@@ -17,65 +17,52 @@ boot.loader.grub.enable = true;
   # boot.loader.efi.efiSysMountPoint = "/boot/efi";
   # Define on which hard drive you want to install Grub.
 boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only
-boot.kernelPackages = pkgs.linuxPackages_latest;
 boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
-  
-networking.hostName = "srv-t1"; # Define your hostname.
-networking.hostId = "8fa5e746";
-  # Pick only one of the below networking options.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+boot.kernelModules = [ "kvm-amd" "kvm-intel" ];
+virtualisation.libvirtd.enable = true;
 
-  # Set your time zone.
-time.timeZone = "America/Phoenix";
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Select internationalisation properties.
-i18n.defaultLocale = "en_US.UTF-8";
+# Localization
+  time.timeZone = "America/Phoenix";
+  i18n.defaultLocale = "en_US.UTF-8";
   # console = {
   #   font = "Lat2-Terminus16";
   #   keyMap = "us";
   #   useXkbConfig = true; # use xkb.options in tty.
   # };
 
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
+# Networking
+  networking.hostName = "srv-t1"; # Define your hostname.
+  networking.hostId = "8fa5e746";
+  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
 
-  # Configure keymap in X11
-  # services.xserver.xkb.layout = "us";
-  # services.xserver.xkb.options = "eurosign:e,caps:escape";
+# Firewall
+  networking.firewall.allowedTCPPorts = [
+    6443 # k3s
+    2379 # k3s - etcd clients
+    2380 # k3s - etcd peers
+    80 # http
+    443 # https
+    9090 # cockpit
+  ];
 
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
+  networking.firewall.allowedUDPPorts = [ 
+    8472 # k3s - Flannel
+  ];
 
-  # Enable sound.
-  # hardware.pulseaudio.enable = true;
-  # OR
-  # services.pipewire = {
-  #   enable = true;
-  #   pulse.enable = true;
-  # };
 
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.libinput.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
+# Users
  users.users.thomas-local = {
    isNormalUser = true;
-   extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+   extraGroups = [ "wheel" "libvirtd" ];.
    packages = with pkgs;
   #     tree
    ];
  };
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-environment.systemPackages = with pkgs; [
-  cockpit 
-];
+# System Packages
+  environment.systemPackages = with pkgs; [
+    cockpit 
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -107,23 +94,9 @@ environment.systemPackages = with pkgs; [
   };
 
 
-# Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [
-    6443 # k3s
-    2379 # k3s - etcd clients
-    2380 # k3s - etcd peers
-    80 # http
-    443 # https
-    9090 # cockpit
-  ];
 
-  networking.firewall.allowedUDPPorts = [ 
-    8472 # k3s - Flannel
-  ];
 
-#Enable Hypervisor
 
-virtualisation.libvirtd.enable = true;
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
