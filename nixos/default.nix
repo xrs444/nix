@@ -12,6 +12,7 @@
     inputs.nix-flatpak.nixosModules.nix-flatpak
     ./nixos/modules/apps
     ./nixos/modules/services
+    ./${hostname}
     ./hardware-configuration.nix
   ];
 
