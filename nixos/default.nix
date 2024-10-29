@@ -7,8 +7,9 @@
 }: 
 {
   imports = [
-    inputs.hardware.nixosModules.common-cpu-amd
-    inputs.hardware.nixosModules.common-ssd
+    inputs.determinate.nixosModules.default
+    inputs.disko.nixosModules.disko
+    inputs.nix-flatpak.nixosModules.nix-flatpak
     ./nixos/modules/apps
     ./nixos/modules/services
     ./hardware-configuration.nix

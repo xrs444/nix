@@ -86,15 +86,14 @@
     80 # http
     443 # https
     9090 # cockpit
+    22
   ];
   networking.firewall.allowedUDPPorts = [ 
     8472 # k3s - Flannel
   ];
 
-
-  # TODO: Configure your system-wide user settings (groups, etc), add more users as needed.
   users.users = {
-    # FIXME: Replace with your username
+
     thomas-local = {
       # If you do, you can skip setting a root password by passing '--no-root-passwd' to nixos-install.
       # Be sure to change it (using passwd) after rebooting!
@@ -117,26 +116,6 @@
       PasswordAuthentication = true;
     };
   };
-
-  services.nfs.server.enable = true; #NFS
-
-  services.k3s = {
-    enable = true;
-    role = "server";
-    token = "<randomized common secret>";
-    clusterInit = true;
-  };
-
-  services.cockpit = {
-    enable = true;
-    port = 9090;
-    settings = {
-      WebService = {
-        AllowUnencrypted = true;
-      };
-    };
-  };
-
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   system.stateVersion = "24.05";
