@@ -12,6 +12,7 @@
     ./nixos/modules/apps
     ./nixos/modules/services
     ./hardware-configuration.nix
+    ./disks.nix
   ];
 
   boot = {
