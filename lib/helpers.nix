@@ -50,7 +50,7 @@
           ;
       };
       modules = [
-        ../host
+        ../nixos
       ];
     };
 
