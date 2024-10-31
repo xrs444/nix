@@ -14,8 +14,6 @@
   ...
 }:
 
-
-
 {
   imports = [
     inputs.determinate.nixosModules.default
@@ -136,9 +134,6 @@
         # programs here, NOT in environment.systemPackages
       ];
     };
-    };
-
-
   };
 
   services = {
