@@ -43,12 +43,18 @@
       stateVersion = "24.05";
       helper = import ./lib { inherit inputs outputs stateVersion; };
     in{
+
+      homeConfigurations = {
+        "thomas-local@xsrv1" = helper.mkHome { hostname = "xsrv1"; };
+        "thomas-local@xsrv2" = helper.mkHome { hostname = "xsrv2"; };
+        "thomas-local@xsrv3" = helper.mkHome { hostname = "xsrv3"; };
+      }
       nixosConfigurations = {
               # Servers
         xsrv1 = helper.mkNixos { hostname = "xsrv1"; };
         xrsv2 = helper.mkNixos { hostname = "xsrv2"; };
         xrsv3 = helper.mkNixos { hostname = "xsrv3"; };
-    };
+      };
       darwinConfigurations = {
         xlt1-tl = helper.mkDarwin {
         hostname = "xlt1-tl";
