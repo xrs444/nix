@@ -45,14 +45,23 @@
     in{
       nixosConfigurations = {
               # Servers
-        xsrv-1 = helper.mkNixos { hostname = "xsrv1"; };
-        xrsv-2 = helper.mkNixos { hostname = "xsrv2"; };
-        xrsv-3 = helper.mkNixos { hostname = "xsrv3"; };
+        xsrv1 = helper.mkNixos { hostname = "xsrv1"; };
+        xrsv2 = helper.mkNixos { hostname = "xsrv2"; };
+        xrsv3 = helper.mkNixos { hostname = "xsrv3"; };
     };
       darwinConfigurations = {
         xlt1-tl = helper.mkDarwin {
         hostname = "xlt1-tl";
         };
       };
+        
+  overlays = import ./overlays { inherit inputs; };
+      # Custom NixOS modules
+  nixosModules = import ./modules/nixos;
+      # Custom packages; acessible via 'nix build', 'nix shell', etc
+  packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+      # Formatter for .nix files, available via 'nix fmt'
+  formatter = helper.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
 
-};
+  };
+}
