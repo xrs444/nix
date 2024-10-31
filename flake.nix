@@ -1,5 +1,35 @@
 {
   description = "flake";
+  inputs = {
+    nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2405.*";
+    nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
+
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+
+    home-manager.url = "github:nix-community/home-manager/release-24.05";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
+    nixos-needtoreboot.url = "github:thefossguy/nixos-needsreboot";
+    nixos-needtoreboot.inputs.nixpkgs.follows = "nixpkgs";
+
+    nix-darwin.url = "github:LnL7/nix-darwin";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
+
+    sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # FlakeHub
+
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
+    fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
+    nix-flatpak.url = "https://flakehub.com/f/gmodena/nix-flatpak/*.tar.gz";
+  };
 
   # ...
 
