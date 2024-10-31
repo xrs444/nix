@@ -136,13 +136,14 @@
     };
   };
 
-  services = {
-    fwupd.enable = isInstall;
-    smartd.enable = isInstall;
-  };
+    services = {
+      fwupd.enable = isInstall;
+      smartd.enable = isInstall;
+    };
 
-  system = {
-    nixos.label = lib.mkIf isInstall "-";
-    inherit stateVersion;
+    system = {
+      nixos.label = lib.mkIf isInstall "-";
+      inherit stateVersion;
+    };
   };
 }
