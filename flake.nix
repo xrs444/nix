@@ -1,5 +1,5 @@
 {
-  description = "jnsgruk's nixos configuration";
+  description = " nixos configuration";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
     unstable.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -9,6 +9,8 @@
     disko.inputs.nixpkgs.follows = "unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "unstable";
+    lanzaboote.url = "github:nix-community/lanzaboote";
+    lanzaboote.inputs.nixpkgs.follows = "unstable";
   };
 
   outputs =

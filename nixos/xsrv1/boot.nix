@@ -3,6 +3,10 @@
   boot = {
     # Secure boot configuration
     loader.systemd-boot.enable = lib.mkForce false;
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/etc/secureboot";
+    };
 
     initrd = {
       availableKernelModules = [
