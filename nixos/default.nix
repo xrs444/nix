@@ -57,7 +57,7 @@
       [
         git
         nix-output-monitor
-      ];
+      ]
       ++ lib.optionals isInstall [
         inputs.determinate.packages.${platform}.default
         inputs.fh.packages.${platform}.default
