@@ -9,20 +9,21 @@
   imports = [
     inputs.hardware.nixosModules.common-cpu-amd
     inputs.hardware.nixosModules.common-ssd
-    ./nixos/modules/apps
-    ./nixos/modules/services
+    (modulesPath + "/installer/scan/not-detected.nix")
+    ./nixos/_elements/apps
+    ./nixos/_elements/services
     ./hardware-configuration.nix
     ./disks.nix
   ];
 
   boot = {
     initrd.availableKernelModules = [
-      "ahci"
-      "nvme"
-      "uas"
-      "usbhid"
-      "sd_mod"
+      "mpt3sas"
       "xhci_pci"
+      "ahci"
+      "usbhid"
+      "usb_storage"
+      "sd_mod" 
     ];
     kernelModules = [
       "kvm-amd"
@@ -32,8 +33,13 @@
       enable = true;
       mdadmConf = "PROGRAM=true";
     };
-  };
+    boot.swraid.enable = true;
+};
 
+hardware = {
+    cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+ };
 
-    
-  }
+networking = {
+  useDHCP = lib.mkDefault true;
+};
