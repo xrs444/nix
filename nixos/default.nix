@@ -93,7 +93,7 @@
     };
   };
 
-  nix =
+  nix = {
     let
       flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
     in
@@ -118,7 +118,27 @@
     };
 
   nixpkgs.hostPlatform = lib.mkDefault "${platform}";
-    
+
+    programs = {
+    nh = {
+      clean = {
+        enable = true;
+        extraArgs = "--keep-since 15d --keep 10";
+      };
+      enable = true;
+      flake = "/home/${username}/Zero/nix-config";
+    };
+    nix-index-database.comma.enable = isInstall;
+    nix-ld = lib.mkIf isInstall {
+      enable = true;
+      libraries = with pkgs; [
+        # Add any missing dynamic libraries for unpackaged
+        # programs here, NOT in environment.systemPackages
+      ];
+    };
+  };
+
+
   };
 
   services = {
