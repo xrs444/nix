@@ -83,5 +83,5 @@
       );
 
       formatter = libx.forAllSystems (system: self.packages.${system}.nixfmt-plus);
-    };
 }
+
