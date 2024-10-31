@@ -70,4 +70,4 @@
   formatter = helper.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
 
   };
-}
+};
