@@ -1,73 +1,87 @@
 {
-  description = "flake";
-
+  description = "jnsgruk's nixos configuration";
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2405.*";
-    nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
-
-    disko.url = "github:nix-community/disko";
-    disko.inputs.nixpkgs.follows = "nixpkgs";
-
-    home-manager.url = "github:nix-community/home-manager/release-24.05";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    master.url = "github:nixos/nixpkgs/master";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
-
-    nixos-needtoreboot.url = "github:thefossguy/nixos-needsreboot";
-    nixos-needtoreboot.inputs.nixpkgs.follows = "nixpkgs";
-
-    nix-darwin.url = "github:LnL7/nix-darwin";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-
-    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
-    nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
-
-    sops-nix.url = "github:Mic92/sops-nix";
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
-
-    # FlakeHub
-
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
-    fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-    nix-flatpak.url = "https://flakehub.com/f/gmodena/nix-flatpak/*.tar.gz";
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "unstable";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "unstable";
   };
 
-  # ...
-
   outputs =
-    { self, nix-darwin, nixpkgs, ... }@inputs:
-
+    {
+      self,
+      nixpkgs,
+      unstable,
+      ...
+    }@inputs:
     let
       inherit (self) outputs;
-      # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
       stateVersion = "24.05";
-      helper = import ./lib { inherit inputs outputs stateVersion; };
+      username = "thomas-local";
+
+      libx = import ./lib {
+        inherit
+          self
+          inputs
+          outputs
+          stateVersion
+          username
+          ;
+      };
     in
     {
+      # nix build .#homeConfigurations."jon@freyja".activationPackage
       homeConfigurations = {
-        "thomas-local@xsrv1" = helper.mkHome { hostname = "xsrv1"; };
-        "thomas-local@xsrv2" = helper.mkHome { hostname = "xsrv2"; };
-        "thomas-local@xsrv3" = helper.mkHome { hostname = "xsrv3"; };
-      };
-      nixosConfigurations = {
-              # Servers
-        xsrv1 = helper.mkNixos { hostname = "xsrv1"; };
-        xrsv2 = helper.mkNixos { hostname = "xsrv2"; };
-        xrsv3 = helper.mkNixos { hostname = "xsrv3"; };
-      };
-      darwinConfigurations = {
-        xlt1-tl = helper.mkDarwin {
-        hostname = "xlt1-tl";
+        # Servers
+        "${username}@xsvr1" = libx.mkHome { hostname = "xsvr1"; };
+        "${username}@xsvr2" = libx.mkHome { hostname = "xsvr2"; };
+        "${username}@xsvr3" = libx.mkHome { hostname = "xsvr3"; };
         };
       };
-        
-      overlays = import ./overlays { inherit inputs; };
-      # Custom NixOS modules
-      nixosModules = import ./modules/nixos;
-      # Custom packages; acessible via 'nix build', 'nix shell', etc
-      packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
-      # Formatter for .nix files, available via 'nix fmt'
-      formatter = helper.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
 
+      nixosConfigurations = {
+        # Desktop machines
+        # Servers
+        xsrv1 = libx.mkHost {
+          hostname = "xsvr1";
+          pkgsInput = nixpkgs;
+        };
+        xsrv2 = libx.mkHost {
+          hostname = "xsvr2";
+          pkgsInput = nixpkgs;
+        };
+        xsvr3 = libx.mkHost {
+          hostname = "xsvr3";
+          pkgsInput = nixpkgs;
+        };
+      };
+
+      # Custom packages; acessible via 'nix build', 'nix shell', etc
+      packages = libx.forAllSystems (
+        system:
+        let
+          pkgs = unstable.legacyPackages.${system};
+        in
+        import ./pkgs { inherit pkgs; }
+      );
+
+      # Custom overlays
+      overlays = import ./overlays { inherit inputs; };
+
+      # Devshell for bootstrapping
+      # Accessible via 'nix develop' or 'nix-shell' (legacy)
+      devShells = libx.forAllSystems (
+        system:
+        let
+          pkgs = unstable.legacyPackages.${system};
+        in
+        import ./shell.nix { inherit pkgs; }
+      );
+
+      formatter = libx.forAllSystems (system: self.packages.${system}.nixfmt-plus);
     };
 }

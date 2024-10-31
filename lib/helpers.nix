@@ -1,7 +1,9 @@
 {
+  self,
   inputs,
   outputs,
   stateVersion,
+  username,
   ...
 }:
 {
@@ -9,114 +11,59 @@
   mkHome =
     {
       hostname,
-      username ? "thomas-local",
+      user ? username,
       desktop ? null,
-      platform ? "x86_64-linux",
+      system ? "x86_64-linux",
     }:
-    let
-      isISO = builtins.substring 0 4 hostname == "iso-";
-      isInstall = !isISO;
-      isLaptop = hostname != "xdt1-tl" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsrv3";
-      isWorkstation = builtins.isString desktop;
-    in
     inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = inputs.nixpkgs.legacyPackages.${platform};
+      pkgs = inputs.unstable.legacyPackages.${system};
       extraSpecialArgs = {
         inherit
+          self
           inputs
           outputs
-          desktop
-          hostname
-          platform
-          username
           stateVersion
-          isInstall
-          isLaptop
-          isISO
-          isWorkstation
+          hostname
+          desktop
           ;
+        username = user;
       };
-      modules = [ ../home-manager ];
+      modules = [
+        inputs.catppuccin.homeManagerModules.catppuccin
+        ../home
+      ];
     };
 
-  # Helper function for generating NixOS configs
-  mkNixos =
+  # Helper function for generating host configs
+  mkHost =
     {
       hostname,
-      username ? "thomas-local",
       desktop ? null,
-      platform ? "x86_64-linux",
+      pkgsInput ? inputs.unstable,
     }:
-    let
-      isISO = builtins.substring 0 4 hostname == "iso-";
-      isInstall = !isISO;
-      isLaptop = hostname != "xdt1-tl" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsrv3";
-      isWorkstation = builtins.isString desktop;
-      tailNet = "corgi-squeaker.ts.net";
-    in
-    inputs.nixpkgs.lib.nixosSystem {
+    pkgsInput.lib.nixosSystem {
       specialArgs = {
         inherit
+          self
           inputs
           outputs
-          desktop
-          hostname
-          platform
-          username
           stateVersion
-          isInstall
-          isISO
-          isLaptop
-          isWorkstation
-          tailNet
+          username
+          hostname
+          desktop
           ;
       };
-      # If the hostname starts with "iso-", generate an ISO image
-      modules =
-        let
-          cd-dvd =
-            if (desktop == null) then
-              inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            else
-              inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix";
-        in
-        [ ../nixos ] ++ inputs.nixpkgs.lib.optionals isISO [ cd-dvd ];
-    };
-
-  mkDarwin =
-    {
-      desktop ? "aqua",
-      hostname,
-      username ? "thomas-local",
-      platform ? "aarch64-darwin",
-    }:
-    let
-      isISO = false;
-      isInstall = true;
-      isLaptop = true;
-      isWorkstation = true;
-    in
-    inputs.nix-darwin.lib.darwinSystem {
-      specialArgs = {
-        inherit
-          inputs
-          outputs
-          desktop
-          hostname
-          platform
-          username
-          stateVersion
-          isInstall
-          isISO
-          isLaptop
-          isWorkstation
-          ;
-      };
-      modules = [ ../darwin ];
+      modules = [
+        inputs.agenix.nixosModules.default
+        inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.libations.nixosModules.libations
+        ../host
+      ];
     };
 
   forAllSystems = inputs.nixpkgs.lib.genAttrs [
     "aarch64-linux"
+    "i686-linux"
     "x86_64-linux"
     "aarch64-darwin"
     "x86_64-darwin"

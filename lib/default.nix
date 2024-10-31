@@ -1,17 +1,22 @@
 {
+  self,
   inputs,
   outputs,
   stateVersion,
+  username,
   ...
 }:
 let
-  helpers = import ./helpers.nix { inherit inputs outputs stateVersion; };
+  helpers = import ./helpers.nix {
+    inherit
+      self
+      inputs
+      outputs
+      stateVersion
+      username
+      ;
+  };
 in
 {
-  inherit (helpers)
-    mkDarwin
-    mkHome
-    mkNixos
-    forAllSystems
-    ;
+  inherit (helpers) mkHome mkHost forAllSystems;
 }
