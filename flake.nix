@@ -1,5 +1,6 @@
 {
   description = "flake";
+
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2405.*";
     nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
@@ -33,23 +34,9 @@
 
   # ...
 
-  outputs = { nixpkgs, ... }@inputs: {
-
-    nixosConfigurations.default = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [
-        ./nixos/xsrv1/default.nix
-        ./nixos/modules/apps
-        ./nixos/modules/services
-      ];
-    };
-
-    homeManagerModules.default = ./homeManagerModules;
-
-  };
-
   outputs =
     { self, nix-darwin, nixpkgs, ... }@inputs:
+
     let
       inherit (self) outputs;
       # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
