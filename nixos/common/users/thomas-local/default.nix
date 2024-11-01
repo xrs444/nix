@@ -10,8 +10,8 @@ in
         "networkmanager"
         "users"
         "wheel"
-      ]
+      ];
 
-    #packages = with pkgs; [ home-manager ];
+    packages = with pkgs; [ home-manager ];
   };
 }
