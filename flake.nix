@@ -44,7 +44,6 @@
         "${username}@xsvr2" = helper.mkHome { hostname = "xsvr2"; };
         "${username}@xsvr3" = helper.mkHome { hostname = "xsvr3"; };
         };
-      };
 
       nixosConfigurations = {
         # Desktop machines
