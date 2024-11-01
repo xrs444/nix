@@ -27,10 +27,7 @@
       mdadmConf = "PROGRAM=true";
     };
     boot.swraid.enable = true;
-
-    # Use the latest Linux kernel, rather than the default LTS
-    kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
-
+    
   hardware = {
     cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   };
