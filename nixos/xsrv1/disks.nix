@@ -6,7 +6,7 @@
     disk = {
       one = {
         type = "disk";
-        device = "/dev/disk/by-id/by-uuid/ata-CT1000BX500SSD1_2432E8BE03BE";
+        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE";
         content = {
           type = "gpt";
           partitions = {
