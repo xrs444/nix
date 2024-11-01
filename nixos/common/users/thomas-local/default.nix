@@ -12,6 +12,6 @@ in
         "wheel"
       ]
 
-    packages = [ pkgs.home-manager ];
+    #packages = with pkgs; [ home-manager ];
   };
 }
