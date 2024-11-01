@@ -26,7 +26,7 @@
       stateVersion = "24.05";
       username = "thomas-local";
       
-      helper = import ./lib {
+      helper = import ./lib/default.nix {
         inherit
           self
           inputs
