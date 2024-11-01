@@ -2,8 +2,8 @@
 
 {
   imports = [
+    ./disks.nix
     inputs.disko.nixosModules.disko
-    (import ./disks.nix { inherit lib; })
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-pc-ssd
   ];
