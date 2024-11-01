@@ -26,7 +26,6 @@
       enable = true;
       mdadmConf = "PROGRAM=true";
     };
-    swraid.enable = true;
     
   };
 
