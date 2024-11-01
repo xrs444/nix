@@ -22,15 +22,12 @@
       ];
     };
 
-      swraid = {
+    swraid = {
       enable = true;
       mdadmConf = "PROGRAM=true";
     };
     boot.swraid.enable = true;
     
-  hardware = {
-    cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-  };
   };
 
 }
