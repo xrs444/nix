@@ -85,5 +85,5 @@
       );
 
       formatter = helper.forAllSystems (system: self.packages.${system}.nixfmt-plus);
+    };
 }
-
