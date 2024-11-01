@@ -26,7 +26,7 @@
       enable = true;
       mdadmConf = "PROGRAM=true";
     };
-    boot.swraid.enable = true;
+    swraid.enable = true;
     
   };
 
