@@ -1,5 +1,5 @@
 { lib, pkgs, ... }:
 {
-  imports = [ ../common/services/nfs/xsrv1.nix ];
+  imports = [ ../common/services/nfs/xsvr1.nix ];
 
 }
