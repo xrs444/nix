@@ -4,7 +4,7 @@ let
 in
 {
   imports = [
-    ./atuin.nix
+ #   ./atuin.nix
     ./git.nix
     ./starship.nix
     ./tmux.nix
