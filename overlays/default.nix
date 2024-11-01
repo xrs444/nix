@@ -13,13 +13,13 @@
     unstable = import inputs.unstable {
       inherit (final) system;
       config.allowUnfree = true;
-      overlays = [
-        (_final: prev: {
+#      overlays = [
+#        (_final: prev: {
           # example = prev.example.overrideAttrs (oldAttrs: rec {
           # ...
           # });
-        })
-      ];
+ #       })
+#     ];
     };
   };
 }
