@@ -13,7 +13,7 @@
     lanzaboote.inputs.nixpkgs.follows = "unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-  }
+  };
   outputs =
     {
       self,
@@ -25,16 +25,16 @@
       inherit (self) outputs;
       stateVersion = "24.05";
       username = "thomas-local";
-
-#      libx = import ./lib {
-#        inherit
-#          self
-#          inputs
-#          outputs
-#          stateVersion
-#          username
-#          ;
-#      };
+      
+      helper = import ./lib {
+        inherit
+          self
+          inputs
+          outputs
+          stateVersion
+          username
+          ;
+      };
     in
     {
       # nix build .#homeConfigurations."jon@freyja".activationPackage
