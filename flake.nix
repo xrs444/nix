@@ -48,11 +48,11 @@
       nixosConfigurations = {
         # Desktop machines
         # Servers
-        xsrv1 = helper.mkHost {
+        xsvr1 = helper.mkHost {
           hostname = "xsvr1";
           pkgsInput = nixpkgs;
         };
-        xsrv2 = helper.mkHost {
+        xsvr2 = helper.mkHost {
           hostname = "xsvr2";
           pkgsInput = nixpkgs;
         };
