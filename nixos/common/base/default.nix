@@ -11,7 +11,7 @@
     ./hardware.nix
     ./locale.nix
     ./nh.nix
-    ../services/firewall.nix
+#    ../services/firewall.nix
     ../services/openssh.nix
  
   ];
