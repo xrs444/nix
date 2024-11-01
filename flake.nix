@@ -39,24 +39,24 @@
       # nix build .#homeConfigurations."jon@freyja".activationPackage
       homeConfigurations = {
         # Servers
-        "${username}@xsvr1" = libx.mkHome { hostname = "xsvr1"; };
-        "${username}@xsvr2" = libx.mkHome { hostname = "xsvr2"; };
-        "${username}@xsvr3" = libx.mkHome { hostname = "xsvr3"; };
+        "${username}@xsvr1" = libx.helpers.mkHome { hostname = "xsvr1"; };
+        "${username}@xsvr2" = libx.helpers.mkHome { hostname = "xsvr2"; };
+        "${username}@xsvr3" = libx.helpers.mkHome { hostname = "xsvr3"; };
         };
       };
 
       nixosConfigurations = {
         # Desktop machines
         # Servers
-        xsrv1 = libx.mkHost {
+        xsrv1 = libx.helpers.mkHost {
           hostname = "xsvr1";
           pkgsInput = nixpkgs;
         };
-        xsrv2 = libx.mkHost {
+        xsrv2 = libx.helpers.mkHost {
           hostname = "xsvr2";
           pkgsInput = nixpkgs;
         };
-        xsvr3 = libx.mkHost {
+        xsvr3 = libx.helpers.mkHost {
           hostname = "xsvr3";
           pkgsInput = nixpkgs;
         };
