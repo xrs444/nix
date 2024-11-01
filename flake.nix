@@ -1,8 +1,8 @@
 {
   description = " nixos configuration";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
-    unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2405.*";
+    unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
     master.url = "github:nixos/nixpkgs/master";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     disko.url = "github:nix-community/disko";
@@ -11,7 +11,8 @@
     home-manager.inputs.nixpkgs.follows = "unstable";
     lanzaboote.url = "github:nix-community/lanzaboote";
     lanzaboote.inputs.nixpkgs.follows = "unstable";
-  };
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
+    fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
 
   outputs =
     {
@@ -25,45 +26,45 @@
       stateVersion = "24.05";
       username = "thomas-local";
 
-      libx = import ./lib {
-        inherit
-          self
-          inputs
-          outputs
-          stateVersion
-          username
-          ;
-      };
+#      libx = import ./lib {
+#        inherit
+#          self
+#          inputs
+#          outputs
+#          stateVersion
+#          username
+#          ;
+#      };
     in
     {
       # nix build .#homeConfigurations."jon@freyja".activationPackage
       homeConfigurations = {
         # Servers
-        "${username}@xsvr1" = libx.helpers.mkHome { hostname = "xsvr1"; };
-        "${username}@xsvr2" = libx.helpers.mkHome { hostname = "xsvr2"; };
-        "${username}@xsvr3" = libx.helpers.mkHome { hostname = "xsvr3"; };
+        "${username}@xsvr1" = helper.mkHome { hostname = "xsvr1"; };
+        "${username}@xsvr2" = helper.mkHome { hostname = "xsvr2"; };
+        "${username}@xsvr3" = helper.mkHome { hostname = "xsvr3"; };
         };
       };
 
       nixosConfigurations = {
         # Desktop machines
         # Servers
-        xsrv1 = libx.helpers.mkHost {
+        xsrv1 = helper.mkHost {
           hostname = "xsvr1";
           pkgsInput = nixpkgs;
         };
-        xsrv2 = libx.helpers.mkHost {
+        xsrv2 = helper.mkHost {
           hostname = "xsvr2";
           pkgsInput = nixpkgs;
         };
-        xsvr3 = libx.helpers.mkHost {
+        xsvr3 = helper.mkHost {
           hostname = "xsvr3";
           pkgsInput = nixpkgs;
         };
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc
-      packages = libx.forAllSystems (
+      packages = helper.forAllSystems (
         system:
         let
           pkgs = unstable.legacyPackages.${system};
@@ -76,7 +77,7 @@
 
       # Devshell for bootstrapping
       # Accessible via 'nix develop' or 'nix-shell' (legacy)
-      devShells = libx.forAllSystems (
+      devShells = helper.forAllSystems (
         system:
         let
           pkgs = unstable.legacyPackages.${system};
@@ -84,6 +85,6 @@
         import ./shell.nix { inherit pkgs; }
       );
 
-      formatter = libx.forAllSystems (system: self.packages.${system}.nixfmt-plus);
+      formatter = helper.forAllSystems (system: self.packages.${system}.nixfmt-plus);
 }
 
