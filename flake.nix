@@ -13,7 +13,7 @@
     lanzaboote.inputs.nixpkgs.follows = "unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-
+  }
   outputs =
     {
       self,
