@@ -11,7 +11,6 @@ in
         "users"
         "wheel"
       ];
-
     packages = with pkgs; [ home-manager ];
   };
 }
