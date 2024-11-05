@@ -9,8 +9,6 @@
     disko.inputs.nixpkgs.follows = "unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "unstable";
-    lanzaboote.url = "github:nix-community/lanzaboote";
-    lanzaboote.inputs.nixpkgs.follows = "unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
   };

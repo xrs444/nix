@@ -18,7 +18,6 @@
 
   networking = {
     hostName = hostname;
-    useDHCP = lib.mkDefault true;
   };
 
   environment.systemPackages = (import ./packages.nix { inherit pkgs; }).basePackages;

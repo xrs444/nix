@@ -1,21 +1,21 @@
 _: {
-  time.timeZone = "Europe/London";
+  time.timeZone = "America/Phoenix";
 
-  console.keyMap = "uk";
-  services.xserver.xkb.layout = "gb";
+  console.keyMap = "us";
+  services.xserver.xkb.layout = "us";
 
   i18n = {
-    defaultLocale = "en_GB.utf8";
+    defaultLocale = "en_US.utf8";
     extraLocaleSettings = {
-      LC_ADDRESS = "en_GB.utf8";
-      LC_IDENTIFICATION = "en_GB.utf8";
-      LC_MEASUREMENT = "en_GB.utf8";
-      LC_MONETARY = "en_GB.utf8";
-      LC_NAME = "en_GB.utf8";
-      LC_NUMERIC = "en_GB.utf8";
-      LC_PAPER = "en_GB.utf8";
-      LC_TELEPHONE = "en_GB.utf8";
-      LC_TIME = "en_GB.utf8";
+      LC_ADDRESS = "en_US.utf8";
+      LC_IDENTIFICATION = "en_US.utf8";
+      LC_MEASUREMENT = "en_US.utf8";
+      LC_MONETARY = "en_US.utf8";
+      LC_NAME = "en_US.utf8";
+      LC_NUMERIC = "en_US.utf8";
+      LC_PAPER = "en_US.utf8";
+      LC_TELEPHONE = "en_US.utf8";
+      LC_TIME = "en_US.utf8";
     };
   };
 }
