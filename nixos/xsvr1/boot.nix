@@ -33,17 +33,30 @@ systemd.network = {
   enable = true;
   netdevs = {
     "10G-Bond0" = {
-      Kind = "bond";
-      Name = "bond0";
+      netdevConfig = {
+        Kind = "bond";
+        Name = "bond0";
+      };
+      bondConfig = {
+        Mode = "802.3ad";
+        TransmitHashPolicy = "layer3+4";
+        MIIMonitorSec="0.100s";
+      };
     };
-    bondConfig = {
-      Mode = "802.3ad";
-      MIIMonitorSec="0.100s";
+    "bond0.17" = {
+      netdevConfig = {
+        id = 17;
+        interface = "bond0";
+    };
+    "bridge17" = {
+      netdevConfig = {
+        kind = "bridge";
+        Name "br17";
+      };
     };
   };
 
   networks = { 
-
     "20-enp3s0f0" = {
     matchConfig.Name = "enp3s0f0";
     networkConfig.Bond = "bond0";
@@ -61,6 +74,13 @@ systemd.network = {
        matchConfig.Name = "eno1";
        linkConfig.RequiredForOnline = "carrier";
        networkConfig.DHCP = "yes";
+    };
+    "50-br17" = {
+      matchConfig = "br17";
+      bridgeConfig = {};
+      linkConfig = {
+        RequiredForOnline = "carrier";
+      };
     };
   };
 }
