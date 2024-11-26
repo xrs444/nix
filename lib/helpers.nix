@@ -49,10 +49,9 @@
           desktop
           ;
       };
-#      modules = [
-#        inputs.lanzaboote.nixosModules.lanzaboote
-#        ../nixos
-#      ];
+      modules = [
+        ../nixos
+      ];
     };
 
   forAllSystems = inputs.nixpkgs.lib.genAttrs [
