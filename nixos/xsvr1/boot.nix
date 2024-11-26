@@ -74,7 +74,7 @@
          networkConfig.DHCP = "yes";
       };
       "50-br17" = {
-        matchConfig = "br17";
+        matchConfig.Name = "br17";
         bridgeConfig = {};
         linkConfig = {
         RequiredForOnline = "carrier";
