@@ -25,7 +25,7 @@
     
   };
 
-}
+};
 
 systemd.network = { 
 
