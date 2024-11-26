@@ -1,5 +1,4 @@
-{ lib, pkgs, ... }:
-{
+_: {
   imports = [ 
     ../common/services/nfs/xsvr1.nix 
     ../common/services/zfs
