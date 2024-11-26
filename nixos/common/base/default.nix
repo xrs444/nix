@@ -29,6 +29,7 @@
   services = {
     chrony.enable = true;
     journald.extraConfig = "SystemMaxUse=250M";
+    flatpak.enable = true;
   };
 
   security = {
