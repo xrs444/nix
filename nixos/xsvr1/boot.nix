@@ -25,9 +25,8 @@
     
   };
 
-}
+};
 
-networking.useNetworks = true;
 systemd.network = { 
 
   enable = true;
