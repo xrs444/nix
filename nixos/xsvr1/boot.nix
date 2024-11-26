@@ -25,7 +25,7 @@
     
   };
 
-};
+}
 
 systemd.network = { 
 
@@ -82,4 +82,5 @@ systemd.network = {
       };
     };
   };
+ };
 }
