@@ -46,7 +46,8 @@ systemd.network = {
       netdevConfig = {
         id = 17;
         interface = "bond0";
-    };
+      };
+    };  
     "bridge17" = {
       netdevConfig = {
         kind = "bridge";
@@ -82,5 +83,4 @@ systemd.network = {
       };
     };
   };
- };
 }
