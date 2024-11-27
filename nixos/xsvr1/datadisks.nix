@@ -16,7 +16,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -33,7 +33,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -50,7 +50,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -67,7 +67,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -84,7 +84,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -101,7 +101,7 @@
             size = "100%";
             content = {
               type = "zfs";
-              pool = "";
+              pool = "zroot";
             };
           };
         };
@@ -109,12 +109,34 @@
     };
 
     zpool = {
-     tank = { 
+     zroot = { 
         type = "zpool";
-        mode = "raidz2";
+        mode = {
+          topology = {
+            type = topology;
+            vdev =[
+              { 
+                mode = mirror;
+                members = [ "data-one" "data-two"];
+              }
+            ];
+             vdev =[
+              { 
+                mode = mirror;
+                members = [ "data-three" "data-four"];
+              }
+            ];
+            vdev =[
+              { 
+                mode = mirror;
+                members = [ "data-five" "data-six"];
+              }
+            ];
+          };
+        };
         options.cachefile = "none";
         rootFSOptions = {
-          compression = "zstd";
+          compression = "lz4";
           "com.sun:auto-snapshot" = "false";
         };
       };
@@ -141,9 +163,7 @@
           mountpoint = /zfs/clientbackups;
           options."com.sun:auto-snapshot" = "true";
         };
-
       };
-
     };
   };
 }
