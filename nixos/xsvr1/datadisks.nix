@@ -121,26 +121,26 @@
       mountpoint = "/zfs";
 
       datasets = {
-        zfs_fs = {
+        media = {
+          type = "zfs_fs";
           mountpoint = /zfs/media;
           options."com.sun:auto-snapshot" = "true";
         };
-        zfs_fs = {
+        containers = {
+          type = "zfs_fs";
           mountpoint = /zfs/containers;
           options."com.sun:auto-snapshot" = "true";
         };
-        zfs_fs = {
+        googlebackups = {
+          type = "zfs_fs";
           mountpoint = /zfs/googlebackups;
           options."com.sun:auto-snapshot" = "true";
         };
-        zfs_fs = {
+        clientbackups = {
+          type = "zfs_fs";
           mountpoint = /zfs/clientbackups;
           options."com.sun:auto-snapshot" = "true";
         };
-
-
-
-
 
       };
 
