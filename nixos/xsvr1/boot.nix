@@ -40,12 +40,14 @@
           MIIMonitorSec="0.100s";
         };
       };
-      "bond0.17" = {
-        netdevConfig = {
-          id = 17;
-          interface = "bond0";
-        };
-      };  
+#      "bond0.17" = {
+#        netdevConfig = {
+#          Kind = "vlan";
+#          id = 17;
+#          interface = "bond0";
+#          mode = "802.3ad";
+#        };
+#      };  
       "bridge17" = {
         netdevConfig = {
           kind = "bridge";
