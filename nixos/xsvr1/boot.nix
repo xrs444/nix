@@ -29,17 +29,17 @@
   systemd.network = { 
     enable = true;
     netdevs = {
-      "10G-Bond0" = {
-        netdevConfig = {
-          Kind = "bond";
-          Name = "bond0";
-        };
+#      "10G-Bond0" = {
+#        netdevConfig = {
+#          Kind = "bond";
+#          Name = "bond0";
+#        };
 #        bondConfig = {
 #          Mode = "802.3ad";
 #          TransmitHashPolicy = "layer3+4";
 #          MIIMonitorSec="0.100s";
 #        };
-      };
+#      };
 #      "bond0.17" = {
 #        netdevConfig = {
 #          Kind = "vlan";
