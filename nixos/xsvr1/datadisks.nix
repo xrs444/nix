@@ -119,7 +119,6 @@
         };
       };
       mountpoint = "/zfs";
-      postCreateHook = 
 
       datasets = {
         zfs_fs = {
