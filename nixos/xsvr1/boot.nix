@@ -48,12 +48,12 @@
 #          mode = "802.3ad";
 #        };
 #      };  
-      "bridge17" = {
-        netdevConfig = {
-          kind = "bridge";
-          Name = "br17";
-        };
-      };
+#      "bridge17" = {
+#        netdevConfig = {
+#          kind = "bridge";
+#          Name = "br17";
+#        };
+#      };
     };
 
     networks = { 
