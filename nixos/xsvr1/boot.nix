@@ -1,8 +1,7 @@
 { pkgs, lib, ... }:
 {
   boot = {
-    # Secure boot configuration
-    loader.systemd-boot.enable = lib.mkForce false;
+    loader.systemd-boot.enable = true;
 
     initrd = {
       availableKernelModules = [
