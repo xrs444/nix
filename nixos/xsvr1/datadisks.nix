@@ -114,19 +114,19 @@
         mode = {
           topology = {
             type = topology;
-            vdev =[
+            vdev1 =[
               { 
                 mode = mirror;
                 members = [ "data-one" "data-two"];
               }
             ];
-             vdev =[
+             vdev2 =[
               { 
                 mode = mirror;
                 members = [ "data-three" "data-four"];
               }
             ];
-            vdev =[
+            vdev3 =[
               { 
                 mode = mirror;
                 members = [ "data-five" "data-six"];
