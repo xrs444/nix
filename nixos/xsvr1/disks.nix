@@ -10,10 +10,10 @@
         content = {
           type = "gpt";
           partitions = {
-            BOOT = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-            };
+#            BOOT = {
+#              size = "1M";
+#              type = "EF02"; # for grub MBR
+#            };
             ESP = {
               size = "500M";
               type = "EF00";
@@ -38,10 +38,10 @@
         content = {
           type = "gpt";
           partitions = {
-            BOOT = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-            };
+#            BOOT = {
+#              size = "1M";
+#              type = "EF02"; # for grub MBR
+#            };
             ESP = {
               size = "500M";
               type = "EF00";
@@ -69,6 +69,10 @@
         content = {
           type = "filesystem";
           format = "vfat";
+          mountOptions = [
+            "defaults"
+            "umask=0077"
+          ];
           mountpoint = "/boot";
         };
       };
