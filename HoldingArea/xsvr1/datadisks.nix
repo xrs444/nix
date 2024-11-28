@@ -1,3 +1,8 @@
+# Decided not to use this, but included it to revisit later.
+# Need to work out how to create multiple VDEVs for one pool.
+# Safer to not use though as it will be persistant data storage.
+
+
 # ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0791190 - VDEV 1 - 1
 # ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0774016 - VDEV 1 - 2
 # ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0771782 - VDEV 2 - 1
