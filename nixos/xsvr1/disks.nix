@@ -15,7 +15,7 @@
 #              type = "EF02"; # for grub MBR
 #            };
             ESP = {
-              size = "500M";
+              size = "1024";
               type = "EF00";
               content = {
                 type = "mdraid";
@@ -26,7 +26,7 @@
               size = "100%";
               content = {
                 type = "mdraid";
-                name = "raid1";
+                name = "root_fs";
               };
             };
           };
@@ -43,7 +43,7 @@
 #              type = "EF02"; # for grub MBR
 #            };
             ESP = {
-              size = "500M";
+              size = "1024M";
               type = "EF00";
               content = {
                 type = "mdraid";
@@ -54,7 +54,7 @@
               size = "100%";
               content = {
                 type = "mdraid";
-                name = "raid1";
+                name = "root_fs";
               };
             };
           };
@@ -76,7 +76,7 @@
           mountpoint = "/boot";
         };
       };
-      raid1 = {
+      root_fs = {
         type = "mdadm";
         level = 1;
         content = {
