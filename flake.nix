@@ -21,7 +21,7 @@
     }@inputs:
     let
       inherit (self) outputs;
-      stateVersion = "24.05";
+      stateVersion = "24.11";
       username = "thomas-local";
       
       helper = import ./lib {
