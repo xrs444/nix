@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+# Using this to built the ZFS array for now, then mount in boot.nix
+# One day I'll do it in Disko, but I need to actually make some progress!
+# This method is safer, as it won't fire unless specifically called. I'll migrate it over later.
+
+# Disks involved and VDEV assignments. 
+
+# ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0791190 - VDEV 1 - 1
+# ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0774016 - VDEV 1 - 2
+# ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0771782 - VDEV 2 - 1
+# ata-WDC_WD30EFRX-68EUZN0_WD-WMC4N2432718 - VDEV 2 - 2
+# ata-WDC_WD30EFRX-68EUZN0_WD-WMC4N2449151 - VDEV 3 - 1
+# ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0753744 - VDEV 3 - 2 
+
+zpool create -f \
+      -o ashift=12 \
+      -m /zfs zpool-xsvr1 \
+      mirror ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0791190 ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0774016 \
+      mirror ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0771782 ata-WDC_WD30EFRX-68EUZN0_WD-WMC4N2432718 \
+      mirror ata-WDC_WD30EFRX-68EUZN0_WD-WMC4N2449151 ata-WDC_WD30EFRX-68EUZN0_WD-WCC4N0753744
+
+zfs set compression=lz4 recordsize=1M xattr=sa acltype=posixacl atime=off zpool-xsvr1
+
+
+zfs create zpool-xsvr1/media \
+    -o recordsize=1M
+
+zfs create zpool-xsvr1/music \
+    -o recordsize=1M
+
+zfs create zpool-xsvr1/devicebackups \
+    -o recordsize=1M
+
+zfs create zpool-xsvr1/googlebackups \
+    -o recordsize=1M
+
+zfs create zpool-xsvr1/systembackups \
+    -o recordsize=1M
+
+zfs create zpool-xsvr1/photos \
+    -o recordsize=1M
+

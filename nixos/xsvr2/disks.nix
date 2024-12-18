@@ -1,12 +1,12 @@
-# ata-CT1000BX500SSD1_2432E8BE03BE - System
-# ata-CT1000BX500SSD1_2434E9882FC2 - System
-# ata-CT1000MX500SSD1_2410E89C985C - Longhorn
+# ata-CT1000BX500SSD1_2434E9882FCF - System
+# ata-CT1000BX500SSD1_2434E988331E - System
+#
 {
   disko.devices = {
     disk = {
       one = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE";
+        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FCF";
         content = {
           type = "gpt";
           partitions = {
@@ -34,7 +34,7 @@
       };
       two = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2";
+        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E988331E";
         content = {
           type = "gpt";
           partitions = {
