@@ -24,7 +24,7 @@
     
   };
 
-  networking.useNetworkd = true
+  networking.useNetworkd = true;
   systemd.network = {
     enable = true;
     netdevs = {
