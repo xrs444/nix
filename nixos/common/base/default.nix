@@ -13,6 +13,7 @@
     ./nh.nix
 #    ../services/firewall.nix
     ../services/openssh.nix
+    ./diskos.nix
  
   ];
 
