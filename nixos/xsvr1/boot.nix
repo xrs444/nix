@@ -57,7 +57,7 @@
       "bridge17" = {
         netdevConfig = {
           Kind = "bridge";
-          Name = "bridge17";  # Changed to match the netdev name
+          Name = "bridge17";
         };
       };
     };
@@ -73,12 +73,18 @@
       "30-bond0" = {
         matchConfig.Name = "bond0";
         linkConfig.RequiredForOnline = "carrier";
-        networkConfig.DHCP = "yes";
+        networkConfig = {
+          DHCP = "ipv4";
+          IPv6AcceptRA = true;
+        };
       };
       "40-eno1" = {
         matchConfig.Name = "eno1";
         linkConfig.RequiredForOnline = "carrier";
-        networkConfig.DHCP = "yes";
+        networkConfig = {
+          DHCP = "ipv4";
+          IPv6AcceptRA = true;
+        };
       };
       # Added configuration for VLAN interface
       "45-bond0.17" = {
@@ -86,7 +92,7 @@
         networkConfig.Bridge = "bridge17";
       };
       "50-bridge17" = {
-        matchConfig.Name = "bridge17";  # Changed to match the netdev name
+        matchConfig.Name = "bridge17";
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";
