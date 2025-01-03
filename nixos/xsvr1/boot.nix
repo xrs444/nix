@@ -1,5 +1,8 @@
 { pkgs, lib, ... }:
 {
+
+  networking.useNetworkd = true;
+
   boot = {
     loader.systemd-boot.enable = true;
 
@@ -23,8 +26,6 @@
     };
     
   };
-
-  networking.useNetworkd = true;
   systemd.network = {
     enable = true;
     netdevs = {
