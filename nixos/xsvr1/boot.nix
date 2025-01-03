@@ -25,44 +25,48 @@
   };
 
 
-  systemd.network = { 
+{
+  systemd.network = {
     enable = true;
     netdevs = {
-#      "10G-Bond0" = {
-#        netdevConfig = {
-#          Kind = "bond";
-#          Name = "bond0";
-#        };
-#        bondConfig = {
-#          Mode = "802.3ad";
-#          TransmitHashPolicy = "layer3+4";
-#          MIIMonitorSec="0.100s";
-#        };
-#      };
-#      "bond0.17" = {
-#        netdevConfig = {
-#          Kind = "vlan";
-#          id = 17;
-#          interface = "bond0";
-#          mode = "802.3ad";
-#        };
-#      };  
-#      "bridge17" = {
-#        netdevConfig = {
-#          kind = "bridge";
-#          Name = "br17";
-#        };
-#      };
+      "10G-Bond0" = {
+        netdevConfig = {
+          Kind = "bond";
+          Name = "bond0";
+        };
+        bondConfig = {
+          Mode = "802.3ad";
+          TransmitHashPolicy = "layer3+4";
+          MIIMonitorSec = "0.100s";
+          LACPTransmitRate = "fast";
+          MinLinks = "1";
+          AdActorSystemPriority = "65535";
+          AdSelectPolicy = "stable";
+        };
+      };
+      "bond0.17" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.17";
+          id = 17;
+          interface = "bond0";
+        };
+      };
+      "bridge17" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "br17";
+        };
+      };
     };
-
-    networks = { 
+    networks = {
       "20-enp3s0f0" = {
-      matchConfig.Name = "enp3s0f0";
-      networkConfig.Bond = "bond0";
+        matchConfig.Name = "enp3s0f0";
+        networkConfig.Bond = "bond0";
       };
       "20-enp3s0f1" = {
-      matchConfig.Name = "enp3s0f1";
-      networkConfig.Bond = "bond0";
+        matchConfig.Name = "enp3s0f1";
+        networkConfig.Bond = "bond0";
       };
       "30-bond0" = {
         matchConfig.Name = "bond0";
@@ -70,17 +74,16 @@
         networkConfig.DHCP = "yes";
       };
       "40-eno1" = {
-         matchConfig.Name = "eno1";
-         linkConfig.RequiredForOnline = "carrier";
-         networkConfig.DHCP = "yes";
+        matchConfig.Name = "eno1";
+        linkConfig.RequiredForOnline = "carrier";
+        networkConfig.DHCP = "yes";
       };
       "50-br17" = {
         matchConfig.Name = "br17";
         bridgeConfig = {};
         linkConfig = {
-        RequiredForOnline = "carrier";
+          RequiredForOnline = "carrier";
         };
-      };
     };
   };
 }
