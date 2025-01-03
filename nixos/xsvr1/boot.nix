@@ -24,8 +24,6 @@
     
   };
 
-
-{
   systemd.network = {
     enable = true;
     netdevs = {
@@ -48,14 +46,14 @@
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.17";
-          id = 17;
-          interface = "bond0";
+          Id = 17;
+          Interface = "bond0";
         };
       };
       "bridge17" = {
         netdevConfig = {
           Kind = "bridge";
-          Name = "br17";
+          Name = "bridge17";  # Changed to match the netdev name
         };
       };
     };
@@ -78,12 +76,18 @@
         linkConfig.RequiredForOnline = "carrier";
         networkConfig.DHCP = "yes";
       };
-      "50-br17" = {
-        matchConfig.Name = "br17";
+      # Added configuration for VLAN interface
+      "45-bond0.17" = {
+        matchConfig.Name = "bond0.17";
+        networkConfig.Bridge = "bridge17";
+      };
+      "50-bridge17" = {
+        matchConfig.Name = "bridge17";  # Changed to match the netdev name
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+      };
     };
   };
 }
