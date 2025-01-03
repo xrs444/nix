@@ -37,7 +37,7 @@
         bondConfig = {
           Mode = "802.3ad";
           TransmitHashPolicy = "layer2+3";
-          MIIMonitorSec = "0.100s";
+#          MIIMonitorSec = "0.100s";
           LACPTransmitRate = "fast";
           MinLinks = "1";
 #          AdActorSystemPriority = "65535";
