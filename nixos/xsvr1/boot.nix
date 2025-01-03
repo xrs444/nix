@@ -39,9 +39,6 @@
           TransmitHashPolicy = "layer2+3";
           MIIMonitorSec = "0.100s";
           LACPTransmitRate = "fast";
-#          MinLinks = "1";
-          AdActorSystemPriority = "65535";
-          AdSelectPolicy = "stable";
         };
       };
       "bond0.17" = {
