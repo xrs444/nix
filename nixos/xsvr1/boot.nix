@@ -48,8 +48,10 @@
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.17";
+         vlanConfig = {
           Id = 17;
-          Interface = "bond0";
+          ParentDevice = "bond0";
+          }
         };
       };
       "bridge17" = {
