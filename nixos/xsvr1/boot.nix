@@ -51,7 +51,7 @@
          vlanConfig = {
           Id = 17;
           ParentDevice = "bond0";
-          }
+          };
         };
       };
       "bridge17" = {
