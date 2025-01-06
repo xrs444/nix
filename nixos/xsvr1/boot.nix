@@ -1,11 +1,11 @@
 { pkgs, lib, ... }:
 {
 
-  imports = [
-    ./boot.nix
-    ./extra.nix
-    ./hardware.nix
-  ];
+#  imports = [
+#    ./boot.nix
+#    ./extra.nix
+#    ./hardware.nix
+#  ];
 
   networking.useNetworkd = true;
 
