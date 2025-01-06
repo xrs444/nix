@@ -58,65 +58,6 @@
       };
     };
 
-    disk = {
-      one = {
-        type = "disk";
-        device = "/dev/sda";
-        content = {
-          type = "gpt";
-          partitions = {
-            BOOT = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-            };
-            ESP = {
-              size = "500M";
-              type = "EF00";
-              content = {
-                type = "mdraid";
-                name = "boot";
-              };
-            };
-            mdadm = {
-              size = "100%";
-              content = {
-                type = "mdraid";
-                name = "raid1";
-              };
-            };
-          };
-        };
-      };
-      two = {
-        type = "disk";
-        device = "/dev/sdb";
-        content = {
-          type = "gpt";
-          partitions = {
-            boot = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-            };
-            ESP = {
-              size = "500M";
-              type = "EF00";
-              content = {
-                type = "mdraid";
-                name = "boot";
-              };
-            };
-            mdadm = {
-              size = "100%";
-              content = {
-                type = "mdraid";
-                name = "raid1";
-              };
-            };
-          };
-        };
-      };
-    };
-
     mdadm = {
       root_fs = {
         type = "mdadm";
