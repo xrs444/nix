@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+_{:
 {
   basePackages = with pkgs; [
     zfs
