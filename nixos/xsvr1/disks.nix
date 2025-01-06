@@ -10,24 +10,12 @@
         content = {
           type = "gpt";
           partitions = {
-#            BOOT = {
-#              size = "1M";
-#              type = "EF02"; # for grub MBR
-#            };
             ESP = {
-              size = "1024";
+              size = "1024M";
               type = "EF00";
-              content = {
-                type = "mdraid";
-                name = "boot";
-              };
             };
             mdadm = {
               size = "100%";
-              content = {
-                type = "mdraid";
-                name = "root_fs";
-              };
             };
           };
         };
@@ -38,24 +26,12 @@
         content = {
           type = "gpt";
           partitions = {
-#            BOOT = {
-#              size = "1M";
-#              type = "EF02"; # for grub MBR
-#            };
             ESP = {
               size = "1024M";
               type = "EF00";
-              content = {
-                type = "mdraid";
-                name = "boot";
-              };
             };
             mdadm = {
               size = "100%";
-              content = {
-                type = "mdraid";
-                name = "root_fs";
-              };
             };
           };
         };
@@ -66,6 +42,10 @@
         type = "mdadm";
         level = 1;
         metadata = "1.0";
+        devices = [
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part1" # ESP on disk one
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part1" # ESP on disk two
+        ];
         content = {
           type = "filesystem";
           format = "vfat";
@@ -79,16 +59,14 @@
       root_fs = {
         type = "mdadm";
         level = 1;
+        devices = [
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part2" # mdadm partition on disk one
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part2" # mdadm partition on disk two
+        ];
         content = {
-          type = "gpt";
-          partitions.primary = {
-            size = "100%";
-            content = {
-              type = "filesystem";
-              format = "xfs";
-              mountpoint = "/";
-            };
-          };
+          type = "filesystem";
+          format = "xfs";
+          mountpoint = "/";
         };
       };
     };
