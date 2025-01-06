@@ -1,14 +1,14 @@
-{
-  inputs = {
-    disko.url = "github:nix-community/disko";
-    disko.inputs.nixpkgs.follows = "nixpkgs";
-  };
+#{
+#  inputs = {
+#    disko.url = "github:nix-community/disko";
+#    disko.inputs.nixpkgs.follows = "nixpkgs";
+#  };
 
-  nixosConfigurations.nixos = {
+#  nixosConfigurations.nixos = {
     # ...
-    modules = [
-      ./configuration.nix
-      inputs.disko.nixosModules.disko
-    ];
-  };
-}
+#    modules = [
+#      ./configuration.nix
+#      inputs.disko.nixosModules.disko
+#    ];
+#  };
+#}
