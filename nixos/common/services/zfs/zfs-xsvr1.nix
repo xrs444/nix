@@ -1,4 +1,5 @@
-_: { 
+_: {
+  networking.hostId = "0814bb9a";
   services.sanoid = {
     enable = true;
     datasets = {
