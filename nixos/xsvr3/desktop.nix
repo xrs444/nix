@@ -9,8 +9,8 @@
     layout = "us";
     variant = "";
     };
-  };
   libinput.enable = true;
+  };
   programs = {
     firefox.enable = true;
     gnupg.agent = {
