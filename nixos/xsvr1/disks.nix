@@ -13,9 +13,19 @@
             ESP = {
               size = "1024M";
               type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [
+                  "defaults"
+                  "umask=0077"
+                ];
+              };
             };
             mdadm = {
               size = "100%";
+              type = "FD00";
             };
           };
         };
@@ -29,39 +39,26 @@
             ESP = {
               size = "1024M";
               type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+              };
             };
             mdadm = {
               size = "100%";
+              type = "FD00";
             };
           };
         };
       };
     };
     mdadm = {
-      boot = {
-        type = "mdadm";
-        level = 1;
-        metadata = "1.0";
-        devices = [
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part1" # ESP on disk one
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part1" # ESP on disk two
-        ];
-        content = {
-          type = "filesystem";
-          format = "vfat";
-          mountOptions = [
-            "defaults"
-            "umask=0077"
-          ];
-          mountpoint = "/boot";
-        };
-      };
       root_fs = {
         type = "mdadm";
         level = 1;
         devices = [
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part2" # mdadm partition on disk one
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part2" # mdadm partition on disk two
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part2"
+          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part2"
         ];
         content = {
           type = "filesystem";
