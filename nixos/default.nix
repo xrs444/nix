@@ -41,7 +41,7 @@
     };
   };
 
-  users.users.thomas_local = {
+  users.users.thomas-local = {
     isNormalUser  = true;
     home  = "/home/thomas-local";
     description  = "thomas-local";
