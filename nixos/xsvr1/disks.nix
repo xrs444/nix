@@ -25,7 +25,10 @@
             };
             mdadm = {
               size = "100%";
-              type = "FD00";
+              content = {
+                type = "mdraid";
+                name = "root_fs";
+              };
             };
           };
         };
@@ -38,7 +41,6 @@
           partitions = {
             ESP = {
               size = "1024M";
-              type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -46,7 +48,10 @@
             };
             mdadm = {
               size = "100%";
-              type = "FD00";
+              content = {
+                type = "mdraid";
+                name = "root_fs";
+              };
             };
           };
         };
