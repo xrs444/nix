@@ -57,18 +57,80 @@
         };
       };
     };
+
+    disk = {
+      one = {
+        type = "disk";
+        device = "/dev/sda";
+        content = {
+          type = "gpt";
+          partitions = {
+            BOOT = {
+              size = "1M";
+              type = "EF02"; # for grub MBR
+            };
+            ESP = {
+              size = "500M";
+              type = "EF00";
+              content = {
+                type = "mdraid";
+                name = "boot";
+              };
+            };
+            mdadm = {
+              size = "100%";
+              content = {
+                type = "mdraid";
+                name = "raid1";
+              };
+            };
+          };
+        };
+      };
+      two = {
+        type = "disk";
+        device = "/dev/sdb";
+        content = {
+          type = "gpt";
+          partitions = {
+            boot = {
+              size = "1M";
+              type = "EF02"; # for grub MBR
+            };
+            ESP = {
+              size = "500M";
+              type = "EF00";
+              content = {
+                type = "mdraid";
+                name = "boot";
+              };
+            };
+            mdadm = {
+              size = "100%";
+              content = {
+                type = "mdraid";
+                name = "raid1";
+              };
+            };
+          };
+        };
+      };
+    };
+
     mdadm = {
       root_fs = {
         type = "mdadm";
         level = 1;
-        devices = [
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2432E8BE03BE-part2"
-          "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FC2-part2"
-        ];
         content = {
-          type = "filesystem";
-          format = "xfs";
-          mountpoint = "/";
+          type = "gpt";
+          partitions.primary = {
+            size = "100%";
+            content = {
+             type = "filesystem";
+             format = "xfs";
+             mountpoint = "/";
+            };
+          };
         };
       };
     };
