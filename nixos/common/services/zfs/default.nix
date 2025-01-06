@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
   basePackages = with pkgs; [
-    zfs;
+    zfs
   ];
   services.zfs = {
     autoScrub.enable = true;
