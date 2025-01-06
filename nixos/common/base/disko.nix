@@ -1,4 +1,4 @@
-#{
+{
 #  inputs = {
 #    disko.url = "github:nix-community/disko";
 #    disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -11,4 +11,4 @@
 #      inputs.disko.nixosModules.disko
 #    ];
 #  };
-#}
+}
