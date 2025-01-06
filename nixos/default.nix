@@ -49,6 +49,8 @@
 #  openssh.authorizedKeys.keys  = [ "ssh-dss " ];
   };
 
+  networking.nftables.enable = true;
+  services.resolved.enable = true;
 
   nix = {
     # This will add each flake input as a registry

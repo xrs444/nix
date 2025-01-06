@@ -1,5 +1,5 @@
 let
-  xsr1 = "ssh-ed25519 placeholder";
+  xsvr1 = "ssh-ed25519 placeholder";
   users = [ thomas-local ];
 in
 {
