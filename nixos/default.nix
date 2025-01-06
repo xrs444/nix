@@ -41,6 +41,15 @@
     };
   };
 
+  users.users.thomas_local = {
+    isNormalUser  = true;
+    home  = "/home/thomas-local";
+    description  = "thomas-local";
+    extraGroups  = [ "wheel" "networkmanager" ];
+#  openssh.authorizedKeys.keys  = [ "ssh-dss " ];
+  };
+
+
   nix = {
     # This will add each flake input as a registry
     # To make nix3 commands consistent with your flake
