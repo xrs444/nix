@@ -1,6 +1,6 @@
 { pkgs, ...}:
 {
-  basePackages = with pkgs; [
+  environmnet.systemPackages = with pkgs; [
     zfs
   ];
   services.zfs = {
