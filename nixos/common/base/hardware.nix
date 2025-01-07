@@ -1,1 +1,6 @@
-_: { hardware.enableRedistributableFirmware = true; }
+_: { 
+  
+  hardware.enableRedistributableFirmware = true;
+  fileSystems."/".options = [ "noatime" "nodiratime" "discard" ]; 
+
+}
