@@ -58,7 +58,6 @@
       };
       "30-bond0" = {
         matchConfig.Name = "bond0";
-        linkConfig.RequiredForOnline = "carrier";
         networkConfig = {
           DHCP = "ipv4";
           IPv6AcceptRA = true;
