@@ -1,16 +1,23 @@
 { config, pkgs, ... }:
 
 {
-  services.xserver = {
+  services = {
+    xserver = {
     enable = true;
-    displayManager.gdm.enable = true;
+    displayManager.gdm = {
+      enable = true;
+      wayland = true;
+    }
     desktopManager.gnome.enable = true;
     xkb = {
       layout = "us";
       variant = "";
       };
-    libinput.enable = true;
   };
+
+  libinput.enable = true;
+  };
+  
   programs = {
     firefox.enable = true;
     gnupg.agent = {
