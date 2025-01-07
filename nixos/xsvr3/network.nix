@@ -59,6 +59,7 @@
       "45-bond0.17" = {
         matchConfig.Name = "bond0.17";
         networkConfig.Bridge = "bridge17";
+        linkConfig.RequiredForOnline = "carrier";
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
