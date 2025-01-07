@@ -34,11 +34,11 @@
     };
     networks = {
       "10-enp3s0f0" = {
-        matchConfig.Name = "enp3s0f0";
+        matchConfig.Name = "enp2s0f0";
         networkConfig.Bond = "bond0";
       };
       "20-enp3s0f1" = {
-        matchConfig.Name = "enp3s0f1";
+        matchConfig.Name = "enp2s0f1";
         networkConfig.Bond = "bond0";
       };
       "30-bond0" = {

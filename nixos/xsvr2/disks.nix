@@ -1,25 +1,26 @@
 # ata-CT1000BX500SSD1_2434E9882FCF - System
 # ata-CT1000BX500SSD1_2434E988331E - System
-#
+# ata-CT1000MX500SSD1_2323E6E0F5AD - longhorn
 {
   disko.devices = {
     disk = {
       one = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-CT1000BX500SSD1_2434E9882FCF";
+        device = "/dev/disk/by-id/ta-CT1000BX500SSD1_2434E9882FCF";
         content = {
           type = "gpt";
           partitions = {
-#            BOOT = {
-#              size = "1M";
-#              type = "EF02"; # for grub MBR
-#            };
             ESP = {
-              size = "1024";
+              size = "1024M";
               type = "EF00";
               content = {
-                type = "mdraid";
-                name = "boot";
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [
+                  "defaults"
+                  "umask=0077"
+                ];
               };
             };
             mdadm = {
@@ -38,16 +39,11 @@
         content = {
           type = "gpt";
           partitions = {
-#            BOOT = {
-#              size = "1M";
-#              type = "EF02"; # for grub MBR
-#            };
             ESP = {
               size = "1024M";
-              type = "EF00";
               content = {
-                type = "mdraid";
-                name = "boot";
+                type = "filesystem";
+                format = "vfat";
               };
             };
             mdadm = {
@@ -61,21 +57,8 @@
         };
       };
     };
+
     mdadm = {
-      boot = {
-        type = "mdadm";
-        level = 1;
-        metadata = "1.0";
-        content = {
-          type = "filesystem";
-          format = "vfat";
-          mountOptions = [
-            "defaults"
-            "umask=0077"
-          ];
-          mountpoint = "/boot";
-        };
-      };
       root_fs = {
         type = "mdadm";
         level = 1;
@@ -84,9 +67,9 @@
           partitions.primary = {
             size = "100%";
             content = {
-              type = "filesystem";
-              format = "xfs";
-              mountpoint = "/";
+             type = "filesystem";
+             format = "xfs";
+             mountpoint = "/";
             };
           };
         };
