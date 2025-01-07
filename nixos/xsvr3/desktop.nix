@@ -40,4 +40,4 @@
     gnome-contacts
     simple-scan
     ];
-  }
+}
