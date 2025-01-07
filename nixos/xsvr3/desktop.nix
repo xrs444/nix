@@ -39,5 +39,5 @@
     gnome-weather
     gnome-contacts
     simple-scan
-    ];
+    ]);
 }
