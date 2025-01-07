@@ -1,18 +1,18 @@
-#  - System
-#  - Longhorn
+# nvme-CT500P3PSSD8_241748806E5C - System
+# nvme-CT1000P3SSD8_24414B6FE363 - Longhorn
 #
 {
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/some-disk-id";
+        device = "/dev/disk/by-id/nvme-CT500P3PSSD8_241748806E5C";
         type = "disk";
         content = {
           type = "gpt";
           partitions = {
             ESP = {
               type = "EF00";
-              size = "500M";
+              size = "1000M";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -24,7 +24,7 @@
               size = "100%";
               content = {
                 type = "filesystem";
-                format = "ext4";
+                format = "xfs";
                 mountpoint = "/";
               };
             };
