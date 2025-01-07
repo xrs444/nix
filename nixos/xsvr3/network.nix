@@ -33,7 +33,7 @@
       };
     };
     networks = {
-      "20-enp1s0f0" = {
+      "10-enp1s0f0" = {
         matchConfig.Name = "enp1s0f0";
         networkConfig.Bond = "bond0";
       };
