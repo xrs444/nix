@@ -13,3 +13,34 @@ jobs:
     - uses: DeterminateSystems/magic-nix-cache-action@v2
     - run: nix-build
     - run: nix-shell --run "echo OK"
+
+
+name: Build with magic
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'flake.lock'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host:
+          - xsvr1
+          - xsvr2
+          - xsvr3
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@v16
+      with:
+        determinate: true
+    - uses: DeterminateSystems/magic-nix-cache-action@v8
+    - name: Building 👷 ${{ matrix.host }} 🐧
+    - run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel -L
