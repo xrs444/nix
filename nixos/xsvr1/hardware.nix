@@ -1,5 +1,4 @@
-  { inputs, lib, ... }:
-
+{ inputs, lib, ... }:
 {
   imports = [
     (import ./disks.nix { inherit lib; })
