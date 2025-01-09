@@ -1,6 +1,9 @@
 # ata-CT1000BX500SSD1_2434E9882FCF - System
 # ata-CT1000BX500SSD1_2434E988331E - System
 # ata-CT1000MX500SSD1_2323E6E0F5AD - longhorn
+
+{ lib, ... }:
+
 {
   disko.devices = {
     disk = {
