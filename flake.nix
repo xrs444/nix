@@ -57,7 +57,7 @@
         xsvr3 = helper.mkHost {
           hostname = "xsvr3";
           pkgsInput = nixpkgs;
-          desktop = gnome;
+#          desktop = gnome;
         };
       };
 
