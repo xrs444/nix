@@ -6,7 +6,7 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "bond0" = {
+      "10-bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
@@ -18,14 +18,14 @@
           LACPTransmitRate = "fast";
         };
       };
-      "bond0.17" = {
+      "20-vlan17" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "bond0.17";
+          Name = "vlan-17";
          };
          vlanConfig.Id = 17;
       };
-      "bridge17" = {
+      "20-bridge17" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge17";
@@ -33,33 +33,23 @@
       };
     };
     networks = {
-      "10-enp2s0f0" = {
+      "30-enp2s0f0" = {
         matchConfig.Name = "enp2s0f0";
         networkConfig.Bond = "bond0";
       };
-      "20-enp2s0f1" = {
+      "30-enp2s0f1" = {
         matchConfig.Name = "enp2s0f1";
         networkConfig.Bond = "bond0";
       };
-      "30-bond0" = {
+      "40-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "ipv4";
           IPv6AcceptRA = true;
         };
-      };
-      "40-eno1" = {
-        matchConfig.Name = "eno1";
-        linkConfig.RequiredForOnline = "carrier";
-        networkConfig = {
-          DHCP = "ipv4";
-          IPv6AcceptRA = true;
-        };
-      };
-      "45-bond0.17" = {
-        matchConfig.Name = "bond0.17";
-        networkConfig.Bridge = "bridge17";
-        linkConfig.RequiredForOnline = "carrier";
+        vlan = [
+          "vlan17"
+        ]
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
