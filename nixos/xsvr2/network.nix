@@ -49,7 +49,7 @@
         };
         vlan = [
           "vlan17"
-        ]
+        ];
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
