@@ -1,19 +1,30 @@
-name: CI
+name: Build servers
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
+    paths:
+      - 'flake.lock'
+  workflow_dispatch:
 
 jobs:
-  check:
+  build-host:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        host:
+          - xsvr1
+          - xsvr2
+          - xsvr3 
     permissions:
-      id-token: "write"
-      contents: "read"
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
-      - name: Run `nix build`
-        run: nix build .
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@v16
+      with:
+        determinate: true
+    - uses: DeterminateSystems/magic-nix-cache-action@v8
+    - name: Building ${{ matrix.host }}
+      run: nix build .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel -L
