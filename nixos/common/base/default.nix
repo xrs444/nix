@@ -14,6 +14,7 @@
 #    ../services/firewall.nix
     ../services/openssh.nix
     ./disko.nix
+    ./comin.nix
  
   ];
 
