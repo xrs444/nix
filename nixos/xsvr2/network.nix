@@ -6,7 +6,7 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "Bond0" = {
+      "bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
