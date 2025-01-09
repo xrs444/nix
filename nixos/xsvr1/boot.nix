@@ -11,7 +11,9 @@
         "ahci"
         "usbhid"
         "usb_storage"
-        "sd_mod" 
+        "sd_mod"
+        "nvme"
+         
       ];
       kernelModules = [
         "kvm-amd" 

@@ -15,6 +15,7 @@
     ../services/openssh.nix
     ./disko.nix
     ./comin.nix
+    ./packages.nix
  
   ];
 
