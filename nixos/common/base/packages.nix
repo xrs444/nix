@@ -1,6 +1,6 @@
 { pkgs, ... }:
 {
-environment.systemPackages  = with pkgs; [
+basePackages.systemPackages  = with pkgs; [
     bat
     binutils
     curl
