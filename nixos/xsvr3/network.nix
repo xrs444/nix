@@ -18,19 +18,6 @@
           LACPTransmitRate = "fast";
         };
       };
-      "bond0.17" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "bond0.17";
-         };
-         vlanConfig.Id = 17;
-      };
-      "bridge17" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge17";
-        };
-      };
     };
     networks = {
       "10-enp1s0f0" = {
@@ -46,26 +33,6 @@
         networkConfig = {
           DHCP = "ipv4";
           IPv6AcceptRA = true;
-        };
-      };
-      "40-eno2" = {
-        matchConfig.Name = "eno2";
-        linkConfig.RequiredForOnline = "carrier";
-        networkConfig = {
-          DHCP = "ipv4";
-          IPv6AcceptRA = true;
-        };
-      };
-      "45-bond0.17" = {
-        matchConfig.Name = "bond0.17";
-        networkConfig.Bridge = "bridge17";
-        linkConfig.RequiredForOnline = "carrier";
-      };
-      "50-bridge17" = {
-        matchConfig.Name = "bridge17";
-        bridgeConfig = {};
-        linkConfig = {
-          RequiredForOnline = "carrier";
         };
       };
     };
