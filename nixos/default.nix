@@ -22,7 +22,7 @@
     ./common/base
     ./common/services
 #   ./common/users
-  ] ++ lib.optional isWorkstation ./common/desktop;
+  ] # ++ lib.optional isWorkstation ./common/desktop;
 
   nixpkgs = {
     overlays = [
@@ -73,20 +73,7 @@
       # Make flake registry and nix path match flake inputs
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-
-    optimise.automatic = true;
-    settings = {
-      auto-optimise-store = true;
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      trusted-users = [
-        "root"
-        "@wheel"
-      ];
     };
-  };
 
   nixpkgs.hostPlatform = lib.mkDefault "${platform}";
 
