@@ -14,7 +14,6 @@
       platform ? "x86_64-linux",
     }:
     let
-      isInstall = !isISO;
       isWorkstation = builtins.isString desktop;
     in
     inputs.home-manager.lib.homeManagerConfiguration {
