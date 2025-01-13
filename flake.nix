@@ -1,7 +1,6 @@
 {
   description = " nixos configuration";
   inputs = {
-
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
@@ -30,8 +29,9 @@
     sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
-    outputs =
-    { self, nix-darwin, nixpkgs, ... }@inputs:
+  
+  outputs =
+    { self, nix-darwin, nixpkgs, home-manager,... }@inputs:
     let
       inherit (self) outputs;
       # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
