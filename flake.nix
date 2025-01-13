@@ -2,18 +2,18 @@
   description = " nixos configuration";
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2411.*";
-    unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
-    master.url = "github:nixos/nixpkgs/master";
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "unstable";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-hardware.url = "https://flakehub.com/f/NixOS/nixos-hardware/*";
+    nixos-needsreboot.url = "https://codeberg.org/Mynacol/nixos-needsreboot/archive/0.2.2.tar.gz";
+    nixos-needsreboot.inputs.nixpkgs.follows = "nixpkgs";
   };
     outputs =
     { self, nix-darwin, nixpkgs, ... }@inputs:
