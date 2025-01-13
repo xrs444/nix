@@ -1,27 +1,28 @@
 {
   config,
-  desktop,
   hostname,
+  isInstall,
+  isWorkstation,
   inputs,
   lib,
   modulesPath,
   outputs,
+  pkgs,
+  platform,
   stateVersion,
   username,
   ...
 }:
 {
-
-  imports =
-    [
-      (modulesPath + "/installer/scan/not-detected.nix")
-      ./common/base
-#      ./common/users
-      ./common/services
-    ]
-    ++ lib.optional (builtins.pathExists (./. + "/${hostname}/extra.nix")) ./${hostname}/extra.nix
-    # Include desktop config if a desktop is defined
-    ++ lib.optional (builtins.isString desktop) ./common/desktop;
+  imports = [
+    inputs.determinate.nixosModules.default
+    inputs.disko.nixosModules.disko
+    (modulesPath + "/installer/scan/not-detected.nix")
+    ./${hostname}
+    ./common/base
+    ./common/services
+#   ./common/users
+  ] ++ lib.optional isWorkstation ./common/desktop;
 
   nixpkgs = {
     overlays = [
@@ -50,16 +51,28 @@
   networking.nftables.enable = true;
   services.resolved.enable = true;
 
-  nix = {
-    # This will add each flake input as a registry
-    # To make nix3 commands consistent with your flake
-    registry = lib.mkForce (lib.mapAttrs (_: value: { flake = value; }) inputs);
-
-    # This will additionally add your inputs to the system's legacy channels
-    # Making legacy nix commands consistent as well, awesome!
-    nixPath = lib.mkForce (
-      lib.mapAttrsToList (key: value: "${key}=${value.to.path}") config.nix.registry
-    );
+ nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    {
+      settings = {
+        experimental-features = "flakes nix-command";
+        # Disable global registry
+        flake-registry = "";
+        # Workaround for https://github.com/NixOS/nix/issues/9574
+        nix-path = config.nix.nixPath;
+        trusted-users = [
+          "root"
+          "${username}"
+        ];
+        warn-dirty = false;
+      };
+      # Disable channels
+      channel.enable = false;
+      # Make flake registry and nix path match flake inputs
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
 
     optimise.automatic = true;
     settings = {
@@ -75,7 +88,16 @@
     };
   };
 
+  nixpkgs.hostPlatform = lib.mkDefault "${platform}";
+
   system = {
+    activationScripts = {
+      nixos-needsreboot = lib.mkIf (isInstall) {
+        supportsDryActivation = true;
+        text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
+      };
+    };
+    nixos.label = lib.mkIf isInstall "-";
     inherit stateVersion;
   };
 }
