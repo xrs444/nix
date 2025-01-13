@@ -36,7 +36,7 @@
           isWorkstation
           ;
       };
-      modules = [ ../home-manager ];
+      modules = [ ../home ];
     };
 
   # Helper function for generating NixOS configs
