@@ -26,7 +26,7 @@
     ./common/base
     ./common/services
 #   ./common/users
-  ] # ++ lib.optional isWorkstation ./common/desktop;
+  ]; # ++ lib.optional isWorkstation ./common/desktop;
 
   nixpkgs = {
     overlays = [
