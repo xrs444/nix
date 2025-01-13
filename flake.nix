@@ -66,7 +66,7 @@
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
 
-      formatter = helper.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+      formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
       
     };
 }
