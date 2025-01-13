@@ -57,7 +57,7 @@
       devShells = helper.forAllSystems (
         system:
         let
-          pkgs = unstable.legacyPackages.${system};
+          pkgs = nixpkgs-unstable.legacyPackages.${system};
         in
         import ./shell.nix { inherit pkgs; }
       );
