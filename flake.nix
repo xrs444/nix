@@ -34,13 +34,13 @@
       nixosConfigurations = {
         # Desktop machines
         # Servers
-        xsvr1 = helper.mkHost {
+        xsvr1 = helper.mkNixos {
           hostname = "xsvr1";
         };
-        xsvr2 = helper.mkHost {
+        xsvr2 = helper.mkNixos {
           hostname = "xsvr2";
         };
-        xsvr3 = helper.mkHost {
+        xsvr3 = helper.mkNixos {
           hostname = "xsvr3";
           desktop = "gnome";
         };
