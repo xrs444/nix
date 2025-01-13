@@ -1,5 +1,21 @@
-{ pkgs, ...}:
 {
+  config,
+  hostname,
+  isWorkstation,
+  lib,
+  pkgs,
+  username,
+  ...
+}:
+let
+  # Declare which hosts have zfs enabled.
+  installOn = [
+    "xsvr1"
+    "xsvr2"
+  ];
+
+in
+lib.mkIf (lib.elem "${hostname}" installOn) {
   boot.supportedFilesystems = [ "zfs" ];
   environment.systemPackages = with pkgs; [
     zfs
