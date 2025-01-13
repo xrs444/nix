@@ -1,5 +1,5 @@
 {
-  description = " nixos configuration";
+  description = "nixos configuration";
   inputs = {
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
@@ -34,39 +34,39 @@
     { self, nix-darwin, nixpkgs, home-manager,... }@inputs:
     let
       inherit (self) outputs;
-      # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
       stateVersion = "24.11";
-      helper = import ./lib { inherit inputs outputs stateVersion; };
+      lib = import ./lib { inherit inputs outputs stateVersion; };
     in
     {
       homeConfigurations = {
         # Servers
-        "thomas-local@xsvr1" = helper.mkHome { hostname = "xsvr1"; };
-        "thomas-local@xsvr2" = helper.mkHome { hostname = "xsvr2"; };
-        "thomas-local@xsvr3" = helper.mkHome { hostname = "xsvr3"; };
+        "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
+        "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
+        "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
         };
 
       nixosConfigurations = {
         # Desktop machines
         # Servers
-        xsvr1 = helper.mkNixos {
+        xsvr1 = lib.mkNixos {
           hostname = "xsvr1";
         };
-        xsvr2 = helper.mkNixos {
+        xsvr2 = lib.mkNixos {
           hostname = "xsvr2";
         };
-        xsvr3 = helper.mkNixos {
+        xsvr3 = lib.mkNixos {
           hostname = "xsvr3";
           desktop = "gnome";
         };
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc
-      packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+      packages = lib.forAllSystems (system: import ./pkgs { pkgs = nixpkgs.legacyPackages.${system}; });
       nixosModules = import ./modules/nixos;
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
 
-      formatter = helper.forAllSystems (system: self.packages.${system}.nixfmt-plus);
+      formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-plus);
+      
     };
 }

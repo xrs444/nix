@@ -71,16 +71,12 @@
           tailNet
           ;
       };
-      # If the hostname starts with "iso-", generate an ISO image
-    #  modules =
-    #    let
-    #      cd-dvd =
-    #        if (desktop == null) then
-    #          inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-    #        else
-    #          inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix";
-    #    in
-    #    [ ../nixos ] ++ inputs.nixpkgs.lib.optionals isISO [ cd-dvd ];
+      modules = [ ../nixos ] ++ (if isISO then [
+        (if (desktop == null)
+          then inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          else inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
+        )
+      ] else []);
     };
 
   mkDarwin =
