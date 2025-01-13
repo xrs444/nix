@@ -8,7 +8,11 @@
 
   services.nfs.server = {
     enable = true;
-    options = [ "nfsvers=4.2" ];
+    extraNfsdConfig = ''
+    rdma = true
+    vers3 = false
+    vers4 =true
+    '';
 
   };
 
