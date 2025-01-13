@@ -26,7 +26,7 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
     role = "server";
     token = "<randomized common secret>";
     clusterInit = [] ++ lib.optional (lib.elem "${hostname}" k3s-firstnode) true;
-    serverAddr = [] ++ lib.optional (lib.elem "${hostname}" k3s-firstnode) "https://xsvr1.x.xrs444.net:6443";
+    serverAddr = [] ++ lib.optional (lib.elem "${hostname}" k3s-node) "https://xsvr1.x.xrs444.net:6443";
   };
 
   networking.firewall.allowedTCPPorts = [
