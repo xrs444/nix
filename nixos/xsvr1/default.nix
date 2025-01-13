@@ -36,10 +36,10 @@
         "kvm-amd" 
       ];
     };
-  };
-  swraid = {
-    enable = true;
-    mdadmConf = "PROGRAM=true";
+    swraid = {
+      enable = true;
+      mdadmConf = "PROGRAM=true";
+    };
   };
 
   powerManagement.cpuFreqGovernor = "performance";
