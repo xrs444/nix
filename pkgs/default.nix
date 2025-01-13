@@ -1,3 +1,3 @@
 pkgs: {
-  nixfmt-plus = pkgs.callPackage ./nixfmt-plus.nix { }
+  nixfmt-plus = pkgs.callPackage ./nixfmt-plus.nix { };
 }
