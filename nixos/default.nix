@@ -16,7 +16,7 @@
     [
       (modulesPath + "/installer/scan/not-detected.nix")
       ./common/base
-      ./common/users
+#      ./common/users
       ./common/services
     ]
     ++ lib.optional (builtins.pathExists (./. + "/${hostname}/extra.nix")) ./${hostname}/extra.nix
