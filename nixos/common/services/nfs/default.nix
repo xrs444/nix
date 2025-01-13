@@ -7,7 +7,7 @@
   imports = lib.optional (builtins.pathExists (./. + "/${hostname}.nix")) ./${hostname}.nix;
 
   services.nfs.server = {
-    enabled = true;
+    enable = true;
     options = [ "nfsvers=4.2" ];
 
   };
