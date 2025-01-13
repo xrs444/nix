@@ -19,6 +19,7 @@ let
 in
 {
   inherit (helpers) 
+    mkDarwin
     mkHome
     mkHost
     forAllSystems

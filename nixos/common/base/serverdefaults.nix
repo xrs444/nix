@@ -1,4 +1,9 @@
-_: {
+{ config, hostname, lib, pkgs, username, ... }:
+let
+  installOn = [ "xsvr1" "xsvr2" "xsvr3" ];
+in
+lib.mkIf (lib.elem hostname installOn) {
+
   systemd.sleep.extraConfig = ''
     AllowSuspend=no
     AllowHibernation=no
@@ -13,5 +18,4 @@ _: {
     algorithm = "lz4";
     enable = true;
   };
-
 }

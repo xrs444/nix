@@ -6,7 +6,11 @@
 {
   imports = lib.optional (builtins.pathExists (./. + "/${hostname}.nix")) ./${hostname}.nix;
 
-  services.nfs.server.enable = true;
+  services.nfs.server = {
+    enabled = true;
+    options = [ "nfsvers=4.2" ];
+
+  };
 
   networking = {
     firewall = {
@@ -17,6 +21,5 @@
         2049
       ];
     };
-
   };
 }

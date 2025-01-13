@@ -1,6 +1,7 @@
 { pkgs, lib, ... }:
 {
 
+  networking.hostId = "0814bb9a";
   networking.useNetworkd = true;
 
   systemd.network = {

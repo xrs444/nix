@@ -11,6 +11,8 @@
     home-manager.inputs.nixpkgs.follows = "unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
+    sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
   outputs =
     {
@@ -57,7 +59,7 @@
         xsvr3 = helper.mkHost {
           hostname = "xsvr3";
           pkgsInput = nixpkgs;
-#          desktop = gnome;
+          desktop = "gnome";
         };
       };
 
