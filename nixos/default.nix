@@ -17,6 +17,10 @@
   imports = [
     inputs.determinate.nixosModules.default
     inputs.disko.nixosModules.disko
+    inputs.nix-flatpak.nixosModules.nix-flatpak
+    inputs.nix-index-database.nixosModules.nix-index
+    inputs.nix-snapd.nixosModules.default
+    inputs.sops-nix.nixosModules.sops
     (modulesPath + "/installer/scan/not-detected.nix")
     ./${hostname}
     ./common/base
