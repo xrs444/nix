@@ -37,7 +37,7 @@
       };
     in
     {
-      # nix build .#homeConfigurations."jon@freyja".activationPackage
+      # nix build .#homeConfigurations
       homeConfigurations = {
         # Servers
         "${username}@xsvr1" = helper.mkHome { hostname = "xsvr1"; };
