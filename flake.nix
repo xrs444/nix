@@ -1,12 +1,13 @@
 {
   description = " nixos configuration";
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2405.*";
+    nixpkgs.url = "https://flakehub.com/f/nixos/nixpkgs/0.2411.*";
     unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     master.url = "github:nixos/nixpkgs/master";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     disko.url = "github:nix-community/disko";
-    disko.inputs.nixpkgs.follows = "unstable";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "unstable";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
@@ -14,35 +15,20 @@
     sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
-  outputs =
-    {
-      self,
-      nixpkgs,
-      unstable,
-      ...
-    }@inputs:
+    outputs =
+    { self, nix-darwin, nixpkgs, ... }@inputs:
     let
       inherit (self) outputs;
+      # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
       stateVersion = "24.11";
-      username = "thomas-local";
-      
-      helper = import ./lib {
-        inherit
-          self
-          inputs
-          outputs
-          stateVersion
-          username
-          ;
-      };
+      helper = import ./lib { inherit inputs outputs stateVersion; };
     in
     {
-      # nix build .#homeConfigurations
       homeConfigurations = {
         # Servers
-        "${username}@xsvr1" = helper.mkHome { hostname = "xsvr1"; };
-        "${username}@xsvr2" = helper.mkHome { hostname = "xsvr2"; };
-        "${username}@xsvr3" = helper.mkHome { hostname = "xsvr3"; };
+        "thomas-local@xsvr1" = helper.mkHome { hostname = "xsvr1"; };
+        "thomas-local@xsvr2" = helper.mkHome { hostname = "xsvr2"; };
+        "thomas-local@xsvr3" = helper.mkHome { hostname = "xsvr3"; };
         };
 
       nixosConfigurations = {
@@ -50,15 +36,12 @@
         # Servers
         xsvr1 = helper.mkHost {
           hostname = "xsvr1";
-          pkgsInput = nixpkgs;
         };
         xsvr2 = helper.mkHost {
           hostname = "xsvr2";
-          pkgsInput = nixpkgs;
         };
         xsvr3 = helper.mkHost {
           hostname = "xsvr3";
-          pkgsInput = nixpkgs;
           desktop = "gnome";
         };
       };
