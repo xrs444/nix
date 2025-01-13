@@ -13,6 +13,7 @@
     tree
     wget
     nix-output-monitor
+    nixfmt-rfc-style
       ]
   ++ lib.optionals isInstall [
     inputs.determinate.packages.${platform}.default
