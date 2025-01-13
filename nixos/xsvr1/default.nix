@@ -17,7 +17,7 @@
     ./network.nix
   ];
 
-    boot = {
+  boot = {
     loader.systemd-boot.enable = true;
 
     initrd = {
@@ -34,7 +34,7 @@
         "kvm-amd" 
       ];
     };
-
+  };
   swraid = {
     enable = true;
     mdadmConf = "PROGRAM=true";
