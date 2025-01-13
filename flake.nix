@@ -47,13 +47,7 @@
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc
-      packages = helper.forAllSystems (
-        system:
-        let
-          pkgs = unstable.legacyPackages.${system};
-        in
-        import ./pkgs { inherit pkgs; }
-      );
+     packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
 
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
