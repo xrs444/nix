@@ -62,8 +62,8 @@
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc
-     packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
-
+      packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+      nixosModules = import ./modules/nixos;
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
 
