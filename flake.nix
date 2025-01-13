@@ -62,20 +62,11 @@
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc
-     packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
+      packages = helper.forAllSystems (system: import ./pkgs nixpkgs.legacyPackages.${system});
 
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
 
-      # Devshell for bootstrapping
-      # Accessible via 'nix develop' or 'nix-shell' (legacy)
-      devShells = helper.forAllSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-        in
-        import ./shell.nix { inherit pkgs; }
-      );
       formatter = helper.forAllSystems (system: self.packages.${system}.nixfmt-plus);
     };
 }
