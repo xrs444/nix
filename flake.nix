@@ -1,6 +1,8 @@
 {
   description = "nixos configuration";
   inputs = {
+    comin.url = github:nlewo/comin;
+    comin.inputs.nixpkgs.follows = "nixpkgs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
@@ -31,7 +33,7 @@
   };
   
   outputs =
-    { self, nix-darwin, nixpkgs, home-manager,... }@inputs:
+    { self, nix-darwin, nixpkgs, home-manager,comin, ... }@inputs:
     let
       inherit (self) outputs;
       stateVersion = "24.11";
