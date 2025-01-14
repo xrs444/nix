@@ -18,9 +18,8 @@ virtualisation.libvirtd = {
     qemu
     virt-manager
     quickemu
-  ];
-
-
+    ];
+  };
 
   networking.firewall.allowedTCPPorts = [
     5900 # VNC
@@ -29,6 +28,5 @@ virtualisation.libvirtd = {
     443
     80
   ];
-
 
 }
