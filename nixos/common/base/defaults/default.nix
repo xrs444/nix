@@ -84,7 +84,6 @@
         enable = true;
         servers = [ "time.xrs444.net"];
         extraConfig = ''
-          rtcsync
           makestep 1.0 3
         '';
       };
