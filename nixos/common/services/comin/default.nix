@@ -5,7 +5,7 @@
     enable = true;
     remotes = [{
       name = "origin";
-      url = "https://gitlab.com/xrs444/nix.git";
+      url = "https://github.com/xrs444/nix.git";
       branches.main.name = "main";
       }];
   };
