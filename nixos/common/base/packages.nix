@@ -14,6 +14,7 @@
     wget
     nix-output-monitor
     nixfmt-rfc-style
+    usbutils
       ]
   ++ lib.optionals isInstall [
     inputs.determinate.packages.${platform}.default
