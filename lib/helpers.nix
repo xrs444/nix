@@ -71,7 +71,10 @@
           tailNet
           ;
       };
-      modules = [ ../nixos ] ++ (if isISO then [
+      modules = [ 
+        ../nixos
+        inputs.comin.nixosModules.comin
+       ] ++ (if isISO then [
         (if (desktop == null)
           then inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           else inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-graphical-calamares.nix"
