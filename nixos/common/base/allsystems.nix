@@ -14,10 +14,15 @@
     environment.systemPackages = (import ./packages.nix { inherit pkgs; }).basePackages;
   
     services = {
-      chrony.enable = true;
+
+      chrony = {
+        enable = true;
+        servers = [ "time.xrs444.net"];
+      };
+      
       fwupd.enable = isInstall;
       journald.extraConfig = "SystemMaxUse=250M";
-   #   flatpak.enable = true;
+      flatpak.enable = true;
     };
   
     security = {
