@@ -14,9 +14,6 @@
   ...
 }:
 {
-
-
-  
   boot = {
     loader = {
       systemd-boot.enable = true;
@@ -90,7 +87,6 @@
       
       fwupd.enable = isInstall;
       journald.extraConfig = "SystemMaxUse=250M";
-      flatpak.enable = true;
     };
   
     security = {
