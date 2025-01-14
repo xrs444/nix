@@ -17,26 +17,26 @@ let
   ncRunCache = [
     "xsvr3"
   ];
+  isCache = lib.elem "${hostname}" ncSetCache;
+  isServer = lib.elem "${hostname}" ncRunCache;
 in
-lib.mkIf (lib.elem "${hostname}" ncSetCache) {
-
-  nix.binaryCaches = [ "http://nixcache.xrs444.net" ];
-  
-}
-
-lib.mkIf (lib.elem "${hostname}" ncRunCache) {
-
-  services.nginx = {
-    enable = true;
-    appendHttpConfig = ''
-      proxy_cache_path /tmp/pkgcache levels=1:2 keys_zone=cachecache:100m max_size=20g inactive=365d use_temp_path=off;
-      
-      # Cache only success status codes; in particular we don't want to cache 404s.
-      # See https://serverfault.com/a/690258/128321
-      map $status $cache_header {
-        200     "public";
-        302     "public";
-        default "no-cache";
+{
+  config = lib.mkMerge [
+    (lib.mkIf isCache {
+      nix.binaryCaches = [ "http://nixcache.xrs444.net" ];
+    })
+    
+    (lib.mkIf isServer {
+     services.nginx = {
+       enable = true;
+       appendHttpConfig = ''
+         proxy_cache_path /tmp/pkgcache levels=1:2 keys_zone=cachecache:100m max_size=20g inactive=365d use_temp_path=off;
+         # Cache only success status codes; in particular we don't want to cache 404s.
+         # See https://serverfault.com/a/690258/128321
+         map $status $cache_header {
+           200     "public";
+           302     "public";
+           default "no-cache";
       }
       access_log /var/log/nginx/access.log;
     '';
@@ -90,9 +90,9 @@ lib.mkIf (lib.elem "${hostname}" ncRunCache) {
           expires max;
           add_header Cache-Control $cache_header always;
         '';
+        };
       };
     };
-  };
-
+  })
   networking.firewall.allowedTCPPorts = [ 80 ];
 }
