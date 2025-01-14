@@ -1,4 +1,18 @@
-{ config, hostname, lib, pkgs, username, ... }:
+{
+  config,
+  hostname,
+  isInstall,
+  isWorkstation,
+  inputs,
+  lib,
+  modulesPath,
+  outputs,
+  pkgs,
+  platform,
+  stateVersion,
+  username,
+  ...
+}:
 let
   installOn = [ "xsvr1" "xsvr2" "xsvr3" ];
 in
