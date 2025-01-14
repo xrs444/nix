@@ -1,6 +1,6 @@
 { pkgs, isInstall, platform, ... }:
 {
-  basePackages = with pkgs; [
+  environmentPackages = with pkgs; [
     bat
     binutils
     curl
