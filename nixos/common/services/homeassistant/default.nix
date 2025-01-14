@@ -12,13 +12,15 @@ let
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
 
-virtualisation.libvirtd = {
-  enable = true;
-  extraPackages = with pkgs; [
+
+  environment.systemPackages = with pkgs; [
     qemu
     virt-manager
     quickemu
-    ];
+  ];
+
+virtualisation.libvirtd = {
+  enable = true;
   };
 
   networking.firewall.allowedTCPPorts = [
