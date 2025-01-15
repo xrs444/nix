@@ -28,7 +28,27 @@
 #   ./common/users
   ]; # ++ lib.optional isWorkstation ./common/desktop;
 
+  environment = {
+    systemPackages =
+      with pkgs;
+      [
+        git
+        nix-output-monitor
+      ]
+      ++ lib.optionals isInstall [
+        inputs.determinate.packages.${platform}.default
+        inputs.fh.packages.${platform}.default
+        inputs.nixos-needsreboot.packages.${platform}.default
+        nvd
+        nvme-cli
+        rsync
+        smartmontools
+        sops
+      ];
+  };
+
   nixpkgs = {
+    hostPlatform = lib.mkDefault "${platform}";
     overlays = [
       # Add overlays your own flake exports (from overlays and pkgs dir):
       outputs.overlays.additions
@@ -44,6 +64,7 @@
     };
   };
 
+  users.mutableUsers = true;
   users.users.thomas-local = {
     isNormalUser  = true;
     home  = "/home/thomas-local";
@@ -53,7 +74,10 @@
   };
 
   networking.nftables.enable = true;
-  services.resolved.enable = true;
+  services.resolved = {
+    enable = true;
+    domains = [ "x.xrs444.net" ];
+  };
 
  nix =
     let
@@ -78,8 +102,6 @@
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
-
-  nixpkgs.hostPlatform = lib.mkDefault "${platform}";
 
   system = {
     activationScripts = {
