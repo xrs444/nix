@@ -6,7 +6,7 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "bond0" = {
+      "10-bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
@@ -20,15 +20,15 @@
       };
     };
     networks = {
-      "10-enp1s0f0" = {
+      "20-enp1s0f0" = {
         matchConfig.Name = "enp1s0f0";
         networkConfig.Bond = "bond0";
       };
-      "20-enp1s0f1" = {
+      "30-enp1s0f1" = {
         matchConfig.Name = "enp1s0f1";
         networkConfig.Bond = "bond0";
       };
-      "30-bond0" = {
+      "40-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "ipv4";

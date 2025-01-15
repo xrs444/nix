@@ -27,8 +27,8 @@ in
     nix = {
       settings = {
         substituters = [
-          "http://nixcache.xrs444.net/"
-          "https://cache.nixos.org/"
+          "http://nixcache.xrs444.net?priority=10"
+          "https://cache.nixos.org?priority=20"
           ];
         };
       };
