@@ -28,7 +28,6 @@ in
       settings = {
         substituters = [
           "http://nixcache.xrs444.net/"
-          "https://nix-community.cachix.org"
           "https://cache.nixos.org/"
           ];
         };
