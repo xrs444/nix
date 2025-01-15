@@ -23,7 +23,16 @@ in
 {
   config = lib.mkMerge [
     (lib.mkIf isCache {
-      nix.binaryCaches = [ "http://nixcache.xrs444.net" ];
+
+    nix = {
+      settings = {
+        substituters = [
+          "http://nixcache.xrs444.net/"
+          "https://nix-community.cachix.org"
+          "https://cache.nixos.org/"
+          ];
+        };
+      };
     })
     
     (lib.mkIf isServer {
