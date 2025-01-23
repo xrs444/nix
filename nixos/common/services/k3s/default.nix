@@ -27,10 +27,15 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
     token = "<randomized common secret>";
     clusterInit = [] ++ lib.optional (lib.elem "${hostname}" k3s-firstnode) true;
     serverAddr = [] ++ lib.optional (lib.elem "${hostname}" k3s-node) "https://172.20.1.10:6443";
+    extraFlags = toString [
+    "--disable traefik --disable servicelb"
+    ];
   };
 
   environment.systemPackages = with pkgs; [
     fluxcd
+    kubectl
+    kubecolor
   ];
 
   networking.firewall.allowedTCPPorts = [
