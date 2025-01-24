@@ -18,7 +18,8 @@ let
     "xsvr2"
     "xsvr3"
   ];
-
+in
+{
   config = lib.mkMerge [
     
     ( lib.mkIf (lib.elem "${hostname}" installOn) {
@@ -61,5 +62,4 @@ let
 
     } )
   ];
-in
-  config.contents
+}
