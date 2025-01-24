@@ -49,17 +49,20 @@ in
     
     ( lib.mkIf (lib.elem "${hostname}" k3s-firstnode) {
      
-      clusterInit = true;
-      extraFlags = toString [
-        "--disable traefik --disable servicelb" 
-      ];
+      services.k3s = {
+        clusterInit = true;
+        extraFlags = toString [
+          "--disable traefik --disable servicelb" 
+        ];
+    };
     
     } )
     
     ( lib.mkIf (lib.elem "${hostname}" k3s-node) {
-    
-      serverAddr =  "https://172.20.1.10:6443";
-
+     
+      services.k3s = {
+        serverAddr =  "https://172.20.1.10:6443";
+      };
     } )
   ];
 }
