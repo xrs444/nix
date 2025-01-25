@@ -18,23 +18,16 @@
         LACPTransmitRate = "fast";
       };
     };
-    "20-wlo1" = {
-      netdevConfig = {
-        Kind = "wireless";
-        Name = "wlo10";
-        enable = false;
-      };
-    };
     networks = {
-      "30-enp1s0f0" = {
+      "20-enp1s0f0" = {
         matchConfig.Name = "enp1s0f0";
         networkConfig.Bond = "bond0";
       };
-      "40-enp1s0f1" = {
+      "30-enp1s0f1" = {
         matchConfig.Name = "enp1s0f1";
         networkConfig.Bond = "bond0";
       };
-      "50-bond0" = {
+      "40-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
           DHCP = "ipv4";
