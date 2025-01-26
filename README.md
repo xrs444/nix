@@ -1,4 +1,4 @@
-# H1 The xrs444 HomeProd Environment
+# The xrs444 HomeProd Environment
 
 This repository contains (or will contain!) the Nix configurations for my HomeProd servers and workstations. It is very much a work in progress so don't expect it to work as expected, or to remain constant. this includes this Readme! :) 
 
