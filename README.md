@@ -12,9 +12,9 @@ Each server has a 1TB boot SSD, and for xsvr 1 and 2, this is a Raid1 array, as 
 
 Servers and roles:
 
-| Server | Description | CPU | Motherboard| RAM | ZFS Storage Array | Extra |
+| Server | CPU | Motherboard| RAM | ZFS Storage Array | Extra |
 |--------|-------------|-----|------------|-----|-------------------|-------|
-| xsvr1 |   | | Ryzen 7 | SuperMicro | GB | 6 X 3TB ( 3 R1 VDEVs) | HomeAssistant and Omada VMs |
-| xsvr2 |   | | Intel Atom C2750 | SuperMicro| 32 GB | 4 X 2TB ZRAID2 | |
-| xsvr3 |   | | Intel i5 | Lenovo m920x | 16 GB | N/A | |
+| xsvr1 | Ryzen 7 | SuperMicro | GB | 6 X 3TB ( 3 R1 VDEVs) | HomeAssistant and Omada VMs |
+| xsvr2 | Intel Atom C2750 | SuperMicro| 32 GB | 4 X 2TB ZRAID2 | |
+| xsvr3 | Intel i5 | Lenovo m920x | 16 GB | N/A | |
 
