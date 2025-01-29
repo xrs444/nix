@@ -29,11 +29,18 @@ in
         role = "server";
         token = "<randomized common secret>";
       };
+
+      services.openiscsi = {
+        enable = true;
+        name = "iqn.2005-10.nixos:${config.networking.hostName}";
+      };
         
       environment.systemPackages = with pkgs; [
         fluxcd
         kubectl
         kubecolor
+        nfs-utils
+        openiscsi
       ];
         
       networking.firewall.allowedTCPPorts = [
