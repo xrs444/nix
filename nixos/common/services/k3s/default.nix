@@ -30,7 +30,7 @@ in
         token = "<randomized common secret>";
         gracefulNodeShutdown = {
           enable = true;
-          shutdownGracePeriod = "3m"
+          shutdownGracePeriod = "3m";
           };
       };
 
