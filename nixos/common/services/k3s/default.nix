@@ -28,6 +28,10 @@ in
       # enable = true;
         role = "server";
         token = "<randomized common secret>";
+        gracefulNodeShutdown = {
+          enable = true;
+          shutdownGracePeriod = "3m"
+          };
       };
 
       services.openiscsi = {
@@ -59,7 +63,7 @@ in
       services.k3s = {
         clusterInit = true;
         extraFlags = toString [
-          "--disable traefik --disable servicelb" 
+          "--disable traefik --disable servicelb --cluster-domain 'xrs444.net'"
         ];
     };
     
