@@ -64,11 +64,13 @@
           desktop = "gnome";
         };
         # Auxiliary
-        xdash1 = lib.mkNixos {
+          xdash1 = lib.mkNixos {
           hostname = "xdash1";
+          platform = "aarch64-linux";
         };
         xhac-radio = lib.mkNixos {
           hostname = "xhac-radio";
+          platform = "aarch64-linux";
         };
       };
 
