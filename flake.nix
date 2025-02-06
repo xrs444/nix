@@ -45,6 +45,9 @@
         "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
         "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
         "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
+        # Auxiliary
+        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
+        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
         };
 
       nixosConfigurations = {
@@ -59,6 +62,13 @@
         xsvr3 = lib.mkNixos {
           hostname = "xsvr3";
           desktop = "gnome";
+        };
+        # Auxiliary
+        xdash1 = lib.mkNixos {
+          hostname = "xdash1";
+        };
+        xhac-radio = lib.mkNixos {
+          hostname = "xhac-radio";
         };
       };
 
