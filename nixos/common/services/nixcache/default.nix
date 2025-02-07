@@ -13,6 +13,7 @@ let
     "xsvr1"
     "xsvr1"
     "xsvr3"
+    "xdash1"
   ];
   ncRunCache = [
     "xsvr3"
