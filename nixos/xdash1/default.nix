@@ -9,6 +9,7 @@
 {
   imports = [
     inputs.nixos-hardware.nixosModules.common-pc
+    ./network.nix
   ];
 
   boot = {
@@ -20,4 +21,8 @@
   };
   nixpkgs.hostPlatform = "aarch64-linux";
 
+  environment.systemPackages = with pkgs; [
+    labwc
+  ];
 }
+

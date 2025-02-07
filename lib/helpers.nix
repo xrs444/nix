@@ -50,7 +50,7 @@
     let
       isISO = builtins.substring 0 4 hostname == "iso-";
       isInstall = !isISO;
-      isLaptop = hostname != "xdash1" && != "xhac-radio" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsvr3";
+      isLaptop = hostname != "xdash1" && hostname != "xhac-radio" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsvr3";
       isWorkstation = builtins.isString desktop;
       tailNet = "corgi-squeaker.ts.net";
     in
