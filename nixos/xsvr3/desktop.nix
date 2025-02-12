@@ -43,5 +43,7 @@
     gnome-maps
     gnome-weather
     gnome-contacts
+    gnome-photos
+    gnome-tour
     ]);
 }
