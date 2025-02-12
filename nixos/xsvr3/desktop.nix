@@ -26,9 +26,22 @@
      };
    };
   environment.gnome.excludePackages = (with pkgs; [
-    epiphany # web browsere
     gnome-calculator
-    yelp # help viewer
     simple-scan
+    cheese
+    gnome-music
+    epiphany 
+    geary
+    evinc
+    gnome-characters
+    totem
+    tali
+    iagno
+    hitori
+    atomi
+    yelp
+    gnome-maps
+    gnome-weather
+    gnome-contacts
     ]);
 }
