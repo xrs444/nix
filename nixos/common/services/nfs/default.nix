@@ -8,12 +8,11 @@
 
   services.nfs.server = {
     enable = true;
-    extraNfsdConfig = ''
-    rdma = true
-    vers3 = false
-    vers4 =true
-    '';
-
+    nfsd = {
+      rdma = true;
+      vers3 = false;
+      vers4 = true;
+      };
   };
 
   networking = {
