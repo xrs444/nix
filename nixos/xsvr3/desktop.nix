@@ -3,12 +3,12 @@
 {
   services = {
     xserver = {
-    enable = true;
-    displayManager.gdm = {
       enable = true;
-      wayland = true;
-      default = gnome;
-    };
+      displayManager.gdm = {
+        enable = true;
+        wayland = true;
+        default = "gnome";
+      };
     desktopManager.gnome.enable = true;
     xkb = {
       layout = "us";
