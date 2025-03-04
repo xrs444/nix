@@ -8,12 +8,19 @@
 
   services.nfs.server = {
     enable = true;
-    nfsd = {
-      rdma = true;
+    settings.nsfd = {
+      vers2 = false;
       vers3 = false;
       vers4 = true;
-      };
+      "vers4.0" = true;
+      "vers4.1" = true;
+      "vers4.2" = true;
+    };
+    exports = ''
+      /export *(rw,no_subtree_check,fsid=0)
+    '';
   };
+  services.rpcbind.enable = true;
 
   networking = {
     firewall = {
