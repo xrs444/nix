@@ -38,7 +38,7 @@
     tali
     iagno
     hitori
-    atomi
+    atomix
     yelp
     gnome-maps
     gnome-weather
