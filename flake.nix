@@ -46,8 +46,8 @@
         "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
         "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
         # Auxiliary
-        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
-        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
+#        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
+#        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
         };
 
       nixosConfigurations = {
