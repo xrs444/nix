@@ -32,7 +32,7 @@
     gnome-music
     epiphany 
     geary
-    evinc
+    evince
     gnome-characters
     totem
     tali
