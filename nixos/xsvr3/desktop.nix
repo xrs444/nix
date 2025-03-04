@@ -25,7 +25,7 @@
        enableSSHSupport = true;
      };
    };
-  environment.gnome.excludePackages = (with pkgs; [
+  environment.gnome.excludePackages = with pkgs; [
     gnome-calculator
     simple-scan
     cheese
@@ -45,5 +45,5 @@
     gnome-contacts
     gnome-photos
     gnome-tour
-    ]);
+    ];
 }
