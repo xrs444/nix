@@ -7,7 +7,6 @@
       displayManager.gdm = {
         enable = true;
         wayland = true;
-        default = "gnome";
       };
     desktopManager.gnome.enable = true;
     xkb = {
