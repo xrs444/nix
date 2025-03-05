@@ -3,7 +3,7 @@
   inputs = {
     comin.url = github:nlewo/comin;
     comin.inputs.nixpkgs.follows = "nixpkgs";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0.1";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
