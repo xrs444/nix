@@ -32,6 +32,32 @@
           Name = "bridge17";
         };
       };
+      "bond0.16" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.16";
+         };
+         vlanConfig.Id = 16;
+      };
+      "bridge16" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge16";
+        };
+      };
+      "bond0.13" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.13";
+         };
+         vlanConfig.Id = 13;
+      };
+      "bridge13" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge13";
+        };
+      };
     };
     networks = {
       "10-enp3s0f0" = {
