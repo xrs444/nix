@@ -60,10 +60,40 @@
       "45-bond0.17" = {
         matchConfig.Name = "bond0.17";
         networkConfig.Bridge = "bridge17";
-        linkConfig.RequiredForOnline = "carrier";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "55-bond0.16" = {
+        matchConfig.Name = "bond0.16";
+        networkConfig.Bridge = "bridge16";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "60-bridge16" = {
+        matchConfig.Name = "bridge16";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "55-bond0.13" = {
+        matchConfig.Name = "bond0.13";
+        networkConfig.Bridge = "bridge13";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "60-bridge13" = {
+        matchConfig.Name = "bridge13";
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";
