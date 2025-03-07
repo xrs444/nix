@@ -32,6 +32,32 @@
           Name = "bridge17";
         };
       };
+      "bond0.16" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.16";
+         };
+         vlanConfig.Id = 16;
+      };
+      "bridge16" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge16";
+        };
+      };
+      "bond0.13" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.13";
+         };
+         vlanConfig.Id = 13;
+      };
+      "bridge13" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge13";
+        };
+      };
     };
     networks = {
       "10-enp3s0f0" = {
@@ -60,10 +86,40 @@
       "45-bond0.17" = {
         matchConfig.Name = "bond0.17";
         networkConfig.Bridge = "bridge17";
-        linkConfig.RequiredForOnline = "carrier";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "55-bond0.16" = {
+        matchConfig.Name = "bond0.16";
+        networkConfig.Bridge = "bridge16";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "60-bridge16" = {
+        matchConfig.Name = "bridge16";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "55-bond0.13" = {
+        matchConfig.Name = "bond0.13";
+        networkConfig.Bridge = "bridge13";
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "60-bridge13" = {
+        matchConfig.Name = "bridge13";
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";
