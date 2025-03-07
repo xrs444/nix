@@ -34,8 +34,8 @@
       kernelModules = [
         "kvm-amd" 
       ];
-      zfs.extraPools = [ "zpool-xsvr1" ];
     };
+    zfs.extraPools = [ "zpool-xsvr1" ];
     swraid = {
       enable = true;
       mdadmConf = "PROGRAM=true";
