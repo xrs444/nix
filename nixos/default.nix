@@ -21,6 +21,7 @@
     inputs.nix-index-database.nixosModules.nix-index
     inputs.nix-snapd.nixosModules.default
     inputs.sops-nix.nixosModules.sops
+    inputs.comin.nixosModules.comin
     (modulesPath + "/installer/scan/not-detected.nix")
     ./${hostname}
     ./common/base

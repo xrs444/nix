@@ -73,8 +73,6 @@
       };
       modules = [ 
         ../nixos
-        inputs.comin.nixosModules.comin
-        sops-nix.nixosModules.sops
        ] ++ (if isISO then [
         (if (desktop == null)
           then inputs.nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
