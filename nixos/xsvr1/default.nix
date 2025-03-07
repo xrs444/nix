@@ -21,7 +21,6 @@
 
   boot = {
     loader.systemd-boot.enable = true;
-
     initrd = {
       availableKernelModules = [
         "mpt3sas"
@@ -35,6 +34,7 @@
       kernelModules = [
         "kvm-amd" 
       ];
+      zfs.extraPools = [ "zpool-xsvr1" ];
     };
     swraid = {
       enable = true;
