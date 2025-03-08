@@ -73,8 +73,8 @@
       "50-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          DHCP = "yes";
-          IPv6AcceptRA = true;
+          DHCP = "ipv4";
+#          IPv6AcceptRA = true;
         };
       };
       "55-bond0.17" = {
@@ -82,7 +82,7 @@
         networkConfig = {
           Bridge = "bridge17";
           DHCP = false;
-#          IPv6AcceptRA = false;
+          IPv6AcceptRA = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
