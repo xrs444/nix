@@ -73,7 +73,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='hda' bus='sata'/>
+          <target dev='cdrom' bus='sata'/>
           <readonly/>
         </disk>
         <interface type='bridge'>
