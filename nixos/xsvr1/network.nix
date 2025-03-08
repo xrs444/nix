@@ -76,13 +76,17 @@
           DHCP = "yes";
           IPv6AcceptRA = true;
         };
+        vlan = [
+          "bond0.13"
+          "bond0.16"
+          "bond0.17"
+        ];
       };
       "55-bond0.13" = {
         matchConfig.Name = "bond0.13";
         networkConfig = {
           Bridge = "bridge13";
-          DHCP = false;
-          IPv6AcceptRA = false;
+          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -92,8 +96,7 @@
         matchConfig.Name = "bond0.17";
         networkConfig = {
           Bridge = "bridge17";
-          DHCP = false;
-          IPv6AcceptRA = false;
+          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -104,8 +107,7 @@
         matchConfig.Name = "bond0.16";
        networkConfig ={ 
           Bridge = "bridge16";
-          DHCP = false;
-          IPv6AcceptRA = false;
+          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -114,6 +116,7 @@
       "70-bridge13" = {
         matchConfig.Name = "bridge13";
         bridgeConfig = {};
+        networkConfig.LinkLocalAddressing = "no";
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -121,6 +124,7 @@
       "75-bridge16" = {
         matchConfig.Name = "bridge16";
         bridgeConfig = {};
+        networkConfig.LinkLocalAddressing = "no";
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -128,6 +132,7 @@
       "80-bridge17" = {
         matchConfig.Name = "bridge17";
         bridgeConfig = {};
+        networkConfig.LinkLocalAddressing = "no";
         linkConfig = {
           RequiredForOnline = "carrier";
         };
