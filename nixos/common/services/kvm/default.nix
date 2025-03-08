@@ -30,8 +30,14 @@ virtualisation = {
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
-        };
+    };
     allowedBridges = [ "bridge16" "bridge17" "bridge21" ];
+    extraConfig = ''
+      listen_tls = 0
+      listen_tcp = 1
+      listen_addr "0.0.0.0"
+      auth_tcp = "none"  # Warning: Use only in trusted networks
+    '';
   };
 };
 
