@@ -71,7 +71,7 @@
       "30-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          DHCP = "ipv4";
+          DHCP = "yes";
           IPv6AcceptRA = true;
         };
       };
@@ -79,8 +79,8 @@
         matchConfig.Name = "bond0.17";
         networkConfig = {
           Bridge = "bridge17";
-          DHCP = "false";
-          IPv6AcceptRA = "false";
+          DHCP = false;
+          IPv6AcceptRA = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -97,8 +97,8 @@
         matchConfig.Name = "bond0.16";
         networkConfig ={ 
           Bridge = "bridge16";
-          DHCP = "false";
-          IPv6AcceptRA = "false";
+          DHCP = false;
+          IPv6AcceptRA = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -115,8 +115,8 @@
         matchConfig.Name = "bond0.13";
         networkConfig = {
           Bridge = "bridge13";
-          DHCP = "false";
-          IPv6AcceptRA = "false";
+          DHCP = false;
+          IPv6AcceptRA = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
