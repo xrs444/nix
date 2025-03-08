@@ -20,7 +20,7 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
   ];
 
 programs.virt-manager.enable = true;
-users.groups.libvirtd.members = ["thomas_local"];
+users.groups.libvirtd.members = ["thomas-local"];
 
 virtualisation = { 
   libvirtd = {
