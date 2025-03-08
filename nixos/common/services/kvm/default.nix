@@ -36,5 +36,6 @@ virtualisation = {
         };
     };
   spiceUSBRedirection.enable = true;
+  };
 };
 }
