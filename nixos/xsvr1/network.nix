@@ -73,7 +73,7 @@
       "50-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          DHCP = "ipv4";
+          DHCP = "yes";
 #          IPv6AcceptRA = true;
         };
       };
