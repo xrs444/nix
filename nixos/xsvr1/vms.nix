@@ -97,15 +97,28 @@ let
     </domain>
   '';
 
-  # Generate VM config files
-  vmConfigs = map (vm: {
-    name = "${vm.name}.xml";
-    value = {
-      target = "/etc/libvirt/qemu/${vm.name}.xml";
-      text = makeVmXml vm;
+  # Create a service for each VM config
+  mkVmConfigService = vm:
+    let
+      xmlFile = pkgs.writeText "${vm.name}-domain.xml" (makeVmXml vm);
+    in {
+      name = "libvirt-vm-${vm.name}";
+      value = {
+        description = "Create libvirt config for ${vm.name}";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "libvirtd.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.coreutils}/bin/mkdir -p /etc/libvirt/qemu && ${pkgs.coreutils}/bin/cp -f ${xmlFile} /etc/libvirt/qemu/${vm.name}.xml'";
+        };
+      };
     };
-  }) vmSpecs;
+
+  # Generate all VM services
+  vmServices = builtins.listToAttrs (map mkVmConfigService vmSpecs);
+
 in
 {
-  environment.etc = builtins.listToAttrs vmConfigs;
+  systemd.services = vmServices;
 }
