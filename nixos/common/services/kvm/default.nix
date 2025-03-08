@@ -28,6 +28,7 @@ security.polkit = {
       }
     });
   '';
+};
 programs.virt-manager.enable = true;
 users.groups.libvirtd.members = ["thomas_local"];
 
