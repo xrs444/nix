@@ -17,12 +17,13 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
     virt-manager
     quickemu
   ];
-
+qemu.ovmf.enable = true; 
 programs.virt-manager.enable = true;
 users.groups.libvirtd.members = ["thomas_local"];
 virtualisation = { 
-libvirtd.enable = true;
-spiceUSBRedirection.enable = true;
+  libvirtd = {
+    enable = true;
+  };
+  spiceUSBRedirection.enable = true;
 };
-
 }
