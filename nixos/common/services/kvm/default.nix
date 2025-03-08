@@ -31,6 +31,7 @@ virtualisation = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
         };
+    allowedBridges = [ "bridge16" "bridge17" "bridge21" ];
 };
 
 # Open firewall ports
