@@ -4,7 +4,7 @@ let
   vmSpecs = [
     {
       name = "v-xhac1";
-      vcpu = "2";
+      vcpu = "4";
       memory = "8";
       hostNic = "bridge17";
       mac = "52:54:00:00:00:01";
