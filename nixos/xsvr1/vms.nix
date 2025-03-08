@@ -59,15 +59,21 @@ in
           <name>${name}</name>
           <memory unit='GiB'>${conf.memory}</memory>
           <vcpu>${conf.vcpu}</vcpu>
-          <os>
-            <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
+            <type arch='x86_64'>hvm</type>
             <boot dev='hd'/>
+            <boot dev='cdrom'/>
           </os>
           <features>
             <acpi/>
             <apic/>
+            <vmport state='off'/>
           </features>
-          <cpu mode='host-passthrough'/>
+          <cpu mode='host-model'/>
+          <clock offset='utc'>
+            <timer name='rtc' tickpolicy='catchup'/>
+            <timer name='pit' tickpolicy='delay'/>
+            <timer name='hpet' present='no'/>
+          </clock>
           <devices>
             <emulator>/run/current-system/sw/bin/qemu-system-x86_64</emulator>
             <disk type='file' device='disk'>
@@ -75,14 +81,27 @@ in
               <source file='${conf.storage.path}'/>
               <target dev='vda' bus='virtio'/>
             </disk>
+            <disk type='file' device='cdrom'>
+              <target dev='hda' bus='ide'/>
+              <readonly/>
+            </disk>
             <interface type='bridge'>
               <source bridge='${conf.hostNic}'/>
               <mac address='${conf.mac}'/>
               <model type='virtio'/>
             </interface>
-            <console type='pty'>
-              <target type='serial' port='0'/>
-            </console>
+            <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+              <listen type='address' address='127.0.0.1'/>
+            </graphics>
+            <console type='pty'/>
+            <channel type='unix'>
+              <target type='virtio' name='org.qemu.guest_agent.0'/>
+            </channel>
+            <input type='tablet' bus='usb'/>
+            <input type='keyboard' bus='usb'/>
+            <video>
+              <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1'/>
+            </video>
           </devices>
         </domain>
       '') guests)}
