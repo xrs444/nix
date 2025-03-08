@@ -30,7 +30,9 @@ virtualisation = {
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
-    };
-  };
+        };
 };
+
+# Open firewall ports
+networking.firewall.allowedTCPPorts = [ 16509 5900 ];  # libvirt and VNC
 }
