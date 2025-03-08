@@ -75,20 +75,13 @@
           IPv6AcceptRA = true;
         };
       };
-      "40-eno1" = {
-        matchConfig.Name = "eno1";
-        linkConfig.RequiredForOnline = "carrier";
-        networkConfig = {
-          DHCP = "ipv4";
-          IPv6AcceptRA = true;
-        };
-        dhcpV4Config = {
-          ClientIdentifier = "mac";
-        };        
-      };
-      "45-bond0.17" = {
+      "40-bond0.17" = {
         matchConfig.Name = "bond0.17";
-        networkConfig.Bridge = "bridge17";
+        networkConfig = {
+          Bridge = "bridge17";
+          DHCP = "false";
+          IPv6AcceptRA = "false";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -102,7 +95,11 @@
       };
       "55-bond0.16" = {
         matchConfig.Name = "bond0.16";
-        networkConfig.Bridge = "bridge16";
+        networkConfig ={ 
+          Bridge = "bridge16";
+          DHCP = "false";
+          IPv6AcceptRA = "false";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -117,6 +114,9 @@
       "55-bond0.13" = {
         matchConfig.Name = "bond0.13";
         networkConfig.Bridge = "bridge13";
+          DHCP = "false";
+          IPv6AcceptRA = "false";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
