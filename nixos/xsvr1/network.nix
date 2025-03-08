@@ -58,7 +58,7 @@
 #          Name = "bridge17";
 #        };
 #      };
-#    };
+   };
     networks = {
       "40-enp3s0f0" = {
         matchConfig.Name = "enp3s0f0";
@@ -131,6 +131,6 @@
 #          RequiredForOnline = "carrier";
 #        };
 #      };
-#    };
-# };
+    };
+ };
 }
