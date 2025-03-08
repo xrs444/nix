@@ -16,10 +16,12 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
     qemu
     virt-manager
     quickemu
+    OVMF
   ];
-
+security.polkit.enable = true;
 programs.virt-manager.enable = true;
 users.groups.libvirtd.members = ["thomas_local"];
+networking.firewall.checkReversePath = false;
 
 virtualisation = { 
   libvirtd = {
