@@ -45,7 +45,7 @@ let
 
   # Convert list to attribute set
   guests = lib.listToAttrs (map (vm: lib.nameValuePair vm.name {
-    inherit (vm) memory mac storage vcpu autostart;
+    inherit (vm) memory mac storage vcpu autostart hostNic;
     }) vmSpecs);
 
 in
