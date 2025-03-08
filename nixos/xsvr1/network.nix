@@ -7,6 +7,10 @@
   systemd.network = {
     enable = true;
     netdevs = {
+      "1-enp14s0u10u2c2" = {
+        enable = false;
+        name - "enp14s0u10u2c2";
+      }
       "5-bond0" = {
         netdevConfig = {
           Kind = "bond";
@@ -72,16 +76,10 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
-        address = [
-          "172.20.1.10/24"
-        ];
-        routes = [
-          { gateway = "172.20.1.250"; }
-        ];
-#        networkConfig = {
-#          DHCP = "yes";
-#          IPv6AcceptRA = true;
-#        };
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = true;
+        };
       };
       "55-bond0.17" = {
         matchConfig.Name = "bond0.17";
