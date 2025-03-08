@@ -7,7 +7,7 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "5-bond0" = {
+      "10-bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
@@ -63,12 +63,12 @@
       "40-enp3s0f0" = {
         matchConfig.Name = "enp3s0f0";
         networkConfig.Bond = "bond0";
-        linkConfig.RequiredForOnline = "enslaved";
+#        linkConfig.RequiredForOnline = "enslaved";
       };
       "40-enp3s0f1" = {
         matchConfig.Name = "enp3s0f1";
         networkConfig.Bond = "bond0";
-        linkConfig.RequiredForOnline = "enslaved";
+#        linkConfig.RequiredForOnline = "enslaved";
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
