@@ -113,7 +113,8 @@
       };
       "55-bond0.13" = {
         matchConfig.Name = "bond0.13";
-        networkConfig.Bridge = "bridge13";
+        networkConfig = {
+          Bridge = "bridge13";
           DHCP = "false";
           IPv6AcceptRA = "false";
         };
@@ -129,5 +130,4 @@
         };
       };
     };
-  };
 }
