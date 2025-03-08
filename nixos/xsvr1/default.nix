@@ -15,7 +15,7 @@
     inputs.nixos-hardware.nixosModules.common-pc
     ./disks.nix
     ./network.nix
-#    ./vms.nix
+    ./vms.nix
   ];
   hardware.cpu.amd.updateMicrocode = true;
   nixpkgs.hostPlatform = "x86_64-linux";

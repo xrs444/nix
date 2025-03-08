@@ -7,7 +7,7 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "10-bond0" = {
+      "5-bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
@@ -77,43 +77,7 @@
           IPv6AcceptRA = true;
         };
       };
-      "55-bond0.17" = {
-        matchConfig.Name = "bond0.17";
-        networkConfig = {
-          Bridge = "bridge17";
-          DHCP = false;
-          IPv6AcceptRA = false;
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-       };
-      };
-      "60-bridge17" = {
-        matchConfig.Name = "bridge17";
-        bridgeConfig = {};
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-     "75-bond0.16" = {
-        matchConfig.Name = "bond0.16";
-       networkConfig ={ 
-          Bridge = "bridge16";
-          DHCP = false;
-          IPv6AcceptRA = false;
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "80-bridge16" = {
-        matchConfig.Name = "bridge16";
-        bridgeConfig = {};
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "85-bond0.13" = {
+      "55-bond0.13" = {
         matchConfig.Name = "bond0.13";
         networkConfig = {
           Bridge = "bridge13";
@@ -124,8 +88,45 @@
           RequiredForOnline = "carrier";
        };
       };
-      "90-bridge13" = {
+      "60-bond0.17" = {
+        matchConfig.Name = "bond0.17";
+        networkConfig = {
+          Bridge = "bridge17";
+          DHCP = false;
+          IPv6AcceptRA = false;
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
+
+     "65-bond0.16" = {
+        matchConfig.Name = "bond0.16";
+       networkConfig ={ 
+          Bridge = "bridge16";
+          DHCP = false;
+          IPv6AcceptRA = false;
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "70-bridge13" = {
         matchConfig.Name = "bridge13";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "75-bridge16" = {
+        matchConfig.Name = "bridge16";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "80-bridge17" = {
+        matchConfig.Name = "bridge17";
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";
