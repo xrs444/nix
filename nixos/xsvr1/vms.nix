@@ -1,9 +1,7 @@
 { pkgs, lib, ... }:
-{
 
 let
-
-vmSpecs = [
+  vmSpecs = [
     {
       name = "v-xhac1";
       vcpu = "2";
@@ -45,21 +43,19 @@ vmSpecs = [
     }
   ];
 
-
   # Convert list to attribute set
   guests = lib.listToAttrs (map (vm: lib.nameValuePair vm.name {
     inherit (vm) memory mac storage vcpu autostart;
     }) vmSpecs);
 
 in
+{
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu.ovmf.enable = true;
+  };
 
-  {
-    virtualisation.libvirtd = {
-      enable = true;
-      qemu.ovmf.enable = true;
-    };
-
-    # Create the VMs using the guest specifications
+  # Create the VMs using the guest specifications
   virtualisation.libvirtd.guests = builtins.mapAttrs (name: conf:
     {
       networkInterfaces = [{
@@ -77,7 +73,5 @@ in
         }
       ];
     }
-    ) guests;
-  }
-
+  ) guests;
 }
