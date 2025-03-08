@@ -72,10 +72,16 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
-        networkConfig = {
-          DHCP = "yes";
-          IPv6AcceptRA = true;
-        };
+        address = [
+          "172.20.1.10/24"
+        ];
+        routes = [
+          { gateway = "172.20.1.250"; }
+        ];
+#        networkConfig = {
+#          DHCP = "yes";
+#          IPv6AcceptRA = true;
+#        };
       };
       "55-bond0.17" = {
         matchConfig.Name = "bond0.17";
