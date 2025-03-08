@@ -67,7 +67,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='cdrom' bus='sata'/>
+          <target dev='sda' bus='sata'/>
           <readonly/>
         </disk>
         <interface type='bridge'>
@@ -100,19 +100,52 @@ let
       value = {
         description = "Create libvirt config for ${vm.name}";
         wantedBy = [ "multi-user.target" ];
+        requires = [ "libvirtd.service" ];
         after = [ "libvirtd.service" ];
+        path = [ pkgs.libvirt ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.coreutils}/bin/mkdir -p /etc/libvirt/qemu && ${pkgs.coreutils}/bin/cp -f ${xmlFile} /etc/libvirt/qemu/${vm.name}.xml'";
+          ExecStart = pkgs.writeShellScript "create-vm-${vm.name}" ''
+            set -eu
+            mkdir -p /etc/libvirt/qemu
+            cp -f ${xmlFile} /etc/libvirt/qemu/${vm.name}.xml
+            virsh define /etc/libvirt/qemu/${vm.name}.xml || true
+            ${lib.optionalString vm.autostart "virsh autostart ${vm.name} || true"}
+          '';
         };
       };
     };
 
+  # Add path watching service for each VM
+  mkVmWatcher = vm: {
+    name = "watch-vm-${vm.name}";
+    value = {
+      path = {
+        pathConfig.PathChanged = "/etc/libvirt/qemu/${vm.name}.xml";
+        wantedBy = [ "multi-user.target" ];
+      };
+      service = {
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
+            set -eu
+            virsh define /etc/libvirt/qemu/${vm.name}.xml
+          '';
+        };
+        path = [ pkgs.libvirt ];
+        after = [ "libvirtd.service" ];
+      };
+    };
+  };
+
   # Generate all VM services
   vmServices = builtins.listToAttrs (map mkVmConfigService vmSpecs);
+  vmWatchers = builtins.listToAttrs (map mkVmWatcher vmSpecs);
 
 in
 {
   systemd.services = vmServices;
+  systemd.paths = lib.mapAttrs (name: cfg: cfg.path) vmWatchers;
+  systemd.services = lib.mapAttrs (name: cfg: cfg.service) vmWatchers // vmServices;
 }
