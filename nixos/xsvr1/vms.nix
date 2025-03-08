@@ -59,7 +59,8 @@ in
           <name>${name}</name>
           <memory unit='GiB'>${conf.memory}</memory>
           <vcpu>${conf.vcpu}</vcpu>
-            <type arch='x86_64'>hvm</type>
+          <os>
+            <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
             <boot dev='hd'/>
             <boot dev='cdrom'/>
           </os>
