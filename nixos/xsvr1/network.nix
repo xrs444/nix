@@ -7,9 +7,6 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      "1-enp14s0u10u2c2" = {
-        enable = false;
-      };
       "5-bond0" = {
         netdevConfig = {
           Kind = "bond";
@@ -85,7 +82,7 @@
         networkConfig = {
           Bridge = "bridge17";
           DHCP = false;
-          IPv6AcceptRA = false;
+#          IPv6AcceptRA = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
