@@ -43,65 +43,69 @@ let
     }
   ];
 
-  guests = lib.listToAttrs (map (vm: lib.nameValuePair vm.name {
-    inherit (vm) memory mac storage vcpu autostart hostNic;
-    }) vmSpecs);
-
-in
-
-{
-  virtualisation.libvirtd.qemu.verbatimConfig = ''
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: conf: ''
-      <domain type='kvm'>
-        <name>${name}</name>
-        <memory unit='GiB'>${conf.memory}</memory>
-        <vcpu>${conf.vcpu}</vcpu>
-        <os>
-          <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
-          <boot dev='hd'/>
-          <boot dev='cdrom'/>
-        </os>
-        <features>
-          <acpi/>
-          <apic/>
-          <vmport state='off'/>
-        </features>
-        <cpu mode='host-model'/>
-        <clock offset='utc'>
-          <timer name='rtc' tickpolicy='catchup'/>
-          <timer name='pit' tickpolicy='delay'/>
-          <timer name='hpet' present='no'/>
-        </clock>
-        <devices>
-          <emulator>/run/current-system/sw/bin/qemu-system-x86_64</emulator>
-          <disk type='file' device='disk'>
-            <driver name='qemu' type='qcow2'/>
-            <source file='${conf.storage.path}'/>
-            <target dev='vda' bus='virtio'/>
-          </disk>
-          <disk type='file' device='cdrom'>
-            <target dev='hda' bus='ide'/>
-            <readonly/>
-          </disk>
-          <interface type='bridge'>
-            <source bridge='${conf.hostNic}'/>
-            <mac address='${conf.mac}'/>
-            <model type='virtio'/>
-          </interface>
-          <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
-            <listen type='address' address='127.0.0.1'/>
-          </graphics>
-          <console type='pty'/>
-          <channel type='unix'>
-            <target type='virtio' name='org.qemu.guest_agent.0'/>
-          </channel>
-          <input type='tablet' bus='usb'/>
-          <input type='keyboard' bus='usb'/>
-          <video>
-            <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1'/>
-          </video>
-        </devices>
-      </domain>
-    '') guests)}
+  # Function to generate VM XML content
+  makeVmXml = vm: ''
+    <domain type='kvm'>
+      <name>${vm.name}</name>
+      <memory unit='GiB'>${vm.memory}</memory>
+      <vcpu>${vm.vcpu}</vcpu>
+      <os>
+        <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
+        <boot dev='hd'/>
+        <boot dev='cdrom'/>
+      </os>
+      <features>
+        <acpi/>
+        <apic/>
+        <vmport state='off'/>
+      </features>
+      <cpu mode='host-model'/>
+      <clock offset='utc'>
+        <timer name='rtc' tickpolicy='catchup'/>
+        <timer name='pit' tickpolicy='delay'/>
+        <timer name='hpet' present='no'/>
+      </clock>
+      <devices>
+        <emulator>/run/current-system/sw/bin/qemu-system-x86_64</emulator>
+        <disk type='file' device='disk'>
+          <driver name='qemu' type='qcow2'/>
+          <source file='${vm.storage.path}'/>
+          <target dev='vda' bus='virtio'/>
+        </disk>
+        <disk type='file' device='cdrom'>
+          <target dev='hda' bus='ide'/>
+          <readonly/>
+        </disk>
+        <interface type='bridge'>
+          <source bridge='${vm.hostNic}'/>
+          <mac address='${vm.mac}'/>
+          <model type='virtio'/>
+        </interface>
+        <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+          <listen type='address' address='127.0.0.1'/>
+        </graphics>
+        <console type='pty'/>
+        <channel type='unix'>
+          <target type='virtio' name='org.qemu.guest_agent.0'/>
+        </channel>
+        <input type='tablet' bus='usb'/>
+        <input type='keyboard' bus='usb'/>
+        <video>
+          <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1'/>
+        </video>
+      </devices>
+    </domain>
   '';
+
+  # Generate VM config files
+  vmConfigs = map (vm: {
+    name = "${vm.name}.xml";
+    value = {
+      target = "/etc/libvirt/qemu/${vm.name}.xml";
+      text = makeVmXml vm;
+    };
+  }) vmSpecs;
+in
+{
+  environment.etc = builtins.listToAttrs vmConfigs;
 }
