@@ -19,12 +19,12 @@
           LACPTransmitRate = "fast";
         };
       };
-      "10-bond0.13" = {
+      "10-bond0.21" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "bond0.13";
+          Name = "bond0.21";
          };
-        vlanConfig.Id = 13;
+        vlanConfig.Id = 21;
       };
       "15-bond0.16" = {
         netdevConfig = {
@@ -40,10 +40,10 @@
          };
          vlanConfig.Id = 17;
       };
-      "25-bridge13" = {
+      "25-bridge21" = {
         netdevConfig = {
           Kind = "bridge";
-          Name = "bridge13";
+          Name = "bridge21";
         };
       };
       "30-bridge16" = {
@@ -77,15 +77,15 @@
           IPv6AcceptRA = true;
         };
         vlan = [
-          "bond0.13"
+          "bond0.21"
           "bond0.16"
           "bond0.17"
         ];
       };
-      "55-bond0.13" = {
-        matchConfig.Name = "bond0.13";
+      "55-bond0.21" = {
+        matchConfig.Name = "bond0.21";
         networkConfig = {
-          Bridge = "bridge13";
+          Bridge = "bridge21";
           LinkLocalAddressing = "no";
         };
         linkConfig = {
@@ -113,8 +113,8 @@
           RequiredForOnline = "carrier";
         };
       };
-      "70-bridge13" = {
-        matchConfig.Name = "bridge13";
+      "70-bridge21" = {
+        matchConfig.Name = "bridge21";
         bridgeConfig = {};
         networkConfig.LinkLocalAddressing = "no";
         linkConfig = {

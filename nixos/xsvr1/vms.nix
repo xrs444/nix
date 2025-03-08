@@ -28,7 +28,7 @@ let
       name = "v-xwifi1";
       vcpu = "2";
       memory = "4";
-      hostNic = "bridge13";
+      hostNic = "bridge21";
       mac = "52:54:00:8d:2e:ee";
       autostart = true;
       storage = {
