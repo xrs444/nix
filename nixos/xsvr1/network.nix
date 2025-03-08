@@ -9,8 +9,8 @@
     netdevs = {
       "1-enp14s0u10u2c2" = {
         enable = false;
-        name - "enp14s0u10u2c2";
-      }
+        name = "enp14s0u10u2c2";
+      };
       "5-bond0" = {
         netdevConfig = {
           Kind = "bond";
