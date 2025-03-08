@@ -10,9 +10,7 @@ let
       mac = "52:54:00:00:00:01";
       autostart = true;
       storage = {
-        path = "/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
-        type = "qcow2";  # Image format
-        device = "disk";
+        path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
       };
     }
     {
@@ -23,9 +21,7 @@ let
       mac = "52:54:00:c7:8c:08";
       autostart = true;
       storage = {
-        path = "/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
-        type = "qcow2";  # Image format
-        device = "disk";
+        path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
       };
     }
     {
@@ -36,9 +32,7 @@ let
       mac = "52:54:00:8d:2e:ee";
       autostart = true;
       storage = {
-        path = "/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
-        type = "qcow2";  # Image format
-        device = "disk";
+        path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
       };
     }
   ];
