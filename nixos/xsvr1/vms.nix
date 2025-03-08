@@ -50,8 +50,9 @@ let
 in
 
 {
+
   virtualisation.libvirtd = {
-    onBoot = "start";
+        onBoot = "start";
     onShutdown = "shutdown";
     extraConfig = ''
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: conf: ''
