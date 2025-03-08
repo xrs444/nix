@@ -43,35 +43,42 @@ let
     }
   ];
 
-  # Convert list to attribute set
   guests = lib.listToAttrs (map (vm: lib.nameValuePair vm.name {
     inherit (vm) memory mac storage vcpu autostart hostNic;
     }) vmSpecs);
 
 in
 {
+  # Enable libvirtd
   virtualisation.libvirtd = {
     enable = true;
-    qemu.ovmf.enable = true;
+    qemu = {
+      ovmf.enable = true;
+      runAsRoot = true;
+    };
+    # Define the VMs
+    extraConfig = ''
+      ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: conf: ''
+        <domain type='kvm'>
+          <name>${name}</name>
+          <memory unit='GiB'>${conf.memory}</memory>
+          <vcpu>${conf.vcpu}</vcpu>
+          <os>
+            <type arch='x86_64'>hvm</type>
+          </os>
+          <devices>
+            <disk type='file' device='disk'>
+              <source file='${conf.storage.path}'/>
+              <target dev='vda' bus='virtio'/>
+            </disk>
+            <interface type='bridge'>
+              <source bridge='${conf.hostNic}'/>
+              <mac address='${conf.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          </devices>
+        </domain>
+      '') guests)}
+    '';
   };
-
-  # Create the VMs using the guest specifications
-  virtualisation.libvirtd.guests = builtins.mapAttrs (name: conf:
-    {
-      networkInterfaces = [{
-        type = "bridge";
-        source.bridge = conf.hostNic;  # Use VM-specific bridge
-        mac = conf.mac;
-      }];
-      vcpu = conf.vcpu;
-      memory = conf.memory;
-      autoStart = conf.autostart;
-      storagePool = null;  # Don't use storage pool when using direct image path
-      disks = [
-        {
-          inherit (conf.storage) device path type;
-        }
-      ];
-    }
-  ) guests;
 }
