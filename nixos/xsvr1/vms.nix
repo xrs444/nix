@@ -139,13 +139,15 @@ let
     };
   };
 
-  # Generate all VM services
+  # Generate all VM services and watchers
   vmServices = builtins.listToAttrs (map mkVmConfigService vmSpecs);
   vmWatchers = builtins.listToAttrs (map mkVmWatcher vmSpecs);
+  
+  # Merge all services into one attribute set
+  allServices = vmServices // lib.mapAttrs (name: cfg: cfg.service) vmWatchers;
 
 in
 {
-  systemd.services = vmServices;
+  systemd.services = allServices;
   systemd.paths = lib.mapAttrs (name: cfg: cfg.path) vmWatchers;
-  systemd.services = lib.mapAttrs (name: cfg: cfg.service) vmWatchers // vmServices;
 }
