@@ -82,6 +82,9 @@
           DHCP = "ipv4";
           IPv6AcceptRA = true;
         };
+        dhcpV4Config = {
+          ClientIdentifier = "mac";
+        };        
       };
       "45-bond0.17" = {
         matchConfig.Name = "bond0.17";
