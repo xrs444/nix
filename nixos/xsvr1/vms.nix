@@ -48,15 +48,11 @@ let
     }) vmSpecs);
 
 in
+
 {
-  # Enable libvirtd
   virtualisation.libvirtd = {
-    enable = true;
-    qemu = {
-      ovmf.enable = true;
-      runAsRoot = true;
-    };
-    # Define the VMs
+    onBoot = "start";
+    onShutdown = "shutdown";
     extraConfig = ''
       ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: conf: ''
         <domain type='kvm'>
@@ -64,10 +60,18 @@ in
           <memory unit='GiB'>${conf.memory}</memory>
           <vcpu>${conf.vcpu}</vcpu>
           <os>
-            <type arch='x86_64'>hvm</type>
+            <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
+            <boot dev='hd'/>
           </os>
+          <features>
+            <acpi/>
+            <apic/>
+          </features>
+          <cpu mode='host-passthrough'/>
           <devices>
+            <emulator>/run/current-system/sw/bin/qemu-system-x86_64</emulator>
             <disk type='file' device='disk'>
+              <driver name='qemu' type='qcow2'/>
               <source file='${conf.storage.path}'/>
               <target dev='vda' bus='virtio'/>
             </disk>
@@ -76,6 +80,9 @@ in
               <mac address='${conf.mac}'/>
               <model type='virtio'/>
             </interface>
+            <console type='pty'>
+              <target type='serial' port='0'/>
+            </console>
           </devices>
         </domain>
       '') guests)}
