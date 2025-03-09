@@ -35,7 +35,7 @@ virtualisation = {
     extraConfig = ''
       listen_tls = 0
       listen_tcp = 1
-      listen_addr "0.0.0.0"
+      listen_addr = "0.0.0.0"
       auth_tcp = "none"  # Warning: Use only in trusted networks
       unix_sock_group = "libvirt"
       unix_sock_rw_perms = "0770"
