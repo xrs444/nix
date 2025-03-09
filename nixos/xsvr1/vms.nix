@@ -45,6 +45,8 @@ let
       <vcpu>${vm.vcpu}</vcpu>
       <os>
         <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
+        <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
+        <nvram>/var/lib/libvirt/qemu/nvram/${vm.name}_VARS.fd</nvram>
         <boot dev='hd'/>
         <boot dev='cdrom'/>
       </os>

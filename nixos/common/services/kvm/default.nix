@@ -30,6 +30,10 @@ virtualisation = {
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
+      ovmf = {
+        enable = true;
+        packages = [ pkgs.OVMF.fd ];
+      };
     };
     allowedBridges = [ "bridge16" "bridge17" "bridge21" ];
     extraConfig = ''
