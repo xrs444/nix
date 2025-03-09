@@ -132,7 +132,20 @@ let
           Type = "oneshot";
           ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
             set -eu
-            virsh define /etc/libvirt/qemu/${vm.name}.xml
+            # Check if VM exists and get autostart status
+            if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
+              autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}')
+              # Try to undefine if not running
+              if ! virsh domstate "${vm.name}" | grep -q "running"; then
+                virsh undefine "${vm.name}" --nvram || true
+              fi
+            fi
+            # Define the VM
+            virsh define "/etc/libvirt/qemu/${vm.name}.xml" || true
+            # Restore autostart if it was enabled
+            if [ "$autostart" = "yes" ]; then
+              virsh autostart "${vm.name}" || true
+            fi
           '';
         };
         path = [ pkgs.libvirt ];
