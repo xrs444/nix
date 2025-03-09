@@ -9,6 +9,7 @@ let
       hostNic = "bridge17";
       mac = "52:54:00:00:00:01";
       autostart = true;
+      firmware = "efi";  # or "bios"
       storage = {
         path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
       };
@@ -20,6 +21,7 @@ let
       hostNic = "bridge16";
       mac = "52:54:00:c7:8c:08";
       autostart = true;
+      firmware = "bios"; 
       storage = {
         path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
       };
@@ -31,6 +33,7 @@ let
       hostNic = "bridge21";
       mac = "52:54:00:8d:2e:ee";
       autostart = true;
+      firmware = "bios"; 
       storage = {
         path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
       };
@@ -45,8 +48,10 @@ let
       <vcpu>${vm.vcpu}</vcpu>
       <os>
         <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
-        <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
-        <nvram template='/run/libvirt/nix-ovmf/OVMF_VARS.fd'>/var/lib/libvirt/qemu/nvram/${vm.name}_VARS.fd</nvram>
+        ${if vm.firmware == "efi" then ''
+          <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
+          <nvram template='/run/libvirt/nix-ovmf/OVMF_VARS.fd'>/var/lib/libvirt/qemu/nvram/${vm.name}_VARS.fd</nvram>
+        '' else ""}
         <boot dev='hd'/>
         <boot dev='cdrom'/>
       </os>
@@ -137,7 +142,11 @@ let
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}')
               # Try to undefine if not running
               if ! virsh domstate "${vm.name}" | grep -q "running"; then
-                virsh undefine "${vm.name}" --nvram || true
+                ${if vm.firmware == "efi" then
+                  "virsh undefine \"${vm.name}\" --nvram || true"
+                else
+                  "virsh undefine \"${vm.name}\" || true"
+                }
               fi
             fi
             # Define the VM
