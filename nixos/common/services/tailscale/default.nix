@@ -11,7 +11,7 @@ let
   # Declare which hosts have Tailscale enabled.
   installOn = [
     "xsvr1"
-    "xsvr1"
+    "xsvr2"
     "xsvr3"
   ];
   tsExitNodes = [
