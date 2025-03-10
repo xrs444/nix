@@ -63,7 +63,9 @@
     nix-output-monitor
     nixfmt-rfc-style
     usbutils
-      ]
+    screen
+    tmux
+    ]
     ++ lib.optionals isInstall [
       inputs.determinate.packages.${platform}.default
       inputs.fh.packages.${platform}.default
