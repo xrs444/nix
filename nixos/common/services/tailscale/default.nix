@@ -26,10 +26,10 @@ in
       services.tailscale = {
         enable = true;
         extraUpFlags = [
-          "--operator=${username}"
+          "--operator=${username} --accept-routes"
         ];
         extraSetFlags = [
-          "--operator=${username}"
+          "--operator=${username} --accept-routes"
         ];
       };     
     })   
@@ -43,10 +43,10 @@ in
       services.tailscale = {
         enable = true;
         extraUpFlags = [
-          "--operator=${username} --advertise-exit-node"
+          "--operator=${username} --advertise-exit-node --accept-routes"
           ];
         extraSetFlags = [
-          "--operator=${username} --advertise-exit-node"
+          "--operator=${username} --advertise-exit-node --accept-routes"
           ];
         openFirewall = true;
         useRoutingFeatures = "both";
