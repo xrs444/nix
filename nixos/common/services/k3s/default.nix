@@ -20,14 +20,21 @@ let
   ];
 in
 {
+
   config = lib.mkMerge [
     
     ( lib.mkIf (lib.elem "${hostname}" installOn) {
      
+      sops.secrets."k3s.yaml" = {
+        format = "dotenv";
+        path = "/etc/rancher/k3s/token.env";
+
+      };
+
       services.k3s = {
-      # enable = true;
+        enable = true;
         role = "server";
-        token = "<randomized common secret>";
+        tokenFile = "/etc/rancher/k3s/token.env";
         gracefulNodeShutdown = {
           enable = true;
           shutdownGracePeriod = "3m";
@@ -77,3 +84,4 @@ in
     } )
   ];
 }
+
