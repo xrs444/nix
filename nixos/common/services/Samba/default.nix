@@ -38,7 +38,7 @@ in
             "map to guest" = "bad user";
           };
         };
-      }
+      };
 
       services.samba-wsdd = {
         enable = true;
