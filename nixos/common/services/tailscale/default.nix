@@ -12,7 +12,7 @@ let
     "xsvr1"
     "xsvr2"
   ];
-  tsExitnodes = [
+  tsExitNodes = [
     "xsvr3"
   ];
 
