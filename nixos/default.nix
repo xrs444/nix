@@ -74,7 +74,13 @@
 #  openssh.authorizedKeys.keys  = [ "ssh-dss " ];
   };
 
-  defaultSopsFile = ../secrets/secrets.yaml;
+  sops = lib.mkIf (isInstall) {
+    age = {
+      keyFile = "/var/lib/private/sops/age/keys.txt";
+      generateKey = false;
+    };
+    defaultSopsFile = ../secrets/secrets.yaml;
+  };
 
   networking.nftables.enable = true;
   services.resolved = {
