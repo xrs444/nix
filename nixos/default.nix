@@ -74,6 +74,8 @@
 #  openssh.authorizedKeys.keys  = [ "ssh-dss " ];
   };
 
+  defaultSopsFile = ../secrets/secrets.yaml;
+
   networking.nftables.enable = true;
   services.resolved = {
     enable = true;
