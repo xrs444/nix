@@ -83,6 +83,9 @@ in
      
       services.k3s = {
         serverAddr =  "https://172.20.1.10:6443";
+        extraFlags = toString [
+          "--disable servicelb"
+        ];
       };
     } )
   ];
