@@ -15,6 +15,7 @@
     ./disks.nix
     ./network.nix
     ./desktop.nix
+    ./serial.nix
   ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
