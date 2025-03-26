@@ -95,6 +95,8 @@
     domains = [ "x.xrs444.net" ];
   };
 
+  services.resolved.fallbackDns = 172.18.10.250
+
  nix =
     let
       flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
