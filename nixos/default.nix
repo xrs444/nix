@@ -96,7 +96,7 @@
     domains = [ "x.xrs444.net" ];
   };
 
-  services.resolved.fallbackDns = "172.18.10.250";
+  services.resolved.fallbackDns = [ "172.18.10.250" ];
 
   nix = 
   let
