@@ -73,7 +73,7 @@ in
       services.k3s = {
         clusterInit = true;
         extraFlags = toString [
-          "--disable traefik --disable servicelb --cluster-domain 'xrs444.net'--cluster-cidr=172.21.0.0/16 --service-cidr=172.22.0.0/16"
+          "--disable traefik --disable servicelb --cluster-domain 'xrs444.net'--cluster-cidr=172.21.0.0/16 --service-cidr=172.22.0.0/16 --flannel-iface=bond0"
         ];
     };
     
@@ -84,7 +84,7 @@ in
       services.k3s = {
         serverAddr =  "https://172.20.1.10:6443";
         extraFlags = toString [
-          "--disable servicelb"
+          "--disable servicelb --flannel-iface=bond0"
         ];
       };
     } )
