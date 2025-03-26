@@ -20,14 +20,24 @@ let
   ];
 in
 {
+
   config = lib.mkMerge [
     
     ( lib.mkIf (lib.elem "${hostname}" installOn) {
      
+      sops.secrets."k3s_token" = {
+        sopsFile = ../../../../secrets/k3s.yaml;
+        format = "yaml";
+        owner = "root";
+        group = "root";
+        mode = "0600";
+        path = "/etc/k3s/token";
+      };
+
       services.k3s = {
-      # enable = true;
+        enable = true;
         role = "server";
-        token = "<randomized common secret>";
+        tokenFile = config.sops.secrets."k3s_token".path;
         gracefulNodeShutdown = {
           enable = true;
           shutdownGracePeriod = "3m";
@@ -73,7 +83,11 @@ in
      
       services.k3s = {
         serverAddr =  "https://172.20.1.10:6443";
+        extraFlags = toString [
+          "--disable servicelb"
+        ];
       };
     } )
   ];
 }
+

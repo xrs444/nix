@@ -45,17 +45,35 @@
           Kind = "bridge";
           Name = "bridge21";
         };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
       };
       "30-bridge16" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge16";
         };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
       };
       "35-bridge17" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge17";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
         };
       };
    };
@@ -116,7 +134,10 @@
       "70-bridge21" = {
         matchConfig.Name = "bridge21";
         bridgeConfig = {};
-        networkConfig.LinkLocalAddressing = "no";
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -124,7 +145,10 @@
       "75-bridge16" = {
         matchConfig.Name = "bridge16";
         bridgeConfig = {};
-        networkConfig.LinkLocalAddressing = "no";
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -132,7 +156,10 @@
       "80-bridge17" = {
         matchConfig.Name = "bridge17";
         bridgeConfig = {};
-        networkConfig.LinkLocalAddressing = "no";
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };

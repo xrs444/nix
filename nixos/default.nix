@@ -74,35 +74,52 @@
 #  openssh.authorizedKeys.keys  = [ "ssh-dss " ];
   };
 
+  sops = lib.mkIf (isInstall) {
+    age = {
+      keyFile = "/var/lib/private/sops/age/keys.txt";
+      generateKey = false;
+    };
+    defaultSopsFile = ../secrets/secrets.yaml;
+  };
+
+  systemd = {
+    extraConfig = "DefaultTimeoutStopSec=10s";
+    tmpfiles.rules = [
+
+      "d /var/lib/private/sops/age 0755 root root"
+    ];
+  };
+
   networking.nftables.enable = true;
   services.resolved = {
     enable = true;
     domains = [ "x.xrs444.net" ];
   };
 
- nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = "flakes nix-command";
-        # Disable global registry
-        flake-registry = "";
-        # Workaround for https://github.com/NixOS/nix/issues/9574
-        nix-path = config.nix.nixPath;
-        trusted-users = [
-          "root"
-          "${username}"
-        ];
-        warn-dirty = false;
-      };
-      # Disable channels
-      channel.enable = false;
-      # Make flake registry and nix path match flake inputs
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  services.resolved.fallbackDns = [ "172.18.10.250" ];
+
+  nix = 
+  let
+    flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+  in {
+    settings = {
+      experimental-features = "flakes nix-command";
+      # Disable global registry
+      flake-registry = "";
+      # Workaround for https://github.com/NixOS/nix/issues/9574
+      nix-path = config.nix.nixPath;
+      trusted-users = [
+        "root"
+        "${username}"
+      ];
+      warn-dirty = false;
     };
+    # Disable channels
+    channel.enable = false;
+    # Make flake registry and nix path match flake inputs
+    registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+    nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  };
 
   system = {
     activationScripts = {
