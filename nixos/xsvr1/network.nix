@@ -136,7 +136,6 @@
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
-          IPForward = "yes";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -148,7 +147,6 @@
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
-          IPForward = "yes";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -160,7 +158,6 @@
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
-          IPForward = "yes";
           IPMasquerade = "no";
         };
         linkConfig = {
