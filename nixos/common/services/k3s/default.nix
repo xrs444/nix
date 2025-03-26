@@ -26,15 +26,17 @@ in
     ( lib.mkIf (lib.elem "${hostname}" installOn) {
      
       sops.secrets."k3s.yaml" = {
-        format = "dotenv";
-        path = "/etc/rancher/k3s/token.env";
-
+        format = "yaml";
+        owner = "root";
+        group = "root";
+        mode = "0600";
+        path = "/etc/k3s/token";
       };
 
       services.k3s = {
         enable = true;
         role = "server";
-        tokenFile = "/etc/rancher/k3s/token.env";
+        tokenFile = "/etc/k3s/token";
         gracefulNodeShutdown = {
           enable = true;
           shutdownGracePeriod = "3m";
