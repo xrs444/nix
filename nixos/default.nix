@@ -82,6 +82,13 @@
     defaultSopsFile = ../secrets/secrets.yaml;
   };
 
+  systemd = {
+    extraConfig = "DefaultTimeoutStopSec=10s";
+    tmpfiles.rules = [
+      "d /var/lib/private/sops/age 0755 root root"
+    ];
+  };
+
   networking.nftables.enable = true;
   services.resolved = {
     enable = true;
