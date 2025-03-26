@@ -44,4 +44,5 @@
   };
 
   powerManagement.cpuFreqGovernor = "performance";
+  
 }
