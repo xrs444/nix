@@ -25,7 +25,8 @@ in
     
     ( lib.mkIf (lib.elem "${hostname}" installOn) {
      
-      sops.secrets."k3s.yaml" = {
+      sops.secrets."k3s_token" = {
+        sopsFile = ../../../../secrets/k3s.yaml;
         format = "yaml";
         owner = "root";
         group = "root";
@@ -36,7 +37,7 @@ in
       services.k3s = {
         enable = true;
         role = "server";
-        tokenFile = "/etc/k3s/token";
+        tokenFile = config.sops.secrets."k3s_token".path;
         gracefulNodeShutdown = {
           enable = true;
           shutdownGracePeriod = "3m";
