@@ -6,7 +6,7 @@ let
       name = "v-xhac1";
       vcpu = "4";
       memory = "8";
-      hostNic = "bridge17";
+      hostNic = "vmbridge17";
       mac = "52:54:00:00:00:01";
       autostart = true;
       firmware = "efi";  # or "bios"
@@ -18,7 +18,7 @@ let
       name = "v-xpbx1";
       vcpu = "2";
       memory = "6";
-      hostNic = "bridge16";
+      hostNic = "vmbridge16";
       mac = "52:54:00:c7:8c:08";
       autostart = true;
       firmware = "bios"; 
@@ -30,7 +30,7 @@ let
       name = "v-xwifi1";
       vcpu = "2";
       memory = "4";
-      hostNic = "bridge21";
+      hostNic = "vmbridge21";
       mac = "52:54:00:8d:2e:ee";
       autostart = true;
       firmware = "bios"; 
@@ -77,8 +77,8 @@ let
           <target dev='sda' bus='sata'/>
           <readonly/>
         </disk>
-        <interface type='bridge'>
-          <source bridge='${vm.hostNic}'/>
+        <interface type='vmbridge'>
+          <source vmbridge='${vm.hostNic}'/>
           <mac address='${vm.mac}'/>
           <model type='virtio'/>
         </interface>
