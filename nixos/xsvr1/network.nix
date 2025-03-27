@@ -76,6 +76,78 @@
           STP = false;
         };
       };
+      
+# VM Temporary testing for K3S network block issue.
+
+      "5-bond1" = {
+        netdevConfig = {
+          Kind = "bond";
+          Name = "bond1";
+        };
+        bondConfig = {
+          Mode = "802.3ad";
+          TransmitHashPolicy = "layer2+3";
+          MIIMonitorSec = "0.100s";
+          LACPTransmitRate = "fast";
+        };
+      };
+      "10-bond1.21" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond1.21";
+         };
+        vlanConfig.Id = 21;
+      };
+      "15-bond1.16" = {
+        netdevConfig = {
+          Kind = "vlan";
+         Name = "bond1.16";
+         };
+         vlanConfig.Id = 16;
+      };
+     "20-bond1.17" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond1.17";
+         };
+         vlanConfig.Id = 17;
+      };
+      "25-vmbridge21" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "vmbridge21";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
+      "30-vmbridge16" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "vmbridge16";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
+      "35-vmbridge17" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "vmbridge17";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
    };
     networks = {
       "40-enp3s0f0" = {
@@ -164,6 +236,95 @@
           RequiredForOnline = "carrier";
         };
       };
+
+# Temporary config for VM K3S issue
+
+      "40-" = {
+        matchConfig.Name = "";
+        networkConfig.Bond = "bond1";
+#        linkConfig.RequiredForOnline = "enslaved";
+      };
+      "40-" = {
+        matchConfig.Name = "";
+        networkConfig.Bond = "bond1";
+#        linkConfig.RequiredForOnline = "enslaved";
+      };
+      "50-bond1" = {
+        matchConfig.Name = "bond1";
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = true;
+        };
+        vlan = [
+          "bond1.21"
+          "bond1.16"
+          "bond1.17"
+        ];
+      };
+      "55-bond1.21" = {
+        matchConfig.Name = "bond1.21";
+        networkConfig = {
+          Bridge = "vmbridge21";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
+      "60-bond1.17" = {
+        matchConfig.Name = "bond1.17";
+        networkConfig = {
+          Bridge = "vmbridge17";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
+
+     "65-bond1.16" = {
+        matchConfig.Name = "bond1.16";
+       networkConfig ={ 
+          Bridge = "vmbridge16";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "70-vbridge21" = {
+        matchConfig.Name = "vbridge21";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "75-vmbridge16" = {
+        matchConfig.Name = "vmbridge16";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "80-vmbridge17" = {
+        matchConfig.Name = "vmbridge17";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
     };
- };
+  };
 }
