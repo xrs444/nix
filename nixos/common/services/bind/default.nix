@@ -1,4 +1,10 @@
-{ pkgs, lib, ... }:
+{
+  config,
+  hostname,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   installOn = [
