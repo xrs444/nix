@@ -239,13 +239,13 @@
 
 # Temporary config for VM K3S issue
 
-      "40-" = {
-        matchConfig.Name = "";
+      "40-en01" = {
+        matchConfig.Name = "eno1";
         networkConfig.Bond = "bond1";
 #        linkConfig.RequiredForOnline = "enslaved";
       };
-      "40-" = {
-        matchConfig.Name = "";
+      "40-eno2" = {
+        matchConfig.Name = "eno2";
         networkConfig.Bond = "bond1";
 #        linkConfig.RequiredForOnline = "enslaved";
       };
