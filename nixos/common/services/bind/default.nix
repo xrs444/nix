@@ -6,7 +6,7 @@ let
   ];
 in
 {
-  lib.mkIf (lib.elem "${hostname}" installOn) {
+  bindConfig = lib.mkIf (lib.elem "${hostname}" installOn) {
 
     services.bind = {
       enable = true;
