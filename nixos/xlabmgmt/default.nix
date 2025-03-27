@@ -13,8 +13,8 @@
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nixos-hardware.nixosModules.common-gpu-amd
     inputs.nixos-hardware.nixosModules.common-pc
-    ./disks.nix
-    ./network.nix
+#    ./disks.nix
+#    ./network.nix
   ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
