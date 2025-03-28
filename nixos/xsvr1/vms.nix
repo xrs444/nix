@@ -8,7 +8,7 @@ let
       memory = "8";
       hostNic = "vmbridge17";
       mac = "52:54:00:00:00:01";
-      autostart = "enable";
+      autostart = true;
       firmware = "efi";  # or "bios"
       storage = {
         path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
@@ -20,7 +20,7 @@ let
       memory = "6";
       hostNic = "vmbridge16";
       mac = "52:54:00:c7:8c:08";
-      autostart = "enable";
+      autostart = true;
       firmware = "bios"; 
       storage = {
         path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
@@ -32,7 +32,7 @@ let
       memory = "4";
       hostNic = "vmbridge21";
       mac = "52:54:00:8d:2e:ee";
-      autostart = "enable";
+      autostart = true;
       firmware = "bios"; 
       storage = {
         path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
