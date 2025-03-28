@@ -293,7 +293,7 @@
         };
       };
       "70-vmbridge21" = {
-        matchConfig.Name = "vbridge21";
+        matchConfig.Name = "vmbridge21";
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
