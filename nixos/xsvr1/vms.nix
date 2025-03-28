@@ -8,7 +8,7 @@ let
       memory = "8";
       hostNic = "vmbridge17";
       mac = "52:54:00:00:00:01";
-      autostart = true;
+      autostart = "enable";
       firmware = "efi";  # or "bios"
       storage = {
         path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
@@ -20,7 +20,7 @@ let
       memory = "6";
       hostNic = "vmbridge16";
       mac = "52:54:00:c7:8c:08";
-      autostart = true;
+      autostart = "enable";
       firmware = "bios"; 
       storage = {
         path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
@@ -32,7 +32,7 @@ let
       memory = "4";
       hostNic = "vmbridge21";
       mac = "52:54:00:8d:2e:ee";
-      autostart = true;
+      autostart = "enable";
       firmware = "bios"; 
       storage = {
         path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
@@ -137,9 +137,10 @@ let
           Type = "oneshot";
           ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
             set -eu
+            autostart="disable"  # Initialize with default value
             # Check if VM exists and get autostart status
             if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
-              autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}')
+              autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
               # Try to undefine if not running
               if ! virsh domstate "${vm.name}" | grep -q "running"; then
                 ${if vm.firmware == "efi" then
