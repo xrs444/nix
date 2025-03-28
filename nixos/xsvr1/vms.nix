@@ -77,8 +77,8 @@ let
           <target dev='sda' bus='sata'/>
           <readonly/>
         </disk>
-        <interface type='vmbridge'>
-          <source vmbridge='${vm.hostNic}'/>
+        <interface type='bridge'>
+          <source bridge='${vm.hostNic}'/>
           <mac address='${vm.mac}'/>
           <model type='virtio'/>
         </interface>
