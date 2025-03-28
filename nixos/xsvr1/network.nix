@@ -292,7 +292,7 @@
           RequiredForOnline = "carrier";
         };
       };
-      "70-vbridge21" = {
+      "70-vmbridge21" = {
         matchConfig.Name = "vbridge21";
         bridgeConfig = {};
         networkConfig = {
