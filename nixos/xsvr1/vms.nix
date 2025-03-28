@@ -157,7 +157,7 @@ let
             fi
           '';
         };
-        path = [ pkgs.libvirt ];
+        path = [ pkgs.libvirt pkgs.gawk ];
         after = [ "libvirtd.service" ];
       };
     };
