@@ -65,7 +65,7 @@
         xlabmgmt = lib.mkNixos {
           hostname = "xlabmgmt";
           desktop = "gnome";
-        }
+        };
 #       Auxiliary
 #          xdash1 = lib.mkNixos {
 #          hostname = "xdash1";
