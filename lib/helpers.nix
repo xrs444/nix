@@ -81,11 +81,11 @@
       ] else []);
     };
 
-  mkDarwin =
+   mkDarwin =
     {
       desktop ? "aqua",
       hostname,
-      username ? "xrs444",
+      username ? "thomas-local",
       platform ? "aarch64-darwin",
     }:
     let
