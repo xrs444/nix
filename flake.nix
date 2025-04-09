@@ -85,18 +85,11 @@
 
     # macOS machines
     darwinConfigurations = {
-      xlt1-t = nix-darwin.lib.darwinSystem {
-        system = "aarch64-darwin";
-        modules = [
-          ./hosts/xlt1-t/configuration.nix
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.thomas-local = import ./home/thomas-local/darwin.nix;
-          }
-        ];
-        specialArgs = { inherit inputs stateVersion; };
+      xlt1-t = lib.mkDarwin {
+        hostname = "xlt1-t";
+        username = "thomas-local";  # Specify username if different from default
+        desktop = "aqua";  # Optional, defaults to "aqua"
+        platform = "aarch64-darwin";  # Optional, this is the default
       };
     };
 
