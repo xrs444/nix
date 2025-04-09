@@ -33,7 +33,7 @@
   };
   
   outputs =
-    { self, nix-darwin, nixpkgs, home-manager,comin, ... }@inputs:
+    { self, nix-darwin, nixpkgs, home-manager, comin, ... }@inputs:
     let
       inherit (self) outputs;
       stateVersion = "24.11";
@@ -46,29 +46,27 @@
         "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
         "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
         "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xlabmgmt"; };
-        # Auxiliary
+# Auxiliary
 #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
 #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
-        };
+# Auxiliary
+#        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
+#        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
+      };
 
       nixosConfigurations = {
-        # Desktop machines
         # Servers
-        xsvr1 = lib.mkNixos {
-          hostname = "xsvr1";
-        };
-        xsvr2 = lib.mkNixos {
-          hostname = "xsvr2";
-        };
-        xsvr3 = lib.mkNixos {
+        xsvr1 = lib.mkNixos { hostname = "xsvr1"; };
+        xsvr2 = lib.mkNixos { hostname = "xsvr2"; };
+        xsvr3 = lib.mkNixos { 
           hostname = "xsvr3";
           desktop = "gnome";
         };
         xlabmgmt = lib.mkNixos {
           hostname = "xlabmgmt";
           desktop = "gnome";
-        };
-        # Auxiliary
+        }
+#       Auxiliary
 #          xdash1 = lib.mkNixos {
 #          hostname = "xdash1";
 #          platform = "aarch64-linux";
@@ -77,20 +75,22 @@
 #          hostname = "xhac-radio";
 #          platform = "aarch64-linux";
 #        };
+
+      };
+
         # macOS machines
-        darwinConfigurations = {
-        xlt1-t = helper.mkDarwin {
+      darwinConfigurations = {
+        xlt1-t = lib.mkDarwin {
           hostname = "xlt1-t";
         };
       };
 
-      # Custom packages; acessible via 'nix build', 'nix shell', etc
+      # Custom packages; accessible via 'nix build', 'nix shell', etc
       packages = lib.forAllSystems (system: import ./pkgs { pkgs = nixpkgs.legacyPackages.${system}; });
       nixosModules = import ./modules/nixos;
       # Custom overlays
       overlays = import ./overlays { inherit inputs; };
 
       formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-      
     };
 }
