@@ -77,6 +77,11 @@
 #          hostname = "xhac-radio";
 #          platform = "aarch64-linux";
 #        };
+        # macOS machines
+        darwinConfigurations = {
+        xlt1-t = helper.mkDarwin {
+          hostname = "xlt1-t";
+        };
       };
 
       # Custom packages; acessible via 'nix build', 'nix shell', etc

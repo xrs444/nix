@@ -5,13 +5,10 @@
   ...
 }:
 let
-  installFor = [ "martin" ];
+  installFor = [ "xrs444" ];
 in
 lib.mkIf (lib.elem username installFor) {
   environment.systemPackages = with pkgs; [
-    grandperspective
-    keka
-    stats
     utm
   ];
 
