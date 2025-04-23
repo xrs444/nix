@@ -49,12 +49,13 @@ in
           "--operator=${username}"
           "--advertise-exit-node"
           "--accept-routes"
+          "--allow-lan-access"
           ];
         openFirewall = true;
-        useRoutingFeatures = "server";
+        useRoutingFeatures = "both";
         interfaceName = "userspace-networking";
         };
-        networking.firewall.checkReversePath = "loose";
+      networking.firewall.checkReversePath = "loose";
       services.networkd-dispatcher = {
         enable = true;
         rules."50-tailscale" = {
