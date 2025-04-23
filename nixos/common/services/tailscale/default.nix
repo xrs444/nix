@@ -46,10 +46,9 @@ in
       services.tailscale = {
         enable = true;
         extraUpFlags = [
-          "--operator=${username} --advertise-exit-node --accept-routes"
-          ];
-        extraSetFlags = [
-          "--operator=${username} --advertise-exit-node --accept-routes"
+          "--operator=${username}"
+          "--advertise-exit-node"
+          "--accept-routes"
           ];
         openFirewall = true;
         useRoutingFeatures = "server";
