@@ -65,6 +65,7 @@
     usbutils
     screen
     tmux
+    
     ]
     ++ lib.optionals isInstall [
       inputs.determinate.packages.${platform}.default
