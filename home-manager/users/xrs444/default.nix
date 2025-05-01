@@ -1,5 +1,7 @@
 { pkgs, ... }: {
-  home.stateVersion = "24.11";
+
+  home.username = "xrs444";
+  home.homeDirectory = "/home/xrs444";
   
   home.packages = with pkgs; [
     # Add your user packages here
