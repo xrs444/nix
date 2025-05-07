@@ -52,10 +52,10 @@
         networkConfig = {
           DHCP = "ipv4";
           IPv6AcceptRA = true;
+        };
         vlan = [
           "vlan22"
-          ];
-        };
+        ];
       };
       "51-bridge22" = {
         matchConfig.Name = "bridge22";
