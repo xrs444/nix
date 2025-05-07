@@ -3,55 +3,19 @@
 let
   vmSpecs = [
     {
-      name = "v-xhac1";
-      vcpu = "4";
-      memory = "8";
-      hostNic = "bridge17";
-      mac = "52:54:00:00:00:01";
-      autostart = true;
-      firmware = "efi";  # or "bios"
-      storage = {
-        path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
-      };
-    }
-    {
-      name = "v-xpbx1";
-      vcpu = "2";
-      memory = "6";
-      hostNic = "bridge16";
-      mac = "52:54:00:c7:8c:08";
-      autostart = true;
-      firmware = "bios"; 
-      storage = {
-        path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
-      };
-    }
-    {
-      name = "v-xwifi1";
-      vcpu = "2";
-      memory = "4";
-      hostNic = "bridge21";
-      mac = "52:54:00:8d:2e:ee";
-      autostart = true;
-      firmware = "bios"; 
-      storage = {
-        path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
-      };
-    }
-    {
-      name = "v-k8s-xsvr1";
+      name = "v-k8s-xsvr3";
       vcpu = "4";
       memory = "16";
-      hostNic = "bridge21";
-      mac = "52:54:00:8d:2e:ef";
+      hostNic = " bridge22";
+      mac = "52:54:00:8d:2e:ff";
       autostart = true;
-      firmware = "efi"; 
+      firmware = "efi";
       storage = {
-        path = "zfs/vm/v-k8s-xsvr1.qcow2";  # Path to existing image
+        path = "/vm/v-k8s-xsvr3.qcow2";
       };
       extraDrives = [
         {
-          path = "/dev/disk/by-id/ata-CT1000MX500SSD1_2410E89C985C";
+          path = "/dev/disk/by-id/nvme-CT1000P3SSD8_24414B6FE363";
           device = "disk";
           bus = "sata";
           target = "sdb";

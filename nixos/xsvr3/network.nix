@@ -18,6 +18,19 @@
           LACPTransmitRate = "fast";
         };
       };
+      "22-vlan22" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan-22";
+         };
+         vlanConfig.Id = 22;
+      };
+      "22-bridge22" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge22";
+        };
+      };
     };
     networks = {
       "20-enp1s0f0" = {
@@ -39,6 +52,16 @@
         networkConfig = {
           DHCP = "ipv4";
           IPv6AcceptRA = true;
+        vlan = [
+          "vlan22"
+          ];
+        };
+      };
+      "51-bridge22" = {
+        matchConfig.Name = "bridge22";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
         };
       };
     };

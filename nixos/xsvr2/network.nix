@@ -26,10 +26,23 @@
          };
          vlanConfig.Id = 17;
       };
+      "22-vlan22" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlan-22";
+         };
+         vlanConfig.Id = 22;
+      };
       "20-bridge17" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge17";
+        };
+      };
+      "22-bridge22" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge22";
         };
       };
     };
@@ -50,10 +63,18 @@
         };
         vlan = [
           "vlan17"
+          "vlan22"
         ];
       };
       "50-bridge17" = {
         matchConfig.Name = "bridge17";
+        bridgeConfig = {};
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "51-bridge22" = {
+        matchConfig.Name = "bridge22";
         bridgeConfig = {};
         linkConfig = {
           RequiredForOnline = "carrier";

@@ -14,6 +14,7 @@
     inputs.nixos-hardware.nixosModules.common-pc-ssd
     ./disks.nix
     ./network.nix
+    ./vms.nix
   ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
