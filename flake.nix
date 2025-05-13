@@ -81,7 +81,7 @@
       #        };
       # Clients
       xdt1-t = lib.mkNixos {
-        hostname = "xlabmgmt";
+        hostname = "xdt1-t";
         desktop = "gnome";
     };
 
