@@ -54,9 +54,8 @@
       # Auxiliary
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
-      # Auxiliary
-      #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
-      #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
+      # Clients
+      "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xdt1-t"; };
     };
 
     nixosConfigurations = {
@@ -80,7 +79,10 @@
       #          hostname = "xhac-radio";
       #          platform = "aarch64-linux";
       #        };
-
+      # Clients
+      xdt1-t = lib.mkNixos {
+        hostname = "xlabmgmt";
+        desktop = "gnome";
     };
 
     # macOS machines
