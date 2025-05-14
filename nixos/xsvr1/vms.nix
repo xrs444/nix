@@ -47,7 +47,7 @@ let
       autostart = true;
       firmware = "efi"; 
       storage = {
-        path = "zfs/vm/v-k8s-xsvr1.qcow2";  # Path to existing image
+        path = "zfs/vm/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";  # Path to existing image
       };
       extraDrives = [
         {

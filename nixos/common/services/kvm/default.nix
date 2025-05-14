@@ -8,6 +8,8 @@
 let
   installOn = [
     "xsvr1"
+    "xsvr2"
+    "xsvr3"
   ];
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
@@ -35,7 +37,7 @@ virtualisation = {
         packages = [ pkgs.OVMF.fd ];
       };
     };
-    allowedBridges = [ "bridge16" "bridge17" "bridge21" ];
+    allowedBridges = [ "bridge16" "bridge17" "bridge21" "bridge22" ];
     extraConfig = ''
       listen_tls = 0
       listen_tcp = 1
