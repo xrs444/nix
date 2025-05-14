@@ -24,8 +24,10 @@
     };
     nvidia = {
       open = true;
+      prime = null; # Explicitly disable PRIME to avoid bus ID errors
       modesetting.enable = true;
       nvidiaSettings.enable = true;
+      # powerManagement.enable = false; # (optional) disable power management if not needed
     };
   };
 
