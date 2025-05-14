@@ -21,12 +21,12 @@
     cpu.amd.updateMicrocode = true;
     graphics = {
       enable = true;
-    };
+        enable32Bit = true;
     nvidia = {
       open = true;
       modesetting.enable = true;
       nvidiaSettings.enable = true;
-      # powerManagement.enable = false; # (optional) disable power management if not needed
+      powerManagement.enable = true;
     };
   };
 
@@ -62,9 +62,5 @@
   };
 
   powerManagement.cpuFreqGovernor = "performance";
-  
-  services = {
-    xserver.videoDrivers = ["nvidia"];
-  };
 
 }
