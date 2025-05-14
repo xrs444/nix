@@ -45,6 +45,7 @@
     lib = import ./lib { inherit inputs outputs stateVersion; };
   in
   {
+    overlays = import ./overlays { inherit inputs; };
     homeConfigurations = {
       # Servers
       "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
@@ -98,10 +99,6 @@
     # Custom packages; accessible via 'nix build', 'nix shell', etc
     packages = lib.forAllSystems (system: import ./pkgs { pkgs = nixpkgs.legacyPackages.${system}; });
     nixosModules = import ./modules/nixos;
-    # Custom overlays
-    overlays = import ./overlays { inherit inputs; };
-
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-    };
   };
 }
