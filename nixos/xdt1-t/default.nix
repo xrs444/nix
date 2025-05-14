@@ -25,7 +25,6 @@
     nvidia = {
       open = true;
       modesetting.enable = true;
-      usePrime = false;
       nvidiaSettings.enable = true;
     };
   };
