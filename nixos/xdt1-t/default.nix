@@ -22,13 +22,15 @@
     graphics = {
       enable = true;
         enable32Bit = true;
+      };
     nvidia = {
       open = true;
       modesetting.enable = true;
       nvidiaSettings.enable = true;
       powerManagement.enable = true;
+      };
     };
-  };
+  
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
@@ -63,5 +65,4 @@
 
   powerManagement.cpuFreqGovernor = "performance";
 
-  };
 }
