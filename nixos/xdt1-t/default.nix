@@ -19,7 +19,18 @@
 
   hardware = {
     cpu.amd.updateMicrocode = true;
-    nvidia.open = true;
+    graphics = {
+      enable = true;
+      nvidia = {
+        open = true;
+        driver = "nvidia";
+        modesetting.enable = true;
+        usePrime = false;
+        nvidiaSettings.enable = true;
+      };
+    };
+
+
   };
 
   nixpkgs.hostPlatform = "x86_64-linux";
@@ -55,4 +66,8 @@
 
   powerManagement.cpuFreqGovernor = "performance";
   
+  services = {
+    xserver.videoDrivers = ["nvidia"];
+  };
+
 }
