@@ -21,9 +21,9 @@
 
   boot = {
     loader = {
-      systemd-boot.enable = false;
+      systemd-boot.enable = lib.mkForce false;
       grub = {
-        enable = true;
+        enable = lib.mkForce true;
         device = "nodev";
         useOSProber = true;
         efiSupport = true;
