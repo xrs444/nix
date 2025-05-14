@@ -53,9 +53,9 @@
     hostPlatform = lib.mkDefault "${platform}";
     overlays = [
       # Add overlays your own flake exports (from overlays and pkgs dir):
-#      outputs.overlays.additions
+      outputs.overlays.additions
 #      outputs.overlays.modifications
-#      outputs.overlays.unstable-packages
+      outputs.overlays.unstable-packages
 
       # Or just specify overlays directly here, for example:
       # (_: _: { embr = inputs.embr.packages."${pkgs.system}".embr; })
