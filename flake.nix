@@ -102,5 +102,6 @@
     overlays = import ./overlays { inherit inputs; };
 
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+    };
   };
 }
