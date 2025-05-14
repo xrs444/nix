@@ -24,7 +24,6 @@
     };
     nvidia = {
       open = true;
-      driver = "nvidia";
       modesetting.enable = true;
       usePrime = false;
       nvidiaSettings.enable = true;
