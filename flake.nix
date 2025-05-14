@@ -101,4 +101,5 @@
     nixosModules = import ./modules/nixos;
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
   };
+};
 }
