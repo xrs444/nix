@@ -21,7 +21,7 @@
       "22-vlan22" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "vlan-22";
+          Name = "vlan22";
          };
          vlanConfig.Id = 22;
       };
