@@ -68,7 +68,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='sda' bus='sata'/>
+          <target dev='hdc' bus='sata'/>
           <readonly/>
         </disk>
         ${lib.concatStringsSep "\n" (

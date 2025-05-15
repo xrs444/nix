@@ -62,7 +62,7 @@
       "26-bridge22" = {
         netdevConfig = {
           Kind = "bridge";
-          Name = "bridge21";
+          Name = "bridge22";
         };
         bridgeConfig = {
           ForwardDelaySec = 0;

@@ -42,7 +42,7 @@ let
       name = "v-k8s-xsvr1";
       vcpu = "4";
       memory = "16";
-      hostNic = "bridge21";
+      hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
       autostart = true;
       firmware = "efi"; 
@@ -104,7 +104,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='sda' bus='sata'/>
+          <target dev='hdc' bus='sata'/> 
           <readonly/>
         </disk>
         ${lib.concatStringsSep "\n" (
@@ -211,3 +211,4 @@ in
   systemd.services = allServices;
   systemd.paths = lib.mapAttrs (name: cfg: cfg.path) vmWatchers;
 }
+
