@@ -34,6 +34,7 @@
       ];
       kernelModules = [
         "kvm-amd"
+        "amdgpu"
       ];
     };
     zfs.extraPools = [ "zpool-xsvr1" ];

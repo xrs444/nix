@@ -11,7 +11,7 @@ let
       autostart = true;
       firmware = "efi";  # or "bios"
       storage = {
-        path = "/zfs/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
+        path = "/vm/v-xhac1/v-xhac1.qcow2";  # Path to existing image
       };
     }
     {
@@ -23,7 +23,7 @@ let
       autostart = true;
       firmware = "bios"; 
       storage = {
-        path = "/zfs/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
+        path = "/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
       };
     }
     {
@@ -35,7 +35,7 @@ let
       autostart = true;
       firmware = "bios"; 
       storage = {
-        path = "zfs/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
+        path = "/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
       };
     }
     {
@@ -47,7 +47,7 @@ let
       autostart = true;
       firmware = "efi"; 
       storage = {
-        path = "zfs/vm/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";  # Path to existing image
+        path = "/vm/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";  # Path to existing image
       };
       extraDrives = [
         {
