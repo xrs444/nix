@@ -19,18 +19,15 @@
 
   hardware = {
     cpu.amd.updateMicrocode = true;
-    graphics = {
-      enable = true;
-        enable32Bit = true;
-      };
-    nvidia = {
-      open = true;
-      modesetting.enable = true;
-      nvidiaSettings.enable = true;
-      powerManagement.enable = true;
-      };
-    };
-  
+    graphics.enable = true;
+#    nvidia = {
+#      open = true;
+#      modesetting.enable = true;
+#      nvidiaSettings.enable = true;
+#      powerManagement.enable = true;
+#      package = pkgs.linuxPackages.nvidiaPackages.stable;
+#   };
+  };
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
@@ -59,10 +56,17 @@
       ];
       kernelModules = [
         "kvm-amd"
+        "nvidia"
+        "amdgpu"
       ];
     };
   };
 
-  powerManagement.cpuFreqGovernor = "performance";
+  powerManagement.cpuFreqGovernor = "powersave";
+
+  services.xserver.videoDrivers = [ 
+#    "nvidia"
+    "amdgpu"
+  ];
 
 }
