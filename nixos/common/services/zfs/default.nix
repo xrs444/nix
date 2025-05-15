@@ -17,9 +17,15 @@ let
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
   boot.supportedFilesystems = [ "zfs" ];
-  environment.systemPackages = with pkgs; [
+  environment = {
+    systemPackages = with pkgs; [
     zfs
-  ];
+    ];
+    etc = {
+    "vm".source = "/zfs/vm";
+    "vm".target = "/vm";
+    };
+  }; 
   services.zfs = {
     autoScrub.enable = true;
   };
