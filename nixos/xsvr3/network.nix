@@ -45,7 +45,7 @@ systemd.network = {
           Name = "bond0.22";
          };
          vlanConfig.Id = 22;
-      };      
+      };     
       "25-bridge21" = {
         netdevConfig = {
           Kind = "bridge";
@@ -120,7 +120,7 @@ systemd.network = {
           "bond0.21"
           "bond0.16"
           "bond0.17"
-          "bondo.22"
+          "bond0.22"
         ];
       };
       "55-bond0.21" = {
