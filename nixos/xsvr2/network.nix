@@ -19,30 +19,26 @@
           LACPTransmitRate = "fast";
         };
       };
-      "20-vlan17" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "vlan17";
-         };
-         vlanConfig.Id = 17;
+      "20-bond0.22" = {
+        matchConfig.Name = "bond0.22";
+        networkConfig = {
+        Bridge = "bridge22";
+        LinkLocalAddressing = "no";
       };
-      "22-vlan22" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "vlan22";
-         };
-         vlanConfig.Id = 22;
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
       };
-      "20-bridge17" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge17";
-        };
-      };
-      "22-bridge22" = {
+      "30-bridge22" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge22";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
         };
       };
     };

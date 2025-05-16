@@ -45,7 +45,7 @@
           Kind = "vlan";
           Name = "bond0.22";
          };
-         vlanConfig.Id = 17;
+         vlanConfig.Id = 22;
       };      
       "25-bridge21" = {
         netdevConfig = {

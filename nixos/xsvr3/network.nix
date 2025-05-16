@@ -18,13 +18,13 @@
           LACPTransmitRate = "fast";
         };
       };
-      "22-vlan22" = {
+      "21-bond0.22" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "vlan22";
+          Name = "bond0.22";
          };
          vlanConfig.Id = 22;
-      };
+      };      
       "22-bridge22" = {
         netdevConfig = {
           Kind = "bridge";
@@ -56,6 +56,16 @@
         vlan = [
           "vlan22"
         ];
+      };
+      "45-bond0.22" = {
+        matchConfig.Name = "bond0.22";
+        networkConfig = {
+        Bridge = "bridge22";
+        LinkLocalAddressing = "no";
+      };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
       };
       "51-bridge22" = {
         matchConfig.Name = "bridge22";
