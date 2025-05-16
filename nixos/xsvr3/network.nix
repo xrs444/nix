@@ -3,10 +3,10 @@
 
   networking.useNetworkd = true;
   
-  systemd.network = {
+systemd.network = {
     enable = true;
     netdevs = {
-      "10-bond0" = {
+      "5-bond0" = {
         netdevConfig = {
           Kind = "bond";
           Name = "bond0";
@@ -18,20 +18,83 @@
           LACPTransmitRate = "fast";
         };
       };
-      "21-bond0.22" = {
+      "10-bond0.21" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.21";
+         };
+        vlanConfig.Id = 21;
+      };
+      "15-bond0.16" = {
+        netdevConfig = {
+          Kind = "vlan";
+         Name = "bond0.16";
+         };
+         vlanConfig.Id = 16;
+      };
+     "20-bond0.17" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.17";
+         };
+         vlanConfig.Id = 17;
+      };
+     "21-bond0.22" = {
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.22";
          };
          vlanConfig.Id = 22;
       };      
-      "22-bridge22" = {
+      "25-bridge21" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge21";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
+      "26-bridge22" = {
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge22";
         };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
       };
-    };
+      "30-bridge16" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge16";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
+      "35-bridge17" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge17";
+        };
+        bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
+      };
+   };
     networks = {
       "20-enp1s0f0" = {
         matchConfig.Name = "enp1s0f0";
@@ -47,17 +110,30 @@
           DHCP = "no";
         };
       };
-      "40-bond0" = {
+      "50-bond0" = {
         matchConfig.Name = "bond0";
         networkConfig = {
-          DHCP = "ipv4";
+          DHCP = "yes";
           IPv6AcceptRA = true;
         };
         vlan = [
-          "vlan22"
+          "bond0.21"
+          "bond0.16"
+          "bond0.17"
+          "bondo.22"
         ];
       };
-      "45-bond0.22" = {
+      "55-bond0.21" = {
+        matchConfig.Name = "bond0.21";
+        networkConfig = {
+        Bridge = "bridge21";
+        LinkLocalAddressing = "no";
+      };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
+      "55-bond0.22" = {
         matchConfig.Name = "bond0.22";
         networkConfig = {
         Bridge = "bridge22";
@@ -67,9 +143,67 @@
           RequiredForOnline = "carrier";
        };
       };
-      "51-bridge22" = {
+      "60-bond0.17" = {
+        matchConfig.Name = "bond0.17";
+        networkConfig = {
+          Bridge = "bridge17";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
+
+     "65-bond0.16" = {
+        matchConfig.Name = "bond0.16";
+       networkConfig ={ 
+          Bridge = "bridge16";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+     "70-bridge21" = {
+        matchConfig.Name = "bridge21";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+     "71-bridge22" = {
         matchConfig.Name = "bridge22";
         bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "75-bridge16" = {
+        matchConfig.Name = "bridge16";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "80-bridge17" = {
+        matchConfig.Name = "bridge17";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
