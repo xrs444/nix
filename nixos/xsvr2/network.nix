@@ -22,14 +22,14 @@
       "20-vlan17" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "vlan-17";
+          Name = "vlan17";
          };
          vlanConfig.Id = 17;
       };
       "22-vlan22" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "vlan-22";
+          Name = "vlan22";
          };
          vlanConfig.Id = 22;
       };
