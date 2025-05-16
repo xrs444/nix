@@ -115,7 +115,7 @@
           "bond0.21"
           "bond0.16"
           "bond0.17"
-          "bondo.22"
+          "bond0.22"
         ];
       };
       "55-bond0.21" = {
@@ -148,7 +148,6 @@
           RequiredForOnline = "carrier";
        };
       };
-
      "65-bond0.16" = {
         matchConfig.Name = "bond0.16";
        networkConfig ={ 
