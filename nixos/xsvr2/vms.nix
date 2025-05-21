@@ -6,7 +6,8 @@ let
       name = "v-k8s-xsvr2";
       vcpu = "4";
       memory = "16";
-      hostNic = " bridge22";
+      nicType = "macvtap";
+      hostNic = "bond0.22";
       mac = "52:54:00:8d:2e:fe";
       autostart = true;
       firmware = "efi";
@@ -68,7 +69,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='hdc' bus='sata'/>
+          <target dev='hdc' bus='sata'/> 
           <readonly/>
         </disk>
         ${lib.concatStringsSep "\n" (
@@ -76,11 +77,21 @@ let
             if vm ? extraDrives && vm.extraDrives != null then vm.extraDrives else []
           )
         )}
-        <interface type='bridge'>
-          <source bridge='${vm.hostNic}'/>
-          <mac address='${vm.mac}'/>
-          <model type='virtio'/>
-        </interface>
+        ${
+          if (vm.nicType or "bridge") == "macvtap" then ''
+            <interface type='direct' trustGuestRxFilters='yes'>
+              <source dev='${vm.hostNic}' mode='bridge'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          '' else ''
+            <interface type='bridge'>
+              <source bridge='${vm.hostNic}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          ''
+        }
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>
