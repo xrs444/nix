@@ -139,7 +139,7 @@
           Promiscuous= true;
         };
         bridgeConfig = {
-          HairPin = true; # Enable hairpin mode
+#          HairPin = true; # Enable hairpin mode
         };
       };
       "60-bond0.17" = {
