@@ -46,6 +46,5 @@
 
   powerManagement.cpuFreqGovernor = "performance";
   
-networking.firewall.enable = false;
 
 }

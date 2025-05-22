@@ -66,7 +66,7 @@
   powerManagement.cpuFreqGovernor = "powersave";
 
   services.xserver.videoDrivers = [ 
-#    "nvidia"
+#   "nvidia"
     "amdgpu"
   ];
 

@@ -133,6 +133,16 @@ systemd.network = {
           RequiredForOnline = "carrier";
        };
       };
+      "55-bond0.22" = {
+        matchConfig.Name = "bond0.22";
+        networkConfig = {
+        Bridge = "bridge22";
+        LinkLocalAddressing = "no";
+      };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+       };
+      };
       "60-bond0.17" = {
         matchConfig.Name = "bond0.17";
         networkConfig = {
@@ -156,6 +166,17 @@ systemd.network = {
       };
      "70-bridge21" = {
         matchConfig.Name = "bridge21";
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+     "71-bridge22" = {
+        matchConfig.Name = "bridge22";
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
