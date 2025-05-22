@@ -128,15 +128,15 @@
           RequiredForOnline = "carrier";
        };
       };
-      "55-bond0.22" = {
+      "57-bond0.22" = {
         matchConfig.Name = "bond0.22";
         networkConfig = {
           Bridge = "bridge22";
           LinkLocalAddressing = "no";
-          ProxyARP = true; # Enable proxy ARP
         };
         linkConfig = {
           RequiredForOnline = "carrier";
+          Promiscuous= true;
         };
         bridgeConfig = {
           HairPin = true; # Enable hairpin mode

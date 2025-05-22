@@ -133,15 +133,15 @@ systemd.network = {
           RequiredForOnline = "carrier";
        };
       };
-      "55-bond0.22" = {
+      "57-bond0.22" = {
         matchConfig.Name = "bond0.22";
         networkConfig = {
           Bridge = "bridge22";
           LinkLocalAddressing = "no";
-          ProxyARP = true; # Enable proxy ARP
         };
         linkConfig = {
           RequiredForOnline = "carrier";
+          Promiscuous= true;
         };
         bridgeConfig = {
           HairPin = true; # Enable hairpin mode
@@ -160,7 +160,7 @@ systemd.network = {
 
      "65-bond0.16" = {
         matchConfig.Name = "bond0.16";
-       networkConfig ={ 
+        networkConfig ={ 
           Bridge = "bridge16";
           LinkLocalAddressing = "no";
         };
