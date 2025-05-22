@@ -109,7 +109,12 @@
           isWorkstation
           ;
       };
-      modules = [ ../darwin ];
+      modules = [
+        # Wrap the import so it gets the right arguments
+        ({ config, pkgs, ... }@args: import ../darwin (args // {
+          inherit inputs outputs desktop hostname platform username;
+        }))
+      ];
     };
 
   forAllSystems = inputs.nixpkgs.lib.genAttrs [
