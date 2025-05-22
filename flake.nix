@@ -84,15 +84,16 @@
       xdt1-t = lib.mkNixos {
         hostname = "xdt1-t";
         desktop = "gnome";
+      };
     };
 
     # macOS machines
     darwinConfigurations = {
       xlt1-t = lib.mkDarwin {
         hostname = "xlt1-t";
-        username = "thomas-local";  # Specify username if different from default
-        desktop = "aqua";  # Optional, defaults to "aqua"
-        platform = "aarch64-darwin";  # Optional, this is the default
+        username = "thomas-local";
+        desktop = "aqua";
+        platform = "aarch64-darwin";
       };
     };
 
@@ -101,5 +102,4 @@
     nixosModules = import ./modules/nixos;
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
   };
-};
 }
