@@ -38,7 +38,11 @@
     zfs.extraPools = [ "zpool-xsvr2" ];    
     swraid = {
       enable = true;
+      mdadmConf = ''
+        MAILADDR xrs444@xrs444.net
+      '';
     };
+  };
   };
   powerManagement.cpuFreqGovernor = "performance";
 }
