@@ -6,8 +6,8 @@ let
       name = "v-k8s-xsvr2";
       vcpu = "4";
       memory = "16";
-      nicType = "macvtap";
-      hostNic = "bond0.22";
+      nicType = "bridge";
+      hostNic = "bridge22";
       mac = "52:54:00:8d:2e:fe";
       autostart = true;
       firmware = "efi";

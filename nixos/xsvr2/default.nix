@@ -38,7 +38,6 @@
     zfs.extraPools = [ "zpool-xsvr2" ];    
     swraid = {
       enable = true;
-      mdadmConf = "PROGRAM=true";
     };
   };
   powerManagement.cpuFreqGovernor = "performance";

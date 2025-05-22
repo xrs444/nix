@@ -20,7 +20,6 @@
   hardware.cpu.amd.updateMicrocode = true;
   nixpkgs.hostPlatform = "x86_64-linux";
 
-
   boot = {
     loader.systemd-boot.enable = true;
     kernel.sysctl."net.ipv4.ip_forward" = 1;
@@ -42,7 +41,6 @@
     zfs.extraPools = [ "zpool-xsvr1" ];
     swraid = {
       enable = true;
-      mdadmConf = "PROGRAM=true";
     };
   };
 
