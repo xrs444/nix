@@ -91,7 +91,7 @@
     ];
   };
 
-  networking.nftables.enable = true;
+  # networking.nftables.enable = true;
   networking.firewall.allowPing = true;
 
   services.resolved = {
