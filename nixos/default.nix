@@ -92,12 +92,13 @@
   };
 
   networking.nftables.enable = true;
+  networking.firewall.allowPing = true;
+
   services.resolved = {
     enable = true;
     domains = [ "x.xrs444.net" ];
+    fallbackDns = [ "172.18.10.250" ];
   };
-
-  services.resolved.fallbackDns = [ "172.18.10.250" ];
 
   nix = 
   let
