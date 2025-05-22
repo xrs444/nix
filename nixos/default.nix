@@ -91,8 +91,7 @@
     ];
   };
 
-  # networking.nftables.enable = true;
-
+  networking.nftables.enable = false;
   networking.firewall.enable = false;
   networking.firewall.allowPing = true;
 
