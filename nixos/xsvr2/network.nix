@@ -4,7 +4,7 @@
   networking.hostId = "8f9996ca";
   networking.useNetworkd = true;
 
-    systemd.network = {
+  systemd.network = {
     enable = true;
     netdevs = {
       "5-bond0" = {
@@ -46,7 +46,7 @@
           Name = "bond0.22";
          };
          vlanConfig.Id = 22;
-      };      
+      };
       "25-bridge21" = {
         netdevConfig = {
           Kind = "bridge";
@@ -209,4 +209,3 @@
     };
   };
 }
-

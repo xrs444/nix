@@ -46,7 +46,7 @@
           Name = "bond0.22";
          };
          vlanConfig.Id = 22;
-      };     
+      };
       "25-bridge21" = {
         netdevConfig = {
           Kind = "bridge";
@@ -152,7 +152,6 @@
           RequiredForOnline = "carrier";
        };
       };
-
      "65-bond0.16" = {
         matchConfig.Name = "bond0.16";
        networkConfig ={ 
