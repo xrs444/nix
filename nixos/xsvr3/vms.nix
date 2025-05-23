@@ -6,7 +6,7 @@ let
       name = "v-k8s-xsvr3";
       vcpu = "4";
       memory = "16";
-      nicType = "bridge";
+      nicType = "macvtap";
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ff";
       autostart = true;
