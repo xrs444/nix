@@ -138,9 +138,6 @@
           RequiredForOnline = "carrier";
           Promiscuous= true;
         };
-        bridgeConfig = {
-#          HairPin = true; # Enable hairpin mode
-        };
       };
       "60-bond0.17" = {
         matchConfig.Name = "bond0.17";
