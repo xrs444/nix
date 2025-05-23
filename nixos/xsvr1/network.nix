@@ -68,7 +68,7 @@
           ForwardDelaySec = 0;
           HelloTimeSec = 2;
           AgeingTimeSec = 300;
-          STP = false;
+          STP = true;
         };
       };
       "30-bridge16" = {
