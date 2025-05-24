@@ -1,8 +1,11 @@
 { pkgs, lib, ... }:
 {
 
-  networking.useNetworkd = true;
-  
+  networking = {
+    useNetworkd = true;
+    interfaces."bond0.22".proxyARP = true;
+  };
+
 systemd.network = {
     enable = true;
     netdevs = {

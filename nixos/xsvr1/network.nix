@@ -1,8 +1,11 @@
 { pkgs, lib, ... }:
 {
 
-  networking.hostId = "0814bb9a";
-  networking.useNetworkd = true;
+  networking = {
+    hostId = "0814bb9a";
+    useNetworkd = true;
+    interfaces."bond0.22".proxyARP = true;
+  };
 
   systemd.network = {
     enable = true;
