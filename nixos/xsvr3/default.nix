@@ -24,6 +24,7 @@
   boot = {
     loader.systemd-boot.enable = true;
     kernel.sysctl."net.ipv4.ip_forward" = lib.mkForce 1;
+    kernel.sysctl."net.ipv4.proxy_arp" = lib.mkForce 1;
 
     initrd = {
       availableKernelModules = [
