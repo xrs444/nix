@@ -62,18 +62,6 @@ systemd.network = {
           STP = false;
         };
       };
-      "26-bridge22" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge22";
-        };
-        bridgeConfig = {
-          ForwardDelaySec = 0;
-          HelloTimeSec = 2;
-          AgeingTimeSec = 300;
-          STP = false;
-        };
-      };
       "30-bridge16" = {
         netdevConfig = {
           Kind = "bridge";
@@ -137,17 +125,6 @@ systemd.network = {
           RequiredForOnline = "carrier";
        };
       };
-      "57-bond0.22" = {
-        matchConfig.Name = "bond0.22";
-        networkConfig = {
-          Bridge = "bridge22";
-          LinkLocalAddressing = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-          Promiscuous= true;
-        };
-      };
       "60-bond0.17" = {
         matchConfig.Name = "bond0.17";
         networkConfig = {
@@ -171,17 +148,6 @@ systemd.network = {
       };
      "70-bridge21" = {
         matchConfig.Name = "bridge21";
-        bridgeConfig = {};
-        networkConfig = {
-          LinkLocalAddressing = "no";
-          IPMasquerade = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-     "71-bridge22" = {
-        matchConfig.Name = "bridge22";
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
