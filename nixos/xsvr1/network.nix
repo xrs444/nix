@@ -188,6 +188,11 @@
         matchConfig.Name = "bond0.22";
         networkConfig = {
           Bridge = "bridge22";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+          Promiscuous = true;
         };
       };
       "90-bridge22" = {
