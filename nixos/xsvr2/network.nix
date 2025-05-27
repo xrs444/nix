@@ -5,7 +5,8 @@
     hostId = "8f9996ca";
     useNetworkd = true;
     interfaces."bond0.22".proxyARP = true;
-    interfaces."bridge22".proxyARP = true;
+    interfaces."bond0.22".acceptLocal = true;
+    
   };
 
   systemd.network = {

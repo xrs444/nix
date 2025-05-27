@@ -5,7 +5,7 @@
     hostId = "0814bb9a";
     useNetworkd = true;
     interfaces."bond0.22".proxyARP = true;
-    interfaces."bridge22".proxyARP = true;
+    interfaces."bond0.22".acceptLocal = true; # <--- Add this line
   };
 
   systemd.network = {
@@ -142,17 +142,6 @@
       };
      "70-bridge21" = {
         matchConfig.Name = "bridge21";
-        bridgeConfig = {};
-        networkConfig = {
-          LinkLocalAddressing = "no";
-          IPMasquerade = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-     "71-bridge22" = {
-        matchConfig.Name = "bridge22";
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
