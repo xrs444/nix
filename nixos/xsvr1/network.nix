@@ -86,6 +86,12 @@
           STP = false;
         };
       };
+      "40-bridge22" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = "bridge22";
+        };
+      };
    };
     networks = {
       "40-enp3s0f0" = {
@@ -174,7 +180,13 @@
       };
       "85-bond0.22" = {
         matchConfig.Name = "bond0.22";
-        networkConfig.AcceptLocal = true;
+        networkConfig.Bridge = "bridge22";
+        networkConfig.ARP = true;
+      };
+      "90-bridge22" = {
+        matchConfig.Name = "bridge22";
+        networkConfig.ARP = true;
+        # Optionally, add more bridge settings here
       };
     };
   };
