@@ -91,7 +91,12 @@
           Kind = "bridge";
           Name = "bridge22";
         };
-        # Add bridgeConfig if needed
+          bridgeConfig = {
+          ForwardDelaySec = 0;
+          HelloTimeSec = 2;
+          AgeingTimeSec = 300;
+          STP = false;
+        };
       };
     };
     networks = {
@@ -179,7 +184,6 @@
           RequiredForOnline = "carrier";
         };
       };
-      # Removed invalid ARP options from here
       "85-bond0.22" = {
         matchConfig.Name = "bond0.22";
         networkConfig = {
@@ -188,7 +192,14 @@
       };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
-        # Optionally, add more bridge settings here
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
       };
     };
   };

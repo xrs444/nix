@@ -202,7 +202,14 @@
       };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
-        # Optionally, add more bridge settings here
+        bridgeConfig = {};
+        networkConfig = {
+          LinkLocalAddressing = "no";
+          IPMasquerade = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
       };
     };
   };
