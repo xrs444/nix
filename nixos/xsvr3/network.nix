@@ -4,7 +4,6 @@
   networking = {
     useNetworkd = true;
     interfaces."bond0.22".proxyARP = true;
-    interfaces."bond0.22".acceptLocal = true;
   };
 
 systemd.network = {
@@ -178,6 +177,10 @@ systemd.network = {
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+      };
+      "85-bond0.22" = {
+        matchConfig.Name = "bond0.22";
+        networkConfig.AcceptLocal = true;
       };
     };
   };
