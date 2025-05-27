@@ -5,7 +5,6 @@
     hostId = "8f9996ca";
     useNetworkd = true;
     interfaces."bond0.22".proxyARP = true;
-    
   };
 
   systemd.network = {
@@ -27,29 +26,29 @@
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.21";
-         };
+        };
         vlanConfig.Id = 21;
       };
       "15-bond0.16" = {
         netdevConfig = {
           Kind = "vlan";
-         Name = "bond0.16";
-         };
-         vlanConfig.Id = 16;
+          Name = "bond0.16";
+        };
+        vlanConfig.Id = 16;
       };
-     "20-bond0.17" = {
+      "20-bond0.17" = {
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.17";
-         };
-         vlanConfig.Id = 17;
+        };
+        vlanConfig.Id = 17;
       };
-     "21-bond0.22" = {
+      "21-bond0.22" = {
         netdevConfig = {
           Kind = "vlan";
           Name = "bond0.22";
-         };
-         vlanConfig.Id = 22;
+        };
+        vlanConfig.Id = 22;
       };
       "25-bridge21" = {
         netdevConfig = {
@@ -99,7 +98,7 @@
           STP = false;
         };
       };
-   };
+    };
     networks = {
       "30-enp2s0f0" = {
         matchConfig.Name = "enp2s0f0";
@@ -125,12 +124,12 @@
       "55-bond0.21" = {
         matchConfig.Name = "bond0.21";
         networkConfig = {
-        Bridge = "bridge21";
-        LinkLocalAddressing = "no";
-      };
+          Bridge = "bridge21";
+          LinkLocalAddressing = "no";
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
-       };
+        };
       };
       "57-bond0.22" = {
         matchConfig.Name = "bond0.22";
@@ -140,7 +139,7 @@
         };
         linkConfig = {
           RequiredForOnline = "carrier";
-          Promiscuous= true;
+          Promiscuous = true;
         };
       };
       "60-bond0.17" = {
@@ -151,11 +150,11 @@
         };
         linkConfig = {
           RequiredForOnline = "carrier";
-       };
+        };
       };
-     "65-bond0.16" = {
+      "65-bond0.16" = {
         matchConfig.Name = "bond0.16";
-       networkConfig ={ 
+        networkConfig = { 
           Bridge = "bridge16";
           LinkLocalAddressing = "no";
         };
@@ -163,7 +162,7 @@
           RequiredForOnline = "carrier";
         };
       };
-     "70-bridge21" = {
+      "70-bridge21" = {
         matchConfig.Name = "bridge21";
         bridgeConfig = {};
         networkConfig = {
@@ -196,14 +195,8 @@
           RequiredForOnline = "carrier";
         };
       };
-      "85-bond0.22" = {
-        matchConfig.Name = "bond0.22";
-        networkConfig.Bridge = "bridge22";
-        networkConfig.ARP = true;
-      };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
-        networkConfig.ARP = true;
         # Optionally, add more bridge settings here
       };
     };
