@@ -34,7 +34,6 @@
       ];
       kernelModules = [
         "kvm-intel"
-        "arp" 
       ];
     };
     zfs.extraPools = [ "zpool-xsvr2" ];    
