@@ -22,7 +22,7 @@
   boot = {
     loader.systemd-boot.enable = true;
     kernel.sysctl."net.ipv4.ip_forward" = 1;
-    kernel.sysctl."net.ipv4.proxy_arp" = lib.mkForce 1;
+    kernel.sysctl."net.ipv4.conf.all.proxy_arp" = 1;
 
     initrd = {
       availableKernelModules = [
@@ -33,7 +33,8 @@
         "sd_mod" 
       ];
       kernelModules = [
-        "kvm-intel" 
+        "kvm-intel"
+        "arp" 
       ];
     };
     zfs.extraPools = [ "zpool-xsvr2" ];    
