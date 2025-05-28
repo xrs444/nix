@@ -8,25 +8,25 @@
   systemd.network = {
     enable = true;
     netdevs = {
-      # VLANs on enp2s0f0
-      "10-enp2s0f0.21" = {
+      # VLANs on enp3s0f0
+      "10-enp3s0f0.21" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "enp2s0f0.21";
+          Name = "enp3s0f0.21";
         };
         vlanConfig.Id = 21;
       };
-      "15-enp2s0f0.16" = {
+      "15-enp3s0f0.16" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "enp2s0f0.16";
+          Name = "enp3s0f0.16";
         };
         vlanConfig.Id = 16;
       };
-      "20-enp2s0f0.17" = {
+      "20-enp3s0f0.17" = {
         netdevConfig = {
           Kind = "vlan";
-          Name = "enp2s0f0.17";
+          Name = "enp3s0f0.17";
         };
         vlanConfig.Id = 17;
       };
@@ -70,8 +70,8 @@
     };
     networks = {
       # Attach VLANs to physical NIC
-      "10-enp2s0f0.21" = {
-        matchConfig.Name = "enp2s0f0.21";
+      "10-enp3s0f0.21" = {
+        matchConfig.Name = "enp3s0f0.21";
         networkConfig = {
           Bridge = "bridge21";
           LinkLocalAddressing = "no";
@@ -80,8 +80,8 @@
           RequiredForOnline = "carrier";
         };
       };
-      "15-enp2s0f0.16" = {
-        matchConfig.Name = "enp2s0f0.16";
+      "15-enp3s0f0.16" = {
+        matchConfig.Name = "enp3s0f0.16";
         networkConfig = {
           Bridge = "bridge16";
           LinkLocalAddressing = "no";
@@ -90,8 +90,8 @@
           RequiredForOnline = "carrier";
         };
       };
-      "20-enp2s0f0.17" = {
-        matchConfig.Name = "enp2s0f0.17";
+      "20-enp3s0f0.17" = {
+        matchConfig.Name = "enp3s0f0.17";
         networkConfig = {
           Bridge = "bridge17";
           LinkLocalAddressing = "no";
