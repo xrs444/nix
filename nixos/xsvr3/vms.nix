@@ -6,8 +6,8 @@ let
       name = "v-k8s-xsvr3";
       vcpu = "4";
       memory = "16";
-      nicType = "bridge";
-      hostNic = "bridge22";
+      nicType = "direct";
+      hostNic = "enp2s0f1";
       mac = "52:54:00:8d:2e:ff";
       autostart = true;
       firmware = "efi";
@@ -23,11 +23,8 @@ let
           driverType = "raw";
         }
       ];
-      withVnic = false; # Set to true to enable the virtual NIC
-      pciDevices = [
-        # Example PCI device for passthrough (replace with your actual values)
-        { domain = "0x0000"; bus = "0x01"; slot = "0x00"; function = "0x1"; }
-      ];
+      withVnic = true; # Set to true to enable the virtual NIC
+      pciDevices = [];
     }
   ];
 
@@ -95,13 +92,27 @@ let
             if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else []
           )
         )}
-        ${if vm.withVnic or true then ''
-          <interface type='bridge'>
-            <source bridge='${vm.hostNic}'/>
-            <mac address='${vm.mac}'/>
-            <model type='virtio'/>
-          </interface>
-        '' else ""}
+        ${if vm.withVnic or true then
+          if vm.nicType == "macvtap" then ''
+            <interface type='macvtap'>
+              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          '' else if vm.nicType == "direct" then ''
+            <interface type='direct' trustGuestRxFilters="yes">
+              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          '' else ''
+            <interface type='bridge'>
+              <source bridge='${vm.hostNic}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          ''
+        else ""}
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>

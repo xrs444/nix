@@ -6,9 +6,9 @@ let
       name = "v-xhac1";
       vcpu = "4";
       memory = "8";
-      hostNic = "bridge17";
       nicType = "bridge"; # or "macvtap"
-      mac = "52:54:00:00:00:01";
+      hostNic = "bridge17";
+      mac = "52:54:00:00:00:10";
       autostart = true;
       firmware = "efi";
       withVnic = true;
@@ -22,12 +22,12 @@ let
       memory = "6";
       nicType = "bridge";
       hostNic = "bridge16";
-      mac = "52:54:00:c7:8c:08";
+      mac = "52:54:00:c7:8c:80";
       autostart = true;
       firmware = "bios";
       withVnic = true;
       storage = {
-        path = "/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
+        path = "/vm/v-xpbx1/v-xpbx1.qcow2";
       };
     }
     {
@@ -40,15 +40,15 @@ let
       autostart = true;
       firmware = "bios"; 
       storage = {
-        path = "/vm/v-xwifi1/v-xwifi1.qcow2";  # Path to existing image
+        path = "/vm/v-xwifi1/v-xwifi1.qcow2";
       };
     }
     {
       name = "v-k8s-xsvr1";
       vcpu = "4";
       memory = "16";
-      nicType = "bridge";
-      hostNic = "bridge22";
+      nicType = "direct"; # or "bridge"
+      hostNic = "enp2s0f1";
       mac = "52:54:00:8d:2e:ef";
       autostart = true;
       firmware = "efi";
@@ -65,10 +65,7 @@ let
         }
       ];
       withVnic = false; # Set to true to enable the virtual NIC
-      pciDevices = [
-        # Example PCI device for passthrough (replace with your actual values)
-        { domain = "0x0000"; bus = "0x0a"; slot = "0x00"; function = "0x0"; }
-      ];
+      pciDevices = [];
     }
   ];
 
@@ -136,13 +133,27 @@ let
             if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else []
           )
         )}
-        ${if vm.withVnic or true then ''
-          <interface type='bridge'>
-            <source bridge='${vm.hostNic}'/>
-            <mac address='${vm.mac}'/>
-            <model type='virtio'/>
-          </interface>
-        '' else ""}
+        ${if vm.withVnic or true then
+          if vm.nicType == "macvtap" then ''
+            <interface type='macvtap'>
+              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          '' else if vm.nicType == "direct" then ''
+            <interface type='direct' trustGuestRxFilters="yes">
+              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          '' else ''
+            <interface type='bridge'>
+              <source bridge='${vm.hostNic}'/>
+              <mac address='${vm.mac}'/>
+              <model type='virtio'/>
+            </interface>
+          ''
+        else ""}
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>
