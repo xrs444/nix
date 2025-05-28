@@ -49,9 +49,9 @@ let
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
       autostart = true;
-      firmware = "efi"; 
+      firmware = "efi";
       storage = {
-        path = "/vm/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";  # Path to existing image
+        path = "/vm/v-k8s-xsvr3/v-k8s-xsvr1.qcow2";
       };
       extraDrives = [
         {
@@ -61,6 +61,11 @@ let
           target = "sdb";
           driverType = "raw";
         }
+      ];
+      withVnic = false; # Set to true to enable the virtual NIC
+      pciDevices = [
+        # Example PCI device for passthrough (replace with your actual values)
+        { domain = "0x0000"; bus = "0x0a"; slot = "0x00"; function = "0x0"; }
       ];
     }
   ];
@@ -72,6 +77,14 @@ let
       <target dev='${drive.target or "sdb"}' bus='${drive.bus or "sata"}'/>
       <address type='drive'/>
     </disk>
+  '';
+
+  makePciHostdevXml = pci: ''
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+        <address domain='${pci.domain}' bus='${pci.bus}' slot='${pci.slot}' function='${pci.function}'/>
+      </source>
+    </hostdev>
   '';
 
   # Function to generate VM XML content
@@ -108,7 +121,7 @@ let
           <target dev='vda' bus='virtio'/>
         </disk>
         <disk type='file' device='cdrom'>
-          <target dev='hdc' bus='sata'/> 
+          <target dev='hdc' bus='sata'/>
           <readonly/>
         </disk>
         ${lib.concatStringsSep "\n" (
@@ -116,21 +129,18 @@ let
             if vm ? extraDrives && vm.extraDrives != null then vm.extraDrives else []
           )
         )}
-        ${
-          if (vm.nicType or "bridge") == "macvtap" then ''
-            <interface type='direct' trustGuestRxFilters='yes'>
-              <source dev='${vm.hostNic}' mode='bridge'/>
-              <mac address='${vm.mac}'/>
-              <model type='virtio'/>
-            </interface>
-          '' else ''
-            <interface type='bridge'>
-              <source bridge='${vm.hostNic}'/>
-              <mac address='${vm.mac}'/>
-              <model type='virtio'/>
-            </interface>
-          ''
-        }
+        ${lib.concatStringsSep "\n" (
+          map makePciHostdevXml (
+            if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else []
+          )
+        )}
+        ${if vm.withVnic or true then ''
+          <interface type='bridge'>
+            <source bridge='${vm.hostNic}'/>
+            <mac address='${vm.mac}'/>
+            <model type='virtio'/>
+          </interface>
+        '' else ""}
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>
@@ -225,4 +235,3 @@ in
   systemd.services = allServices;
   systemd.paths = lib.mapAttrs (name: cfg: cfg.path) vmWatchers;
 }
-

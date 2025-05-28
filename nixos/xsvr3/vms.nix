@@ -23,6 +23,11 @@ let
           driverType = "raw";
         }
       ];
+      withVnic = false; # Set to true to enable the virtual NIC
+      pciDevices = [
+        # Example PCI device for passthrough (replace with your actual values)
+        { domain = "0x0000"; bus = "0x01"; slot = "0x00"; function = "0x1"; }
+      ];
     }
   ];
 
@@ -33,6 +38,14 @@ let
       <target dev='${drive.target or "sdb"}' bus='${drive.bus or "sata"}'/>
       <address type='drive'/>
     </disk>
+  '';
+
+  makePciHostdevXml = pci: ''
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+        <address domain='${pci.domain}' bus='${pci.bus}' slot='${pci.slot}' function='${pci.function}'/>
+      </source>
+    </hostdev>
   '';
 
   # Function to generate VM XML content
@@ -77,11 +90,18 @@ let
             if vm ? extraDrives && vm.extraDrives != null then vm.extraDrives else []
           )
         )}
-        <interface type='bridge'>
-          <source bridge='${vm.hostNic}'/>
-          <mac address='${vm.mac}'/>
-          <model type='virtio'/>
-        </interface>
+        ${lib.concatStringsSep "\n" (
+          map makePciHostdevXml (
+            if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else []
+          )
+        )}
+        ${if vm.withVnic or true then ''
+          <interface type='bridge'>
+            <source bridge='${vm.hostNic}'/>
+            <mac address='${vm.mac}'/>
+            <model type='virtio'/>
+          </interface>
+        '' else ""}
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>
