@@ -12,7 +12,7 @@ let
       autostart = true;
       firmware = "efi";
       storage = {
-        path = "/vm/v-k8s-xsvr3/v-k8s-xsvr2.qcow2";
+        path = "/vm/v-k8s-xsvr2/v-k8s-xsvr2.qcow2";
       };
       extraDrives = [
         {
