@@ -78,6 +78,11 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+        vlan = [
+          "enp1s0f0.21"
+          "enp1s0f0.16"
+          "enp1s0f0.17"
+        ];
       };
       # Attach VLANs to physical NIC
       "10-enp1s0f0.21" = {

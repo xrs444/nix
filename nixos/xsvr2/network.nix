@@ -79,6 +79,7 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+        
       };
       # Attach VLANs to physical NIC
       "10-enp2s0f0.21" = {
@@ -90,6 +91,11 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+        vlan = [
+          "enp2s0f0.21"
+          "enp2s0f0.16"
+          "enp2s0f0.17"
+        ];
       };
       "15-enp2s0f0.16" = {
         matchConfig.Name = "enp2s0f0.16";
