@@ -31,7 +31,7 @@ let
   allNodeIPs = lib.attrValues (lib.mapAttrs (name: cfg: cfg.ip) nodeConfigs);
   
   # VIP configuration
-  vipAddress = "172.20.1.100";
+  vipAddress = "172.20.1.101";
   metallbASN = 65001;
   frrASN = 65000;
 
