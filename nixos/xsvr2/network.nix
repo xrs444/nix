@@ -69,6 +69,16 @@
       };
     };
     networks = {
+      # Parent interface for VLANs
+      "00-enp2s0f0" = {
+        matchConfig.Name = "enp3s0f0";
+        networkConfig = {
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
       # Attach VLANs to physical NIC
       "10-enp2s0f0.21" = {
         matchConfig.Name = "enp2s0f0.21";
