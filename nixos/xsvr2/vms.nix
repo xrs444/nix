@@ -16,7 +16,7 @@ let
       };
       extraDrives = [
         {
-          path = "/dev/disk/by-id/CT1000MX500SSD1_2323E6E0F5AD";
+          path = "/dev/disk/by-id/ata-CT1000MX500SSD1_2323E6E0F5AD";
           device = "disk";
           bus = "sata";
           target = "sdb";

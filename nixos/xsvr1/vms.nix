@@ -11,6 +11,7 @@ let
       mac = "52:54:00:00:00:01";
       autostart = true;
       firmware = "efi";
+      withVnic = true;
       storage = {
         path = "/vm/v-xhac1/v-xhac1.qcow2";
       };
@@ -23,7 +24,8 @@ let
       hostNic = "bridge16";
       mac = "52:54:00:c7:8c:08";
       autostart = true;
-      firmware = "bios"; 
+      firmware = "bios";
+      withVnic = true;
       storage = {
         path = "/vm/v-xpbx1/v-xpbx1.qcow2";  # Path to existing image
       };
