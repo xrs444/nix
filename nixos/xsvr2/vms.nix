@@ -6,8 +6,8 @@ let
       name = "v-k8s-xsvr2";
       vcpu = "4";
       memory = "16";
-      nicType = "direct";
-      hostNic = "enp2s0f1"; # Use the VLAN interface for direct mode
+      nicType = "bridge";
+      hostNic = "bridge22"; # Use the VLAN interface for direct mode
       mac = "52:54:00:8d:2e:fe";
       autostart = true;
       firmware = "efi";
@@ -24,10 +24,7 @@ let
         }
       ];
       withVnic = false; # Set to true to enable the virtual NIC
-      pciDevices = [
-        # Example PCI device for passthrough (replace with your actual values)
-        { domain = "0x0000"; bus = "0x02"; slot = "0x00"; function = "0x1"; }
-      ];
+      pciDevices = [];
     }
   ];
 

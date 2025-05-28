@@ -47,8 +47,8 @@ let
       name = "v-k8s-xsvr1";
       vcpu = "4";
       memory = "16";
-      nicType = "direct"; # or "bridge"
-      hostNic = "enp2s0f1";
+      nicType = "bridge"; # or "bridge"
+      hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
       autostart = true;
       firmware = "efi";
