@@ -1,5 +1,10 @@
-# flake.nix or shared configuration module
-{ config, lib, pkgs, hostname, ... }:
+{
+  config,
+  hostname,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # Define node-specific configurations
@@ -24,93 +29,94 @@ let
     };
   };
 
-  # Get current node config based on hostname
-  currentNode = nodeConfigs.${hostName};
-  
-  # All node IPs for BGP neighbors
-  allNodeIPs = lib.attrValues (lib.mapAttrs (name: cfg: cfg.ip) nodeConfigs);
-  
-  # VIP configuration
-  vipAddress = "172.20.1.101";
-  metallbASN = 65001;
-  frrASN = 65000;
+  frrASN = 65000;         # <-- Add your ASN here
+  metallbASN = 65001;     # <-- Add your MetalLB ASN here
+  vipAddress = "172.20.1.101"; # <-- Add your VIP address here
 
-in {
-  # Enable FRR routing daemon
-  services.frr = {
-    enable = true;
-    bgp.enable = true;
-    config = ''
-      frr version 8.4
-      frr defaults traditional
-      hostname ${hostName}
-      log syslog informational
-      no ipv6 forwarding
-      service integrated-vtysh-config
-      !
-      router bgp ${toString frrASN}
-       bgp router-id ${currentNode.routerId}
-       ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") allNodeIPs}
-       !
-       address-family ipv4 unicast
-        network 172.21.0.0/24
-        ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") allNodeIPs}
-       exit-address-family
-      !
-      line vty
-      !
-    '';
-  };
+  # List of all node IPs
+  allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
 
-  # Enable keepalived for VIP
-  services.keepalived = {
-    enable = true;
-    vrrpInstances = {
-      k8s-gateway = {
-        state = currentNode.keepalivedState;
-        interface = "bond0"; # Adjust if your interface is different
-        virtualRouterId = 51;
-        priority = currentNode.keepalivedPriority;
-        advert_int = 1;
-        authentication = {
-          auth_type = "PASS";
-          auth_pass = "k8s-cluster-vip";
-        };
-        virtualIps = [
-          "${vipAddress}/24"
-        ];
-        extraConfig = ''
-          track_script {
-            check_frr
-          }
-        '';
-      };
+  # Only set currentNode if hostname is in nodeConfigs
+  currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
+in
+
+if currentNode == null then
+  {}
+else
+  {
+    # Enable FRR routing daemon
+    services.frr = {
+      bgpd.enable = true;
+      config = ''
+        frr version 8.4
+        frr defaults traditional
+        hostname ${hostname}
+        log syslog informational
+        no ipv6 forwarding
+        service integrated-vtysh-config
+        !
+        router bgp ${toString frrASN}
+         bgp router-id ${currentNode.routerId}
+         ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") allNodeIPs}
+         !
+         address-family ipv4 unicast
+          network 172.21.0.0/24
+          ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") allNodeIPs}
+         exit-address-family
+        !
+        line vty
+        !
+      '';
     };
-    extraConfig = ''
-      vrrp_script check_frr {
-        script "/run/current-system/sw/bin/systemctl is-active frr"
-        interval 2
-        weight -2
-        fall 3
-        rise 2
-      }
-    '';
-  };
 
-  # Open required ports in firewall
-  networking.firewall = {
-    allowedTCPPorts = [ 179 ]; # BGP port
-    allowedUDPPorts = [ ];
-    extraCommands = ''
-      # Allow VRRP multicast
-      iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
-      iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
-    '';
-  };
+    # Enable keepalived for VIP
+    services.keepalived = {
+      enable = true;
+      vrrpInstances = {
+        k8s-gateway = {
+          state = currentNode.keepalivedState;
+          interface = "bond0"; # Adjust if your interface is different
+          virtualRouterId = 51;
+          priority = currentNode.keepalivedPriority;
+          virtualIps = [
+            { addr = "${vipAddress}/24"; }
+          ];
+          extraConfig = ''
+            authentication {
+              auth_type PASS
+              auth_pass k8s-cluster-vip
+            }
+            track_script {
+              check_frr
+            }
+          '';
+        };
+      };
+      extraConfig = ''
+        vrrp_script check_frr {
+          script "/run/current-system/sw/bin/systemctl is-active frr"
+          interval 2
+          weight -2
+          fall 3
+          rise 2
+        }
+      '';
+    };
 
-  # Enable IP forwarding
-  boot.kernel.sysctl = {
-    lib.mkforce "net.ipv4.ip_forward" = 1;
-    lib.mkforce    "net.ipv6.conf.all.forwarding" = 1;
-  };
-}
+    # Open required ports in firewall
+    networking.firewall = {
+      allowedTCPPorts = [ 179 ]; # BGP port
+      allowedUDPPorts = [ ];
+      extraCommands = ''
+        # Allow VRRP multicast
+        iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
+        iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
+      '';
+    };
+
+    # Enable IP forwarding
+    boot.kernel.sysctl = {
+      "net.ipv4.ip_forward" = lib.mkForce 1;
+      "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
+    };
+  }
