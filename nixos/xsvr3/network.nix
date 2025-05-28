@@ -73,6 +73,7 @@
         matchConfig.Name = "enp3s0f0";
         networkConfig = {
           LinkLocalAddressing = "no";
+          DHCP = "yes";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
