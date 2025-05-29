@@ -79,11 +79,10 @@ else
     # Enable keepalived for VIP
     services.keepalived = {
       enable = true;
-      pidFile = "/run/keepalived.pid";
       vrrpInstances = {
         k8s-gateway = {
           state = currentNode.keepalivedState;
-          interface = "bond0"; # Adjust if your interface is different
+          interface = "bond0";
           virtualRouterId = 51;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
