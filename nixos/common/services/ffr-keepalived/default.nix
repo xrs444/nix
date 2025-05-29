@@ -25,12 +25,13 @@ let
       ip = "172.20.1.30";
       routerId = "172.20.1.30";
       keepalivedState = "BACKUP";
-      keepalivedPriority = 100;
+      keepalivedPriority = 99;
     };
   };
 
   frrASN = 65000;         # <-- Add your ASN here
   metallbASN = 65001;     # <-- Add your MetalLB ASN here
+  metallbIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ]; # Or use the MetalLB speaker IPs if you have more than one
   vipAddress = "172.20.1.101"; # <-- Add your VIP address here
 
   # List of all node IPs
@@ -57,11 +58,11 @@ else
         !
         router bgp ${toString frrASN}
          bgp router-id ${currentNode.routerId}
-         ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") allNodeIPs}
+         ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") metallbIPs}
          !
          address-family ipv4 unicast
           network 172.21.0.0/24
-          ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") allNodeIPs}
+          ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") metallbIPs}
          exit-address-family
         !
         line vty
