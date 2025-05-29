@@ -52,7 +52,7 @@ else
         frr version 8.4
         frr defaults traditional
         hostname ${hostname}
-        log syslog informational
+        log stdout informational
         no ipv6 forwarding
         service integrated-vtysh-config
         !
