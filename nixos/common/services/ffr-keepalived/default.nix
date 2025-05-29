@@ -79,6 +79,7 @@ else
     # Enable keepalived for VIP
     services.keepalived = {
       enable = true;
+      pidFile = "/run/keepalived.pid";
       vrrpInstances = {
         k8s-gateway = {
           state = currentNode.keepalivedState;
