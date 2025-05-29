@@ -61,7 +61,6 @@ else
          ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") metallbIPs}
          !
          address-family ipv4 unicast
-          network 172.21.0.0/24
           ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") metallbIPs}
          exit-address-family
         !
@@ -69,6 +68,13 @@ else
         !
       '';
     };
+
+    # Add this to your top-level attribute set (alongside services.frr, services.keepalived, etc.)
+    environment.etc."check-frr.sh".text = ''
+      #!/bin/sh
+      systemctl is-active frr
+    '';
+    environment.etc."check-frr.sh".mode = "0755";
 
     # Enable keepalived for VIP
     services.keepalived = {
@@ -95,7 +101,7 @@ else
       };
       extraConfig = ''
         vrrp_script check_frr {
-          script "/run/current-system/sw/bin/systemctl is-active frr"
+          script "/etc/check-frr.sh"
           interval 2
           weight -2
           fall 3
