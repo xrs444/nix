@@ -85,7 +85,7 @@ else
           extraConfig = ''
             authentication {
               auth_type PASS
-              auth_pass k8s-cluster-vip
+              auth_pass k8svip
             }
             track_script {
               check_frr
