@@ -38,4 +38,6 @@
   };
 
   powerManagement.cpuFreqGovernor = "performance";
+
 }
+

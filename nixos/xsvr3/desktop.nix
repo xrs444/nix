@@ -46,4 +46,15 @@
     gnome-photos
     gnome-tour
     ];
+
+    environment.systemPackages = with pkgs; [
+      gnome-remote-desktop
+    ];
+
+  services.gnome.gnome-remote-desktop.enable = true;
+  networking.firewall.allowedTCPPorts = [ 3389 ];
+  networking.firewall.allowedUDPPorts = [ 3389 ];
+  services.xrdp.enable = true;
+  services.xrdp.defaultWindowManager = "${pkgs.gnome-session}/bin/gnome-session";
+  services.xrdp.openFirewall = true;
 }
