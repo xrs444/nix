@@ -20,32 +20,14 @@
 
   hardware = {
     cpu.amd.updateMicrocode = true;
-    graphics.enable = true;
-#    nvidia = {
-#      open = true;
-#      modesetting.enable = true;
-#      nvidiaSettings.enable = true;
-#      powerManagement.enable = true;
-#      package = pkgs.linuxPackages.nvidiaPackages.stable;
-#   };
+    nvidia.open = true; 
   };
+  
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
   boot = {
-    loader = {
-      systemd-boot.enable = lib.mkForce false;
-      grub = {
-        enable = lib.mkForce true;
-        device = "nodev";
-        useOSProber = true;
-        efiSupport = true;
-      };
-      efi = {
-        canTouchEfiVariables = true;
-        efiSysMountPoint = "/boot";
-      };
-    };
+    blacklistedKernelModules=["nouveau"];
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -66,8 +48,7 @@
   powerManagement.cpuFreqGovernor = "powersave";
 
   services.xserver.videoDrivers = [ 
-#   "nvidia"
+    "nvidia"
     "amdgpu"
   ];
-
 }
