@@ -50,6 +50,7 @@
   };
 
   powerManagement.cpuFreqGovernor = "powersave";
+  fileSystems."/".options = [ "noatime" "nodiratime" "discard" ];
 
 
   services.xserver.videoDrivers = [ 
