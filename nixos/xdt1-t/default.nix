@@ -19,7 +19,6 @@
 
   hardware = {
     cpu.amd.updateMicrocode = true;
-    graphics.enable = true;
     nvidia = {
       modesetting.enable = true;
       nvidiaSettings = true;
