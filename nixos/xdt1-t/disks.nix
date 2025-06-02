@@ -7,7 +7,7 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/";
+        device = "/dev/disk/by-id/ata-CT1000MX500SSD1_2339E87A35BC";
         type = "disk";
         content = {
           type = "gpt";
@@ -23,7 +23,7 @@
               };
             };
             root = {
-              size = "50%";
+              size = "100%";
               content = {
                 type = "filesystem";
                 format = "xfs";
