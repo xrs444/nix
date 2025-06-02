@@ -36,6 +36,7 @@
       [
         git
         nix-output-monitor
+        pci utils
       ]
       ++ lib.optionals isInstall [
         inputs.determinate.packages.${platform}.default
