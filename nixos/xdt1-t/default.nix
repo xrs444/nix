@@ -11,7 +11,6 @@
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-pc-ssd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
-    inputs.nixos-hardware.nixosModules.common-gpu-nvidia
     inputs.nixos-hardware.nixosModules.common-pc
     ./disks.nix
     ./network.nix
@@ -20,10 +19,17 @@
 
   hardware = {
     cpu.amd.updateMicrocode = true;
-    nvidia.open = true; 
+    graphics.enable = true;
+    nvidia = {
+      modesetting.enable = true;
+      nvidiaSettings = true;
+      powerManagement.enable = false;
+      powerManagement.finegrained = false;
+      open = true;
+    };
+
   };
   
-
   nixpkgs.hostPlatform = "x86_64-linux";
 
   boot = {
@@ -40,15 +46,14 @@
       kernelModules = [
         "kvm-amd"
         "nvidia"
-        "amdgpu"
       ];
     };
   };
 
   powerManagement.cpuFreqGovernor = "powersave";
 
+
   services.xserver.videoDrivers = [ 
     "nvidia"
-    "amdgpu"
   ];
 }
