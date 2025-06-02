@@ -30,8 +30,8 @@ let
   };
 
   frrASN = 65000;         # <-- Add your ASN here
-  metallbASN = 65001;     # <-- Add your MetalLB ASN here
-  metallbIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ]; # Or use the MetalLB speaker IPs if you have more than one
+  ciliumASN = 65001;     # <-- Add your cilium ASN here
+  ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ]; # Or use the cilium speaker IPs if you have more than one
   vipAddress = "172.20.1.101"; # <-- Add your VIP address here
 
   # List of all node IPs
@@ -58,10 +58,13 @@ else
         !
         router bgp ${toString frrASN}
          bgp router-id ${currentNode.routerId}
-         ${lib.concatMapStringsSep "\n " (ip: "neighbor ${ip} remote-as ${toString metallbASN}") metallbIPs}
+         bgp listen range 172.20.0.0/16 peer-group CILIUM
+         !
+         neighbor CILIUM peer-group
+         neighbor CILIUM remote-as ${toString ciliumASN}
          !
          address-family ipv4 unicast
-          ${lib.concatMapStringsSep "\n  " (ip: "neighbor ${ip} activate") metallbIPs}
+          neighbor CILIUM activate
          exit-address-family
         !
         line vty
