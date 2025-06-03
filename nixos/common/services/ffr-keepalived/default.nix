@@ -33,6 +33,7 @@ let
   ciliumASN = 65001;     # <-- Add your cilium ASN here
   ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ]; # Or use the cilium speaker IPs if you have more than one
   vipAddress = "172.20.1.101"; # <-- Add your VIP address here
+  bgpPassword = "testauth";  # Consider using a secret management solution
 
   # List of all node IPs
   allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
@@ -62,6 +63,7 @@ else
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
+         neighbor CILIUM password ${bgpPassword}
          !
          address-family ipv4 unicast
           neighbor CILIUM activate
