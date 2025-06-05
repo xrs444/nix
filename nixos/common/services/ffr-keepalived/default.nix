@@ -29,11 +29,11 @@ let
     };
   };
 
-  frrASN = 65000;         # <-- Add your ASN here
-  ciliumASN = 65001;     # <-- Add your cilium ASN here
-  ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ]; # Or use the cilium speaker IPs if you have more than one
-  vipAddress = "172.20.1.101"; # <-- Add your VIP address here
-  bgpPassword = "testauth";  # Consider using a secret management solution
+  frrASN = 65000;
+  ciliumASN = 65001;
+  ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ];
+  vipAddress = "172.20.1.101";
+  # Remove the hardcoded bgpPassword
 
   # List of all node IPs
   allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
@@ -46,9 +46,21 @@ if currentNode == null then
   {}
 else
   {
+
+    sops.secrets."bgp" = {
+      sopsFile = ../../../../secrets/bgp.yaml;
+      format = "yaml";
+      owner = "root";
+      group = "root";
+      mode = "0600";
+      path = "/etc/bgp/token";
+    };
+
     # Enable FRR routing daemon
     services.frr = {
       bgpd.enable = true;
+      # Add dependency on the secret
+      serviceConfig.SupplementaryGroups = [ config.users.groups.keys.name ];
       config = ''
         frr version 8.4
         frr defaults traditional
@@ -63,7 +75,7 @@ else
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
-         neighbor CILIUM password ${bgpPassword}
+         neighbor CILIUM password ${config.sops.secrets."bgp".path}
          !
          address-family ipv4 unicast
           neighbor CILIUM activate

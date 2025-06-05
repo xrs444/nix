@@ -56,7 +56,6 @@
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
       # Clients
-      "thomas-local@xdt1-t" = lib.mkHome { hostname = "xdt1-t"; };
     };
 
     nixosConfigurations = {
@@ -81,10 +80,6 @@
       #          platform = "aarch64-linux";
       #        };
       # Clients
-      xdt1-t = lib.mkNixos {
-        hostname = "xdt1-t";
-        desktop = "gnome";
-      };
     };
 
     # macOS machines
