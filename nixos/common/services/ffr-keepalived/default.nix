@@ -75,7 +75,7 @@ else
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
-         neighbor CILIUM password ${config.sops.secrets."bgp".path}
+#         neighbor CILIUM password ${config.sops.secrets."bgp".path}
          !
          address-family ipv4 unicast
           neighbor CILIUM activate
