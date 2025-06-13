@@ -59,8 +59,7 @@ else
     # Enable FRR routing daemon
     services.frr = {
       bgpd.enable = true;
-      # Add dependency on the secret
-      serviceConfig.SupplementaryGroups = [ config.users.groups.keys.name ];
+      bgpd.serviceConfig.SupplementaryGroups = [ config.users.groups.keys.name ];
       config = ''
         frr version 8.4
         frr defaults traditional
