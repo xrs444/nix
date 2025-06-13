@@ -60,7 +60,6 @@ else
     services.frr = {
       bgpd.enable = true;
       config = ''
-        frr version 8.4
         frr defaults traditional
         hostname ${hostname}
         log stdout informational
@@ -68,19 +67,23 @@ else
         service integrated-vtysh-config
         !
         router bgp ${toString frrASN}
-        bgp router-id ${currentNode.routerId}
-        bgp listen range 172.20.0.0/16 peer-group CILIUM
-        !
-        neighbor CILIUM peer-group
-        neighbor CILIUM remote-as ${toString ciliumASN}
-#       neighbor CILIUM password ${config.sops.secrets."bgp".path}
-        !
-        address-family ipv4 unicast
-        neighbor CILIUM activate
-        exit-address-family
-        !
-        line vty
-        !
+         bgp router-id ${currentNode.routerId}
+#         bgp listen range 172.20.0.0/16 peer-group CILIUM
+         !
+         neighbor CILIUM peer-group
+         neighbor CILIUM remote-as ${toString ciliumASN}
+#        neighbor CILIUM password ${config.sops.secrets."bgp".path}
+         neighbor CILIUM activate
+         neighbor CILIUM soft-reconfiguration inbound
+         neighbor CILIUM timers 15 45
+         neighbor CILIUM timers connect 15
+         !
+         address-family ipv4 unicast
+
+         exit-address-family
+         !
+         line vty
+         !
       '';
     };
 
