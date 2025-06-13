@@ -68,16 +68,16 @@ else
         service integrated-vtysh-config
         !
         router bgp ${toString frrASN}
-         bgp router-id ${currentNode.routerId}
-         bgp listen range 172.20.0.0/16 peer-group CILIUM
-         !
-         neighbor CILIUM peer-group
-         neighbor CILIUM remote-as ${toString ciliumASN}
-#         neighbor CILIUM password ${config.sops.secrets."bgp".path}
-         !
-         address-family ipv4 unicast
-          neighbor CILIUM activate
-         exit-address-family
+        bgp router-id ${currentNode.routerId}
+        bgp listen range 172.20.0.0/16 peer-group CILIUM
+        !
+        neighbor CILIUM peer-group
+        neighbor CILIUM remote-as ${toString ciliumASN}
+#       neighbor CILIUM password ${config.sops.secrets."bgp".path}
+        !
+        address-family ipv4 unicast
+        neighbor CILIUM activate
+        exit-address-family
         !
         line vty
         !
