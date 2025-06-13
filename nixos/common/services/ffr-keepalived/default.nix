@@ -59,7 +59,6 @@ else
     # Enable FRR routing daemon
     services.frr = {
       bgpd.enable = true;
-      bgpd.serviceConfig.SupplementaryGroups = [ config.users.groups.keys.name ];
       config = ''
         frr version 8.4
         frr defaults traditional
@@ -83,6 +82,11 @@ else
         line vty
         !
       '';
+    };
+
+    # Add this block to override the systemd unit for bgpd
+    systemd.services.frr-bgpd = {
+      serviceConfig.SupplementaryGroups = [ "keys" ];
     };
 
     # Add this to your top-level attribute set (alongside services.frr, services.keepalived, etc.)
