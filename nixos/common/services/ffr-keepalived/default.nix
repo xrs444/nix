@@ -113,6 +113,7 @@ else
             track_script {
               check_frr
             }
+            notify_master "/run/current-system/systemd/bin/systemctl restart frr"
           '';
         };
       };
