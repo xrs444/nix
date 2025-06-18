@@ -72,7 +72,6 @@ else
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
-#        neighbor CILIUM password ${config.sops.secrets."bgp".path}
          neighbor CILIUM activate
          neighbor CILIUM soft-reconfiguration inbound
          neighbor CILIUM timers 3 9
