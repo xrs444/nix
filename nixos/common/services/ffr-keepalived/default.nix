@@ -68,7 +68,7 @@ else
         !
         router bgp ${toString frrASN}
          bgp router-id ${currentNode.routerId}
-         bgp listen range 172.20.0.0/16 peer-group CILIUM
+         bgp listen range 172.20.3.0/24 peer-group CILIUM
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
