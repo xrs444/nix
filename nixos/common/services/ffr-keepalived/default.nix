@@ -48,8 +48,8 @@ else
 
     # Enable FRR routing daemon
     services.frr = {
-      enable = true;
-      vtysh.enable = true;
+      bgpd.enable = true;
+      staticd.enable = true;
       config = ''
         router bgp ${toString frrASN}
           bgp router-id ${currentNode.routerId}
