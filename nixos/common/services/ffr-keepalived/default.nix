@@ -48,59 +48,34 @@ else
 
     # Enable FRR routing daemon
     services.frr = {
-      bgpd.enable = true;
+      enable = true;
+      vtysh.enable = true;
       config = ''
-        frr defaults traditional
-        hostname ${hostname}
-        log stdout debug
-        no ipv6 forwarding
-        service integrated-vtysh-config
-        !
         router bgp ${toString frrASN}
-         bgp router-id ${currentNode.routerId}
-         bgp listen range 172.20.3.0/24 peer-group CILIUM
-         !
-         neighbor CILIUM peer-group
-         neighbor CILIUM remote-as ${toString ciliumASN}
-         neighbor CILIUM ebgp-multihop 4
-         # Keep your existing timer configuration
-         neighbor CILIUM timers 3 9
-         neighbor CILIUM timers connect 15
-         # Add the route maps
-         neighbor CILIUM route-map CILIUM-IN in
-         neighbor CILIUM route-map CILIUM-OUT out
-         !
-         address-family ipv4 unicast
-           redistribute connected
-           redistribute static
-           neighbor CILIUM activate
-         exit-address-family
-         !
-         line vty
-         !
+          bgp router-id ${currentNode.routerId}
+          bgp listen range 172.20.3.0/24 peer-group CILIUM
+          
+          neighbor CILIUM peer-group
+          neighbor CILIUM remote-as ${toString ciliumASN}
+          neighbor CILIUM ebgp-multihop 4
+          neighbor CILIUM timers 3 9
+          neighbor CILIUM timers connect 15
+          
+          # Add route maps directly in the config string
+          neighbor CILIUM route-map CILIUM-IN in
+          neighbor CILIUM route-map CILIUM-OUT out
+          
+          address-family ipv4 unicast
+            redistribute connected
+            redistribute static
+            neighbor CILIUM activate
+          exit-address-family
+        !
+        route-map CILIUM-IN permit 10
+        !
+        route-map CILIUM-OUT permit 10
       '';
 
-      # Define the route maps that permit all routes
-      routeMaps = {
-        "CILIUM-IN" = {
-          entries = [
-            {
-              action = "permit";
-              prefix = "0.0.0.0/0";
-              seq = 10;
-            }
-          ];
-        };
-        "CILIUM-OUT" = {
-          entries = [
-            {
-              action = "permit";
-              prefix = "0.0.0.0/0";
-              seq = 10;
-            }
-          ];
-        };
-      };
     };
 
     # Add this block to override the systemd unit for bgpd
