@@ -71,9 +71,6 @@ else
          bgp listen range 172.20.0.0/16 peer-group CILIUM
          !
          neighbor CILIUM peer-group
-         neighbor 172.20.3.10 peer-group CILIUM
-         neighbor 172.20.3.20 peer-group CILIUM
-         neighbor 172.20.3.30 peer-group CILIUM
          neighbor CILIUM remote-as ${toString ciliumASN}
 #        neighbor CILIUM password ${config.sops.secrets."bgp".path}
          neighbor CILIUM activate
