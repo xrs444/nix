@@ -62,11 +62,11 @@ else
          !
          neighbor CILIUM peer-group
          neighbor CILIUM remote-as ${toString ciliumASN}
-         neighbor CILIUM activate
-         neighbor CILIUM soft-reconfiguration inbound
+         neighbor CILIUM ebgp-multihop 4
+         # Keep your existing timer configuration
          neighbor CILIUM timers 3 9
          neighbor CILIUM timers connect 15
-         neighbor CILIUM ebgp-multihop 4
+         # Add the route maps
          neighbor CILIUM route-map CILIUM-IN in
          neighbor CILIUM route-map CILIUM-OUT out
          !
