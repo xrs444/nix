@@ -79,7 +79,7 @@ else
          neighbor CILIUM update-source ${vipAddress}
          !
          address-family ipv4 unicast
-
+           redistribute connected
          exit-address-family
          !
          line vty
