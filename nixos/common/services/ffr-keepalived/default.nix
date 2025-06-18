@@ -33,7 +33,6 @@ let
   ciliumASN = 65001;
   ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ];
   vipAddress = "172.20.1.101";
-  # Remove the hardcoded bgpPassword
 
   # List of all node IPs
   allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
@@ -46,15 +45,6 @@ if currentNode == null then
   {}
 else
   {
-
-    sops.secrets."bgp" = {
-      sopsFile = ../../../../secrets/bgp.yaml;
-      format = "yaml";
-      owner = "root";
-      group = "root";
-      mode = "0600";
-      path = "/etc/bgp/token";
-    };
 
     # Enable FRR routing daemon
     services.frr = {
