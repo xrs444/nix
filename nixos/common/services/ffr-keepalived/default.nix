@@ -49,7 +49,6 @@ else
     # Enable FRR routing daemon
     services.frr = {
       bgpd.enable = true;
-      staticd.enable = true;
       config = ''
         router bgp ${toString frrASN}
           bgp router-id ${currentNode.routerId}
