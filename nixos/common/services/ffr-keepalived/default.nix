@@ -77,6 +77,7 @@ else
          neighbor CILIUM soft-reconfiguration inbound
          neighbor CILIUM timers 15 45
          neighbor CILIUM timers connect 15
+         neighbor CILIUM update-source ${vipAddress}
          !
          address-family ipv4 unicast
 
