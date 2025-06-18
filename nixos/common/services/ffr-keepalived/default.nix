@@ -75,7 +75,7 @@ else
 #        neighbor CILIUM password ${config.sops.secrets."bgp".path}
          neighbor CILIUM activate
          neighbor CILIUM soft-reconfiguration inbound
-         neighbor CILIUM timers 15 45
+         neighbor CILIUM timers 3 9
          neighbor CILIUM timers connect 15
          neighbor CILIUM update-source ${vipAddress}
          !
