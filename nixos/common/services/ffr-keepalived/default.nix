@@ -62,7 +62,7 @@ else
       config = ''
         frr defaults traditional
         hostname ${hostname}
-        log stdout informational
+        log stdout debug
         no ipv6 forwarding
         service integrated-vtysh-config
         !
