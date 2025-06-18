@@ -67,6 +67,8 @@ else
          neighbor CILIUM timers 3 9
          neighbor CILIUM timers connect 15
          neighbor CILIUM ebgp-multihop 4
+         neighbor CILIUM route-map CILIUM-IN in
+         neighbor CILIUM route-map CILIUM-OUT out
          !
          address-family ipv4 unicast
            redistribute connected
@@ -77,6 +79,28 @@ else
          line vty
          !
       '';
+
+      # Define the route maps that permit all routes
+      routeMaps = {
+        "CILIUM-IN" = {
+          entries = [
+            {
+              action = "permit";
+              prefix = "0.0.0.0/0";
+              seq = 10;
+            }
+          ];
+        };
+        "CILIUM-OUT" = {
+          entries = [
+            {
+              action = "permit";
+              prefix = "0.0.0.0/0";
+              seq = 10;
+            }
+          ];
+        };
+      };
     };
 
     # Add this block to override the systemd unit for bgpd
