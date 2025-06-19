@@ -51,7 +51,7 @@ else
       bgpd.enable = true;
       config = ''
         router bgp ${toString frrASN}
-          bgp router-id ${vipAddress}
+          bgp router-id ${currentNode.routerId}
           bgp listen range 172.20.3.0/24 peer-group CILIUM
 
           neighbor CILIUM peer-group
@@ -59,7 +59,7 @@ else
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
           neighbor CILIUM timers connect 15
-          neighbor CILIUM update-source ${vipAddress}
+          neighbor CILIUM update-source ${currentNode.ip}
 
           # Add route maps directly in the config string
           neighbor CILIUM route-map CILIUM-IN in
