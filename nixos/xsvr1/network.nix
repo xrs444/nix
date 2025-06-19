@@ -200,7 +200,6 @@
         networkConfig = {
           LinkLocalAddressing = "no";
           IPMasquerade = "no";
-          Address = ["172.20.3.201/24"]
         };
         linkConfig = {
           RequiredForOnline = "carrier";
