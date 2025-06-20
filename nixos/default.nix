@@ -126,9 +126,9 @@
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
 
-  system.activationScripts.nixos-needsreboot = lib.mkIf isInstall {
-    supportsDryActivation = true;
-    text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
-  };
+ # system.activationScripts.nixos-needsreboot = lib.mkIf isInstall {
+ #   supportsDryActivation = true;
+ ##   text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
+ # };
   system.stateVersion = stateVersion;
 }
