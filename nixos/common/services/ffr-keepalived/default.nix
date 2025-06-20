@@ -136,6 +136,11 @@ else
       '';
     };
 
+    # Ensure direct reachability to Talos nodes for BGP next-hop
+    networking.routes = {
+      "172.20.3.0/24" = [ "dev bond0" ];
+    };
+
     # Enable IP forwarding
     boot.kernel.sysctl = {
       "net.ipv4.ip_forward" = lib.mkForce 1;
