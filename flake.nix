@@ -30,6 +30,8 @@
     quickgui.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-needtoreboot.url = github:thefossguy/nixos-needsreboot;
+    nixos-needtoreboot.inputs.nixpkgs.follows = "nixpkgs";
   };
   
   outputs = { self

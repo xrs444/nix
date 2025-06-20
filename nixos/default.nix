@@ -23,6 +23,7 @@
     inputs.nix-snapd.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     inputs.comin.nixosModules.comin
+    inputs.nixos-needtoreboot.packages.${platform}.default
     (modulesPath + "/installer/scan/not-detected.nix")
     ./${hostname}
     ./common/base
