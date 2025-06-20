@@ -54,17 +54,13 @@ else
         router bgp ${toString frrASN}
           bgp router-id ${currentNode.routerId}
           neighbor CILIUM peer-group
-          # bgp listen range 172.20.3.0/24 peer-group CILIUM
+          bgp listen range 172.20.3.0/24 peer-group CILIUM
 
           neighbor CILIUM remote-as ${toString ciliumASN}
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
           neighbor CILIUM timers connect 15
-
-          # Explicitly define each Cilium node as a neighbor
-          neighbor 172.20.3.10 peer-group CILIUM
-          neighbor 172.20.3.20 peer-group CILIUM
-          neighbor 172.20.3.30 peer-group CILIUM
+          # neighbor CILIUM update-source 172.20.3.200
 
           neighbor CILIUM route-map CILIUM-IN in
           neighbor CILIUM route-map CILIUM-OUT out
