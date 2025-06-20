@@ -53,9 +53,9 @@ else
       config = ''
         router bgp ${toString frrASN}
           bgp router-id ${currentNode.routerId}
+          neighbor CILIUM peer-group
           bgp listen range 172.20.3.0/24 peer-group CILIUM
 
-          neighbor CILIUM peer-group
           neighbor CILIUM remote-as ${toString ciliumASN}
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
