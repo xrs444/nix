@@ -10,20 +10,20 @@ let
   # Define node-specific configurations
   nodeConfigs = {
     xsvr1 = {
-      ip = "172.20.1.10";
-      routerId = "172.20.1.10";
+      ip = "172.20.3.201";
+      routerId = "172.20.3.201";
       keepalivedState = "MASTER";
       keepalivedPriority = 101;
     };
     xsvr2 = {
-      ip = "172.20.1.20";
-      routerId = "172.20.1.20";
+      ip = "172.20.3.202";
+      routerId = "172.20.3.202";
       keepalivedState = "BACKUP";
       keepalivedPriority = 100;
     };
     xsvr3 = {
-      ip = "172.20.1.30";
-      routerId = "172.20.1.30";
+      ip = "172.20.3.203";
+      routerId = "172.20.3.203";
       keepalivedState = "BACKUP";
       keepalivedPriority = 99;
     };
@@ -32,7 +32,8 @@ let
   frrASN = 65000;
   ciliumASN = 65001;
   ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ];
-  vipAddress = "172.20.1.101";
+  vipAddress = "172.20.3.200";
+  gatewayvipaddress = "172.20.1.200"
 
   # List of all node IPs
   allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
@@ -59,7 +60,7 @@ else
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
           neighbor CILIUM timers connect 15
-          neighbor CILIUM update-source ${currentNode.ip}
+          neighbor CILIUM update-source 172.20.3.200
 
           # Add route maps directly in the config string
           neighbor CILIUM route-map CILIUM-IN in
@@ -96,7 +97,7 @@ else
       vrrpInstances = {
         k8s-gateway = {
           state = currentNode.keepalivedState;
-          interface = "bond0";
+          interface = "bridge22";
           virtualRouterId = 51;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
@@ -106,6 +107,25 @@ else
             authentication {
               auth_type PASS
               auth_pass k8svip
+            }
+            track_script {
+              check_frr
+            }
+            notify_master "/run/current-system/systemd/bin/systemctl restart frr"
+          '';
+        };
+        network-gateway = {
+          state = currentNode.keepalivedState;
+          interface = "bond0";
+          virtualRouterId = 51;
+          priority = currentNode.keepalivedPriority;
+          virtualIps = [
+            { addr = "${gatewayvipAddress}/24"; }
+          ];
+          extraConfig = ''
+            authentication {
+              auth_type PASS
+              auth_pass networksvip
             }
             track_script {
               check_frr
@@ -136,14 +156,9 @@ else
       '';
     };
 
-
     # Enable IP forwarding
     boot.kernel.sysctl = {
       "net.ipv4.ip_forward" = lib.mkForce 1;
       "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
     };
-
-    networking.staticRoutes = [
-      { destination = "172.20.3.0/24"; interface = "bond0"; }
-    ];
   }

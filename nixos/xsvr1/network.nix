@@ -196,6 +196,7 @@
       };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
+        address = [ "172.20.3.201/24"];
         bridgeConfig = {};
         networkConfig = {
           LinkLocalAddressing = "no";
