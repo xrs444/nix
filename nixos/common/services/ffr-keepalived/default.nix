@@ -66,7 +66,6 @@ else
           neighbor CILIUM route-map CILIUM-OUT out
 
           address-family ipv4 unicast
-            neighbor 172.20.3.0/24 activate
             redistribute connected
             redistribute static
             neighbor CILIUM activate
