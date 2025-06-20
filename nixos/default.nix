@@ -131,6 +131,7 @@
  ##   text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
  # };
   system = {
+    nixos.label = lib.mkIf isInstall "-";
     inherit stateVersion;
   };
 }
