@@ -146,4 +146,8 @@ else
       "net.ipv4.ip_forward" = lib.mkForce 1;
       "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
     };
+
+    networking.staticRoutes = [
+      { destination = "172.20.3.0/24"; interface = "bond0"; }
+    ];
   }
