@@ -62,7 +62,7 @@ else
           neighbor CILIUM timers connect 15
           neighbor CILIUM update-source 172.20.3.200
 
-          # Add explicit neighbors for each Cilium node
+          # Explicitly define each Cilium node as a neighbor
           neighbor 172.20.3.10 peer-group CILIUM
           neighbor 172.20.3.20 peer-group CILIUM
           neighbor 172.20.3.30 peer-group CILIUM
