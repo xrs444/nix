@@ -62,7 +62,11 @@ else
           neighbor CILIUM timers connect 15
           neighbor CILIUM update-source 172.20.3.200
 
-          # Add route maps directly in the config string
+          # Add explicit neighbors for each Cilium node
+          neighbor 172.20.3.10 peer-group CILIUM
+          neighbor 172.20.3.20 peer-group CILIUM
+          neighbor 172.20.3.30 peer-group CILIUM
+
           neighbor CILIUM route-map CILIUM-IN in
           neighbor CILIUM route-map CILIUM-OUT out
 
