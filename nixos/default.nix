@@ -130,5 +130,7 @@
  #   supportsDryActivation = true;
  ##   text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
  # };
-  system.stateVersion = stateVersion;
+  system = {
+    inherit stateVersion;
+  };
 }
