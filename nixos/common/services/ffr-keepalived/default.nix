@@ -60,7 +60,6 @@ else
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
           neighbor CILIUM timers connect 15
-          neighbor CILIUM update-source 172.20.3.200
 
           # Explicitly define each Cilium node as a neighbor
           neighbor 172.20.3.10 peer-group CILIUM
