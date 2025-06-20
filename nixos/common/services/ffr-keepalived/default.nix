@@ -33,7 +33,7 @@ let
   ciliumASN = 65001;
   ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ];
   vipAddress = "172.20.3.200";
-  gatewayvipaddress = "172.20.1.200";
+  gatewayVipAddress = "172.20.1.200";
 
   # List of all node IPs
   allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
@@ -120,7 +120,7 @@ else
           virtualRouterId = 51;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
-            { addr = "${gatewayvipAddress}/24"; }
+            { addr = "${gatewayVipAddress}/24"; }
           ];
           extraConfig = ''
             authentication {
