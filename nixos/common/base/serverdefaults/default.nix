@@ -32,4 +32,12 @@ lib.mkIf (lib.elem hostname installOn) {
     algorithm = "lz4";
     enable = true;
   };
+
+  environment = {
+    systemPackages =
+      with pkgs;
+      [
+        tcpdump
+      ];
+  };
 }
