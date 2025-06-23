@@ -1,0 +1,10 @@
+{ pkgs, lib, ... }:
+{
+
+services.nfs.server.enable = true;
+
+#zfs set sharenfs="rw=172.21.0.0/24,all_squash,anonuid=70,anongid=70" 
+
+
+}
+
