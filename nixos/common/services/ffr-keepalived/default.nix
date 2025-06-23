@@ -54,20 +54,18 @@ else
         router bgp ${toString frrASN}
           bgp router-id ${currentNode.routerId}
           neighbor CILIUM peer-group
-          bgp listen range 172.20.3.0/24 peer-group CILIUM
-
           neighbor CILIUM remote-as ${toString ciliumASN}
           neighbor CILIUM ebgp-multihop 4
           neighbor CILIUM timers 3 9
           neighbor CILIUM timers connect 15
-          # neighbor CILIUM update-source 172.20.3.200
+          neighbor CILIUM update-source 172.20.3.200
 
           neighbor CILIUM route-map CILIUM-IN in
           neighbor CILIUM route-map CILIUM-OUT out
 
+          bgp listen range 172.20.3.0/24 peer-group CILIUM
+
           address-family ipv4 unicast
-            redistribute connected
-            redistribute static
             neighbor CILIUM activate
           exit-address-family
         !
