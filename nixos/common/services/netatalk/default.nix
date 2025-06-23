@@ -18,7 +18,7 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
       settings = {
         time-machine = {
           path = "/zfs/systembackups/timemachine";
-	          "valid users" = "whoever";
+	          "valid users" = "Thomas Letherby";
             "time machine" = true;
          };
       };
