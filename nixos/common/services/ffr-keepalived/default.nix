@@ -88,6 +88,17 @@ else
     '';
     environment.etc."check-frr.sh".mode = "0755";
 
+    environment.etc."check-tailscale-subnet.sh".text = ''
+      #!/bin/sh
+      tailscale status --json | grep '"AdvertisedRoutes":' | grep '172.16.0.0/12' > /dev/null
+      if [ $? -eq 0 ]; then
+        exit 0
+      else
+        exit 1
+      fi
+    '';
+    environment.etc."check-tailscale-subnet.sh".mode = "0755";
+
     # Enable keepalived for VIP
     services.keepalived = {
       enable = true;
@@ -106,7 +117,7 @@ else
               auth_pass k8svip
             }
             track_script {
-              check_frr
+              check_tailscale_subnet
             }
             notify_master "/run/current-system/systemd/bin/systemctl restart frr"
           '';
@@ -125,17 +136,17 @@ else
               auth_pass networksvip
             }
             track_script {
-              check_frr
+              check_tailscale_subnet
             }
             notify_master "/run/current-system/systemd/bin/systemctl restart frr"
           '';
         };
       };
       extraConfig = ''
-        vrrp_script check_frr {
-          script "/etc/check-frr.sh"
+        vrrp_script check_tailscale_subnet {
+          script "/etc/check-tailscale-subnet.sh"
           interval 2
-          weight -2
+          weight 10
           fall 3
           rise 2
         }

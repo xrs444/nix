@@ -9,10 +9,10 @@
 }:
 let
   tsClients = [
-    "xsvr1"
-    "xsvr2"
   ];
   tsExitNodes = [
+    "xsvr1"
+    "xsvr2"
     "xsvr3"
   ];
 
@@ -36,11 +36,12 @@ in
     })   
     ( lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
      
-      boot.kernel.sysctl."net.ipv4.ip_forward" = 1;  
+      boot.kernel = {
+        sysctl."net.ipv4.ip_forward" = lib.mkForce 1;
+        sysctl."net.ipv6.conf.all.forwarding" = lib.mkForce 1;
+      };  
       environment.systemPackages = with pkgs; [ 
         tailscale
-        ethtool
-        networkd-dispatcher
       ];
 
       services.tailscale = {
@@ -51,21 +52,12 @@ in
           "--accept-routes"
           "--allow-lan-access"
           "--advertise-routes=172.16.0.0/12"
+          "--snat-subnet-routes=false"
           ];
         openFirewall = true;
         useRoutingFeatures = "both";
-#        interfaceName = "userspace-networking";
         };
       networking.firewall.checkReversePath = "loose";
-#      services.networkd-dispatcher = {
-#        enable = true;
-#        rules."50-tailscale" = {
-#        onState = ["routable"];
-#        script = ''
-#         "${pkgs.ethtool} NETDEV=$(ip -o route get 8.8.8.8 | cut -f 5 -d " ") | -K enp5s0 rx-udp-gro-forwarding on rx-gro-list off
-#          '';
-#         };
-#      };  
     })
   ];
 }
