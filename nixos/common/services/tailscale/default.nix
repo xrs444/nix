@@ -47,69 +47,29 @@ in
         };
       };
 
-      containers.tailscale = {
-        autoStart = true;
-        restartIfChanged = true;
-        privateNetwork = false;
-        extraVeths = {
-          eth0 = {
-            hostBridge = "bridge21";
-          };
+      virtualisation.podman-containers.containers.tailscale = {
+        image = "tailscale/tailscale:latest";
+        security.allowPrivileged = true;
+        network = "host";
+        volumes = [
+          "/dev/net/tun:/dev/net/tun"
+          "/var/lib/tailscale:/var/lib/tailscale"
+        ];
+        environment = {
+          # Optionally, set TS_AUTHKEY or other env vars here
+          # TS_AUTHKEY = "your-auth-key";
         };
-        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
-        config = { config, pkgs, lib, ... }: {
-          environment.systemPackages = with pkgs; [
-            tailscale
-            ethtool
-          ];
-          services.tailscale = {
-            enable = true;
-            extraUpFlags = [
-              "--advertise-exit-node"
-              "--accept-routes"
-              "--advertise-routes=172.16.0.0/12"
-              "--snat-subnet-routes=false"
-              "--tun=userspace-networking"
-              "--netfilter-mode=off" 
-            ];
-            openFirewall = true;
-            useRoutingFeatures = "both";
-          };
-          networking.firewall.checkReversePath = "loose";
-
-          system.stateVersion = "25.05";
-
-          networking = {
-            useDHCP = false;
-            interfaces.eth0.ipv4.addresses = [
-              { address = containerIPs.${hostname}; prefixLength = 24; }
-            ];
-            defaultGateway = "172.20.2.250";
-            nameservers = [ "172.18.10.250" ];
-            firewall.enable = false;
-            useHostResolvConf = lib.mkForce false;
-          };
-
-          services.resolved.enable = true;
-
-          services.keepalived = {
-            enable = true;
-            vrrpInstances = {
-              tailscale-vip = {
-                interface = "eth0";
-                virtualRouterId = 51;
-                priority = if hostname == "xsvr1" then 101 else if hostname == "xsvr2" then 100 else 99;
-                state = if hostname == "xsvr1" then "MASTER" else "BACKUP";
-                virtualIps = [
-                  { addr = "172.20.21.200/24"; }
-                ];
-              };
-            };
-          };
-
-          systemd.services.tailscaled.after = [ "network-online.target" ];
-          systemd.services.tailscaled.wants = [ "network-online.target" ];
-        };
+        cmd = [
+          "/bin/sh"
+          "-c"
+          ''
+            tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock &
+            sleep 2
+            tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false
+            wait
+          ''
+        ];
+        restartPolicy = "always";
       };
     })
   ];
