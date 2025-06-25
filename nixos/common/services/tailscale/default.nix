@@ -70,6 +70,7 @@ in
               "--advertise-routes=172.16.0.0/12"
               "--snat-subnet-routes=false"
               "--tun=userspace-networking"
+              "--netfilter-mode=off" 
             ];
             openFirewall = true;
             useRoutingFeatures = "both";
