@@ -68,7 +68,7 @@ in
                 wait
               '
           '';
-          Restart = "always";
+          restart = "always";
         };
       };
     })
