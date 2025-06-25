@@ -33,12 +33,12 @@ in
       };
     })
     (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
-      containers.nextcloud = {
+      containers.tailscale = {
         autoStart = true;
-        hostName = "${hostname}-ts";
         privateNetwork = false;
-        bridge = "bridge21";
-        config = { config, pkgs, lib, ... }: {
+        hostBridge = "bridge21";
+        config = { config, pkgs, lib, ... }: 
+        {
           environment.systemPackages = with pkgs; [
             tailscale
             ethtool
@@ -59,10 +59,14 @@ in
 
           services.networkd-dispatcher = {
             enable = true;
-            script = ''
-              #!/bin/sh
-              ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
-            '';
+            rules = {
+              "99-custom" = {
+                match = "up";
+                script = ''
+                  ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
+                '';
+              };
+            };
           };
 
           system.stateVersion = "25.05";
@@ -84,7 +88,7 @@ in
       services.keepalived = {
         enable = true;
         vrrpInstances = {
-          nextcloud-vip = {
+          tailscale-vip = {
             interface = "eth0";
             virtualRouterId = 51;
             priority = if hostname == "xsvr1" then 101 else if hostname == "xsvr2" then 100 else 99;
