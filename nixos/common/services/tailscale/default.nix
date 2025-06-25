@@ -110,8 +110,6 @@ in
               };
             };
           };
-
-          security.allowPrivileged = true;
         };
       };
     })
