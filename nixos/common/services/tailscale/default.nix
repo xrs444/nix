@@ -8,8 +8,8 @@
   ...
 }:
 let
-  tsClients = [ ];
-  tsExitNodes = [ "xsvr1" "xsvr2" "xsvr3" ];
+  tsClients = [ "xsvr1" "xsvr2" "xsvr3" ];
+  tsExitNodes = [ ];
 
   # Assign a static IP for each host
   containerIPs = {
