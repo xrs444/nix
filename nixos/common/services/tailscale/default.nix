@@ -38,6 +38,7 @@ in
      
       environment.systemPackages = with pkgs; [ 
         tailscale
+        ethtool
       ];
 
       services.tailscale = {
@@ -52,6 +53,19 @@ in
         useRoutingFeatures = "both";
         };
       networking.firewall.checkReversePath = "loose";
+
+      services.networkd-dispatcher = {
+        enable = true;
+        script = ''
+          #!/bin/sh
+          ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
+        '';
+     };
     })
+};
+  
+  
+  
+  
+  
   ];
-}
