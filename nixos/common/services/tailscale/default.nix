@@ -55,7 +55,7 @@ in
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           ExecStart = ''
-            ${pkgs.podman}/bin/podman run --rm --name tailscale \
+            ${pkgs.podman}/bin/podman run --name tailscale \
               --privileged \
               --network host \
               -v /dev/net/tun:/dev/net/tun \
