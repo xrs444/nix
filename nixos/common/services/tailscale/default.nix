@@ -95,25 +95,24 @@ in
           };
 
           services.resolved.enable = true;
-        };
-      };
-    })
-    {
-      services.keepalived = {
-        enable = true;
-        vrrpInstances = {
-          tailscale-vip = {
-            interface = "eth0";
-            virtualRouterId = 51;
-            priority = if hostname == "xsvr1" then 101 else if hostname == "xsvr2" then 100 else 99;
-            state = if hostname == "xsvr1" then "MASTER" else "BACKUP";
-            virtualIps = [
-              { addr = "172.20.21.200/24"; }
-            ];
+
+          services.keepalived = {
+            enable = true;
+            vrrpInstances = {
+              tailscale-vip = {
+                interface = "eth0";
+                virtualRouterId = 51;
+                priority = if hostname == "xsvr1" then 101 else if hostname == "xsvr2" then 100 else 99;
+                state = if hostname == "xsvr1" then "MASTER" else "BACKUP";
+                virtualIps = [
+                  { addr = "172.20.21.200/24"; }
+                ];
+              };
+            };
           };
         };
       };
-    }
+    })
   ];
 }
 
