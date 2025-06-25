@@ -56,7 +56,13 @@ in
             hostBridge = "bridge21";
           };
         };
-        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW"];
+        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
+        bindMounts = {
+          "/dev/net/tun" = {
+            hostPath = "/dev/net/tun";
+            isReadOnly = false;
+          };
+        };
         config = { config, pkgs, lib, ... }: {
           environment.systemPackages = with pkgs; [
             tailscale
