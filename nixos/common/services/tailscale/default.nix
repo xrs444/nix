@@ -33,12 +33,12 @@ in
         ];
       };
     })
-    (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
 
+    (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
       services.networkd-dispatcher = {
         enable = true;
         rules."99-ts-gro" = {
-          onState =  [ "routable" ];
+          onState = [ "routable" ];
           script = ''
             if [ "$IFACE" = "bond0.21" ]; then
               ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
@@ -47,29 +47,29 @@ in
         };
       };
 
-      virtualisation.podman.containers.tailscale = {
-        image = "tailscale/tailscale:latest";
-        security.allowPrivileged = true;
-        network = "host";
-        volumes = [
-          "/dev/net/tun:/dev/net/tun"
-          "/var/lib/tailscale:/var/lib/tailscale"
-        ];
-        environment = {
-          # Optionally, set TS_AUTHKEY or other env vars here
-          # TS_AUTHKEY = "your-auth-key";
+      virtualisation.podman.enable = true;
+
+      systemd.services.tailscale-podman = {
+        description = "Tailscale Podman Container";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          ExecStart = ''
+            ${pkgs.podman}/bin/podman run --rm --name tailscale \
+              --privileged \
+              --network host \
+              -v /dev/net/tun:/dev/net/tun \
+              -v /var/lib/tailscale:/var/lib/tailscale \
+              tailscale/tailscale:latest \
+              /bin/sh -c '
+                tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock &
+                sleep 2
+                tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false
+                wait
+              '
+          '';
+          Restart = "always";
         };
-        cmd = [
-          "/bin/sh"
-          "-c"
-          ''
-            tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock &
-            sleep 2
-            tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false
-            wait
-          ''
-        ];
-        restartPolicy = "always";
       };
     })
   ];
