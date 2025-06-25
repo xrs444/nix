@@ -75,6 +75,7 @@ in
               "--accept-routes"
               "--advertise-routes=172.16.0.0/12"
               "--snat-subnet-routes=false"
+              "--tun=userspace-networking"
             ];
             openFirewall = true;
             useRoutingFeatures = "both";
@@ -110,6 +111,9 @@ in
               };
             };
           };
+
+          systemd.services.tailscaled.after = [ "network-online.target" ];
+          systemd.services.tailscaled.wants = [ "network-online.target" ];
         };
       };
     })
