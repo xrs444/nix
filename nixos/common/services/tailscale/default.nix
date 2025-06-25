@@ -61,7 +61,7 @@ in
             enable = true;
             rules = {
               "99-custom" = {
-                match = "up";
+                conditions = [ "up" ];
                 script = ''
                   ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
                 '';
