@@ -20,6 +20,7 @@ let
 in
 {
   config = lib.mkMerge [
+
     (lib.mkIf (lib.elem "${hostname}" tsClients) {
       environment.systemPackages = with pkgs; lib.optionals isWorkstation [ trayscale ];
       services.tailscale = {
@@ -33,6 +34,19 @@ in
       };
     })
     (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
+
+      services.networkd-dispatcher = {
+        enable = true;
+        rules."99-ts-gro" = {
+          onState =  [ "routable" ];
+          script = ''
+            if [ "$IFACE" = "bond0.21" ]; then
+              ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
+            fi
+          '';
+        };
+      };
+
       containers.tailscale = {
         autoStart = true;
         privateNetwork = false;
@@ -57,18 +71,6 @@ in
           };
           networking.firewall.checkReversePath = "loose";
 
-          services.networkd-dispatcher = {
-            enable = true;
-            rules = {
-              "99-custom" = {
-                conditions = [ "up" ];
-                script = ''
-                  ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
-                '';
-              };
-            };
-          };
-
           system.stateVersion = "25.05";
 
           networking = {
@@ -76,8 +78,8 @@ in
             interfaces.eth0.ipv4.addresses = [
               { address = containerIPs.${hostname}; prefixLength = 24; }
             ];
-            defaultGateway = "172.20.21.250"; # <-- Set your gateway here
-            nameservers = [ "172.18.10.250" ]; # <-- Set your DNS servers here
+            defaultGateway = "172.20.21.250";
+            nameservers = [ "172.18.10.250" ];
             firewall.enable = false;
             useHostResolvConf = lib.mkForce false;
           };
