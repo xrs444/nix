@@ -56,7 +56,7 @@ in
             hostBridge = "bridge21";
           };
         };
-        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
+        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" "CONFIG_TUN"];
         config = { config, pkgs, lib, ... }: {
           environment.systemPackages = with pkgs; [
             tailscale
