@@ -13,9 +13,9 @@ let
 
   # Assign a static IP for each host
   containerIPs = {
-    xsvr1 = "172.20.21.201";
-    xsvr2 = "172.20.21.202";
-    xsvr3 = "172.20.21.203";
+    xsvr1 = "172.20.2.201";
+    xsvr2 = "172.20.2.202";
+    xsvr3 = "172.20.2.203";
   };
 in
 {
@@ -88,7 +88,7 @@ in
             interfaces.eth0.ipv4.addresses = [
               { address = containerIPs.${hostname}; prefixLength = 24; }
             ];
-            defaultGateway = "172.20.21.250";
+            defaultGateway = "172.20.2.250";
             nameservers = [ "172.18.10.250" ];
             firewall.enable = false;
             useHostResolvConf = lib.mkForce false;
