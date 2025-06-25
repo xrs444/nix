@@ -56,7 +56,7 @@ in
             hostBridge = "bridge21";
           };
         };
-        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
+        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" "SYS_MODULE" ];
         bindMounts = {
           "/dev/net/tun" = {
             hostPath = "/dev/net/tun";
