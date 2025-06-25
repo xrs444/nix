@@ -49,15 +49,20 @@ in
 
       containers.tailscale = {
         autoStart = true;
+        restartIfChanged = true;
         privateNetwork = false;
-        hostBridge = "bridge21";
-        config = { config, pkgs, lib, ... }: 
-        {
+        extraVeths = [
+          {
+            hostBridge = "bridge21";
+            guestInterfaceName = "eth0";
+          }
+        ];
+        additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
+        config = { config, pkgs, lib, ... }: {
           environment.systemPackages = with pkgs; [
             tailscale
             ethtool
           ];
-
           services.tailscale = {
             enable = true;
             extraUpFlags = [
