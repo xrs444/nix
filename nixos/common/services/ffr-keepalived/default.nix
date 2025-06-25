@@ -163,10 +163,4 @@ else
         iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
       '';
     };
-
-    # Enable IP forwarding
-    boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = lib.mkForce 1;
-      "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
-    };
   }

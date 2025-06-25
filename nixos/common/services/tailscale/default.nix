@@ -36,10 +36,6 @@ in
     })   
     ( lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
      
-      boot.kernel = {
-        sysctl."net.ipv4.ip_forward" = lib.mkForce 1;
-        sysctl."net.ipv6.conf.all.forwarding" = lib.mkForce 1;
-      };  
       environment.systemPackages = with pkgs; [ 
         tailscale
       ];
