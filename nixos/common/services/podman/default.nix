@@ -21,5 +21,5 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
       dockerCompat = true;
       defaultNetwork.settings.dns_enabled = true;
     };
-
+  };
 }
