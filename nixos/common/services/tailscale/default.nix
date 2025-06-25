@@ -8,22 +8,20 @@
   ...
 }:
 let
-  tsClients = [
-  ];
-  tsExitNodes = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-  ];
+  tsClients = [ ];
+  tsExitNodes = [ "xsvr1" "xsvr2" "xsvr3" ];
 
+  # Assign a static IP for each host
+  containerIPs = {
+    xsvr1 = "172.20.21.201/24";
+    xsvr2 = "172.20.21.202/24";
+    xsvr3 = "172.20.21.203/24";
+  };
 in
 {
   config = lib.mkMerge [
-    
-    ( lib.mkIf (lib.elem "${hostname}" tsClients) {
-
+    (lib.mkIf (lib.elem "${hostname}" tsClients) {
       environment.systemPackages = with pkgs; lib.optionals isWorkstation [ trayscale ];
-
       services.tailscale = {
         enable = true;
         extraUpFlags = [
@@ -32,17 +30,15 @@ in
         extraSetFlags = [
           "--operator=${username} --accept-routes"
         ];
-      };     
-    })   
-    ( lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
-     
+      };
+    })
+    (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
       containers.nextcloud = {
         autoStart = true;
         hostName = "${hostname}-ts";
         privateNetwork = false;
         bridge = "bridge21";
         config = { config, pkgs, lib, ... }: {
-
           environment.systemPackages = with pkgs; [
             tailscale
             ethtool
@@ -72,12 +68,11 @@ in
           system.stateVersion = "25.05";
 
           networking = {
-            useDHCP = true;
-            firewall = {
-              enable = false;
-            };
-            # Use systemd-resolved inside the container
-            # Workaround for bug https://github.com/NixOS/nixpkgs/issues/162686
+            useDHCP = false;
+            interfaces.eth0.ipv4.addresses = [
+              { address = containerIPs.${hostname}; }
+            ];
+            firewall.enable = false;
             useHostResolvConf = lib.mkForce false;
           };
 
@@ -85,7 +80,23 @@ in
         };
       };
     })
-  ]
+    {
+      services.keepalived = {
+        enable = true;
+        vrrpInstances = {
+          nextcloud-vip = {
+            interface = "eth0";
+            virtualRouterId = 51;
+            priority = if hostname == "xsvr1" then 101 else if hostname == "xsvr2" then 100 else 99;
+            state = if hostname == "xsvr1" then "MASTER" else "BACKUP";
+            virtualIps = [
+              { addr = "172.20.21.200/24"; }
+            ];
+          };
+        };
+      };
+    }
+  ];
 }
 
 
