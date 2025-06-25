@@ -14,6 +14,12 @@ let
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
 
-  virtualisation.podman.enable = true;
+  virtualisation.containers.enable = true;
+  virtualisation = {
+    podman = {
+      enable = true;
+      dockerCompat = true;
+      defaultNetwork.settings.dns_enabled = true;
+    };
 
 }

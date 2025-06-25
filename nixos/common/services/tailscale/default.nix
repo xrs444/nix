@@ -47,7 +47,7 @@ in
         };
       };
 
-      virtualisation.podman-containers.containers.tailscale = {
+      virtualisation.podman.containers.tailscale = {
         image = "tailscale/tailscale:latest";
         security.allowPrivileged = true;
         network = "host";
