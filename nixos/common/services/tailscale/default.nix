@@ -51,12 +51,11 @@ in
         autoStart = true;
         restartIfChanged = true;
         privateNetwork = false;
-        extraVeths = [
-          {
+        extraVeths = {
+          eth0 = {
             hostBridge = "bridge21";
-            guestInterfaceName = "eth0";
-          }
-        ];
+          };
+        };
         additionalCapabilities = [ "CAP_NET_ADMIN" "CAP_NET_RAW" ];
         config = { config, pkgs, lib, ... }: {
           environment.systemPackages = with pkgs; [
