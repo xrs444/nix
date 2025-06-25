@@ -43,10 +43,8 @@ in
       services.tailscale = {
         enable = true;
         extraUpFlags = [
-#          "--operator=${username}"
           "--advertise-exit-node"
           "--accept-routes"
-          "--allow-lan-access"
           "--advertise-routes=172.16.0.0/12"
           "--snat-subnet-routes=false"
           ];
