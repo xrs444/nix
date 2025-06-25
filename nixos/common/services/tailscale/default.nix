@@ -51,7 +51,8 @@ in
 
       systemd.services.tailscale-podman = {
         description = "Tailscale Podman Container";
-        after = [ "network.target" ];
+        after = [ "network.target" "podman.service" ];
+        requires = [ "podman.service" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           ExecStart = ''
@@ -61,12 +62,7 @@ in
               -v /dev/net/tun:/dev/net/tun \
               -v /var/lib/tailscale:/var/lib/tailscale \
               tailscale/tailscale:latest \
-              /bin/sh -c '
-                tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock &
-                sleep 2
-                tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false
-                wait
-              '
+              /bin/sh -c "tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock & sleep 2; tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false; wait"
           '';
           Restart = "always";
         };
