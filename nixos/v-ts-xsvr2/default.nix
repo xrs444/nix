@@ -9,7 +9,7 @@
 {
   imports = [
     ./disks.nix
-    ./network.nix
+#    ./network.nix
   ];
   nixpkgs.hostPlatform = "x86_64-linux";
 

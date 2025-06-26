@@ -16,7 +16,7 @@
     let
       isISO = builtins.substring 0 4 hostname == "iso-";
       isInstall = !isISO;
-      isLaptop = hostname != "xlabmgmt" && hostname != "xdash1" && hostname != "xhac-radio" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsvr3";
+      isLaptop = hostname == "xlt2-s";
       isWorkstation = builtins.isString desktop;
     in
     inputs.home-manager.lib.homeManagerConfiguration {
@@ -50,7 +50,7 @@
     let
       isISO = builtins.substring 0 4 hostname == "iso-";
       isInstall = !isISO;
-      isLaptop = hostname != "xlabmgmt" && hostname != "xdash1" && hostname != "xhac-radio" && hostname != "xsvr1" && hostname != "xsvr2" && hostname != "xsvr3";
+      isLaptop = hostname == "xlt2-s";
       isWorkstation = builtins.isString desktop;
       tailNet = "corgi-squeaker.ts.net";
     in
