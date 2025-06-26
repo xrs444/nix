@@ -8,7 +8,7 @@ let
       memory = "2";
       nicType = "bridge";
       hostNic = "bridge21";
-      mac = "52:54:00:00:00:12";
+      mac = "52:54:00:00:00:31";
       autostart = true;
       firmware = "efi";
       withVnic = true;
