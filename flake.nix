@@ -70,6 +70,10 @@
         hostname = "xlabmgmt";
         desktop = "gnome";
       };
+      v-ts-xsvr1 = lib.mkNixos { hostname = "v-ts-xsvr1"; };
+      v-ts-xsvr2 = lib.mkNixos { hostname = "v-ts-xsvr2"; };
+      v-ts-xsvr3 = lib.mkNixos { hostname = "v-ts-xsvr3"; };
+
       #       Auxiliary
       #          xdash1 = lib.mkNixos {
       #          hostname = "xdash1";
