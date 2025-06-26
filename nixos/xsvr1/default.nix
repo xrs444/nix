@@ -49,5 +49,4 @@
 
   powerManagement.cpuFreqGovernor = "performance";
   
-
 }

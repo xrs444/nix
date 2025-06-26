@@ -44,6 +44,20 @@ let
       };
     }
     {
+      name = "v-ts-xsvr1";
+      vcpu = "2";
+      memory = "2";
+      nicType = "bridge";
+      hostNic = "bridge21";
+      mac = "52:54:00:00:00:11";
+      autostart = true;
+      firmware = "efi";
+      withVnic = true;
+      storage = {
+        path = "/vm/v-ts-xsvr1/v-ts-xsvr1.qcow2";
+      };
+    }
+    {
       name = "v-k8s-xsvr1";
       vcpu = "4";
       memory = "16";

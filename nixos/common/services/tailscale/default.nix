@@ -9,18 +9,17 @@
 }:
 let
   tsClients = [ "xsvr1" "xsvr2" "xsvr3" ];
-  tsExitNodes = [ ];
+  tsExitNodes = [ "v-ts-xsvr1" "v-ts-xsvr2" "v-ts-xsvr3" ];
 
   # Assign a static IP for each host
   containerIPs = {
-    xsvr1 = "172.20.2.201";
-    xsvr2 = "172.20.2.202";
-    xsvr3 = "172.20.2.203";
+    xsvr1-ts = "172.20.21.201/24";
+    xsvr2-ts = "172.20.21.202/24";
+    xsvr3-ts = "172.20.21.203/24";
   };
 in
 {
   config = lib.mkMerge [
-
     (lib.mkIf (lib.elem "${hostname}" tsClients) {
       environment.systemPackages = with pkgs; lib.optionals isWorkstation [ trayscale ];
       services.tailscale = {
@@ -35,43 +34,53 @@ in
     })
 
     (lib.mkIf (lib.elem "${hostname}" tsExitNodes) {
+
+      environment.systemPackages = with pkgs ; [
+        ethtool
+        networkd-dispatcher
+        keepalived
+      ];
+
+      services.tailscale = {
+        enable = true;
+
+          extraUpFlags = [
+            "--advertise-exit-node"
+            "--accept-routes"
+            "--advertise-routes=172.16.0.0/12"
+            "--snat-subnet-routes=false"
+          ];
+          openFirewall = true;
+          useRoutingFeatures = "both";
+      };
+      networking.firewall.checkReversePath = "loose";
+
       services.networkd-dispatcher = {
         enable = true;
-        rules."99-ts-gro" = {
+        rules."99-tailscale" = {
           onState = [ "routable" ];
           script = ''
-            if [ "$IFACE" = "bond0.21" ]; then
-              ethtool -K bond0 rx-udp-gro-forwarding on rx-gro-list off
-            fi
+            #!/bin/sh
+            NIC=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}')
+            ethtool -K "$NIC" rx-udp-gro-forwarding on rx-gro-list off
           '';
         };
       };
 
-      virtualisation.podman.enable = true;
-
-      systemd.services.tailscale-podman = {
-        description = "Tailscale Podman Container";
-        after = [ "network.target" "podman.service" ];
-        requires = [ "podman.service" ];
-        wantedBy = [ "multi-user.target" ];
-        serviceConfig = {
-          ExecStart = ''
-            ${pkgs.podman}/bin/podman run --name tailscale \
-              --privileged \
-              --network host \
-              -v /dev/net/tun:/dev/net/tun \
-              -v /var/lib/tailscale:/var/lib/tailscale \
-              tailscale/tailscale:latest \
-              /bin/sh -c "tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock & sleep 2; tailscale up --advertise-exit-node --accept-routes --advertise-routes=172.16.0.0/12 --snat-subnet-routes=false; wait"
-          '';
-          Restart = "always";
+      services.keepalived = {
+        enable = true;
+        vrrpInstances = {
+          ts-vip = {
+            interface = "eth0";
+            virtualRouterId = 51;
+            priority = if hostname == "v-ts-xsvr1" then 101 else if hostname == "v-ts-xsvr2" then 100 else 99;
+            state = if hostname == "v-ts-xsvr1" then "MASTER" else "BACKUP";
+            virtualIps = [
+              { addr = "172.20.2.200/24"; }
+            ];
+          };
         };
       };
     })
   ];
 }
-
-
-
-
-
