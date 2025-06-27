@@ -52,6 +52,9 @@
       "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
       "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
       "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xlabmgmt"; };
+      "thomas.local@xts1" = lib.mkNixos { hostname = "xts1"; };
+      "thomas.local@xts2" = lib.mkNixos { hostname = "xts2"; };
+      "thomas.local@xts3" = lib.mkNixos { hostname = "xts3"; };
       # Auxiliary
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
@@ -70,9 +73,7 @@
         hostname = "xlabmgmt";
         desktop = "gnome";
       };
-      v-ts-xsvr1 = lib.mkNixos { hostname = "v-ts-xsvr1"; };
-      v-ts-xsvr2 = lib.mkNixos { hostname = "v-ts-xsvr2"; };
-      v-ts-xsvr3 = lib.mkNixos { hostname = "v-ts-xsvr3"; };
+
 
       #       Auxiliary
       #          xdash1 = lib.mkNixos {
