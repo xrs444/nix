@@ -142,15 +142,6 @@ else
           '';
         };
       };
-      extraConfig = ''
-        vrrp_script check_tailscale_subnet {
-          script "/etc/check-tailscale-subnet.sh"
-          interval 2
-          weight 10
-          fall 3
-          rise 2
-        }
-      '';
     };
 
     # Open required ports in firewall
