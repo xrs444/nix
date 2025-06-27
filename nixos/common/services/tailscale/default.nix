@@ -9,13 +9,12 @@
 }:
 let
   tsClients = [ "xsvr1" "xsvr2" "xsvr3" ];
-  tsExitNodes = [ "v-ts-xsvr1" "v-ts-xsvr2" "v-ts-xsvr3" ];
+  tsExitNodes = [ "xts1" "xts2" ];
 
   # Assign a static IP for each host
   containerIPs = {
-    xsvr1-ts = "172.20.21.201/24";
-    xsvr2-ts = "172.20.21.202/24";
-    xsvr3-ts = "172.20.21.203/24";
+    xsvr1-ts = "172.20.1.201/24";
+    xsvr2-ts = "172.20.1.202/24";
   };
 in
 {
@@ -73,8 +72,8 @@ in
           ts-vip = {
             interface = "eth0";
             virtualRouterId = 51;
-            priority = if hostname == "v-ts-xsvr1" then 101 else if hostname == "v-ts-xsvr2" then 100 else 99;
-            state = if hostname == "v-ts-xsvr1" then "MASTER" else "BACKUP";
+            priority = if hostname == "xts1" then 101 else if hostname == "xts2" then 100 else 99;
+            state = if hostname == "xts1" then "MASTER" else "BACKUP";
             virtualIps = [
               { addr = "172.20.2.200/24"; }
             ];

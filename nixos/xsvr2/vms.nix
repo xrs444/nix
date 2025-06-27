@@ -3,20 +3,6 @@
 let
   vmSpecs = [
     {
-      name = "v-ts-xsvr2";
-      vcpu = "2";
-      memory = "2";
-      nicType = "bridge";
-      hostNic = "bridge21";
-      mac = "52:54:00:00:00:21";
-      autostart = true;
-      firmware = "efi";
-      withVnic = true;
-      storage = {
-        path = "/vm/v-ts-xsvr2/v-ts-xsvr2.qcow2";
-      };
-    }
-    {
       name = "v-k8s-xsvr2";
       vcpu = "4";
       memory = "16";
