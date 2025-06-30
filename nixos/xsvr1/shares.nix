@@ -1,6 +1,9 @@
 { config, pkgs, lib, ...}: 
 
 {
+
+services.nfs.server.enable = true;
+
 services.samba = {
   enable = true;
   securityType = "user";
