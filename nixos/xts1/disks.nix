@@ -6,7 +6,7 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/vda";
+        device = "mmc-AJTD4R_0x0760e283";
         type = "disk";
         content = {
           type = "gpt";
