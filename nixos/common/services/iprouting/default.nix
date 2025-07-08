@@ -10,6 +10,8 @@ let
     "xsvr1"
     "xsvr2"
     "xsvr3"
+    "xts1"
+    "xrs2"
   ];
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
