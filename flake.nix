@@ -53,8 +53,6 @@
       "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
       "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xlabmgmt"; };
       "thomas.local@xts1" = lib.mkNixos { hostname = "xts1"; };
-      "thomas.local@xts2" = lib.mkNixos { hostname = "xts2"; };
-      "thomas.local@xts3" = lib.mkNixos { hostname = "xts3"; };
       # Auxiliary
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
@@ -73,7 +71,14 @@
         hostname = "xlabmgmt";
         desktop = "gnome";
       };
-
+      xts1 = lib.mkNixos {
+        hostname = "xts1";
+        platform = "aarch64-linux";
+      };      
+      xts2 = lib.mkNixos {
+        hostname = "xts2";
+        platform = "aarch64-linux";
+      };    
 
       #       Auxiliary
       #          xdash1 = lib.mkNixos {
