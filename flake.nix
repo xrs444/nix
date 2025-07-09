@@ -92,8 +92,8 @@
 
       # Clients
 
-      xlt1-t-nixos = lib.mkNixos {
-        hostname = "xlt1-t-nixos";
+      xlt1-t-vnixos = lib.mkNixos {
+        hostname = "xlt1-t-vnixos";
         desktop = "gnome";
       };
     
