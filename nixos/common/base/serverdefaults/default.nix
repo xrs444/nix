@@ -14,7 +14,7 @@
   ...
 }:
 let
-  installOn = [ "xsvr1" "xsvr2" "xsvr3" ];
+  installOn = [ "xsvr1" "xsvr2" "xsvr3" "xts1" "xts2" ];
 in
 lib.mkIf (lib.elem hostname installOn) {
 

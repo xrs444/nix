@@ -89,7 +89,14 @@
       #          hostname = "xhac-radio";
       #          platform = "aarch64-linux";
       #        };
+
       # Clients
+
+      xlt1-t-nixos = lib.mkNixos {
+        hostname = "xlt1-t-nixos";
+        desktop = "gnome";
+      };
+    
     };
 
     # macOS machines
