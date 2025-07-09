@@ -14,7 +14,7 @@
     disko.url = "https://flakehub.com/f/nix-community/disko/1.10.0.tar.gz";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "https://flakehub.com/f/NixOS/nixos-hardware/*";
-    nixos-needsreboot.url = "https://codeberg.org/Mynacol/nixos-needsreboot/archive/0.2.2.tar.gz";
+    nixos-needsreboot.url = "https://codeberg.org/Mynacol/nixos-needsreboot/archive/main.tar.gz";
     nixos-needsreboot.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     nix-index-database.url = "github:Mic92/nix-index-database";
