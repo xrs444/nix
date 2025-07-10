@@ -24,10 +24,7 @@
     inputs.sops-nix.nixosModules.sops
     inputs.comin.nixosModules.comin
     (modulesPath + "/installer/scan/not-detected.nix")
-    # Correct function call for the function-based module:
-    (./common/base/defaults/default.nix {
-      inherit config hostname isInstall isWorkstation inputs lib modulesPath outputs pkgs platform stateVersion username overlays;
-    })
+    ./common/base/defaults/default.nix
     ./${hostname}
     ./common/base
     ./common/services
