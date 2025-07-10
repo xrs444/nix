@@ -1,4 +1,4 @@
-{ pkgs, comin, system, lib, inputs, ... }:
+{ pkgs, comin, system, lib, inputs, platform, ... }:
 
 {
   services.comin = {

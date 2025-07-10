@@ -3,6 +3,7 @@
   hostname,
   lib,
   pkgs,
+  platform,
   ...
 }:
 let

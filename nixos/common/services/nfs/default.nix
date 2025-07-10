@@ -1,6 +1,7 @@
 {
   hostname,
   lib,
+  platform,
   ...
 }:
 {

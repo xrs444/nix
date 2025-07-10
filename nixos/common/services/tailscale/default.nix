@@ -5,6 +5,7 @@
   lib,
   pkgs,
   username,
+  platform,
   ...
 }:
 let
