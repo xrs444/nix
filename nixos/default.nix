@@ -8,7 +8,7 @@
   modulesPath,
   outputs,
   pkgs,
-  platform,
+  platform ? null,
   stateVersion,
   username,
   overlays,
