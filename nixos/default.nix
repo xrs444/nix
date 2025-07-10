@@ -37,17 +37,21 @@
         git
         nix-output-monitor
         pciutils
-      ]
-      ++ lib.optionals isInstall [
-        inputs.determinate.packages.${platform}.default
-        inputs.fh.packages.${platform}.default
-        inputs.nixos-needsreboot.packages.${platform}.default
         nvd
         nvme-cli
         rsync
         smartmontools
         sops
-      ];
+      ]
+      ++ lib.optionals isInstall (
+        lib.optionals (platform == "x86_64-linux" || platform == "i686-linux") [
+          inputs.determinate.packages.${platform}.default
+          inputs.fh.packages.${platform}.default
+          inputs.nixos-needsreboot.packages.${platform}.default
+        ]
+        ++ lib.optionals (platform == "aarch64-linux") [
+        ]
+      );
   };
 
   nixpkgs = {
@@ -125,7 +129,7 @@
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
 
-  system = {
+  system = lib.mkIf (platform == "x86_64-linux" || platform == "i686-linux") {
     activationScripts = {
       nixos-needsreboot = lib.mkIf (isInstall) {
         supportsDryActivation = true;
