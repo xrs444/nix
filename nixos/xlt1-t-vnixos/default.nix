@@ -12,8 +12,7 @@
     ./disks.nix
 #    ./network.nix
   ];
-  nixpkgs.hostPlatform = "aarch64-linux";
+  nixpkgs.hostPlatform = platform;
 
   system.stateVersion = "25.05";
-
 }
