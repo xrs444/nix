@@ -115,7 +115,7 @@
     # Custom packages; accessible via 'nix build', 'nix shell', etc
     nixosModules = { lib, pkgs, platform, hostname,... }@args: import ./modules/nixos (args // { inherit lib pkgs; });
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-
+    overlays = import ./overlays { inherit inputs; };
     packages = lib.forAllSystems (system:
         let
           # Import nixpkgs for the target system, applying overlays directly
