@@ -1,4 +1,4 @@
-{ lib, pkgs, platform, hostname, config,... } @ args:
+{ lib, ... } @ args:
 let
   currentDir = ./.;
   isDirectoryAndNotTemplate = name: type: type == "directory";
