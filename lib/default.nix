@@ -2,6 +2,7 @@
   inputs,
   outputs,
   stateVersion,
+  platform
   ...
 }:
 let
