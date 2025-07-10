@@ -5,6 +5,7 @@
   pkgs,
   username,
   platform,
+  system,
   ...
 } @ args:
 {
