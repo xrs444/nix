@@ -9,7 +9,7 @@
   ...
 }:
 let
-  tsClients = [ "xsvr1" "xsvr2" "xsvr3" ];
+  tsClients = [ "xsvr1" "xsvr2" "xsvr3" "xtl1-t-nixos"];
   tsExitNodes = [ "xts1" "xts2" ];
 
 in
