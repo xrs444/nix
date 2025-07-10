@@ -57,6 +57,8 @@
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
       # Clients
+      "thomas.local@xlt1-t-vnixos" = lib.mkNixos { hostname = "xlt1-t-vnixos"; };
+      # Auxiliary
     };
 
     nixosConfigurations = {
@@ -112,7 +114,7 @@
 
     # Custom packages; accessible via 'nix build', 'nix shell', etc
     packages = lib.forAllSystems (system: import ./pkgs { pkgs = nixpkgs.legacyPackages.${system}; });
-    nixosModules = import ./modules/nixos;
+    nixosModules = { lib, pkgs, platform, hostname,... }@args: import ./modules/nixos (args // { inherit lib pkgs; });
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
   };
 }
