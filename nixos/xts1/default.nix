@@ -4,6 +4,7 @@
   lib,
   pkgs,
   username,
+  platform,
   ...
 }:
 {
@@ -19,6 +20,14 @@
     {
       assertion = true;
       message = "platform for ${hostname} is ${platform}";
+    }
+    {
+    assertion = pkgs != null;
+    message = "pkgs is not set!";
+    }  
+    {
+    assertion = platform != null;
+    message = "platform is not set!";
     }
   ];
 }
