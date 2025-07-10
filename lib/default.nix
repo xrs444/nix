@@ -2,10 +2,11 @@
   inputs,
   outputs,
   stateVersion,
+  platform ? null,
   ...
 }:
 let
-  helpers = import ./helpers.nix { inherit inputs outputs stateVersion; };
+  helpers = import ./helpers.nix { inherit inputs outputs stateVersion platform; };
 in
 {
   inherit (helpers)
