@@ -45,7 +45,7 @@
     lib = import ./lib { inherit inputs outputs stateVersion ; };
   in
   {
-    overlays = import ./overlays { inherit inputs; };
+
     homeConfigurations = {
       # Servers
       "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
@@ -116,7 +116,7 @@
     nixosModules = { lib, pkgs, platform, hostname,... }@args: import ./modules/nixos (args // { inherit lib pkgs; });
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
 
-    packages = helper.forAllSystems (system:
+    packages = lib.forAllSystems (system:
         let
           # Import nixpkgs for the target system, applying overlays directly
           pkgsWithOverlays = import nixpkgs {
