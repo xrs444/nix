@@ -24,11 +24,13 @@
     inputs.sops-nix.nixosModules.sops
     inputs.comin.nixosModules.comin
     (modulesPath + "/installer/scan/not-detected.nix")
-    ./common/base/defaults/default.nix
+    (./common/base/defaults/default.nix {
+      inherit config hostname isInstall isWorkstation inputs lib modulesPath outputs pkgs platform stateVersion username overlays;
+    })
     ./${hostname}
     ./common/base
     ./common/services
-#   ./common/users
+# ./common/users
   ]; # ++ lib.optional isWorkstation ./common/desktop;
 
   nixpkgs = {
