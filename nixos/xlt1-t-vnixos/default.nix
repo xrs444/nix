@@ -11,6 +11,7 @@
 {
   imports = [
     ./disks.nix
+    ./desktop.nix
 #    ./network.nix
   ];
   nixpkgs.hostPlatform = platform;
