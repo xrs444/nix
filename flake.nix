@@ -95,6 +95,7 @@
       xlt1-t-vnixos = lib.mkNixos {
         hostname = "xlt1-t-vnixos";
         desktop = "gnome";
+        platform = "aarch64-linux";
       };
     
     };
