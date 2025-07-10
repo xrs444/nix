@@ -22,6 +22,7 @@
   };
 
   hardware.enableRedistributableFirmware = true;
+
   fileSystems."/".options = [ "noatime" "nodiratime" "discard" ]; 
 
   time.timeZone = "America/Phoenix";
@@ -46,56 +47,45 @@
 
   networking = {
     hostName = hostname;
-    };
-  
+  };
+
   environment.systemPackages = with pkgs; [
-    bat
-    binutils
-    curl
-    dig
     git
-    killall
-    nfs-utils
-    rsync
-    traceroute
-    tree
-    wget
     nix-output-monitor
-    nixfmt-rfc-style
-    usbutils
-    screen
-    tmux
-    
-    ]
-    ++ lib.optionals isInstall [
+    pciutils
+    nvd
+    nvme-cli
+    rsync
+    smartmontools
+    sops
+  ]
+  ++ lib.optionals isInstall (
+    lib.optionals (platform == "x86_64-linux" || platform == "i686-linux") [
       inputs.determinate.packages.${platform}.default
       inputs.fh.packages.${platform}.default
       inputs.nixos-needsreboot.packages.${platform}.default
-      nvd
-      nvme-cli
-      smartmontools
-      sops
-    ];
+    ]
+    ++ lib.optionals (platform == "aarch64-linux") [
+    ]
+  );
 
-    services = {
+  services = {
+    chrony = {
+      enable = true;
+      servers = [ "time.xrs444.net" ];
+      extraConfig = ''
+        makestep 1.0 3
+      '';
+    };
+    fwupd.enable = isInstall;
+    journald.extraConfig = "SystemMaxUse=250M";
+  };
 
-      chrony = {
-        enable = true;
-        servers = [ "time.xrs444.net"];
-        extraConfig = ''
-          makestep 1.0 3
-        '';
-      };
-      
-      fwupd.enable = isInstall;
-      journald.extraConfig = "SystemMaxUse=250M";
-    };
-  
-    security = {
-      polkit.enable = true;
-      rtkit.enable = true;
-    };
-    
+  security = {
+    polkit.enable = true;
+    rtkit.enable = true;
+  };
+
   programs.nh = {
     enable = true;
     package = pkgs.unstable.nh;
@@ -104,10 +94,10 @@
       enable = true;
       extraArgs = "--keep-since 10d --keep 3";
     };
+    nixos.label = lib.mkIf isInstall "-";
+    inherit stateVersion;
   };
 
-
-    # Create dirs for home-manager
-    systemd.tmpfiles.rules = [ "d /nix/var/nix/profiles/per-user/${username} 0755 ${username} root" ];
-  }
-  
+  # Create dirs for home-manager
+  systemd.tmpfiles.rules = [ "d /nix/var/nix/profiles/per-user/${username} 0755 ${username} root" ];
+}

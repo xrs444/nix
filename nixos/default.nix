@@ -30,42 +30,13 @@
 #   ./common/users
   ]; # ++ lib.optional isWorkstation ./common/desktop;
 
-  environment = {
-    systemPackages =
-      with pkgs;
-      [
-        git
-        nix-output-monitor
-        pciutils
-        nvd
-        nvme-cli
-        rsync
-        smartmontools
-        sops
-      ]
-      ++ lib.optionals isInstall (
-        lib.optionals (platform == "x86_64-linux" || platform == "i686-linux") [
-          inputs.determinate.packages.${platform}.default
-          inputs.fh.packages.${platform}.default
-          inputs.nixos-needsreboot.packages.${platform}.default
-        ]
-        ++ lib.optionals (platform == "aarch64-linux") [
-        ]
-      );
-  };
-
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
     overlays = [
-      # Add overlays your own flake exports (from overlays and pkgs dir):
       outputs.overlays.additions
 #      outputs.overlays.modifications
       outputs.overlays.unstable-packages
-
-      # Or just specify overlays directly here, for example:
-      # (_: _: { embr = inputs.embr.packages."${pkgs.system}".embr; })
     ];
-
     config = {
       allowUnfree = true;
     };
@@ -91,7 +62,6 @@
   systemd = {
     extraConfig = "DefaultTimeoutStopSec=10s";
     tmpfiles.rules = [
-
       "d /var/lib/private/sops/age 0755 root root"
     ];
   };
@@ -112,9 +82,7 @@
   in {
     settings = {
       experimental-features = "flakes nix-command";
-      # Disable global registry
       flake-registry = "";
-      # Workaround for https://github.com/NixOS/nix/issues/9574
       nix-path = config.nix.nixPath;
       trusted-users = [
         "root"
@@ -122,22 +90,8 @@
       ];
       warn-dirty = false;
     };
-    # Disable channels
     channel.enable = false;
-    # Make flake registry and nix path match flake inputs
     registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
-
-  system = lib.mkIf (platform == "x86_64-linux" || platform == "i686-linux") {
-    activationScripts = {
-      nixos-needsreboot = lib.mkIf (isInstall) {
-        supportsDryActivation = true;
-        text = "${lib.getExe inputs.nixos-needsreboot.packages.${pkgs.system}.default} \"$systemConfig\" || true";
-      };
-    };
-    nixos.label = lib.mkIf isInstall "-";
-    inherit stateVersion;
-  };
-  
 }
