@@ -24,7 +24,6 @@
     inputs.sops-nix.nixosModules.sops
     inputs.comin.nixosModules.comin
     (modulesPath + "/installer/scan/not-detected.nix")
-    ./common/base/defaults/default.nix
     ./${hostname}
     ./common/base
     ./common/services
