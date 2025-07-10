@@ -1,11 +1,9 @@
-{ lib, ... } @ args:
+{ lib, ... }:
 let
-  currentDir = ./.;
+  currentDir = ./.; # Represents the current directory
   isDirectoryAndNotTemplate = name: type: type == "directory";
   directories = lib.filterAttrs isDirectoryAndNotTemplate (builtins.readDir currentDir);
-  importDirectory = name:
-    let mod = import (currentDir + "/${name}");
-    in if builtins.isFunction mod then mod args else mod;
+  importDirectory = name: import (currentDir + "/${name}");
 in
 {
   imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
