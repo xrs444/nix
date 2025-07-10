@@ -6,9 +6,10 @@
   username,
   platform,
   ...
-}:
+} @ args:
 {
   imports = [
+    (import ../common/services args)
     ./disks.nix
 #    ./network.nix
   ];
