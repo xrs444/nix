@@ -42,7 +42,7 @@
   let
     inherit (self) outputs;
     stateVersion = "25.05";
-    lib = import ./lib { inherit inputs outputs stateVersion; };
+    lib = import ./lib { inherit inputs outputs stateVersion platform; };
   in
   {
     overlays = import ./overlays { inherit inputs; };
