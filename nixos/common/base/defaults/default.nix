@@ -95,7 +95,8 @@
       extraArgs = "--keep-since 10d --keep 3";
     };
   };
-  inherit stateVersion;
+
+  system.stateVersion = stateVersion;
 
   # Create dirs for home-manager
   systemd.tmpfiles.rules = [ "d /nix/var/nix/profiles/per-user/${username} 0755 ${username} root" ];
