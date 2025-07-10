@@ -15,4 +15,10 @@
 
   system.stateVersion = "25.05";
 
+  assertions = [
+    {
+      assertion = true;
+      message = "platform for ${hostname} is ${platform}";
+    }
+  ];
 }
