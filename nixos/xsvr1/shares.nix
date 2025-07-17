@@ -2,7 +2,24 @@
 
 {
 
-services.nfs.server.enable = true;
+services.nfs.server = {
+  enable = true;
+  createMountPoints = true;
+  
+  exports = ''
+    /zfs 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0)
+    /zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+  '';
+};
+
+services.nfs.settings = {
+  nfsd = {
+    "vers4" = "y";
+    "vers4.0" = "y";
+    "vers4.1" = "y";
+    "vers4.2" = "y";
+  };
+};
 
 services.samba = {
   enable = true;
