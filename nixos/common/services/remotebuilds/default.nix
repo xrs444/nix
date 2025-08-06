@@ -61,7 +61,7 @@ lib.mkIf (lib.elem config.networking.hostName buildclient) {
 ## Client
 
   nix = {
-    buildMachines = [ { 
+    buildMachines = [ ({ 
       hostName = "xsvr1.lan"; 
       systems = [ "x86_64-linux" "aarch64-linux" ];
       protocol = "ssh-ng";
@@ -69,8 +69,9 @@ lib.mkIf (lib.elem config.networking.hostName buildclient) {
       speedFactor = 2;
       supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
       sshUser = "builder";
+    } // lib.optionalAttrs (config.sops.secrets ? builder-ssh-key) {
       sshKey = config.sops.secrets.builder-ssh-key.path;
-    } ];
+    }) ];
     distributedBuilds = true;
     buildCores = 0;
     extraOptions = ''
