@@ -30,7 +30,4 @@
     };
   };
   
-  # Enable flakes for installer
-  nix.settings.experimental-features = ["nix-command" "flakes"];
-  
 }
