@@ -4,6 +4,7 @@
   lib,
   pkgs,
   username,
+  platform,
   ...
 }:
 {
@@ -13,4 +14,23 @@
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
 
+  system.stateVersion = "25.05";
+  
+  # Changes for nixos-anywhere compatibility
+  boot.initrd.availableKernelModules = [
+    "ahci"
+    "sd_mod"
+  ];
+  
+  # Enable SSH for nixos-anywhere
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = true; # For initial setup
+    };
+  };
+  
+  # Enable flakes for installer
+  nix.settings.experimental-features = ["nix-command" "flakes"];
+  
 }

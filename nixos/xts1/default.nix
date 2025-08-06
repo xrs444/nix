@@ -27,7 +27,6 @@
     enable = true;
     settings = {
       PasswordAuthentication = true; # For initial setup
-      PermitRootLogin = "yes"; # Required for nixos-anywhere deployment
     };
   };
   
