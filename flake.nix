@@ -81,7 +81,10 @@
         hostname = "xts2";
         platform = "aarch64-linux";
       };    
-
+      xcomm1 = lib.mkNixos {
+        hostname = "xcomm1";
+        desktop = "gnome";
+      };
       #       Auxiliary
       #          xdash1 = lib.mkNixos {
       #          hostname = "xdash1";
