@@ -35,15 +35,17 @@
         "sd_mod" 
       ];
       kernelModules = [
-        "kvm-intel"
+        "kvm-amd"
+        "amdgpu"
       ];
     };    
   };
 
+  hardware.cpu.amd.updateMicrocode = true;
   powerManagement.cpuFreqGovernor = "performance";
   
-  hardware.pulseaudio.enable = false;
-  security.rtkit.enable = true;
+  hardware.pulseaudio.enable = true;
+  security.rtkit.enable = false;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
