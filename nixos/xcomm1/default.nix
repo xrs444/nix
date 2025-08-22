@@ -15,12 +15,17 @@
     inputs.nixos-hardware.nixosModules.common-pc
     ./disks.nix
     ./network.nix
+    
   ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
   boot = {
-    loader.systemd-boot.enable = true;
+    loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -36,6 +41,13 @@
   };
 
   powerManagement.cpuFreqGovernor = "performance";
+  
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
 
 }
-

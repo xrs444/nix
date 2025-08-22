@@ -76,6 +76,8 @@
     fallbackDns = [ "172.18.10.250" ];
   };
 
+  services.fwupd.enable = true;
+  
   nix = 
   let
     flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
