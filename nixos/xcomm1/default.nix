@@ -45,7 +45,7 @@
   powerManagement.cpuFreqGovernor = "performance";
   
   hardware.pulseaudio.enable = true;
-  security.rtkit.enable = false;
+  security.rtkit.enable = lib.mkForce false;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
