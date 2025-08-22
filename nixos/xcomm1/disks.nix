@@ -1,4 +1,4 @@
-
+# ata-SAMSUNG_SSD_830_Series_S0XXNEAC706979
 
 { lib, ... }:
 
@@ -6,7 +6,7 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/sda";
+        device = "/dev/disk/by-id/ata-SAMSUNG_SSD_830_Series_S0XXNEAC706979";
         type = "disk";
         content = {
           type = "gpt";
