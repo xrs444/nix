@@ -44,7 +44,7 @@
   hardware.cpu.amd.updateMicrocode = true;
   powerManagement.cpuFreqGovernor = "performance";
   
-  hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.enable = false;
   security.rtkit.enable = lib.mkForce false;
   services.pipewire = {
     enable = true;
