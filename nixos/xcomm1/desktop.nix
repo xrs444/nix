@@ -19,6 +19,7 @@
   
   programs = {
     firefox.enable = true;
+    google-chrome.enable = true;
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
