@@ -19,7 +19,6 @@
   
   programs = {
     firefox.enable = true;
-    google-chrome.enable = true;
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
@@ -50,6 +49,7 @@
 
   environment.systemPackages = with pkgs; [
     gnome-remote-desktop
+    google-chrome
   ];
 
   services.gnome.gnome-remote-desktop.enable = true;
