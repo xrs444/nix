@@ -14,7 +14,7 @@
   ];
   nixpkgs.hostPlatform = "aarch64-linux";
 
-  system.stateVersion = "25.05";
+  system.stateVersion = "25.11";
   
   # Changes for nixos-anywhere compatibility
   boot.initrd.availableKernelModules = [
