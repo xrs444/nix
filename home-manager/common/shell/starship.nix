@@ -4,6 +4,7 @@
     starship = {
       enable = true;
       enableZshIntegration = true;
+      enableFishIntegration = true;
       settings = lib.mkDefault {
         format = lib.concatStrings [
           "$username"
