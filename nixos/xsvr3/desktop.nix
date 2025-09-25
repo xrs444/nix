@@ -13,8 +13,8 @@
         layout = "us";
         variant = "";
       };
-      libinput.enable = true;
     };
+    libinput.enable = true;
   };
   
   programs = {
