@@ -73,7 +73,7 @@ lib.mkIf (lib.elem config.networking.hostName buildclient) {
       sshKey = config.sops.secrets.builder-ssh-key.path;
     }) ];
     distributedBuilds = true;
-    buildCores = 0;
+    settings.cores = 0;
     extraOptions = ''
       builders-use-substitutes = true
     '';
