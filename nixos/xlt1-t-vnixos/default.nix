@@ -16,5 +16,4 @@
   ];
   nixpkgs.hostPlatform = platform;
 
-  system.stateVersion = "25.05";
 }
