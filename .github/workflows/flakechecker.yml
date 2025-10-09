@@ -17,7 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: wimpysworld/nothing-but-nix@main
-      - uses: DeterminateSystems/nix-installer-action@v4
+        with:
+          hatchet-protocol: 'holster'
+      - uses: DeterminateSystems/determinate-nix-action@v3
         with:
           extra-conf: |
             lazy-trees = true
