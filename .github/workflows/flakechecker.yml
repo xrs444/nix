@@ -15,11 +15,13 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: wimpysworld/nothing-but-nix@main
         with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@v16
+          hatchet-protocol: 'holster'
+      - uses: DeterminateSystems/determinate-nix-action@v3
         with:
-          determinate: true
+          extra-conf: |
+            lazy-trees = true
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/flake-checker-action@v9
+      - uses: DeterminateSystems/flake-checker-action@v12

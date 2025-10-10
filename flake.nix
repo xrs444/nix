@@ -5,11 +5,11 @@
     comin.inputs.nixpkgs.follows = "nixpkgs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-24.11";
+    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "https://flakehub.com/f/nix-community/disko/1.10.0.tar.gz";
     disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -41,7 +41,7 @@
   }@inputs:
   let
     inherit (self) outputs;
-    stateVersion = "25.11";
+    stateVersion = "25.05";
     lib = import ./lib { inherit inputs outputs stateVersion ; };
   in
   {

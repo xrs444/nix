@@ -15,11 +15,12 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: wimpysworld/nothing-but-nix@main
         with:
-          determinate: true
+          hatchet-protocol: 'holster'
+      - uses: DeterminateSystems/determinate-nix-action@v3
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/update-flake-lock@v24
+      - uses: DeterminateSystems/update-flake-lock@v27
         with:
           pr-title: "chore: update flake.lock"
           # Labels to be set on the PR
