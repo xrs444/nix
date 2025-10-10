@@ -482,11 +482,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1759974692,
-        "narHash": "sha256-8AN/Ps23Wx6CBEj7s5SKp8pVSA63BHlsAQICYF6Ac6E=",
+        "lastModified": 1760071578,
+        "narHash": "sha256-MZUsqax6PoXPDzhpLyduHoPY4CYYrzL97uKbsx/iGPE=",
         "owner": "nix-community",
         "repo": "nix-vscode-extensions",
-        "rev": "6c39663c00cb3041d9567cfc103c29b46d0b3c98",
+        "rev": "65365fe8c09b6c1b6bba1885a126723815376b1b",
         "type": "github"
       },
       "original": {
@@ -519,12 +519,12 @@
     },
     "nixos-hardware": {
       "locked": {
-        "lastModified": 1760053573,
-        "narHash": "sha256-KwyyrQAdX1wD9HVhxotGxbSNdrVm4RGxAkbMKP6uSvE=",
-        "rev": "d232c6f9ccad3af6d1b66f7feccece66f9aec61a",
-        "revCount": 2449,
+        "lastModified": 1760100444,
+        "narHash": "sha256-2t6mYaUE5uZGga+ewkXwN2lsnuLJY1lJhPtJCagT43o=",
+        "rev": "156fbb62a92cbc91248aa3de960289174040cc3c",
+        "revCount": 2451,
         "type": "tarball",
-        "url": "https://api.flakehub.com/f/pinned/NixOS/nixos-hardware/0.1.2449%2Brev-d232c6f9ccad3af6d1b66f7feccece66f9aec61a/0199cb6e-70eb-75df-baf1-58616fa7915c/source.tar.gz"
+        "url": "https://api.flakehub.com/f/pinned/NixOS/nixos-hardware/0.1.2451%2Brev-156fbb62a92cbc91248aa3de960289174040cc3c/0199ce39-9084-7e06-a2f4-21d981f794b7/source.tar.gz"
       },
       "original": {
         "type": "tarball",
