@@ -15,7 +15,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-#      - uses: wimpysworld/nothing-but-nix@main
+      - uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: 'holster'
       - uses: DeterminateSystems/determinate-nix-action@v3
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
       - uses: DeterminateSystems/update-flake-lock@v27
