@@ -9,6 +9,7 @@
 }:
 {
   imports = [
+      inputs.nixos-hardware.nixosModules.common-pc
     ./disks.nix
 #    ./network.nix
   ];

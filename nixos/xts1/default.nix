@@ -9,6 +9,8 @@
 }:
 {
   imports = [
+    inputs.nixos-hardware.nixosModules.common-pc
+    inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ./disks.nix
 #    ./network.nix
   ];
