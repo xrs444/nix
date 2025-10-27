@@ -45,25 +45,6 @@
     lib = import ./lib { inherit inputs outputs stateVersion ; };
   in
   {
-
-    homeConfigurations = {
-      # Servers
-      "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
-      "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
-      "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
-      "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xlabmgmt"; };
-      "thomas-local@xts1" = lib.mkHome { 
-        hostname = "xts1"; 
-        platform = "aarch64-linux";
-      };
-      # Auxiliary
-      #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
-      #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
-      # Clients
-      "thomas.local@xlt1-t-vnixos" = lib.mkNixos { hostname = "xlt1-t-vnixos"; };
-      # Auxiliary
-    };
-
     nixosConfigurations = {
       # Servers
       xsvr1 = lib.mkNixos { hostname = "xsvr1"; };
@@ -108,6 +89,24 @@
     
     };
 
+    homeConfigurations = {
+      # Servers
+      "thomas-local@xsvr1" = lib.mkHome { hostname = "xsvr1"; };
+      "thomas-local@xsvr2" = lib.mkHome { hostname = "xsvr2"; };
+      "thomas-local@xsvr3" = lib.mkHome { hostname = "xsvr3"; };
+      "thomas-local@xlabmgmt" = lib.mkHome { hostname = "xlabmgmt"; };
+      "thomas-local@xts1" = lib.mkHome { 
+        hostname = "xts1"; 
+        platform = "aarch64-linux";
+      };
+      # Auxiliary
+      #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
+      #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
+      # Clients
+      "thomas.local@xlt1-t-vnixos" = lib.mkNixos { hostname = "xlt1-t-vnixos"; };
+      # Auxiliary
+    };
+
     # macOS machines
     darwinConfigurations = {
       xlt1-t = lib.mkDarwin {
@@ -119,9 +118,6 @@
     };
 
     # Custom packages; accessible via 'nix build', 'nix shell', etc
-    nixosModules = { lib, pkgs, platform, hostname,... }@args: import ./modules/nixos (args // { inherit lib pkgs; });
-    formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-    overlays = import ./overlays { inherit inputs; };
     packages = lib.forAllSystems (system:
         let
           # Import nixpkgs for the target system, applying overlays directly
@@ -139,5 +135,9 @@
         # Return the set of custom packages
         customPkgs
       );
+
+    nixosModules = { lib, pkgs, platform, hostname,... }@args: import ./modules/nixos (args // { inherit lib pkgs; });
+    formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+    overlays = import ./overlays { inherit inputs; };
   };
 }
