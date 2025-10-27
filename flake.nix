@@ -103,7 +103,7 @@
       #        "thomas-local@xdash1" = lib.mkHome { hostname = "xdash1"; };
       #        "thomas-local@xhac-radio" = lib.mkHome { hostname = "xhac-radio"; };
       # Clients
-      "thomas.local@xlt1-t-vnixos" = lib.mkNixos { hostname = "xlt1-t-vnixos"; };
+      "thomas.local@xlt1-t-vnixos" = lib.mkHome { hostname = "xlt1-t-vnixos"; };
       # Auxiliary
     };
 
