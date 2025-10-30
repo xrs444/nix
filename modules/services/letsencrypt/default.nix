@@ -15,13 +15,32 @@ let
 in
 
 {
+  # Configure sops for Cloudflare credentials - specify file per secret
+  sops.secrets.cloudflare_api_key = {
+    sopsFile = ../../secrets/cloudflare.yaml;
+    key = "service.api.key";
+    owner = "acme";
+    group = "acme";
+    mode = "0400";
+  };
+  sops.secrets.cloudflare_email = {
+    sopsFile = ../../secrets/cloudflare.yaml;
+    key = "service.api.email";
+    owner = "acme";
+    group = "acme";
+    mode = "0400";
+  };
+
   # Let's Encrypt ACME configuration
   security.acme = {
     acceptTerms = true;
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      credentialsFile = "/var/lib/acme/cloudflare-credentials";
+      environmentFile = pkgs.writeText "cloudflare-env" ''
+        CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_api_key.path}
+        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
+      '';
     };
     
     certs = lib.mkMerge [
@@ -41,33 +60,6 @@ in
     ];
   };
 
-  # Create Cloudflare credentials file
-  environment.etc."acme-cloudflare-credentials" = {
-    text = ''
-      # Cloudflare API credentials for ACME DNS challenge
-      # You need to set these values with your actual Cloudflare credentials
-      # CF_API_EMAIL=your-email@example.com
-      # CF_API_KEY=your-global-api-key
-      # OR use API token instead of email+key (recommended):
-      CF_DNS_API_TOKEN=your-dns-api-token
-    '';
-    mode = "0400";
-    user = "acme";
-    group = "acme";
-  };
-
-  # Ensure the credentials file is in the right location
-  systemd.services.acme-fixperms = {
-    description = "Fix ACME credentials permissions";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "acme-${hostname}.${domain}.service" ] ++ lib.optionals hasKanidm [ "acme-idm.${domain}.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${pkgs.coreutils}/bin/cp /etc/acme-cloudflare-credentials /var/lib/acme/cloudflare-credentials";
-      ExecStartPost = "${pkgs.coreutils}/bin/chown acme:acme /var/lib/acme/cloudflare-credentials";
-    };
-  };
-
   # Create acme user and group
   users.users.acme = {
     isSystemUser = true;
@@ -79,19 +71,4 @@ in
 
   # Open port 80 for HTTP-01 challenge (fallback, though we're using DNS-01)
   networking.firewall.allowedTCPPorts = [ 80 ];
-
-  # Configure sops for Cloudflare credentials
-  sops = {
-    defaultSopsFile = ../../secrets/cloudflare.yaml;
-    secrets.api_key = {
-      owner = "acme";
-      group = "acme";
-      mode = "0400";
-    };
-    secrets.email = {
-      owner = "acme";
-      group = "acme";
-      mode = "0400";
-    };
-  };
 }
