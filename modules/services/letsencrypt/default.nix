@@ -79,4 +79,19 @@ in
 
   # Open port 80 for HTTP-01 challenge (fallback, though we're using DNS-01)
   networking.firewall.allowedTCPPorts = [ 80 ];
+
+  # Configure sops for Cloudflare credentials
+  sops = {
+    defaultSopsFile = ../../secrets/cloudflare.yaml;
+    secrets.api_key = {
+      owner = "acme";
+      group = "acme";
+      mode = "0400";
+    };
+    secrets.email = {
+      owner = "acme";
+      group = "acme";
+      mode = "0400";
+    };
+  };
 }

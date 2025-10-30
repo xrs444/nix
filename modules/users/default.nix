@@ -13,23 +13,32 @@
     # Set initial password for thomas-local specifically
     (lib.mkIf (username == "thomas-local") {
       initialPassword = "changeme"; # Change this on first login
-      # Force local authentication for this user
       ignoreShellProgramCheck = true;
     })
   ];
 
-  # Configure PAM to try local auth first for thomas-local
-  security.pam.services = lib.mkIf (username == "thomas-local") {
-    login.text = lib.mkBefore ''
-      # Try local authentication first for thomas-local
-      auth sufficient pam_unix.so
-    '';
-    su.text = lib.mkBefore ''
-      # Try local authentication first for thomas-local  
-      auth sufficient pam_unix.so
-    '';
-  };
+  # Remove PAM configuration - let kanidm module handle it
+  # security.pam.services = lib.mkIf (username == "thomas-local") {
+  #   login.text = lib.mkBefore ''
+  #     # Try local authentication first for thomas-local
+  #     auth sufficient pam_unix.so
+  #   '';
+  #   su.text = lib.mkBefore ''
+  #     # Try local authentication first for thomas-local  
+  #     auth sufficient pam_unix.so
+  #   '';
+  # };
 
   # Enable sudo for wheel group
   security.sudo.wheelNeedsPassword = true;
+
+  # Enable SSH service
+  services.openssh = {
+    enable = true;
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = true;
+      PubkeyAuthentication = true;
+    };
+  };
 }
