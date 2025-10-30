@@ -32,16 +32,6 @@
     ./common
   ] ++ lib.optional isWorkstation ../modules/packages-workstation;
 
-  # Base user configuration
-  users.mutableUsers = true;
-  users.users.thomas-local = {
-    isNormalUser = true;
-    home = "/home/thomas-local";
-    description = "thomas-local";
-    extraGroups = [ "wheel" "networkmanager" ];
-    # openssh.authorizedKeys.keys = [ "ssh-dss " ];
-  };
-
   # SOPS configuration
   sops = lib.mkIf (isInstall) {
     age = {
