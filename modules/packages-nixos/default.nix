@@ -6,12 +6,12 @@
   comin = import ./comin;
   tailscale = import ./tailscale;
   
-  # Or create a combined module
-  default = { pkgs, ... }: {
+  # Combined module
+  default = { config, lib, pkgs, ... }: {
     imports = [
-      ./cockpit
-      ./comin
-      ./tailscale
+      (import ./cockpit)
+      (import ./comin)
+      (import ./tailscale)
     ];
 
     # NixOS-specific packages
