@@ -12,7 +12,7 @@ with lib;
   options.services.comin-custom = {
     enable = mkOption {
       type = types.bool;
-      default = lib.elem hostname installOn;
+      default = true;
       description = "Enable custom Comin configuration";
     };
   };
