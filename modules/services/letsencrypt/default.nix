@@ -15,17 +15,10 @@ let
 in
 
 {
-  # Configure sops for Cloudflare credentials - specify file per secret
-  sops.secrets.cloudflare_api_key = {
+  # Configure sops for Cloudflare credentials
+  sops.secrets.cloudflare_credentials = {
     sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "api_key";  # Changed from "service.api.key"
-    owner = "acme";
-    group = "acme";
-    mode = "0400";
-  };
-  sops.secrets.cloudflare_email = {
-    sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "email";  # Changed from "service.api.email"
+    key = "api_key";
     owner = "acme";
     group = "acme";
     mode = "0400";
@@ -37,10 +30,7 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      environmentFile = pkgs.writeText "cloudflare-env" ''
-        CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_api_key.path}
-        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
-      '';
+      credentialsFile = config.sops.secrets.cloudflare_credentials.path;
     };
     
     certs = lib.mkMerge [
