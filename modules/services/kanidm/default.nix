@@ -24,7 +24,7 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
-      package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
+      package = lib.mkForce pkgs.kanidmProvision;
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";

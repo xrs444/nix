@@ -15,12 +15,4 @@
 
   #fonts.fontconfig.enable = true;
 
-  overlays = [
-    (final: prev: {
-      kanidm = unstablePkgs.kanidm_1_7;
-      kanidmWithSecretProvisioning = unstablePkgs.kanidm_1_7.override {
-        enableSecretProvisioning = true;
-      };
-    })
-  ];
 }
