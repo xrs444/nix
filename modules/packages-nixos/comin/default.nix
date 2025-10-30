@@ -18,9 +18,18 @@ with lib;
   };
 
   config = mkIf cfg.enable {
-    # Your comin configuration here
     environment.systemPackages = with pkgs; [
-      # comin-related packages
+      comin
     ];
+    services.comin = {
+      enable = true;
+      remotes = [
+        {
+          name = "origin";
+          address = "https://github.com/xrs444/nix.git";
+          branches.main.name = "main";
+        }
+      ];
+    };
   };
 }
