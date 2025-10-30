@@ -21,6 +21,7 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
+      package = pkgs.kanidm;  # Add this line to fix the insecure package issue
   
       
       serverSettings = {
