@@ -82,6 +82,11 @@ in
         username = defaultUser;
       };
       modules = [
+        # Apply overlays to nixpkgs
+        {
+          nixpkgs.overlays = builtins.attrValues outputs.overlays;
+          nixpkgs.config.allowUnfree = true;
+        }
         ../hosts/${platformDir}
         ../hosts/${platformDir}/${hostname}
       ] ++ nixpkgs.lib.optionals (desktop != null) [
@@ -108,6 +113,11 @@ in
         username = defaultUser;
       };
       modules = [
+        # Apply overlays to nixpkgs for Darwin too
+        {
+          nixpkgs.overlays = builtins.attrValues outputs.overlays;
+          nixpkgs.config.allowUnfree = true;
+        }
         ../hosts/darwin
         ../hosts/darwin/${hostname}
       ];
