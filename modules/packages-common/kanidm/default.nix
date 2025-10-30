@@ -33,7 +33,7 @@ lib.mkMerge [
   (lib.mkIf (!isDarwin) {
     services.kanidm = {
       enableClient = true;
-      package = lib.mkForce kanidmPackage;
+      package = lib.mkDefault kanidmPackage;
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;
@@ -43,24 +43,21 @@ lib.mkMerge [
 
     # Configure PAM to try local auth first, then kanidm
     security.pam.services = {
-      sshd.text = lib.mkBefore ''
+      sshd.text = ''
         auth sufficient pam_unix.so nullok
         account sufficient pam_unix.so
-      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
         account sufficient pam_kanidm.so
       '';
       
-      sudo.text = lib.mkBefore ''
+      sudo.text = ''
         auth sufficient pam_unix.so nullok
-      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
       '';
       
-      login.text = lib.mkBefore ''
+      login.text = ''
         auth sufficient pam_unix.so nullok
         account sufficient pam_unix.so
-      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
         account sufficient pam_kanidm.so
       '';

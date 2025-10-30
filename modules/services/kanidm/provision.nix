@@ -24,30 +24,17 @@ lib.mkIf isProvisioningServer {
       
       # Create groups
       groups = {
-        "lubelogger" = {
-          description = "can access lubelogger";
-        };
-        "lubelogger-admin" = {
-          description = "can administrate lubelogger";
-        };
+        "lubelogger" = {};
+        "lubelogger-admin" = {};
       };      
       # Create persons/users
       persons = {
         "xrs444" = {
           displayName = "xrs444";
           legalName = "xrs444";
-          mailPrimary = "xrs444@xrs444.net";
+          mailAddresses = [ "xrs444@xrs444.net" ];
         };
 
-      };
-      
-      # Create accounts linked to persons
-      accounts = {
-        "thomas" = {
-          person = "thomas";
-          description = "Thomas user account";
-          groups = [ "wheel" ];
-        };
       };
     };
   };

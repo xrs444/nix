@@ -13,8 +13,6 @@ let
   # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";
   
-  # Use the kanidm from our overlay (same as client)
-  kanidmPackage = pkgs.kanidm;
 in
 lib.mkMerge [
 
@@ -26,7 +24,7 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
-      package = kanidmPackage;  # Use the same package as client
+      package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
@@ -37,11 +35,6 @@ lib.mkMerge [
         tls_key = "/var/lib/kanidm/certs/key.pem";
       };
     };
-
-    # Install kanidm-provision package on servers
-    environment.systemPackages = with pkgs; [
-      kanidm-provision
-    ];
 
     # Open firewall ports for kanidm
     networking.firewall = {
