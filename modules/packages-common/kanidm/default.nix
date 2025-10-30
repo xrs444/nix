@@ -30,7 +30,7 @@ lib.mkMerge [
   (lib.mkIf (!isDarwin) {
     services.kanidm = {
       enableClient = true;
-      package = pkgs.kanidm_1_7;
+      package = lib.mkForce pkgs.kanidm_1_7;  # Add mkForce here
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;
