@@ -13,28 +13,12 @@
       systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = lib.mkForce false;
       
-      # Use the generic extlinux compatible loader
+      # Use the generic extlinux compatible loader for Raspberry Pi
       generic-extlinux-compatible.enable = lib.mkDefault true;
     };
     
-    # Raspberry Pi firmware
+    # Raspberry Pi firmware and kernel
     kernelPackages = lib.mkDefault pkgs.linuxPackages_rpi4;
-    
-    # Enable GPU firmware
-    loader.raspberryPi = {
-      enable = lib.mkDefault true;
-      version = lib.mkDefault 4;
-      firmwareConfig = ''
-        # Enable 64-bit mode
-        arm_64bit=1
-        
-        # GPU memory split (adjust based on use case)
-        gpu_mem=128
-        
-        # Enable UART for serial console
-        enable_uart=1
-      '';
-    };
     
     # Raspberry Pi specific kernel modules
     initrd.availableKernelModules = [
@@ -53,7 +37,28 @@
       "console=tty0"
     ];
   };
+
+  # Root filesystem configuration - adjust device path as needed
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/NIXOS_SD";
+    fsType = "ext4";
+    options = [ "noatime" ];
+  };
+
+  # Boot partition for Raspberry Pi
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-label/FIRMWARE";
+    fsType = "vfat";
+    options = [ "fmask=0022" "dmask=0022" ];
+  };
   
   # Power management for Raspberry Pi
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
+
+  # Enable hardware features
+  hardware = {
+    enableRedistributableFirmware = true;
+    # Enable I2C if needed
+    # i2c.enable = lib.mkDefault true;
+  };
 }
