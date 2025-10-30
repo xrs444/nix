@@ -18,6 +18,9 @@ let
 in
 lib.mkMerge [
 
+  # Import the provisioning module
+  (import ./provision.nix { inherit config hostname lib pkgs; })
+
   # NixOS server configuration
   (lib.mkIf isKanidmServer {
  
@@ -34,6 +37,11 @@ lib.mkMerge [
         tls_key = "/var/lib/kanidm/certs/key.pem";
       };
     };
+
+    # Install kanidm-provision package on servers
+    environment.systemPackages = with pkgs; [
+      kanidm-provision
+    ];
 
     # Open firewall ports for kanidm
     networking.firewall = {

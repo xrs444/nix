@@ -41,21 +41,36 @@ lib.mkMerge [
       };
     };
 
-    # Configure PAM for kanidm authentication
+    # Configure PAM to try local auth first, then kanidm
     security.pam.services = {
-      sshd.text = lib.mkAfter ''
+      sshd.text = lib.mkBefore ''
+        auth sufficient pam_unix.so nullok
+        account sufficient pam_unix.so
+      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
         account sufficient pam_kanidm.so
       '';
       
-      sudo.text = lib.mkAfter ''
+      sudo.text = lib.mkBefore ''
+        auth sufficient pam_unix.so nullok
+      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
       '';
       
-      login.text = lib.mkAfter ''
+      login.text = lib.mkBefore ''
+        auth sufficient pam_unix.so nullok
+        account sufficient pam_unix.so
+      '' + lib.mkAfter ''
         auth sufficient pam_kanidm.so
         account sufficient pam_kanidm.so
       '';
+    };
+
+    # Ensure NSS prioritizes local files over kanidm
+    system.nssDatabases = {
+      passwd = [ "files" "systemd" ];
+      group = [ "files" "systemd" ];
+      shadow = [ "files" ];
     };
 
     systemd.services.kanidm-unixd = {
