@@ -3,73 +3,67 @@
   hostname,
   lib,
   pkgs,
-  platform,
   ...
 }:
 
 let
-  # Define node-specific configurations
-  nodeConfigs = {
-    xsvr1 = {
-      ip = "172.20.3.201";
-      bindAddress = "172.20.3.201:8443";
-    };
-    xsvr2 = {
-      ip = "172.20.3.202";
-      bindAddress = "172.20.3.202:8443";
-    };
-    xsvr3 = {
-      ip = "172.20.3.203";
-      bindAddress = "172.20.3.203:8443";
-    };
-  };
-
-  kanidmVip = "172.20.3.200";
-
-  # Only set currentNode if hostname is in nodeConfigs
-  currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
+  # Only xsvr1 and xsvr2 should run kanidm servers
+  isKanidmServer = builtins.elem hostname ["xsvr1" "xsvr2"];
 in
 
-if currentNode == null then
+if !isKanidmServer then
   {}
 else
   {
+    # Allow insecure kanidm package temporarily until nixpkgs updates to 1.7
+    nixpkgs.config.permittedInsecurePackages = [
+      "kanidm-1.6.4"
+    ];
+
     services.kanidm = {
       enableServer = true;
+      
       serverSettings = {
-        bindaddress = currentNode.bindAddress;
-        ldapbindaddress = "${currentNode.ip}:3636";
-        origin = "https://${kanidmVip}:8443";
-        domain = "idm.xsvr.local";
-        db_path = "/var/lib/kanidm/kanidm.db";
-        tls_chain = "/var/lib/kanidm/chain.pem";
-        tls_key = "/var/lib/kanidm/key.pem";
-        online_backup = {
-          path = "/var/lib/kanidm/backups";
-          schedule = "00 22 * * *";
-        };
+        bindaddress = "0.0.0.0:8443";
+        ldapbindaddress = "0.0.0.0:3636";
+        origin = "https://idm.xrs444.net";
+        domain = "idm.xrs444.net";
+        tls_chain = "/var/lib/kanidm/certs/chain.pem";
+        tls_key = "/var/lib/kanidm/certs/key.pem";
       };
     };
 
-    # Open required ports in firewall
+    # Open firewall ports for kanidm
     networking.firewall = {
-      allowedTCPPorts = [ 
-        8443  # Kanidm HTTPS
-        3636  # Kanidm LDAP
-      ];
+      allowedTCPPorts = [ 8443 3636 ];
     };
 
-    # Create necessary directories
-    systemd.tmpfiles.rules = [
-      "d /var/lib/kanidm 0700 kanidm kanidm"
-      "d /var/lib/kanidm/backups 0700 kanidm kanidm"
-    ];
+    # Configure Let's Encrypt for idm.xrs444.net
+    security.acme.certs."idm.xrs444.net" = {
+      domain = "idm.xrs444.net";
+      extraDomainNames = [];
+    };
 
-    # Add SSL certificate management (you'll need to configure this based on your setup)
-    environment.etc."kanidm-ssl-setup.sh".text = ''
-      #!/bin/sh
-      # Add your SSL certificate setup here
-      echo "Configure SSL certificates for Kanidm"
-    '';
-    environment.etc."kanidm-ssl-setup.sh".mode = "0755";
+    # Link the ACME certificates to kanidm's expected location
+    systemd.services.kanidm-link-certs = {
+      description = "Link ACME certificates for Kanidm";
+      after = [ "acme-idm.xrs444.net.service" ];
+      wants = [ "acme-idm.xrs444.net.service" ];
+      wantedBy = [ "kanidm.service" ];
+      before = [ "kanidm.service" ];
+      
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        User = "kanidm";
+        Group = "kanidm";
+      };
+      
+      script = ''
+        mkdir -p /var/lib/kanidm/certs
+        ln -sf /var/lib/acme/idm.xrs444.net/fullchain.pem /var/lib/kanidm/certs/chain.pem
+        ln -sf /var/lib/acme/idm.xrs444.net/key.pem /var/lib/kanidm/certs/key.pem
+        chown -R kanidm:kanidm /var/lib/kanidm/certs
+      '';
+    };
   }

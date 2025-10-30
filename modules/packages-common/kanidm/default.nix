@@ -1,19 +1,20 @@
 {
   config,
+  hostname,
   lib,
   pkgs,
   ...
 }:
 
 let
-  # Kanidm server URI - can be overridden via specialArgs or environment
+  # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";
   
   # Check if we're on Darwin (macOS)
   isDarwin = pkgs.stdenv.isDarwin;
 in
 lib.mkMerge [
-  # Common packages for both Darwin and NixOS
+  # Common packages for all systems
   {
     environment.systemPackages = with pkgs; [
       kanidm_1_7
@@ -23,12 +24,10 @@ lib.mkMerge [
   # Darwin-specific configuration
   (lib.mkIf isDarwin {
     # Darwin-specific kanidm client setup if needed
-    # Currently just the package installation above
   })
 
-  # NixOS-specific configuration
+  # NixOS client configuration
   (lib.mkIf (!isDarwin) {
-    # Kanidm Client Configuration (for external server)
     services.kanidm = {
       enableClient = true;
       package = pkgs.kanidm_1_7;
@@ -56,7 +55,6 @@ lib.mkMerge [
       '';
     };
 
-    # Ensure kanidm-unixd service is enabled for PAM integration
     systemd.services.kanidm-unixd = {
       enable = true;
       wantedBy = [ "multi-user.target" ];

@@ -29,6 +29,7 @@ let
 
   vipAddress = "172.20.3.200";
   gatewayVipAddress = "172.20.1.101";
+  kanidmVipAddress = "172.20.1.110";
 
   # Only set currentNode if hostname is in nodeConfigs
   currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
@@ -105,6 +106,25 @@ else
               check_tailscale_subnet
             }
             notify_master "/run/current-system/systemd/bin/systemctl restart frr"
+          '';
+        };
+        kanidm-idm = {
+          state = currentNode.keepalivedState;
+          interface = "bond0";
+          virtualRouterId = 53;
+          priority = currentNode.keepalivedPriority;
+          virtualIps = [
+            { addr = "${kanidmVipAddress}/24"; }
+          ];
+          extraConfig = ''
+            authentication {
+              auth_type PASS
+              auth_pass kanidmvip
+            }
+            track_script {
+              check_tailscale_subnet
+            }
+            notify_master "/run/current-system/systemd/bin/systemctl restart kanidm"
           '';
         };
       };
