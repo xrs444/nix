@@ -12,12 +12,15 @@ let
   
   # Check if we're on Darwin (macOS)
   isDarwin = pkgs.stdenv.isDarwin;
+  
+  # Use unstable kanidm to get 1.7.x
+  kanidmPackage = pkgs.unstable.kanidm or pkgs.kanidm;
 in
 lib.mkMerge [
   # Common packages for all systems
   {
     environment.systemPackages = with pkgs; [
-      kanidm  # Use default latest version (1.7.4)
+      kanidmPackage  # Use the 1.7.x version
     ];
   }
 
@@ -30,7 +33,7 @@ lib.mkMerge [
   (lib.mkIf (!isDarwin) {
     services.kanidm = {
       enableClient = true;
-      package = lib.mkForce pkgs.kanidm;  # Use default latest version (1.7.4)
+      package = kanidmPackage;  # Use the 1.7.x version
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;

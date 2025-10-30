@@ -13,6 +13,9 @@ let
   # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";
   
+  # Use unstable kanidm to get 1.7.x
+  kanidmPackage = pkgs.unstable.kanidm or pkgs.kanidm;
+  
 in
 lib.mkMerge [
 
@@ -21,6 +24,7 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
+      package = kanidmPackage;  # Use the 1.7.x version
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
