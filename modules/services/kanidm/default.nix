@@ -13,8 +13,6 @@ let
   # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";
   
-  # Check if we're on Darwin (macOS)
-  isDarwin = pkgs.stdenv.isDarwin;
 in
 lib.mkMerge [
 
@@ -27,7 +25,7 @@ lib.mkMerge [
 
     services.kanidm = {
       enableServer = true;
-      package = pkgs.unstable.kanidm_1_7; # Use kanidm 1.7 from unstable channel
+  
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
@@ -74,16 +72,4 @@ lib.mkMerge [
     };
   })
 
-  # NixOS client configuration
-  (lib.mkIf (!isDarwin) {
-    services.kanidm = {
-      enableClient = true;
-      package = pkgs.unstable.kanidm_1_7; # Use kanidm 1.7 from unstable
-      clientSettings = {
-        uri = kanidmServerUri;
-        verify_ca = true;
-        verify_hostnames = true;
-      };
-    };
-  })
 ]
