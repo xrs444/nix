@@ -54,18 +54,6 @@
     ];
   };
   
-  # Hardware-specific settings
-  hardware = {
-    # Enable Raspberry Pi specific features
-    raspberry-pi."4" = {
-      apply-overlays-dtmerge.enable = lib.mkDefault true;
-      fkms-3d.enable = lib.mkDefault true;
-    };
-    
-    # Enable I2C and SPI interfaces
-    i2c.enable = lib.mkDefault true;
-  };
-  
   # Power management for Raspberry Pi
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
 }
