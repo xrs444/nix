@@ -13,11 +13,23 @@
     # Set initial password for thomas-local specifically
     (lib.mkIf (username == "thomas-local") {
       initialPassword = "changeme"; # Change this on first login
-      # Or use hashedPassword for better security:
-      # hashedPassword = "$6$rounds=100000$salt$your_hashed_password_here";
+      # Force local authentication for this user
+      ignoreShellProgramCheck = true;
     })
   ];
 
+  # Configure PAM to try local auth first for thomas-local
+  security.pam.services = lib.mkIf (username == "thomas-local") {
+    login.text = lib.mkBefore ''
+      # Try local authentication first for thomas-local
+      auth sufficient pam_unix.so
+    '';
+    su.text = lib.mkBefore ''
+      # Try local authentication first for thomas-local  
+      auth sufficient pam_unix.so
+    '';
+  };
+
   # Enable sudo for wheel group
-  security.sudo.wheelNeedsPassword = true; # Set to true if you want password prompts
+  security.sudo.wheelNeedsPassword = true;
 }
