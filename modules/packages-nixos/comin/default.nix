@@ -18,9 +18,6 @@ with lib;
   };
 
   config = mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
-      comin
-    ];
     services.comin = {
       enable = true;
       remotes = [
