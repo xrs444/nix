@@ -18,11 +18,7 @@ lib.mkMerge [
 
   # NixOS server configuration
   (lib.mkIf isKanidmServer {
-    # Remove the insecure package allowance since we're using 1.7
-    # nixpkgs.config.permittedInsecurePackages = [
-    #   "kanidm-1.6.4"
-    # ];
-
+ 
     services.kanidm = {
       enableServer = true;
   
