@@ -1,17 +1,14 @@
-{ pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
-  # Combined module
-  default = { config, lib, pkgs, ... }: {
-    imports = [
-      ./cockpit
-      (import ./comin)
-      (import ./tailscale)
-    ];
+  imports = [
+    ./cockpit
+    ./comin
+    ./tailscale
+  ];
 
-    # NixOS-specific packages
-    environment.systemPackages = with pkgs; [
-      # Add NixOS-specific packages here
-    ];
-  };
+  # NixOS-specific packages
+  environment.systemPackages = with pkgs; [
+    # Add NixOS-specific packages here
+  ];
 }
