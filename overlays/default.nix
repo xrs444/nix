@@ -24,5 +24,8 @@
       kanidmProvision = unstablePkgs.kanidm_1_7.override {
         enableSecretProvisioning = true;
       };
+      
+      # Override kanidm_1_4 to use version 1.7 from unstable
+      kanidm_1_4 = unstablePkgs.kanidm_1_7;
     };
 }

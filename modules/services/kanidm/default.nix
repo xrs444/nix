@@ -19,12 +19,17 @@ lib.mkMerge [
   # Import the provisioning module
   (import ./provision.nix { inherit config hostname lib pkgs; })
 
+  # Override package for servers only
+  (lib.mkIf isKanidmServer {
+    services.kanidm.package = lib.mkForce pkgs.kanidmProvision;
+  })
+
   # NixOS server configuration
   (lib.mkIf isKanidmServer {
  
     services.kanidm = {
       enableServer = true;
-      package = lib.mkForce pkgs.kanidmProvision;
+      # package setting moved to separate mkIf block above
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
