@@ -20,9 +20,7 @@ lib.mkMerge [
   (lib.mkIf isKanidmServer {
  
     services.kanidm = {
-      enableServer = true;
-      package = pkgs.kanidm;  # Add this line to fix the insecure package issue
-  
+      enableServer = true
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
