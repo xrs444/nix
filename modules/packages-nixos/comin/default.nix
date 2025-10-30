@@ -26,7 +26,7 @@ with lib;
       remotes = [
         {
           name = "origin";
-          address = "https://github.com/xrs444/nix.git";
+          url = "https://github.com/xrs444/nix.git";
           branches.main.name = "main";
         }
       ];
