@@ -4,9 +4,6 @@ let
   cfg = config.services.comin-custom;
   hostname = config.networking.hostName;
   
-  installOn = [
-    # Add hostnames where comin should be installed
-  ];
 in
 
 with lib;
