@@ -20,7 +20,7 @@ lib.mkMerge [
   (lib.mkIf isKanidmServer {
  
     services.kanidm = {
-      enableServer = true
+      enableServer = true;
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
