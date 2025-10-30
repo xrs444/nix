@@ -18,14 +18,14 @@ in
   # Configure sops for Cloudflare credentials - specify file per secret
   sops.secrets.cloudflare_api_key = {
     sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "service.api.key";
+    key = "api_key";  # Changed from "service.api.key"
     owner = "acme";
     group = "acme";
     mode = "0400";
   };
   sops.secrets.cloudflare_email = {
     sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "service.api.email";
+    key = "email";  # Changed from "service.api.email"
     owner = "acme";
     group = "acme";
     mode = "0400";
