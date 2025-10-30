@@ -121,7 +121,11 @@
     };
 
     # Custom packages; accessible via 'nix build', 'nix shell', etc
-    nixosModules = import ./modules/packages-nixos;
+    nixosModules = {
+      cockpit = import ./modules/packages-nixos/cockpit;
+      comin = import ./modules/packages-nixos/comin;
+      tailscale = import ./modules/packages-nixos/tailscale;
+    };
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     overlays = import ./overlays { inherit inputs; };
     packages = lib.forAllSystems (system:
