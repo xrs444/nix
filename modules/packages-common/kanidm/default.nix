@@ -54,6 +54,8 @@ in
           verify_ca = true;
           verify_hostnames = true;
         };
+        # Enable PAM integration
+        enablePam = true;
       };
 
       # Enable PAM integration for SSH authentication

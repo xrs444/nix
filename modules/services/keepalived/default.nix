@@ -12,32 +12,23 @@ let
   nodeConfigs = {
     xsvr1 = {
       ip = "172.20.3.201";
-      routerId = "172.20.3.201";
       keepalivedState = "MASTER";
       keepalivedPriority = 101;
     };
     xsvr2 = {
       ip = "172.20.3.202";
-      routerId = "172.20.3.202";
       keepalivedState = "BACKUP";
       keepalivedPriority = 100;
     };
     xsvr3 = {
       ip = "172.20.3.203";
-      routerId = "172.20.3.203";
       keepalivedState = "BACKUP";
       keepalivedPriority = 99;
     };
   };
 
-  frrASN = 65000;
-  ciliumASN = 65001;
-  ciliumIPs = [ "172.20.3.10" "172.20.3.20" "172.20.3.30" ];
   vipAddress = "172.20.3.200";
   gatewayVipAddress = "172.20.1.101";
-
-  # List of all node IPs
-  allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
 
   # Only set currentNode if hostname is in nodeConfigs
   currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
@@ -47,62 +38,36 @@ if currentNode == null then
   {}
 else
   {
+    # Import Let's Encrypt configuration
+    imports = [
+      ../letsencrypt
+    ];
 
-    # Enable FRR routing daemon
-    services.frr = {
-      bgpd.enable = true;
-      config = ''
-        router bgp ${toString frrASN}
-          bgp router-id ${currentNode.routerId}
-          neighbor CILIUM peer-group
-          neighbor CILIUM remote-as ${toString ciliumASN}
-          neighbor CILIUM ebgp-multihop 4
-          neighbor CILIUM timers 3 9
-          neighbor CILIUM timers connect 15
-          neighbor CILIUM update-source 172.20.3.200
-
-          neighbor CILIUM route-map CILIUM-IN in
-          neighbor CILIUM route-map CILIUM-OUT out
-
-          bgp listen range 172.20.3.0/24 peer-group CILIUM
-
-          address-family ipv4 unicast
-            neighbor CILIUM activate
-          exit-address-family
-        !
-        route-map CILIUM-IN permit 10
-        !
-        route-map CILIUM-OUT permit 10
+    environment.etc."check-tailscale-subnet.sh" = {
+      text = ''
+        #!/bin/sh
+        tailscale status --json | grep '"AdvertisedRoutes":' | grep '172.16.0.0/12' > /dev/null
+        if [ $? -eq 0 ]; then
+          exit 0
+        else
+          exit 1
+        fi
       '';
-
+      mode = "0755";
     };
 
-    # Add this block to override the systemd unit for bgpd
-    systemd.services.frr-bgpd = {
-      serviceConfig.SupplementaryGroups = [ "keys" ];
-    };
-
-    # Add this to your top-level attribute set (alongside services.frr, services.keepalived, etc.)
-    environment.etc."check-frr.sh".text = ''
-      #!/bin/sh
-      systemctl is-active frr
-    '';
-    environment.etc."check-frr.sh".mode = "0755";
-
-    environment.etc."check-tailscale-subnet.sh".text = ''
-      #!/bin/sh
-      tailscale status --json | grep '"AdvertisedRoutes":' | grep '172.16.0.0/12' > /dev/null
-      if [ $? -eq 0 ]; then
-        exit 0
-      else
-        exit 1
-      fi
-    '';
-    environment.etc."check-tailscale-subnet.sh".mode = "0755";
-
-    # Enable keepalived for VIP
+    # Define the script for keepalived to reference
     services.keepalived = {
       enable = true;
+      vrrpScripts = {
+        check_tailscale_subnet = {
+          script = "/etc/check-tailscale-subnet.sh";
+          interval = 2;
+          weight = -2;
+          fall = 3;
+          rise = 2;
+        };
+      };
       vrrpInstances = {
         k8s-gateway = {
           state = currentNode.keepalivedState;
@@ -126,7 +91,7 @@ else
         network-gateway = {
           state = currentNode.keepalivedState;
           interface = "bond0";
-          virtualRouterId = 51;
+          virtualRouterId = 52;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
             { addr = "${gatewayVipAddress}/24"; }
@@ -145,10 +110,8 @@ else
       };
     };
 
-    # Open required ports in firewall
+    # Open required ports in firewall for VRRP
     networking.firewall = {
-      allowedTCPPorts = [ 179 ]; # BGP port
-      allowedUDPPorts = [ ];
       extraCommands = ''
         # Allow VRRP multicast
         iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
