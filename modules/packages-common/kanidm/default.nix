@@ -16,7 +16,7 @@ lib.mkMerge [
   # Common packages for both Darwin and NixOS
   {
     environment.systemPackages = with pkgs; [
-      kanidm
+      kanidm_1_7
     ];
   }
 
