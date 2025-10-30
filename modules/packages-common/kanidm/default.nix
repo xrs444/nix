@@ -14,7 +14,7 @@ let
   isDarwin = pkgs.stdenv.isDarwin;
   
   # Use unstable kanidm to get 1.7.x
-  kanidmPackage = pkgs.unstable.kanidm or pkgs.kanidm;
+  kanidmPackage = pkgs.unstable.kanidm_1_7 or pkgs.kanidm_1_7;
 in
 lib.mkMerge [
   # Common packages for all systems
