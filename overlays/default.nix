@@ -5,6 +5,9 @@
 
   # Modify existing packages
   modifications = final: prev: {
+    # Override kanidm to use the latest 1.7.x version
+    kanidm = prev.unstable.kanidm_1_7;
+    
     # Example: override a package
     # some-package = prev.some-package.overrideAttrs (old: rec {
     #   # modifications

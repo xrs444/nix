@@ -13,8 +13,8 @@ let
   # Check if we're on Darwin (macOS)
   isDarwin = pkgs.stdenv.isDarwin;
   
-  # Use unstable kanidm to get 1.7.x
-  kanidmPackage = pkgs.unstable.kanidm_1_7 or pkgs.kanidm_1_7;
+  # Use the kanidm from our overlay (which points to unstable.kanidm_1_7)
+  kanidmPackage = pkgs.kanidm;
 in
 lib.mkMerge [
   # Common packages for all systems
