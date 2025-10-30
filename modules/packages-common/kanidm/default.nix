@@ -7,7 +7,7 @@
 
 let
   # Kanidm server URI - can be overridden via specialArgs or environment
-  kanidmServerUri = "https://kanidm.xrs.sh";
+  kanidmServerUri = "https://idm.xrs444.net";
   
   # Check if we're on Darwin (macOS)
   isDarwin = pkgs.stdenv.isDarwin;
@@ -31,6 +31,7 @@ lib.mkMerge [
     # Kanidm Client Configuration (for external server)
     services.kanidm = {
       enableClient = true;
+      package = pkgs.kanidm_1_7;
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;
