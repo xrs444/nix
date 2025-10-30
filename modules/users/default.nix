@@ -7,8 +7,7 @@
       extraGroups = [ "wheel" "networkmanager" "docker" "libvirtd" ];
       shell = pkgs.bash;
       openssh.authorizedKeys.keys = [
-        # Add your SSH public keys here
-        # "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... your-key-here"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKuEzwE067tav1hJ44etyUMBlgPIeNqRn4E1+zPt7dK"
       ];
     }
     # Set initial password for thomas-local specifically
