@@ -21,6 +21,7 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
+      package = pkgs.kanidmPackage;  # Use version specified in client.
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
         ldapbindaddress = "0.0.0.0:3636";
