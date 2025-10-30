@@ -17,12 +17,6 @@ let
   isDarwin = pkgs.stdenv.isDarwin;
 in
 lib.mkMerge [
-  # Common packages for all systems
-  {
-    environment.systemPackages = with pkgs; [
-      unstable.kanidm_1_7 # Use kanidm 1.7 from unstable
-    ];
-  }
 
   # NixOS server configuration
   (lib.mkIf isKanidmServer {
