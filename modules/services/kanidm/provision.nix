@@ -25,10 +25,10 @@ lib.mkIf isProvisioningServer {
       # Create groups
       groups = {
         "lubelogger" = {
-          description = "can access lubelogger";;
+          description = "can access lubelogger";
         };
         "lubelogger-admin" = {
-          description = "can administrate lubelogger";;
+          description = "can administrate lubelogger";
         };
       };      
       # Create persons/users
