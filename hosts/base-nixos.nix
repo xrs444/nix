@@ -27,6 +27,7 @@
     ../modules/packages-common
     ../modules/packages-nixos
     ../modules/services
+    ../modules/users  # Add this line
     # Cross-platform common configuration
     ./common
   ] ++ lib.optional isWorkstation ../modules/packages-workstation;
