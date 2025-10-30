@@ -17,7 +17,7 @@ lib.mkMerge [
   # Common packages for all systems
   {
     environment.systemPackages = with pkgs; [
-      kanidm_1_7
+      kanidm  # Use default latest version (1.7.4)
     ];
   }
 
@@ -30,7 +30,7 @@ lib.mkMerge [
   (lib.mkIf (!isDarwin) {
     services.kanidm = {
       enableClient = true;
-      package = lib.mkForce pkgs.kanidm_1_7;  # Add mkForce here
+      package = lib.mkForce pkgs.kanidm;  # Use default latest version (1.7.4)
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;
