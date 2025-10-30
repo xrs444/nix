@@ -1,20 +1,30 @@
-{
-  config,
-  hostname,
-  lib,
-  pkgs,
-  platform,
-  ...
-}:
+{ config, lib, pkgs, ... }:
+
 let
+  cfg = config.services.cockpit-custom;
+  # Get hostname from the system configuration
+  hostname = config.networking.hostName;
+  
   installOn = [
     "xsvr1"
   ];
 in
-lib.mkIf (lib.elem "${hostname}" installOn) {
 
-services.cockpit = {
-  enable = true;
-  openFirewall = true; 
+with lib;
+
+{
+  options.services.cockpit-custom = {
+    enable = mkOption {
+      type = types.bool;
+      default = lib.elem hostname installOn;
+      description = "Enable custom Cockpit configuration";
+    };
+  };
+
+  config = mkIf cfg.enable {
+    services.cockpit = {
+      enable = true;
+      openFirewall = true; 
+    };
   };
 }

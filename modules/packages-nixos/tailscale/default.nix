@@ -1,26 +1,30 @@
-{
-  config,
-  hostname,
-  lib,
-  pkgs,
-  platform,
-  ...
-}:
+{ config, lib, pkgs, ... }:
+
 let
-  # Define which hosts should have Tailscale client functionality  
-  tsClients = [ "xsvr1" "xsvr2" "xsvr3" "xtl1-t-nixos" "xlt1-t" ];
+  cfg = config.services.tailscale-custom;
+  hostname = config.networking.hostName;
   
-  # Only apply to NixOS clients
-  enableTailscale = lib.elem "${hostname}" tsClients;
-  
+  installOn = [
+    "xtl1-t-nixos"
+    "xlt1-t"
+  ];
 in
+
+with lib;
+
 {
-  config = lib.mkIf enableTailscale {
-    # NixOS-specific Tailscale configuration
-    # Most configuration is handled by the common module
-    # This module can be extended for NixOS-specific features
-    
-    # Example: NixOS-specific firewall rules if needed
-    # networking.firewall.allowedUDPPorts = [ 41641 ];
+  options.services.tailscale-custom = {
+    enable = mkOption {
+      type = types.bool;
+      default = lib.elem hostname installOn;
+      description = "Enable custom Tailscale configuration";
+    };
+  };
+
+  config = mkIf cfg.enable {
+    services.tailscale.enable = true;
+    environment.systemPackages = with pkgs; [
+      # tailscale-related packages
+    ];
   };
 }
