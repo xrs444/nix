@@ -19,10 +19,10 @@
         config.allowUnfree = true;
       };
     in {
-      # Override kanidm to use the latest 1.7.x version from unstable
-      kanidm = unstablePkgs.kanidm_1_7;
-      kanidmProvision = unstablePkgs.kanidm_1_7.override {
+      # Override kanidm to use the latest version from unstable
+      kanidm = unstablePkgs.kanidm;
+      kanidmProvision = unstablePkgs.kanidm.override {
         enableSecretProvisioning = true;
+      };
     };
-  };
 }
