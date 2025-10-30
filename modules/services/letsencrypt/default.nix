@@ -4,6 +4,7 @@
   lib,
   pkgs,
   platform,
+  inputs,
   ...
 }:
 
@@ -17,14 +18,14 @@ in
 {
   # Configure sops for Cloudflare credentials - specify file per secret
   sops.secrets.cloudflare_api_key = {
-    sopsFile = ../../secrets/cloudflare.yaml;
+    sopsFile = "${inputs.self}/nix/secrets/cloudflare.yaml";
     key = "service.api.key";
     owner = "acme";
     group = "acme";
     mode = "0400";
   };
   sops.secrets.cloudflare_email = {
-    sopsFile = ../../secrets/cloudflare.yaml;
+    sopsFile = "${inputs.self}/nix/secrets/cloudflare.yaml";
     key = "service.api.email";
     owner = "acme";
     group = "acme";
