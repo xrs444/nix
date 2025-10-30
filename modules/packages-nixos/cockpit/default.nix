@@ -1,7 +1,6 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.cockpit-custom;
   # Get hostname from the system configuration
   hostname = config.networking.hostName;
   
@@ -10,18 +9,8 @@ let
   ];
 in
 
-with lib;
-
 {
-  options.services.cockpit-custom = {
-    enable = mkOption {
-      type = types.bool;
-      default = lib.elem hostname installOn;
-      description = "Enable custom Cockpit configuration";
-    };
-  };
-
-  config = mkIf cfg.enable {
+  config = lib.mkIf (lib.elem hostname installOn) {
     services.cockpit = {
       enable = true;
       openFirewall = true; 
