@@ -16,7 +16,7 @@ in
 lib.mkIf isProvisioningServer {
   
   # SOPS secrets for Kanidm admin password
-  sops.secrets."kanidm/admin" = {
+  sops.secrets."kanidm/admin_password" = {
     sopsFile = ../../../secrets/idm.yaml;
     owner = "kanidm";
     group = "kanidm";
@@ -28,7 +28,7 @@ lib.mkIf isProvisioningServer {
       enable = true;
       
       # Admin account configuration using SOPS secret
-      adminPasswordFile = config.sops.secrets."kanidm/admin".path;
+      adminPasswordFile = config.sops.secrets."kanidm/admin_password".path;
       
       # Create groups
       groups = {
