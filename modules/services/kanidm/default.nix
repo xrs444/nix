@@ -29,7 +29,13 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
+      enableClient = true;   # Enable client for authentication
+      enablePam = true;      # Enable PAM but configure properly
       # package setting moved to separate mkIf block above
+      
+      clientSettings = {
+        uri = kanidmServerUri;
+      };
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
@@ -39,6 +45,43 @@ lib.mkMerge [
         tls_chain = "/var/lib/kanidm/certs/chain.pem";
         tls_key = "/var/lib/kanidm/certs/key.pem";
       };
+    };
+
+    # Configure PAM to try Kanidm first, then fall back to local
+    security.pam.services = {
+      login.text = lib.mkForce ''
+        auth       sufficient pam_kanidm.so ignore_unknown_user
+        auth       sufficient pam_unix.so nullok
+        auth       required   pam_deny.so
+
+        account    sufficient pam_kanidm.so ignore_unknown_user
+        account    sufficient pam_unix.so
+        account    required   pam_deny.so
+
+        password   sufficient pam_kanidm.so
+        password   sufficient pam_unix.so nullok sha512
+        password   required   pam_deny.so
+
+        session    optional   pam_kanidm.so
+        session    required   pam_unix.so
+      '';
+      
+      sshd.text = lib.mkForce ''
+        auth       sufficient pam_kanidm.so ignore_unknown_user
+        auth       sufficient pam_unix.so nullok
+        auth       required   pam_deny.so
+
+        account    sufficient pam_kanidm.so ignore_unknown_user
+        account    sufficient pam_unix.so
+        account    required   pam_deny.so
+
+        password   sufficient pam_kanidm.so
+        password   sufficient pam_unix.so nullok sha512
+        password   required   pam_deny.so
+
+        session    optional   pam_kanidm.so
+        session    required   pam_unix.so
+      '';
     };
 
     # Open firewall ports for kanidm
