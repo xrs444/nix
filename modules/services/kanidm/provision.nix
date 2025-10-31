@@ -17,6 +17,7 @@ lib.mkIf isProvisioningServer {
   
   # SOPS secrets for Kanidm admin password
   sops.secrets."kanidm/admin" = {
+    sopsFile = ../../../secrets/idm.yaml;
     owner = "kanidm";
     group = "kanidm";
     mode = "0400";
