@@ -72,7 +72,7 @@ lib.mkMerge [
     };
   })
 
-  # Replica server configuration (xsvr2)
+  # Replica server configuration (xsvr2) - Independent for now
   (lib.mkIf isReplicaServer {
     services.kanidm = {
       enableServer = true;
@@ -87,7 +87,6 @@ lib.mkMerge [
         tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
         log_level = "info";
         role = "WriteReplica";
-        repl_origin = "https://172.20.1.10:8443";  # xsvr1 IP
         online_backup = {
           path = "/var/lib/kanidm/backups";
           schedule = "0 3 * * *";  # Backup 1 hour after primary
