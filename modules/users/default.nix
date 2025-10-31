@@ -13,7 +13,6 @@
     # Set initial password for thomas-local specifically
     (lib.mkIf (username == "thomas-local") {
       initialPassword = "changeme"; # Change this on first login
-      ignoreShellProgramCheck = true;
     })
   ];
 
@@ -34,4 +33,12 @@
       PubkeyAuthentication = true;
     };
   };
+
+  # Ensure bash is available in the system environment
+  environment.systemPackages = with pkgs; [
+    bash
+  ];
+
+  # Set default shell for new users
+  users.defaultUserShell = pkgs.bash;
 }
