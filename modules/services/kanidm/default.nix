@@ -25,22 +25,13 @@ let
 in
 lib.mkMerge [
 
-  # Enable provisioning on xsvr1
+  # Import provisioning configuration for xsvr1
   (lib.mkIf isProvisioningHost
     (import ./provision.nix { inherit config hostname lib pkgs; }))
 
   # Use the provisioning-enabled package for servers
   (lib.mkIf isKanidmServer {
     services.kanidm.package = lib.mkForce pkgs.kanidmProvision;
-  })
-
-  # SOPS secrets for Kanidm
-  (lib.mkIf isKanidmServer {
-    sops.secrets."kanidm/admin-password" = {
-      owner = "kanidm";
-      group = "kanidm";
-      mode = "0400";
-    };
   })
 
   # Primary server configuration (xsvr1)
@@ -63,11 +54,6 @@ lib.mkMerge [
           schedule = "0 2 * * *";
           versions = 7;
         };
-      };
-      provision = {
-        enable = true;
-        adminPasswordFile = config.sops.secrets."kanidm/admin-password".path;
-        idmAdminPasswordFile = config.sops.secrets."kanidm/admin-password".path;
       };
     };
     
