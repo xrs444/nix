@@ -30,7 +30,7 @@ lib.mkMerge [
     services.kanidm = {
       enableServer = true;
       enableClient = true;   # Enable client for authentication
-      enablePam = true;      # Enable PAM but configure properly
+      enablePam = false;     # Temporarily disable PAM
       # package setting moved to separate mkIf block above
       
       clientSettings = {
@@ -47,52 +47,10 @@ lib.mkMerge [
       };
     };
 
-    # Configure PAM to try Kanidm first, then fall back to local
-    security.pam.services = {
-      login.text = lib.mkForce ''
-        auth       sufficient pam_kanidm.so ignore_unknown_user
-        auth       sufficient pam_unix.so nullok
-        auth       required   pam_deny.so
-
-        account    sufficient pam_kanidm.so ignore_unknown_user
-        account    sufficient pam_unix.so
-        account    required   pam_deny.so
-
-        password   sufficient pam_kanidm.so
-        password   sufficient pam_unix.so nullok sha512
-        password   required   pam_deny.so
-
-        session    optional   pam_keyinit.so revoke
-        session    optional   pam_kanidm.so
-        session    required   pam_limits.so
-        session    optional   pam_systemd.so
-        session    required   pam_unix.so
-        session    optional   pam_mkhomedir.so skel=/etc/skel umask=077
-      '';
-      
-      sshd.text = lib.mkForce ''
-        auth       sufficient pam_kanidm.so ignore_unknown_user
-        auth       sufficient pam_unix.so nullok
-        auth       required   pam_deny.so
-
-        account    sufficient pam_kanidm.so ignore_unknown_user
-        account    sufficient pam_unix.so
-        account    required   pam_deny.so
-
-        password   sufficient pam_kanidm.so
-        password   sufficient pam_unix.so nullok sha512
-        password   required   pam_deny.so
-
-        session    optional   pam_keyinit.so revoke
-        session    optional   pam_kanidm.so
-        session    required   pam_limits.so
-        session    optional   pam_systemd.so
-        session    required   pam_unix.so
-        session    optional   pam_mkhomedir.so skel=/etc/skel umask=077
-      '';
-    };
-
-    # Enable mkhomedir for automatic home directory creation
+    # Remove all custom PAM configuration for now
+    # security.pam.services = { ... };
+    
+    # Just enable mkhomedir
     security.pam.enableMkHomeDir = true;
 
     # Open firewall ports for kanidm
