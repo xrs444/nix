@@ -17,17 +17,19 @@
     })
   ];
 
-  # Remove PAM configuration - let kanidm module handle it
-  # security.pam.services = lib.mkIf (username == "thomas-local") {
-  #   login.text = lib.mkBefore ''
-  #     # Try local authentication first for thomas-local
-  #     auth sufficient pam_unix.so
-  #   '';
-  #   su.text = lib.mkBefore ''
-  #     # Try local authentication first for thomas-local  
-  #     auth sufficient pam_unix.so
-  #   '';
-  # };
+  # Configure PAM to allow local authentication for thomas-local
+  security.pam.services = lib.mkIf (username == "thomas-local") {
+    sshd.text = lib.mkBefore ''
+      # Allow local authentication for thomas-local
+      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      auth sufficient pam_unix.so
+    '';
+    login.text = lib.mkBefore ''
+      # Allow local authentication for thomas-local
+      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      auth sufficient pam_unix.so
+    '';
+  };
 
   # Enable sudo for wheel group
   security.sudo.wheelNeedsPassword = true;
