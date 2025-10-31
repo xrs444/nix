@@ -33,6 +33,8 @@
         # Handle local users before Kanidm
         auth    sufficient pam_unix.so nullok likeauth try_first_pass
         account sufficient pam_unix.so
+        # Also bypass Kanidm in the session phase for local users
+        session sufficient pam_unix.so
       '';
     };
     login = {
@@ -41,6 +43,7 @@
       text = lib.mkBefore ''
         auth    sufficient pam_unix.so nullok likeauth try_first_pass
         account sufficient pam_unix.so
+        session sufficient pam_unix.so
       '';
     };
   };
