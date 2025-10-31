@@ -57,6 +57,12 @@ lib.mkMerge [
       };
     };
     
+    # Ensure kanidm starts after ACME certificate generation
+    systemd.services.kanidm = {
+      after = [ "acme-finished-idm.xrs444.net.target" ];
+      wants = [ "acme-finished-idm.xrs444.net.target" ];
+    };
+    
     # Ensure kanidm can read TLS certificates
     users.users.kanidm.extraGroups = [ "acme" ];
     
@@ -88,6 +94,12 @@ lib.mkMerge [
           versions = 7;
         };
       };
+    };
+    
+    # Ensure kanidm starts after ACME certificate generation
+    systemd.services.kanidm = {
+      after = [ "acme-finished-idm.xrs444.net.target" ];
+      wants = [ "acme-finished-idm.xrs444.net.target" ];
     };
     
     # Ensure kanidm can read TLS certificates
