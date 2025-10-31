@@ -17,22 +17,16 @@
     })
   ];
 
-  # Configure PAM to completely bypass Kanidm for thomas-local
+  # Configure PAM to bypass Kanidm for thomas-local but preserve group functionality
   security.pam.services = lib.mkIf (username == "thomas-local") {
-    sshd.text = lib.mkForce ''
-      # auth
-      auth required pam_env.so
-      auth sufficient pam_unix.so nullok
-      auth required pam_deny.so
-      
-      # account
+    sshd.text = lib.mkBefore ''
+      # Bypass Kanidm for thomas-local user
+      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      auth sufficient pam_unix.so
+      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
       account sufficient pam_unix.so
-      
-      # session
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session required pam_loginuid.so
-      session optional pam_systemd.so
+      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      session sufficient pam_unix.so
     '';
   };
 
