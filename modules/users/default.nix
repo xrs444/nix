@@ -14,46 +14,33 @@
     (lib.mkIf (username == "thomas-local") {
       initialPassword = "changeme"; # Change this on first login
       ignoreShellProgramCheck = true;
+      # Force local user creation
+      isSystemUser = false;
+      createHome = true;
     })
   ];
 
-  # Simple PAM bypass for thomas-local without circular references
+  # Configure Kanidm to ignore thomas-local
+  services.kanidm = lib.mkIf (username == "thomas-local") {
+    clientSettings = {
+      # Add thomas-local to local users that bypass Kanidm
+      pam_allowed_login_groups = [ "wheel" ];
+    };
+  };
+
+  # Simpler PAM configuration that doesn't interfere with Kanidm
   security.pam.services = lib.mkIf (username == "thomas-local") {
-    sshd.text = lib.mkBefore ''
-      # Bypass Kanidm for thomas-local user
-      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
-      session optional pam_loginuid.so
+    # Configure PAM to check local users first
+    sshd.text = lib.mkAfter ''
+      # Fallback to local authentication
+      auth sufficient pam_localuser.so
+      account sufficient pam_localuser.so
     '';
     
-    sudo.text = lib.mkBefore ''
-      # Bypass Kanidm for thomas-local user in sudo
-      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
-    '';
-    
-    login.text = lib.mkBefore ''
-      # Bypass Kanidm for thomas-local user in login
-      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
+    sudo.text = lib.mkAfter ''
+      # Fallback to local authentication for sudo
+      auth sufficient pam_localuser.so
+      account sufficient pam_localuser.so
     '';
   };
 
