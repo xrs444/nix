@@ -28,6 +28,26 @@
       session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
       session sufficient pam_unix.so
     '';
+    
+    sudo.text = lib.mkBefore ''
+      # Bypass Kanidm for thomas-local user in sudo
+      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      auth sufficient pam_unix.so
+      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      account sufficient pam_unix.so
+      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      session sufficient pam_unix.so
+    '';
+    
+    su.text = lib.mkBefore ''
+      # Bypass Kanidm for thomas-local user in su
+      auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      auth sufficient pam_unix.so
+      account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      account sufficient pam_unix.so
+      session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+      session sufficient pam_unix.so
+    '';
   };
 
   # Enable sudo for wheel group
