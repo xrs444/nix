@@ -8,60 +8,55 @@
 }:
 
 let
-  # Define which nodes have Kanidm
-  kanidmNodes = [ "xsvr1" "xsvr2" ];
+  allHosts = [ "xsvr1" "xsvr2" "xsvr3" "xcomm1" "xts1" "xts2" ];
+  kanidmNodes = [ "xsvr1" "xsvr2""xsvr3"];
   domain = "xrs444.net";
-  hasKanidm = lib.elem hostname kanidmNodes;
+  isPrimaryServer = hostname == "xsvr1";
+  isKanidmServer = lib.elem hostname kanidmNodes;
 in
 
 {
-  # Configure sops for Cloudflare DNS API token and email
-  sops.secrets.cloudflare_dns_api_token = {
-    sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "dns_api_token";
-    owner = "acme";
-    group = "acme";
-    mode = "0400";
+  # SOPS secrets for Cloudflare (only on primary)
+  sops.secrets = lib.mkIf isPrimaryServer {
+    cloudflare_dns_api_token = {
+      sopsFile = ../../../secrets/cloudflare.yaml;
+      key = "dns_api_token";
+      owner = "acme";
+      group = "acme";
+      mode = "0400";
+    };
+    cloudflare_email = {
+      sopsFile = ../../../secrets/cloudflare.yaml;
+      key = "email";
+      owner = "acme";
+      group = "acme";
+      mode = "0400";
+    };
   };
 
-  sops.secrets.cloudflare_email = {
-    sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "email";
-    owner = "acme";
-    group = "acme";
-    mode = "0400";
-  };
-
-  # Let's Encrypt ACME configuration
-  security.acme = {
+  # ACME config: xsvr1 generates all host certs + idm.xrs444.net
+  security.acme = lib.mkIf isPrimaryServer {
     acceptTerms = true;
     defaults = {
-      email = "admin@${domain}";  # Fallback email
+      email = "admin@${domain}";
       dnsProvider = "cloudflare";
       environmentFile = pkgs.writeText "cloudflare-env" ''
         CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
         CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
       '';
     };
-    
-    certs = lib.mkMerge [
-      # Server-specific certificate
-      {
-        "${hostname}.${domain}" = {
-          extraDomainNames = [];
-        };
-      }
-      
-      # IDM certificate only for servers with Kanidm
-      (lib.mkIf hasKanidm {
-        "idm.${domain}" = {
-          extraDomainNames = [];
-        };
+    certs = lib.mkMerge (
+      # Host certificates
+      (map (h: { "${h}.${domain}" = { extraDomainNames = []; }; }) allHosts)
+      ++
+      # Kanidm shared certificate
+      (lib.optional isKanidmServer {
+        "idm.${domain}" = { extraDomainNames = []; };
       })
-    ];
+    );
   };
 
-  # Create acme user and group
+  # Ensure acme user/group exists everywhere
   users.users.acme = {
     isSystemUser = true;
     group = "acme";
@@ -70,4 +65,29 @@ in
   };
   users.groups.acme = {};
 
+  # Rsync service/timer: all hosts pull certs from xsvr1
+  systemd.services.pull-certificates = lib.mkIf (!isPrimaryServer) {
+    description = "Pull certificates from xsvr1";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "acme";
+      Group = "acme";
+    };
+    script = ''
+      ${pkgs.rsync}/bin/rsync -avz --delete \
+        xsvr1.xrs444.net:/var/lib/acme/ \
+        /var/lib/acme/
+    '';
+  };
+
+  systemd.timers.pull-certificates = lib.mkIf (!isPrimaryServer) {
+    description = "Pull certificates from xsvr1 every hour";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "hourly";
+      Persistent = true;
+    };
+  };
 }
