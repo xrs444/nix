@@ -17,55 +17,47 @@
     })
   ];
 
-  # Configure PAM to completely bypass Kanidm for thomas-local
+  # Completely replace PAM configuration for thomas-local
   security.pam.services = lib.mkIf (username == "thomas-local") {
-    sshd.text = lib.mkBefore ''
-      # Complete bypass for thomas-local user
-      auth [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      auth required pam_deny.so
-      
-      account [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      account required pam_deny.so
-      
-      session [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
-    '';
+    sshd = {
+      text = lib.mkForce ''
+        # auth
+        auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+        auth sufficient pam_unix.so nullok
+        ${config.security.pam.services.sshd.text}
+        
+        # account  
+        account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+        account sufficient pam_unix.so
+        ${lib.concatStringsSep "\n" (map (rule: "account ${rule}") (lib.filter (rule: lib.hasPrefix "required" rule || lib.hasPrefix "sufficient" rule) (lib.splitString "\n" config.security.pam.services.sshd.text)))}
+        
+        # session
+        session [success=1 default=ignore] pam_succeed_if.so user = thomas-local  
+        session required pam_env.so conffile=/etc/pam/environment readenv=0
+        session required pam_unix.so
+        session optional pam_systemd.so
+        session optional pam_loginuid.so
+      '';
+    };
     
-    sudo.text = lib.mkBefore ''
-      # Complete bypass for thomas-local user in sudo
-      auth [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      auth required pam_deny.so
-      
-      account [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      account required pam_deny.so
-      
-      session [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
-    '';
-    
-    login.text = lib.mkBefore ''
-      # Complete bypass for thomas-local user in login
-      auth [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      auth sufficient pam_unix.so nullok
-      auth required pam_deny.so
-      
-      account [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      account sufficient pam_unix.so
-      account required pam_deny.so
-      
-      session [success=2 default=ignore] pam_succeed_if.so user = thomas-local
-      session required pam_env.so conffile=/etc/pam/environment readenv=0
-      session required pam_unix.so
-      session optional pam_systemd.so
-    '';
+    sudo = {
+      text = lib.mkForce ''
+        # auth
+        auth [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+        auth sufficient pam_unix.so nullok
+        ${config.security.pam.services.sudo.text}
+        
+        # account
+        account [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+        account sufficient pam_unix.so
+        
+        # session  
+        session [success=1 default=ignore] pam_succeed_if.so user = thomas-local
+        session required pam_env.so conffile=/etc/pam/environment readenv=0
+        session required pam_unix.so
+        session optional pam_systemd.so
+      '';
+    };
   };
 
   # Enable sudo for wheel group
