@@ -16,9 +16,17 @@ in
 
 {
   # Configure sops for Cloudflare credentials
-  sops.secrets.cloudflare_credentials = {
+  sops.secrets.cloudflare_api_key = {
     sopsFile = ../../../secrets/cloudflare.yaml;
     key = "api_key";
+    owner = "acme";
+    group = "acme";
+    mode = "0400";
+  };
+  
+  sops.secrets.cloudflare_email = {
+    sopsFile = ../../../secrets/cloudflare.yaml;
+    key = "email";
     owner = "acme";
     group = "acme";
     mode = "0400";
@@ -30,7 +38,11 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      credentialsFile = config.sops.secrets.cloudflare_credentials.path;
+      # Create credentials file with proper format
+      credentialsFile = pkgs.writeText "cloudflare-credentials" ''
+        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
+        CLOUDFLARE_API_KEY_FILE=${config.sops.secrets.cloudflare_api_key.path}
+      '';
     };
     
     certs = lib.mkMerge [
