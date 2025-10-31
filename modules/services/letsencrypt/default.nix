@@ -15,15 +15,15 @@ let
 in
 
 {
-  # Configure sops for Cloudflare credentials
-  sops.secrets.cloudflare_api_key = {
+  # Configure sops for Cloudflare DNS API token and email
+  sops.secrets.cloudflare_dns_api_token = {
     sopsFile = ../../../secrets/cloudflare.yaml;
-    key = "api_key";
+    key = "dns_api_token";
     owner = "acme";
     group = "acme";
     mode = "0400";
   };
-  
+
   sops.secrets.cloudflare_email = {
     sopsFile = ../../../secrets/cloudflare.yaml;
     key = "email";
@@ -36,11 +36,11 @@ in
   security.acme = {
     acceptTerms = true;
     defaults = {
-      email = "admin@${domain}";
+      # Read email from SOPS secrets instead of generating it
+      email = builtins.readFile config.sops.secrets.cloudflare_email.path;
       dnsProvider = "cloudflare";
       environmentFile = pkgs.writeText "cloudflare-env" ''
-        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
-        CLOUDFLARE_API_KEY_FILE=${config.sops.secrets.cloudflare_api_key.path}
+        CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
       '';
     };
     
