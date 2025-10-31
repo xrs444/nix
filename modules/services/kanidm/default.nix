@@ -62,8 +62,12 @@ lib.mkMerge [
         password   sufficient pam_unix.so nullok sha512
         password   required   pam_deny.so
 
+        session    optional   pam_keyinit.so revoke
         session    optional   pam_kanidm.so
+        session    required   pam_limits.so
+        session    optional   pam_systemd.so
         session    required   pam_unix.so
+        session    optional   pam_mkhomedir.so skel=/etc/skel umask=077
       '';
       
       sshd.text = lib.mkForce ''
@@ -79,10 +83,17 @@ lib.mkMerge [
         password   sufficient pam_unix.so nullok sha512
         password   required   pam_deny.so
 
+        session    optional   pam_keyinit.so revoke
         session    optional   pam_kanidm.so
+        session    required   pam_limits.so
+        session    optional   pam_systemd.so
         session    required   pam_unix.so
+        session    optional   pam_mkhomedir.so skel=/etc/skel umask=077
       '';
     };
+
+    # Enable mkhomedir for automatic home directory creation
+    security.pam.enableMkHomeDir = true;
 
     # Open firewall ports for kanidm
     networking.firewall = {
