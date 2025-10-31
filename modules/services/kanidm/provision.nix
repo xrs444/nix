@@ -15,12 +15,19 @@ in
 
 lib.mkIf isProvisioningServer {
   
+  # SOPS secrets for Kanidm admin password
+  sops.secrets."kanidm/admin" = {
+    owner = "kanidm";
+    group = "kanidm";
+    mode = "0400";
+  };
+  
   services.kanidm = {
     provision = {
       enable = true;
       
-      # Admin account configuration
-      adminPasswordFile = "/var/lib/kanidm/admin-password";
+      # Admin account configuration using SOPS secret
+      adminPasswordFile = config.sops.secrets."kanidm/admin-password".path;
       
       # Create groups
       groups = {
@@ -34,30 +41,7 @@ lib.mkIf isProvisioningServer {
           legalName = "xrs444";
           mailAddresses = [ "xrs444@xrs444.net" ];
         };
-
       };
     };
-  };
-  
-  # Ensure admin password file exists with proper permissions
-  systemd.services.kanidm-admin-setup = {
-    description = "Setup Kanidm admin password";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "kanidm.service" ];
-    
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      User = "kanidm";
-      Group = "kanidm";
-    };
-    
-    script = ''
-      if [ ! -f /var/lib/kanidm/admin-password ]; then
-        echo "Please create /var/lib/kanidm/admin-password with the admin password"
-        echo "You can generate one with: openssl rand -base64 32 > /var/lib/kanidm/admin-password"
-        echo "Then set proper permissions: chown kanidm:kanidm /var/lib/kanidm/admin-password && chmod 600 /var/lib/kanidm/admin-password"
-      fi
-    '';
   };
 }
