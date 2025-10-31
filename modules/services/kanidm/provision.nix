@@ -27,7 +27,7 @@ lib.mkIf isProvisioningServer {
       enable = true;
       
       # Admin account configuration using SOPS secret
-      adminPasswordFile = config.sops.secrets."kanidm/admin-password".path;
+      adminPasswordFile = config.sops.secrets."kanidm/admin".path;
       
       # Create groups
       groups = {
