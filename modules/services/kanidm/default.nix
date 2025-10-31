@@ -29,13 +29,14 @@ lib.mkMerge [
  
     services.kanidm = {
       enableServer = true;
-      enableClient = true;   # Enable client for authentication
-      enablePam = false;     # Temporarily disable PAM
+      enableClient = false;  # Disable client completely on servers
+      enablePam = false;     # Disable PAM
       # package setting moved to separate mkIf block above
       
-      clientSettings = {
-        uri = kanidmServerUri;
-      };
+      # Remove clientSettings since client is disabled
+      # clientSettings = {
+      #   uri = kanidmServerUri;
+      # };
       
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
@@ -47,11 +48,8 @@ lib.mkMerge [
       };
     };
 
-    # Remove all custom PAM configuration for now
-    # security.pam.services = { ... };
-    
-    # Just enable mkhomedir
-    security.pam.enableMkHomeDir = true;
+    # Remove mkhomedir since we're not doing client auth on servers
+    # security.pam.enableMkHomeDir = true;
 
     # Open firewall ports for kanidm
     networking.firewall = {
