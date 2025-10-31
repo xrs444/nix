@@ -36,11 +36,10 @@ in
   security.acme = {
     acceptTerms = true;
     defaults = {
-      # Read email from SOPS secrets instead of generating it
-      email = builtins.readFile config.sops.secrets.cloudflare_email.path;
       dnsProvider = "cloudflare";
       environmentFile = pkgs.writeText "cloudflare-env" ''
         CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
+        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
       '';
     };
     
@@ -49,6 +48,9 @@ in
       {
         "${hostname}.${domain}" = {
           extraDomainNames = [];
+          preRun = ''
+            export EMAIL="$(cat ${config.sops.secrets.cloudflare_email.path})"
+          '';
         };
       }
       
@@ -56,6 +58,9 @@ in
       (lib.mkIf hasKanidm {
         "idm.${domain}" = {
           extraDomainNames = [];
+          preRun = ''
+            export EMAIL="$(cat ${config.sops.secrets.cloudflare_email.path})"
+          '';
         };
       })
     ];
@@ -70,6 +75,4 @@ in
   };
   users.groups.acme = {};
 
-  # Open port 80 for HTTP-01 challenge (fallback, though we're using DNS-01)
-  networking.firewall.allowedTCPPorts = [ 80 ];
 }
