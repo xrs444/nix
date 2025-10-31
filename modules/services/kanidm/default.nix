@@ -10,14 +10,18 @@ let
   # Only xsvr1 and xsvr2 should run kanidm servers
   isKanidmServer = builtins.elem hostname ["xsvr1" "xsvr2"];
   
+  # Only xsvr1 should run provisioning
+  isProvisioningHost = hostname == "xsvr1";
+  
   # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";
   
 in
 lib.mkMerge [
 
-  # Import the provisioning module
-  (import ./provision.nix { inherit config hostname lib pkgs; })
+  # Import the provisioning module ONLY on xsvr1
+  (lib.mkIf isProvisioningHost
+    (import ./provision.nix { inherit config hostname lib pkgs; }))
 
   # Override package for servers only
   (lib.mkIf isKanidmServer {
@@ -33,11 +37,6 @@ lib.mkMerge [
       enablePam = false;     # Disable PAM
       # package setting moved to separate mkIf block above
       
-      # Remove clientSettings since client is disabled
-      # clientSettings = {
-      #   uri = kanidmServerUri;
-      # };
-      
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
         ldapbindaddress = "0.0.0.0:3636";
@@ -47,9 +46,6 @@ lib.mkMerge [
         tls_key = "/var/lib/kanidm/certs/key.pem";
       };
     };
-
-    # Remove mkhomedir since we're not doing client auth on servers
-    # security.pam.enableMkHomeDir = true;
 
     # Open firewall ports for kanidm
     networking.firewall = {
