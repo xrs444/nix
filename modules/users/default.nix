@@ -20,10 +20,8 @@
 
   # Configure Kanidm PAM to skip local users
   services.kanidm = lib.mkIf (username == "thomas-local") {
-    enablePam = true;  # Keep enabled but configure properly
-    clientSettings = {
-      pam_allowed_login_groups = [ ];  # Don't allow any groups through Kanidm PAM
-    };
+    enablePam = true;
+    # Do not set pam_allowed_login_groups here; an empty list denies everyone
   };
 
   # Override PAM configuration for thomas-local to handle local users properly
@@ -31,16 +29,19 @@
     sshd = {
       unixAuth = true;
       pamMount = false;
-      # Ensure local users are handled before Kanidm
-      text = lib.mkAfter ''
-        # Handle local users first
-        auth    [success=1 default=ignore] pam_succeed_if.so user ingroup wheel
-        account [success=1 default=ignore] pam_succeed_if.so user ingroup wheel
+      text = lib.mkBefore ''
+        # Handle local users before Kanidm
+        auth    sufficient pam_unix.so nullok likeauth try_first_pass
+        account sufficient pam_unix.so
       '';
     };
     login = {
       unixAuth = true;
       pamMount = false;
+      text = lib.mkBefore ''
+        auth    sufficient pam_unix.so nullok likeauth try_first_pass
+        account sufficient pam_unix.so
+      '';
     };
   };
 
