@@ -36,6 +36,7 @@ in
   security.acme = {
     acceptTerms = true;
     defaults = {
+      email = "admin@${domain}";  # Fallback email
       dnsProvider = "cloudflare";
       environmentFile = pkgs.writeText "cloudflare-env" ''
         CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
@@ -48,9 +49,6 @@ in
       {
         "${hostname}.${domain}" = {
           extraDomainNames = [];
-          preRun = ''
-            export EMAIL="$(cat ${config.sops.secrets.cloudflare_email.path})"
-          '';
         };
       }
       
@@ -58,9 +56,6 @@ in
       (lib.mkIf hasKanidm {
         "idm.${domain}" = {
           extraDomainNames = [];
-          preRun = ''
-            export EMAIL="$(cat ${config.sops.secrets.cloudflare_email.path})"
-          '';
         };
       })
     ];
