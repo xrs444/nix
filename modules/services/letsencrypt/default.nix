@@ -38,8 +38,7 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      # Create credentials file with proper format
-      credentialsFile = pkgs.writeText "cloudflare-credentials" ''
+      environmentFile = pkgs.writeText "cloudflare-env" ''
         CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
         CLOUDFLARE_API_KEY_FILE=${config.sops.secrets.cloudflare_api_key.path}
       '';
