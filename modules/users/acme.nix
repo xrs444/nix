@@ -8,13 +8,13 @@
     createHome = true;
     shell = pkgs.bash;
     openssh.authorizedKeys.keys = [
-      config.sops.secrets."acme/ssh-key".path
+      config.sops.secrets."ssh-key".path
     ];
   };
 
   users.groups.acme = {};
 
-  sops.secrets."acme/ssh-key" = {
+  sops.secrets."ssh-key" = {
     sopsFile = builtins.path { path = ../../secrets/acme.yaml; };
     owner = "acme";
     group = "acme";
