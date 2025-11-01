@@ -15,7 +15,7 @@
   users.groups.acme = {};
 
   sops.secrets."acme/ssh-key" = {
-    sopsFile = builtins.path { path = ../../../secrets/acme.yaml; };
+    sopsFile = builtins.path { path = ./secrets/acme.yaml; };
     owner = "acme";
     group = "acme";
     mode = "0400";
