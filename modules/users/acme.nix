@@ -8,9 +8,8 @@
     createHome = true;
     shell = pkgs.bash;
     openssh.authorizedKeys.keys = [
-      (builtins.readFile config.sops.secrets."acme/ssh-key".path)
+      config.sops.secrets."acme/ssh-key".path
     ];
-    # Remove initialPassword if only using SSH keys
   };
 
   users.groups.acme = {};
