@@ -6,35 +6,34 @@ let
   nixosHosts = lib.filterAttrs (_: host: host.type == "nixos") hosts;
   darwinHosts = lib.filterAttrs (_: host: host.type == "darwin") hosts;
 
-  # Determine the correct base module for each host type
-  getBaseModule = hostConfig:
-    if hostConfig.platform == "aarch64-linux" then
-      ../hosts/nixos-arm
-    else if hostConfig.type == "nixos" then
-      ../hosts/nixos
-    else if hostConfig.type == "darwin" then
-      ../hosts/darwin
-    else
-      throw "Unknown host type: ${hostConfig.type}";
-
   # Common module builder for NixOS
-  mkNixosConfig =
-    hostName:
-    hostConfig:
-    lib.nixosSystem {
+  mkNixosConfig = hostName: hostConfig:
+    let
+      # Determine the correct host directory based on platform
+      hostDir = if hostConfig.platform == "aarch64-linux" 
+                then ../hosts/nixos-arm 
+                else ../hosts/nixos;
+      hostPath = hostDir + "/${hostName}";
+    in
+    inputs.nixpkgs.lib.nixosSystem {
       system = hostConfig.platform;
       specialArgs = {
         inherit inputs outputs stateVersion;
         hostname = hostName;
         username = hostConfig.user;
         platform = hostConfig.platform;
-        desktop = hostConfig.desktop or null;
-        isInstall = hostConfig.installer or false;
-        isWorkstation = builtins.hasAttr "desktop" hostConfig;
+        isInstall = false;
+        isWorkstation = hostConfig.desktop or null != null;
       };
       modules = [
-        (getBaseModule hostConfig)  # This imports the platform wrapper which handles everything
-        inputs.home-manager.nixosModules.home-manager
+        # Import base-nixos directly
+        ../hosts/base-nixos.nix
+        # Import the host-specific configuration
+        hostPath
+        ../modules/roles
+        ../modules/services
+        ../modules/packages-darwin
+        ../modules/packages-nixos
         {
           home-manager = {
             useGlobalPkgs = true;
@@ -65,7 +64,10 @@ let
         desktop = hostConfig.desktop or null;
       };
       modules = [
-        (getBaseModule hostConfig)
+        # Import base-darwin directly
+        ../hosts/base-darwin.nix
+        # Import the host-specific configuration
+        (../hosts + "/${hostConfig.type}/${hostName}")
         inputs.home-manager.darwinModules.home-manager
         {
           home-manager = {

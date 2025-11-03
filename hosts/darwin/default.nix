@@ -12,14 +12,6 @@
   ...
 }:
 {
-  imports = [
-    # Import host-specific configuration
-    ./${hostname}
-    # Import common cache configuration
-    ../common
-    # Import Darwin-specific modules
-    ../../modules/packages-darwin
-  ];
 
   # Enable the Nix daemon
   services.nix-daemon.enable = true;
