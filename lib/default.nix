@@ -75,7 +75,7 @@ in
       platformDir = hostInfo.dir;
     in
     nixpkgs.lib.nixosSystem {
-      system = if platform != null then platform else "x86_64-linux";
+      system = defaultPlatform;
       modules = [
         # Apply overlays to nixpkgs
         {
