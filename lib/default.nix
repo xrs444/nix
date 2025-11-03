@@ -44,14 +44,6 @@ let
     };
 in
 {
-  # Helper function to generate all home configurations from hostUsers mapping
-  mkAllHomes = nixpkgs.lib.forAllSystems (system:
-    nixpkgs.lib.mapAttrs' (hostname: username: {
-      name = "${username}@${hostname}";
-      value = mkHome { inherit hostname system; };
-    }) hostUsers
-  );
-
   # Helper function to generate system configurations for all supported architectures
   forAllSystems = nixpkgs.lib.genAttrs [
     "aarch64-linux"
@@ -60,6 +52,14 @@ in
     "aarch64-darwin"
     "x86_64-darwin"
   ];
+
+  # Helper function to generate all home configurations from hostUsers mapping
+  mkAllHomes = forAllSystems (system:
+    nixpkgs.lib.mapAttrs' (hostname: username: {
+      name = "${username}@${hostname}";
+      value = mkHome { inherit hostname system; };
+    }) hostUsers
+  );
 
   # Helper function to create NixOS configurations
   mkNixos = { hostname, desktop ? null, platform ? null, username ? null, isInstall ? true, isWorkstation ? false }: 
