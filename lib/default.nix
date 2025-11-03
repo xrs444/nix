@@ -1,4 +1,4 @@
-{ inputs, outputs, stateVersion, hostUsers ? {} }:
+{ inputs, outputs, stateVersion, hosts }:
 
 let
   inherit (inputs) nixpkgs home-manager nix-darwin;
@@ -12,96 +12,77 @@ let
     "x86_64-darwin"
   ];
 
-  # Helper function to generate all home configurations from hostUsers mapping
-  mkAllHomes = forAllSystems (system:
-    nixpkgs.lib.mapAttrs' (hostname: username: {
-      name = "${username}@${hostname}";
-      value = mkHome { inherit hostname system; };
-    }) hostUsers
-  );
+  # Helper to filter hosts by type
+  hostsByType = type: builtins.filterAttrs (_: v: v.type == type) hosts;
 
-  # Helper function to create Home Manager configurations
-  mkHome = { hostname, username ? null, platform ? null, system ? null }: 
-    let
-      # Use provided username, fallback to host mapping, then fallback to default
-      defaultUser = if username != null then username 
-                   else if hostUsers ? ${hostname} then hostUsers.${hostname}
-                   else "thomas-local";
-      # Use provided platform, or auto-detect from host directory structure
-      defaultPlatform = if platform != null then platform
-                       else (getHostInfo hostname).platform;
-      usedSystem = if system != null then system else defaultPlatform;
-    in
+  # Generate all home configurations from hosts mapping
+  mkAllHomes = builtins.mapAttrs (hostname: host:
+    mkHome { inherit hostname host; }
+  ) hosts;
+
+  # Create Home Manager configuration for a host
+  mkHome = { hostname, host }: 
     home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.${usedSystem};
+      pkgs = nixpkgs.legacyPackages.${host.platform};
       extraSpecialArgs = { 
         inherit inputs outputs stateVersion hostname;
-        platform = defaultPlatform;
-        username = defaultUser;
-        desktop = null;  # Add desktop parameter for home-manager
+        platform = host.platform;
+        username = host.user;
+        desktop = host.desktop or null;
+        host = host;
       };
       modules = [
         ../homemanager
-        ../homemanager/users/${defaultUser}
+        ../homemanager/users/${host.user}
       ];
     };
 
-  # Helper function to create NixOS configurations
-  mkNixos = { hostname, desktop ? null, platform ? null, username ? null, isInstall ? true, isWorkstation ? false }: 
-    let
-      # Use provided username, fallback to host mapping, then fallback to default
-      defaultUser = if username != null then username 
-                   else if hostUsers ? ${hostname} then hostUsers.${hostname}
-                   else "thomas-local";
-      # Auto-detect platform and directory from host directory structure
-      hostInfo = if platform != null then 
-        { platform = platform; dir = if platform == "aarch64-linux" then "nixos-arm" else "nixos"; }
-      else 
-        getHostInfo hostname;
-      defaultPlatform = hostInfo.platform;
-      platformDir = hostInfo.dir;
-    in
+  # Generate all NixOS configurations from hosts mapping
+  mkAllNixosConfigs = builtins.mapAttrs (hostname: host:
+    mkNixos { inherit hostname host; }
+  ) (hostsByType "nixos");
+
+  # Create NixOS configuration for a host
+  mkNixos = { hostname, host }: 
     nixpkgs.lib.nixosSystem {
-      system = defaultPlatform;
+      system = host.platform;
       modules = [
-        # Apply overlays to nixpkgs
         {
           nixpkgs.overlays = builtins.attrValues outputs.overlays;
           nixpkgs.config.allowUnfree = true;
         }
-        ../hosts/${platformDir}
-        ../hosts/${platformDir}/${hostname}
-      ] ++ nixpkgs.lib.optionals (desktop != null) [
-        ../hosts/${platformDir}/${hostname}/desktop.nix
+        ../hosts/nixos
+        ../hosts/nixos/${hostname}
+      ] ++ nixpkgs.lib.optionals (host.desktop or null != null) [
+        ../hosts/nixos/${hostname}/desktop.nix
       ];
       specialArgs = {
-        inherit inputs outputs stateVersion hostname desktop isInstall isWorkstation;
-        pkgs = nixpkgs.legacyPackages.${defaultPlatform};
-        platform = defaultPlatform;
-        username = defaultUser;
+        inherit inputs outputs stateVersion hostname;
+        pkgs = nixpkgs.legacyPackages.${host.platform};
+        platform = host.platform;
+        username = host.user;
+        desktop = host.desktop or null;
+        host = host;
       };
     };
 
-  # Helper function to create Darwin configurations
-  mkDarwin = { hostname, username ? null, desktop ? null, platform ? null }: 
-    let
-      # Use provided username, fallback to host mapping, then fallback to default
-      defaultUser = if username != null then username 
-                   else if hostUsers ? ${hostname} then hostUsers.${hostname}
-                   else "thomas-local";
-      # Auto-detect platform from host directory structure  
-      defaultPlatform = if platform != null then platform
-                       else (getHostInfo hostname).platform;
-    in
+  # Generate all Darwin configurations from hosts mapping
+  mkAllDarwinConfigs = builtins.mapAttrs (hostname: host:
+    mkDarwin { inherit hostname host; }
+  ) (hostsByType "darwin");
+
+  # Create Darwin configuration for a host
+  mkDarwin = { hostname, host }: 
     nix-darwin.lib.darwinSystem {
-      system = defaultPlatform;
+      system = host.platform;
       specialArgs = { 
-        inherit inputs outputs stateVersion hostname desktop;
-        platform = defaultPlatform;
-        username = defaultUser;
+        inherit inputs outputs stateVersion hostname;
+        platform = host.platform;
+        username = host.user;
+        desktop = host.desktop or null;
+        host = host;
       };
       modules = [
-        # Apply overlays to nixpkgs for Darwin too
         {
           nixpkgs.overlays = builtins.attrValues outputs.overlays;
           nixpkgs.config.allowUnfree = true;
@@ -110,10 +91,13 @@ let
         ../hosts/darwin/${hostname}
       ];
     };
+
 in {
   forAllSystems = forAllSystems;
   mkAllHomes = mkAllHomes;
   mkHome = mkHome;
+  mkAllNixosConfigs = mkAllNixosConfigs;
   mkNixos = mkNixos;
+  mkAllDarwinConfigs = mkAllDarwinConfigs;
   mkDarwin = mkDarwin;
 }

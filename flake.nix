@@ -36,84 +36,79 @@
   let
     inherit (self) outputs;
     stateVersion = "25.05";
-    
-    # Define default users for each host
-    hostUsers = {
-      # Servers
-      xsvr1 = "thomas-local";
-      xsvr2 = "thomas-local";
-      xsvr3 = "thomas-local";
-      xlabmgmt = "thomas-local";
-      xts1 = "thomas-local";
-      xts2 = "thomas-local";
-      xcomm1 = "xrs444";
-      # Auxiliary
-      xdash1 = "thomas-local";
-      xhac-radio = "thomas-local";
-      # Clients
-      xlt1-t-vnixos = "thomas-local";
-      # Darwin
-      xlt1-t = "xrs444";
-    };
-    
-    lib = import ./lib { inherit inputs outputs stateVersion hostUsers; };
-  in
-  {
 
-    # Automatically generate home configurations from hostUsers mapping
-    homeConfigurations = lib.mkAllHomes;
-
-    nixosConfigurations = {
-
-      # Servers
-      
-      xsvr1 = lib.mkNixos { hostname = "xsvr1"; };
-      xsvr2 = lib.mkNixos { hostname = "xsvr2"; };
-      xsvr3 = lib.mkNixos { 
-        hostname = "xsvr3";
+    # Unified host definitions
+    hosts = {
+      xsvr1 = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
+      };
+      xsvr2 = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
+      };
+      xsvr3 = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
         desktop = "gnome";
       };
-      xlabmgmt = lib.mkNixos {
-        hostname = "xlabmgmt";
+      xlabmgmt = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
         desktop = "gnome";
       };
-      xts1 = lib.mkNixos {
-        hostname = "xts1";
-        platform = "aarch64-linux"; # Add this line for ARM hosts
-      };      
-      xts2 = lib.mkNixos {
-        hostname = "xts2";
-      };    
-      xcomm1 = lib.mkNixos {
-        hostname = "xcomm1";
+      xts1 = {
+        user = "thomas-local";
+        platform = "aarch64-linux";
+        type = "nixos";
+      };
+      xts2 = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
+      };
+      xcomm1 = {
+        user = "xrs444";
+        platform = "x86_64-linux";
+        type = "nixos";
         desktop = "gnome";
       };
-
-#       Auxiliary
-
-      xdash1 = lib.mkNixos {
-        hostname = "xdash1";
+      xdash1 = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
       };
-      xhac-radio = lib.mkNixos {
-          hostname = "xhac-radio";
-       };
-
-      # Clients
-
-      xlt1-t-vnixos = lib.mkNixos {
-        hostname = "xlt1-t-vnixos";
+      xhac-radio = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
+      };
+      xlt1-t-vnixos = {
+        user = "thomas-local";
+        platform = "x86_64-linux";
+        type = "nixos";
         desktop = "gnome";
       };
-    
-    };
-
-    # macOS machines
-    darwinConfigurations = {
-      xlt1-t = lib.mkDarwin {
-        hostname = "xlt1-t";
+      xlt1-t = {
+        user = "xrs444";
+        platform = "aarch64-darwin";
+        type = "darwin";
         desktop = "aqua";
       };
     };
+
+    lib = import ./lib { inherit inputs outputs stateVersion hosts; };
+
+  in
+  {
+    homeConfigurations = lib.mkAllHomes;
+
+    nixosConfigurations = lib.mkAllNixosConfigs;
+    darwinConfigurations = lib.mkAllDarwinConfigs;
 
     # Custom packages; accessible via 'nix build', 'nix shell', etc
     nixosModules = {
