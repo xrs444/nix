@@ -43,7 +43,13 @@ let
   ) (hostsByType "nixos");
 
   # Create NixOS configuration for a host
-  mkNixos = { hostname, host }: 
+  mkNixos = { hostname, host }:
+    let
+      hostDir =
+        if host.platform == "aarch64-linux"
+        then ../hosts/nixos-arm/${hostname}
+        else ../hosts/nixos/${hostname};
+    in
     nixpkgs.lib.nixosSystem {
       system = host.platform;
       modules = [
@@ -52,9 +58,9 @@ let
           nixpkgs.config.allowUnfree = true;
         }
         ../hosts/nixos
-        ../hosts/nixos/${hostname}
+        hostDir
       ] ++ nixpkgs.lib.optionals (host.desktop or null != null) [
-        ../hosts/nixos/${hostname}/desktop.nix
+        "${hostDir}/desktop.nix"
       ];
       specialArgs = {
         inherit inputs outputs stateVersion hostname;
