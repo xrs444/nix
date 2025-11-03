@@ -45,7 +45,7 @@ let
 in
 {
   # Helper function to generate all home configurations from hostUsers mapping
-  mkAllHomes = lib.forAllSystems (system:
+  mkAllHomes = nixpkgs.lib.forAllSystems (system:
     nixpkgs.lib.mapAttrs' (hostname: username: {
       name = "${username}@${hostname}";
       value = mkHome { inherit hostname system; };
