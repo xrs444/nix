@@ -22,11 +22,18 @@ lib.mkIf isProvisioningServer {
     group = "kanidm";
     mode = "0400";
   };
+
+  # Add kanidm-provision CLI tool for xsvr1
+  environment.systemPackages = with pkgs; [
+    kanidm-provision  # Separate CLI package from overlay
+  ];
   
   services.kanidm = {
+    # Use the secret provisioning package for xsvr1
+    package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
+    
     provision = {
       enable = true;
-      
       # Admin account configuration using SOPS secret
       adminPasswordFile = config.sops.secrets."admin_password".path;
       

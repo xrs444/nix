@@ -102,6 +102,9 @@
     };
 
     lib = import ./lib { inherit inputs outputs stateVersion hosts; };
+    
+    # Import overlays once
+    allOverlays = import ./overlays { inherit inputs; };
 
   in
   {
@@ -117,13 +120,13 @@
       tailscale = import ./modules/packages-nixos/tailscale;
     };
     formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-    overlays = import ./overlays { inherit inputs; };
+    overlays = allOverlays;
     packages = lib.forAllSystems (system:
       let
-        pkgsWithOverlays = import inputs.nixpkgs {  # <-- use inputs.nixpkgs here
+        pkgsWithOverlays = import inputs.nixpkgs {
           inherit system;
           config = { allowUnfree = true; };
-          overlays = builtins.attrValues self.overlays;
+          overlays = builtins.attrValues allOverlays;
         };
         pkgsFunction = import ./pkgs;
         customPkgs = pkgsFunction pkgsWithOverlays;

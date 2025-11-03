@@ -12,7 +12,10 @@
     initialPassword = "changeme";
     createHome = true;
     home = "/home/thomas-local";
+    group = "thomas-local";
   };
+
+  users.groups.thomas-local = {};
 
   # Disable Kanidm PAM completely when using local authentication
   services.kanidm.enablePam = false;

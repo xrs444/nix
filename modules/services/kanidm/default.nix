@@ -29,9 +29,9 @@ lib.mkMerge [
   (lib.mkIf isProvisioningHost
     (import ./provision.nix { inherit config hostname lib pkgs; }))
 
-  # Use the provisioning-enabled package for servers
-  (lib.mkIf isKanidmServer {
-    services.kanidm.package = lib.mkForce pkgs.kanidmProvision;
+  # Use kanidm_1_7 for xsvr2 (non-provisioning server)
+  (lib.mkIf isReplicaServer {
+    services.kanidm.package = lib.mkDefault pkgs.kanidm_1_7;
   })
 
   # Primary server configuration (xsvr1)
@@ -72,7 +72,7 @@ lib.mkMerge [
     };
   })
 
-  # Replica server configuration (xsvr2) - Independent for now
+  # Replica server configuration (xsvr2)
   (lib.mkIf isReplicaServer {
     services.kanidm = {
       enableServer = true;
@@ -89,7 +89,7 @@ lib.mkMerge [
         role = "WriteReplica";
         online_backup = {
           path = "/var/lib/kanidm/backups";
-          schedule = "0 3 * * *";  # Backup 1 hour after primary
+          schedule = "0 2 * * *";
           versions = 7;
         };
       };

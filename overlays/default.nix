@@ -1,31 +1,34 @@
-{ inputs }:
+{ inputs, ... }:
+let
+  unstablePkgs = system: inputs.nixpkgs-unstable.legacyPackages.${system};
+in
 {
-  # Add custom packages from the 'pkgs' directory
-  additions = final: _prev: import ../pkgs final.pkgs;
+  # This one brings our custom packages from the 'pkgs' directory
+  additions = final: _prev: import ../pkgs {pkgs = final;};
 
-  # Access packages from nixpkgs-unstable
+  # This one contains whatever you want to overlay
+  modifications = final: prev: {
+    # Override default kanidm to use 1.7 from unstable
+    kanidm = (unstablePkgs final.system).kanidm_1_7;
+    
+    # kanidm_1_7 for all kanidm servers (from unstable)
+    kanidm_1_7 = (unstablePkgs final.system).kanidm_1_7;
+    
+    # kanidmWithSecretProvisioning_1_7 for provisioning server (xsvr1)
+    kanidmWithSecretProvisioning_1_7 = (unstablePkgs final.system).kanidm_1_7.override {
+      enableSecretProvisioning = true;
+    };
+    
+    # kanidm-provision CLI tool - separate package from unstable to get 1.7
+    kanidm-provision = (unstablePkgs final.system).kanidm-provision;
+  };
+
+  # When applied, the unstable nixpkgs set (declared in the flake inputs) will
+  # be accessible through 'pkgs.unstable'
   unstable-packages = final: _prev: {
     unstable = import inputs.nixpkgs-unstable {
-      inherit (final) system;
+      system = final.system;
       config.allowUnfree = true;
     };
   };
-
-  # Modify existing packages
-  modifications = final: prev: 
-    let
-      unstablePkgs = import inputs.nixpkgs-unstable {
-        inherit (final) system;
-        config.allowUnfree = true;
-      };
-    in {
-      # Override kanidm to use version 1.7 from unstable
-      kanidm = unstablePkgs.kanidm_1_7;
-      kanidmProvision = unstablePkgs.kanidm_1_7.override {
-        enableSecretProvisioning = true;
-      };
-      
-      # Override kanidm_1_4 to use version 1.7 from unstable
-      kanidm_1_4 = unstablePkgs.kanidm_1_7;
-    };
 }

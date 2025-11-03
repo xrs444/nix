@@ -6,6 +6,7 @@
   stateVersion,
   username,
   inputs,
+  pkgs,
   ...
 }:
 {
@@ -22,26 +23,13 @@
 
   home = {
     inherit username stateVersion;
-    homeDirectory = "/home/${username}";
+    homeDirectory = lib.mkForce (
+      if pkgs.stdenv.isDarwin
+      then "/Users/${username}"
+      else "/home/${username}"
+    );
   };
 
-  nixpkgs = {
-    overlays = [
-      # Add overlays your own flake exports (from overlays and pkgs dir):
-      outputs.overlays.additions
-      outputs.overlays.modifications
-      outputs.overlays.unstable-packages
-
-      # You can also add overlays exported from other flakes:
-      inputs.agenix.overlays.default
-    ];
-
-    config = {
-      # Disable if you don't want unfree packages
-      allowUnfree = true;
-      # Workaround for https://github.com/nix-community/home-manager/issues/2942
-      allowUnfreePredicate = _: true;
-      permittedInsecurePackages = [ "electron-25.9.0" ];
-    };
-  };
+  # Remove this entire nixpkgs section when using home-manager.useGlobalPkgs = true
+  # nixpkgs configuration is handled at the system level instead
 }

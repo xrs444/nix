@@ -16,12 +16,12 @@
     inputs.agenix.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     inputs.disko.nixosModules.disko
+    inputs.comin.nixosModules.comin
+    ../modules/users
   ];
 
-  # Install nixos-needsreboot as a package instead of importing as a module
-  environment.systemPackages = with pkgs; [
-    inputs.nixos-needsreboot.packages.${pkgs.system}.default
-  ];
+  # Overlays are now applied in lib/default.nix at the nixpkgs instantiation level
+  # This ensures they're available before any module evaluation happens
 
   # Minimal config just to test
   system.stateVersion = stateVersion;
