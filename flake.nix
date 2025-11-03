@@ -125,7 +125,7 @@
     overlays = import ./overlays { inherit inputs; };
     packages = lib.forAllSystems (system:
       let
-        pkgsWithOverlays = import nixpkgs {
+        pkgsWithOverlays = import inputs.nixpkgs {  # <-- use inputs.nixpkgs here
           inherit system;
           config = { allowUnfree = true; };
           overlays = builtins.attrValues self.overlays;
