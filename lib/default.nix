@@ -2,6 +2,14 @@
 let
   inherit (inputs.nixpkgs) lib;
 
+  # Helper function for creating packages across systems
+  forAllSystems = lib.genAttrs [
+    "aarch64-linux"
+    "x86_64-linux"
+    "aarch64-darwin"
+    "x86_64-darwin"
+  ];
+
   # Filter hosts by type
   nixosHosts = lib.filterAttrs (_: host: host.type == "nixos") hosts;
   darwinHosts = lib.filterAttrs (_: host: host.type == "darwin") hosts;
@@ -11,9 +19,8 @@ let
     let
       # Determine the correct host directory based on platform
       hostDir = if hostConfig.platform == "aarch64-linux" 
-                then ../hosts/nixos-arm 
+                then ../hosts/nixos-arm
                 else ../hosts/nixos;
-      hostPath = hostDir + "/${hostName}";
     in
     inputs.nixpkgs.lib.nixosSystem {
       system = hostConfig.platform;
@@ -26,10 +33,8 @@ let
         isWorkstation = hostConfig.desktop or null != null;
       };
       modules = [
-        # Import base-nixos directly
         ../hosts/base-nixos.nix
-        # Import the host-specific configuration
-        hostPath
+        (hostDir + "/${hostName}")
         ../modules/roles
         ../modules/services
         ../modules/packages-darwin
@@ -64,10 +69,8 @@ let
         desktop = hostConfig.desktop or null;
       };
       modules = [
-        # Import base-darwin directly
         ../hosts/base-darwin.nix
-        # Import the host-specific configuration
-        (../hosts + "/${hostConfig.type}/${hostName}")
+        (../hosts/darwin + "/${hostName}")
         inputs.home-manager.darwinModules.home-manager
         {
           home-manager = {
@@ -107,6 +110,7 @@ let
 in
 {
   inherit
+    forAllSystems
     mkNixosConfig
     mkDarwinConfig
     mkAllNixosConfigs
