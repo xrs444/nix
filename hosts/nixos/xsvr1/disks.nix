@@ -5,8 +5,7 @@
 { lib, ... }:
 
 {
-  disko = {
-    devices = {
+  disko.devices = {
       disk = {
         one = {
           type = "disk";
@@ -81,5 +80,4 @@
         };
       };
     };
-  };
 }
