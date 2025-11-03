@@ -121,17 +121,5 @@
     };
     formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     overlays = allOverlays;
-    packages = lib.forAllSystems (system:
-      let
-        pkgsWithOverlays = import inputs.nixpkgs {
-          inherit system;
-          config = { allowUnfree = true; };
-          overlays = builtins.attrValues allOverlays;
-        };
-        pkgsFunction = import ./pkgs;
-        customPkgs = pkgsFunction pkgsWithOverlays;
-      in
-      customPkgs
-    );
   };
 }
