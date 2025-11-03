@@ -26,7 +26,6 @@
     (modulesPath + "/installer/scan/not-detected.nix")
     ../modules/packages-common
     ../modules/packages-nixos
-    ../modules/services
     ../modules/users 
     ./common
   ];
