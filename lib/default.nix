@@ -37,15 +37,11 @@ let
             allOverlays.unstable-packages
           ];
           nixpkgs.config.allowUnfree = true;
-          
-          # Set kanidm package default here with higher priority
-          services.kanidm.package = inputs.nixpkgs.lib.mkOverride 900 (
-            (import inputs.nixpkgs {
-              system = hostConfig.platform;
-              overlays = builtins.attrValues allOverlays;
-            }).kanidm_1_7
-          );
         }
+        # Set kanidm package in a separate module that has access to pkgs
+        ({ pkgs, ... }: {
+          services.kanidm.package = inputs.nixpkgs.lib.mkOverride 900 pkgs.kanidm_1_7;
+        })
         ../hosts/base-nixos.nix
         ../modules/services
         ../modules/packages-nixos
