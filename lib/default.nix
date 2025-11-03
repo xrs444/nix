@@ -1,110 +1,50 @@
-{ inputs, outputs, stateVersion, hosts }:
-
+{ inputs, ... }:
 let
-  inherit (inputs) nixpkgs home-manager nix-darwin;
+  inherit (inputs.nixpkgs) lib;
+  inherit (inputs) self;
 
-  # Helper function to generate system configurations for all supported architectures
-  forAllSystems = nixpkgs.lib.genAttrs [
-    "aarch64-linux"
-    "i686-linux"
-    "x86_64-linux"
-    "aarch64-darwin"
-    "x86_64-darwin"
-  ];
+  # Import the host configurations
+  nixosHosts = import ../hosts/nixos-hosts.nix;
+  darwinHosts = import ../hosts/darwin-hosts.nix;
 
-  # Helper to filter hosts by type
-  hostsByType = type: nixpkgs.lib.filterAttrs (_: v: v.type == type) hosts;
-
-  # Generate all home configurations from hosts mapping
-  mkAllHomes = builtins.mapAttrs (hostname: host:
-    mkHome { inherit hostname host; }
-  ) hosts;
-
-  # Create Home Manager configuration for a host
-  mkHome = { hostname, host }: 
-    home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.${host.platform};
-      extraSpecialArgs = { 
-        inherit inputs outputs stateVersion hostname;
-        platform = host.platform;
-        username = host.user;
-        desktop = host.desktop or null;
-        host = host;
-      };
-      modules = [
-        ../homemanager
-        ../homemanager/users/${host.user}
-      ];
-    };
-
-  # Generate all NixOS configurations from hosts mapping
-  mkAllNixosConfigs = builtins.mapAttrs (hostname: host:
-    mkNixos { inherit hostname host; }
-  ) (hostsByType "nixos");
-
-  # Create NixOS configuration for a host
-  mkNixos = { hostname, host }:
-    let
-      hostDir =
-        if host.platform == "aarch64-linux"
-        then ../hosts/nixos-arm/${hostname}
-        else ../hosts/nixos/${hostname};
-    in
-    nixpkgs.lib.nixosSystem {
-      system = host.platform;
-      modules = [
-        {
-          nixpkgs.overlays = builtins.attrValues outputs.overlays;
-          nixpkgs.config.allowUnfree = true;
-        }
-        ../hosts/base-nixos.nix   # <-- Always include base-nixos.nix
-        hostDir
-      ] ++ nixpkgs.lib.optionals (host.desktop or null != null) [
-        "${hostDir}/desktop.nix"
-      ];
+  # Common module builder for NixOS
+  mkNixosConfig =
+    hostName:
+    { system, ... }:
+    lib.nixosSystem {
+      inherit system;
       specialArgs = {
-        inherit inputs outputs stateVersion hostname;
-        platform = host.platform;
-        username = host.user;
-        desktop = host.desktop or null;
-        host = host;
-        isInstall = host.isInstall or false;
-        isWorkstation = host.isWorkstation or false;
-      };
-    };
-
-  # Generate all Darwin configurations from hosts mapping
-  mkAllDarwinConfigs = builtins.mapAttrs (hostname: host:
-    mkDarwin { inherit hostname host; }
-  ) (hostsByType "darwin");
-
-  # Create Darwin configuration for a host
-  mkDarwin = { hostname, host }: 
-    nix-darwin.lib.darwinSystem {
-      system = host.platform;
-      specialArgs = { 
-        inherit inputs outputs stateVersion hostname;
-        platform = host.platform;
-        username = host.user;
-        desktop = host.desktop or null;
-        host = host;
+        inherit inputs;
       };
       modules = [
-        {
-          nixpkgs.overlays = builtins.attrValues outputs.overlays;
-          nixpkgs.config.allowUnfree = true;
-        }
-        ../hosts/darwin
-        ../hosts/darwin/${hostname}
+        ../hosts/${hostName}.nix
+        # Remove extraModules from here - let each host import what it needs
       ];
     };
 
-in {
-  forAllSystems = forAllSystems;
-  mkAllHomes = mkAllHomes;
-  mkHome = mkHome;
-  mkAllNixosConfigs = mkAllNixosConfigs;
-  mkNixos = mkNixos;
-  mkAllDarwinConfigs = mkAllDarwinConfigs;
-  mkDarwin = mkDarwin;
+  # Common module builder for Darwin
+  mkDarwinConfig =
+    hostName:
+    { system, ... }:
+    inputs.darwin.lib.darwinSystem {
+      inherit system;
+      specialArgs = {
+        inherit inputs;
+      };
+      modules = [
+        ../hosts/${hostName}.nix
+        # Remove extraModules from here
+      ];
+    };
+
+  mkAllNixosConfigs = builtins.mapAttrs (_: mkNixosConfig) nixosHosts;
+  mkAllDarwinConfigs = builtins.mapAttrs (_: mkDarwinConfig) darwinHosts;
+in
+{
+  inherit
+    mkNixosConfig
+    mkDarwinConfig
+    mkAllNixosConfigs
+    mkAllDarwinConfigs
+    ;
 }
