@@ -87,8 +87,9 @@ in
       ] ++ nixpkgs.lib.optionals (desktop != null) [
         ../hosts/${platformDir}/${hostname}/desktop.nix
       ];
-      specialArgs = { 
+      specialArgs = {
         inherit inputs outputs stateVersion hostname desktop isInstall isWorkstation;
+        pkgs = nixpkgs.legacyPackages.${system};
         platform = defaultPlatform;
         username = defaultUser;
       };
