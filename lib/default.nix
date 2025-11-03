@@ -18,7 +18,7 @@ let
       { platform = "x86_64-linux"; dir = "nixos"; };
   
   # Helper function to create Home Manager configurations
-  mkHome = { hostname, username ? null, platform ? null }: 
+  mkHome = { hostname, username ? null, platform ? null, system ? null }: 
     let
       # Use provided username, fallback to host mapping, then fallback to default
       defaultUser = if username != null then username 
@@ -27,9 +27,10 @@ let
       # Use provided platform, or auto-detect from host directory structure
       defaultPlatform = if platform != null then platform
                        else (getHostInfo hostname).platform;
+      usedSystem = if system != null then system else defaultPlatform;
     in
     home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.${defaultPlatform};
+      pkgs = nixpkgs.legacyPackages.${usedSystem};
       extraSpecialArgs = { 
         inherit inputs outputs stateVersion hostname;
         platform = defaultPlatform;
@@ -44,11 +45,12 @@ let
 in
 {
   # Helper function to generate all home configurations from hostUsers mapping
-  mkAllHomes = 
+  mkAllHomes = lib.forAllSystems (system:
     nixpkgs.lib.mapAttrs' (hostname: username: {
       name = "${username}@${hostname}";
-      value = mkHome { inherit hostname; };
-    }) hostUsers;
+      value = mkHome { inherit hostname system; };
+    }) hostUsers
+  );
 
   # Helper function to generate system configurations for all supported architectures
   forAllSystems = nixpkgs.lib.genAttrs [
