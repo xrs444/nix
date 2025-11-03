@@ -19,7 +19,7 @@
     # Base NixOS configuration shared with ARM
     ../base-nixos.nix
     # Platform-specific common configuration
-    ./common
+    # ./common
     # Host-specific configuration
     ./${hostname}
   ];

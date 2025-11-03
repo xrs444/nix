@@ -1,13 +1,9 @@
 { lib, ... }:
 let
   currentDir = ./.;
-  # Only include directories that contain a default.nix file
-  isModuleDir = name: type:
-    type == "directory" &&
-    builtins.pathExists (currentDir + "/${name}/default.nix");
-  moduleDirs = lib.filterAttrs isModuleDir (builtins.readDir currentDir);
-  importDirectory = name: import (currentDir + "/${name}");
+  isDirectoryAndNotTemplate = name: type: type == "directory" && name != "_template";
+  directories = lib.filterAttrs isDirectoryAndNotTemplate (builtins.readDir currentDir);
 in
 {
-  imports = lib.mapAttrsToList (name: _: importDirectory name) moduleDirs;
+  imports = lib.mapAttrsToList (name: _: currentDir + "/${name}") directories;
 }
