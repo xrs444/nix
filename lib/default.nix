@@ -57,7 +57,6 @@ let
           nixpkgs.overlays = builtins.attrValues outputs.overlays;
           nixpkgs.config.allowUnfree = true;
         }
-        ../hosts/nixos
         hostDir
       ] ++ nixpkgs.lib.optionals (host.desktop or null != null) [
         "${hostDir}/desktop.nix"
