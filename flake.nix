@@ -85,6 +85,7 @@
       };
       xts1 = lib.mkNixos {
         hostname = "xts1";
+        platform = "aarch64-linux"; # Add this line for ARM hosts
       };      
       xts2 = lib.mkNixos {
         hostname = "xts2";

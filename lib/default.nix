@@ -75,12 +75,7 @@ in
       platformDir = hostInfo.dir;
     in
     nixpkgs.lib.nixosSystem {
-      system = defaultPlatform;
-      specialArgs = { 
-        inherit inputs outputs stateVersion hostname desktop isInstall isWorkstation;
-        platform = defaultPlatform;
-        username = defaultUser;
-      };
+      system = if platform != null then platform else "x86_64-linux";
       modules = [
         # Apply overlays to nixpkgs
         {
@@ -92,6 +87,11 @@ in
       ] ++ nixpkgs.lib.optionals (desktop != null) [
         ../hosts/${platformDir}/${hostname}/desktop.nix
       ];
+      specialArgs = { 
+        inherit inputs outputs stateVersion hostname desktop isInstall isWorkstation;
+        platform = defaultPlatform;
+        username = defaultUser;
+      };
     };
 
   # Helper function to create Darwin configurations
