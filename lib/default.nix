@@ -91,7 +91,7 @@ in
       ];
       specialArgs = {
         inherit inputs outputs stateVersion hostname desktop isInstall isWorkstation;
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = nixpkgs.legacyPackages.${defaultPlatform};
         platform = defaultPlatform;
         username = defaultUser;
       };
