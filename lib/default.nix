@@ -13,7 +13,7 @@ let
   ];
 
   # Helper to filter hosts by type
-  hostsByType = type: builtins.filterAttrs (_: v: v.type == type) hosts;
+  hostsByType = type: nixpkgs.lib.filterAttrs (_: v: v.type == type) hosts;
 
   # Generate all home configurations from hosts mapping
   mkAllHomes = builtins.mapAttrs (hostname: host:
@@ -58,11 +58,12 @@ let
       ];
       specialArgs = {
         inherit inputs outputs stateVersion hostname;
-        pkgs = nixpkgs.legacyPackages.${host.platform};
         platform = host.platform;
         username = host.user;
         desktop = host.desktop or null;
         host = host;
+        isInstall = host.isInstall or false;
+        isWorkstation = host.isWorkstation or false;
       };
     };
 

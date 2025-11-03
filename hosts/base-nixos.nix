@@ -30,7 +30,7 @@
     ../modules/users  # Add this line
     # Cross-platform common configuration
     ./common
-  ] ++ lib.optional isWorkstation ../modules/packages-workstation;
+  ]; # <-- Make sure this line ends with a semicolon!
 
   # SOPS configuration
   sops = lib.mkIf (isInstall) {
