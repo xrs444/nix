@@ -27,10 +27,9 @@
     ../modules/packages-common
     ../modules/packages-nixos
     ../modules/services
-    ../modules/users  # Add this line
-    # Cross-platform common configuration
+    ../modules/users 
     ./common
-  ]; # <-- Make sure this line ends with a semicolon!
+  ];
 
   # SOPS configuration
   sops = lib.mkIf (isInstall) {
