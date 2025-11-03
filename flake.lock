@@ -164,16 +164,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1746728054,
-        "narHash": "sha256-eDoSOhxGEm2PykZFa/x9QG5eTH0MJdiJ9aR00VAofXE=",
-        "rev": "ff442f5d1425feb86344c028298548024f21256d",
-        "revCount": 1236,
-        "type": "tarball",
-        "url": "https://api.flakehub.com/f/pinned/nix-community/disko/1.12.0/0196b11c-619a-758e-a575-5bc724a22daf/source.tar.gz"
+        "lastModified": 1761899396,
+        "narHash": "sha256-XOpKBp6HLzzMCbzW50TEuXN35zN5WGQREC7n34DcNMM=",
+        "owner": "nix-community",
+        "repo": "disko",
+        "rev": "6f4cf5abbe318e4cd1e879506f6eeafd83f7b998",
+        "type": "github"
       },
       "original": {
-        "type": "tarball",
-        "url": "https://flakehub.com/f/nix-community/disko/1.10.0.tar.gz"
+        "owner": "nix-community",
+        "repo": "disko",
+        "type": "github"
       }
     },
     "fenix": {
