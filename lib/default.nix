@@ -110,4 +110,10 @@ let
         ../hosts/darwin/${hostname}
       ];
     };
+in {
+  forAllSystems = forAllSystems;
+  mkAllHomes = mkAllHomes;
+  mkHome = mkHome;
+  mkNixos = mkNixos;
+  mkDarwin = mkDarwin;
 }
