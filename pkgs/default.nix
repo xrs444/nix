@@ -1,7 +1,6 @@
 pkgs:
 
 {
-  # Add custom packages here
-  # Example:
-  # my-custom-package = pkgs.callPackage ./my-custom-package { };
+  # Custom packages
+  kanidm_1_7 = pkgs.callPackage ./kanidm { };
 }
