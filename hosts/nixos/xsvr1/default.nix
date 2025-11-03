@@ -9,6 +9,9 @@
 {
   imports = [
     ../common/hardware-amd.nix
+    ../common/boot.nix
+    ../common/performance.nix
+    ../default.nix
     ./disks.nix
     ./network.nix
     ./vms.nix
