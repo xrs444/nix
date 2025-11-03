@@ -24,10 +24,10 @@
     inputs.sops-nix.nixosModules.sops
     inputs.comin.nixosModules.comin
     (modulesPath + "/installer/scan/not-detected.nix")
-    ../modules/packages-common
-    ../modules/packages-nixos
-    ../modules/users 
-    ./common
+   # ../modules/packages-common
+   # ../modules/packages-nixos
+   # ../modules/users 
+   # ./common
   ];
 
   # SOPS configuration
