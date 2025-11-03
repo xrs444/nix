@@ -32,13 +32,7 @@
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
   
-  outputs = { self
-    , nixpkgs
-    , home-manager
-    , nix-darwin
-    , nix-homebrew
-    , ...
-  }@inputs:
+  outputs = { self, ... }@inputs:
   let
     inherit (self) outputs;
     stateVersion = "25.05";
@@ -130,21 +124,21 @@
     formatter = lib.forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
     overlays = import ./overlays { inherit inputs; };
     packages = lib.forAllSystems (system:
-        let
-          # Import nixpkgs for the target system, applying overlays directly
-          pkgsWithOverlays = import nixpkgs {
-             inherit system;
-             config = { allowUnfree = true; }; # Ensure consistent config
-             # Pass the list of overlay functions directly
-             overlays = builtins.attrValues self.overlays;
-          };
-          # Import the function from pkgs/default.nix
-          pkgsFunction = import ./pkgs;
-          # Call the function with the fully overlaid package set
-          customPkgs = pkgsFunction pkgsWithOverlays;
-        in
-        # Return the set of custom packages
-        customPkgs
-      );
+      let
+        pkgsWithOverlays = import nixpkgs {
+          inherit system;
+          config = { allowUnfree = true; };
+          overlays = builtins.attrValues self.overlays;
+        };
+        pkgsFunction = import ./pkgs;
+        customPkgs = pkgsFunction pkgsWithOverlays;
+      in
+      customPkgs
+    )
+    {
+      aarch64-linux = {
+        nixosConfigurations = self.nixosConfigurations;
+      };
+    };
   };
 }
