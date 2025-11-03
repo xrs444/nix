@@ -2,21 +2,24 @@
 
 let
   inherit (inputs) nixpkgs home-manager nix-darwin;
-  
-  # Helper function to determine platform and directory for a host
-  getHostInfo = hostname: 
-    let
-      # Check if host exists in different platform directories
-      nixosArmPath = ../hosts/nixos-arm/${hostname};
-      darwinPath = ../hosts/darwin/${hostname};
-    in
-    if builtins.pathExists nixosArmPath then 
-      { platform = "aarch64-linux"; dir = "nixos-arm"; }
-    else if builtins.pathExists darwinPath then 
-      { platform = "aarch64-darwin"; dir = "darwin"; }
-    else 
-      { platform = "x86_64-linux"; dir = "nixos"; };
-  
+
+  # Helper function to generate system configurations for all supported architectures
+  forAllSystems = nixpkgs.lib.genAttrs [
+    "aarch64-linux"
+    "i686-linux"
+    "x86_64-linux"
+    "aarch64-darwin"
+    "x86_64-darwin"
+  ];
+
+  # Helper function to generate all home configurations from hostUsers mapping
+  mkAllHomes = forAllSystems (system:
+    nixpkgs.lib.mapAttrs' (hostname: username: {
+      name = "${username}@${hostname}";
+      value = mkHome { inherit hostname system; };
+    }) hostUsers
+  );
+
   # Helper function to create Home Manager configurations
   mkHome = { hostname, username ? null, platform ? null, system ? null }: 
     let
@@ -42,24 +45,6 @@ let
         ../homemanager/users/${defaultUser}
       ];
     };
-in
-{
-  # Helper function to generate system configurations for all supported architectures
-  forAllSystems = nixpkgs.lib.genAttrs [
-    "aarch64-linux"
-    "i686-linux"
-    "x86_64-linux"
-    "aarch64-darwin"
-    "x86_64-darwin"
-  ];
-
-  # Helper function to generate all home configurations from hostUsers mapping
-  mkAllHomes = forAllSystems (system:
-    nixpkgs.lib.mapAttrs' (hostname: username: {
-      name = "${username}@${hostname}";
-      value = mkHome { inherit hostname system; };
-    }) hostUsers
-  );
 
   # Helper function to create NixOS configurations
   mkNixos = { hostname, desktop ? null, platform ? null, username ? null, isInstall ? true, isWorkstation ? false }: 
