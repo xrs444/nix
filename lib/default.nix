@@ -141,10 +141,12 @@ in
   mkAllHomes = inputs.nixpkgs.lib.mapAttrs mkHome hosts;
 
   # Utility to apply function to all systems
-  forAllSystems = inputs.nixpkgs.lib.genAttrs [
-    "aarch64-linux"
-    "x86_64-linux"
-    "aarch64-darwin"
-    "x86_64-darwin"
-  ];
+  forAllSystems = f: inputs.nixpkgs.lib.genAttrs 
+    [
+      "aarch64-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ] 
+    (system: f system);
 }

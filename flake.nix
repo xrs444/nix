@@ -72,7 +72,7 @@
         type = "nixos";
       };
       xcomm1 = {
-        user = "xrs444";
+        user = "thomas-local";
         platform = "x86_64-linux";
         type = "nixos";
         desktop = "gnome";
@@ -94,7 +94,7 @@
         desktop = "gnome";
       };
       xlt1-t = {
-        user = "xrs444";
+        user = "thomas-local";
         platform = "aarch64-darwin";
         type = "darwin";
         desktop = "aqua";
@@ -132,11 +132,6 @@
         customPkgs = pkgsFunction pkgsWithOverlays;
       in
       customPkgs
-    )
-    {
-      aarch64-linux = {
-        nixosConfigurations = self.nixosConfigurations;
-      };
-    };
+    );
   };
 }

@@ -4,27 +4,21 @@
   lib,
   pkgs,
   username,
-  platform,
   ...
 }:
 {
   imports = [
+    ../common/boot.nix
     ./disks.nix
 #    ./network.nix
   ];
-  
-  # Changes for nixos-anywhere compatibility
-  boot.initrd.availableKernelModules = [
-    "ahci"
-    "sd_mod"
-  ];
-  
-  # Enable SSH for nixos-anywhere
-  services.openssh = {
-    enable = true;
-    settings = {
-      PasswordAuthentication = true; # For initial setup
+
+  boot = {
+    initrd = {
+      availableKernelModules = [
+        "mpt3sas"
+      ];
     };
   };
-  
+
 }

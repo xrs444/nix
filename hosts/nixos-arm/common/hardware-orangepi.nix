@@ -10,6 +10,9 @@
   # Orange Pi Zero 3 specific boot configuration
   boot = {
     loader = {
+      # Explicitly disable GRUB for ARM boards
+      grub.enable = lib.mkForce false;
+      
       systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = lib.mkForce false;
       
