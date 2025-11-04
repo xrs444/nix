@@ -30,5 +30,18 @@
     ln -sf /nix/var/nix/profiles/system-profiles/xts1 /nix/var/nix/profiles/system
   '';
 
+  hardware = {
+    raspberry-pi."4".apply-overlays-dtmerge.enable = true;
+    deviceTree = {
+      enable = true;
+      filter = "*rpi-4-*.dtb";
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    libraspberrypi
+    raspberrypi-eeprom
+  ];
+
   hardware.i2c.enable = true;
 }

@@ -39,19 +39,6 @@
     ];
   };
 
-  # Root filesystem configuration - adjust device path as needed
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/NIXOS_SD";
-    fsType = "ext4";
-    options = [ "noatime" ];
-  };
-
-  # Boot partition for Raspberry Pi
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-label/FIRMWARE";
-    fsType = "vfat";
-    options = [ "fmask=0022" "dmask=0022" ];
-  };
   
   # Power management for Raspberry Pi
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
