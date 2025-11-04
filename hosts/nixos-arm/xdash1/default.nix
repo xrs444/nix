@@ -11,10 +11,12 @@
   imports = [
     ../common/hardware-orangepi.nix
     ../common/boot.nix
-    ./disks.nix
     ./network.nix
-    "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"  # Add this for initial install
+    "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
   ];
+
+  # Explicitly disable ZFS for ARM board
+  boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
 
   environment.systemPackages = with pkgs; [
     labwc
@@ -44,5 +46,11 @@
 
   # Auto-login for kiosk
   services.getty.autologinUser = "xdash1";
+
+  # SD image will auto-expand root partition on first boot
+  sdImage = {
+    compressImage = false;  # Set to true if you want .img.zst
+    expandOnBoot = true;    # Auto-expand to fill SD card
+  };
 }
 
