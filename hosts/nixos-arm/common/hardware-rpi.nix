@@ -59,7 +59,6 @@
   # Enable hardware features
   hardware = {
     enableRedistributableFirmware = true;
-    # Enable I2C if needed
-    # i2c.enable = lib.mkDefault true;
+    i2c.enable = lib.mkDefault true;
   };
 }
