@@ -13,8 +13,30 @@
     
     # GUI applications installed via `brew install --cask`
     casks = [
-      "handbrake"
+      "amethyst"
+      "balenaetcher"
       "bambu-studio"
+      "batteryboi"
+      "beeper"
+      "betterdisplay"
+      "elgato-stream-deck"
+      "firewalla"
+      "ghostty"
+      "google-drive"
+      "handbrake"
+      "headlamp"
+      "huiontablet"
+      "ice"
+      "jabra-direct"
+      "jettison"
+      "lulu"
+      "minecraft"
+      "naps2"
+      "qmk-toolbox"
+      "raspberry-pi-imager"
+      "sf-symbols"
+      "syncthing"
+      "zoom"
     ];
     
     # Mac App Store applications
@@ -22,20 +44,17 @@
       "Bitwarden" = 1352778147;
       "Brother P-touch Editor" = 1453365242;
       "Clean Email" = 1441250616;
+      "Cricut Design Space" = 1422528930;
       "CrystalFetch" = 6454431289;
       "Duplicate File Finder" = 1032755628;
-      "GarageBand" = 682658836;
       "HP" = 1474276998;
-      "iMovie" = 408981434;
-      "Keynote" = 409183694;
       "Kindle" = 302584613;
-      "Microsoft Outlook" = 985367838;
-      "Numbers" = 409203825;
-      "Pages" = 409201541;
+      "Microsoft Teams" = 1113153706;
       "Tailscale" = 1475387142;
       "Telegram" = 747648890;
-      "The Unarchiver" = 425424353;
+      "TrainerRoad" = 1056599398;
       "UTM" = 1538878817;
+      "Windows App" = 1295203466;
       "WireGuard" = 1451685025;
     };
     

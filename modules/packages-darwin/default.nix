@@ -19,7 +19,6 @@
     lua
     nodejs
     openjdk
-    python313
     rbenv
     ruby
     rust
@@ -39,8 +38,10 @@
     arping
     atuin
     baobab
+    chezmoi
     fish
     lazyssh
+    mas
     nmap
     sops
     starship
@@ -58,6 +59,8 @@
     brotli
     lz4
     lzo
+    p7zip
+    wimlib
     xz
     zstd
     
@@ -66,6 +69,28 @@
     opus
     theora
     x264
+    
+    # Browsers & Communication
+    firefox
+    thunderbird
+    
+    # Development Tools
+    vscode
+    github-desktop
+    postman
+    
+    # Media & Productivity
+    vlc
+    calibre
+    obsidian
+    logseq
+    
+    # Utilities
+    iterm2
+    raycast
+    wireshark
+    openscad
+    powershell
     
     # Other utilities
     pipx
