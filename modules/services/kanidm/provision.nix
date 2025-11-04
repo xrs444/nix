@@ -39,8 +39,16 @@ lib.mkIf isProvisioningServer {
       
       # Create groups
       groups = {
+        # Apps
         "lubelogger" = {};
         "lubelogger-admin" = {};
+        # Client Access
+        "xlt1-t" = {};
+        "xlt1-t-admin" = {};
+        "xlt2-s" = {};
+        "xlt2-s-admin" = {};
+        "xdt1-t" = {};
+        "xdt1-t-admin" ={};
       };      
       # Create persons/users
       persons = {
