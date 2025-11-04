@@ -41,10 +41,15 @@
     };
   };
 
-  # Enable touch ID for sudo
-  # Note: This option may not be available in nix-darwin 25.05
-  # Alternative: Configure manually or update nix-darwin version
-  # security.pam.enableSudoTouchId = true;
+    nix.linux-builder = {
+    enable = true;
+    ephemeral = true;
+    maxJobs = 4;
+    config = {
+      virtualisation.cores = 4;
+      virtualisation.memorySize = 8192;
+    };
+  };
   
   # Manual PAM configuration for Touch ID (if needed)
   environment.etc."pam.d/sudo_local".text = ''
