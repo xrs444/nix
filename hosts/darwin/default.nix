@@ -16,15 +16,13 @@
   # Enable the Nix daemon
   services.nix-daemon.enable = true;
 
-  # Core nix settings are in ../common
-
   # Set system state version
   system.stateVersion = 5;
 
     # Configure nixpkgs
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
-    # overlays and config are set in ../common
+
   };
 
   # Basic system configuration

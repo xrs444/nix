@@ -14,6 +14,7 @@
     # GUI applications installed via `brew install --cask`
     casks = [
       "handbrake"
+      "bambu-studio"
     ];
     
     # Mac App Store applications

@@ -20,13 +20,13 @@ lib.mkMerge [
   }
 
   # Temporarily disable all Kanidm client services
-  # (lib.mkIf (!isDarwin) {
-  #   services.kanidm = {
-  #     enableClient = true;
-  #     clientSettings = {
-  #       uri = kanidmServerUri;
-  #       verify_ca = true;
-  #     };
-  #   };
-  # })
+ (lib.mkIf (!isDarwin) {
+   services.kanidm = {
+     enableClient = true;
+     clientSettings = {
+       uri = kanidmServerUri;
+       verify_ca = true;
+     };
+   };
+ })
 ]

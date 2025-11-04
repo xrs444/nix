@@ -9,7 +9,7 @@
 }:
 {
   imports = [
-    ../common/hardware-raspberrypi.nix
+    inputs.nixos-hardware.nixosModules.raspberry-pi-3
     ../common/boot.nix
     ./network.nix
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
