@@ -79,12 +79,12 @@
       };
       xdash1 = {
         user = "thomas-local";
-        platform = "x86_64-linux";
+        platform = "aarch64-linux";
         type = "nixos";
       };
       xhac-radio = {
         user = "thomas-local";
-        platform = "x86_64-linux";
+        platform = "aarch64-linux";
         type = "nixos";
       };
       xlt1-t-vnixos = {
