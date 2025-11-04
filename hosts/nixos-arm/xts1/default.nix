@@ -14,13 +14,21 @@
 #    ./network.nix
   ];
 
+  # Explicitly set hostname
+  networking.hostName = lib.mkForce "xts1";
+
   # Bootloader configuration for Raspberry Pi
-  boot.loader.grub.enable = false;
-  boot.loader.generic-extlinux-compatible.enable = true;
+  boot.loader.grub.enable = lib.mkForce false;
+  boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;
+  
+  # Ensure boot partition is writable during rebuild
+  boot.loader.generic-extlinux-compatible.configurationLimit = 10;
 
-  # Enable I2C if needed for POE HAT
+  # Force the system to use the correct profile path
+  system.activationScripts.fixProfile = lib.stringAfter [ "users" ] ''
+    rm -f /nix/var/nix/profiles/system
+    ln -sf /nix/var/nix/profiles/system-profiles/xts1 /nix/var/nix/profiles/system
+  '';
+
   hardware.i2c.enable = true;
-
-  # Ensure system state version is set
-  system.stateVersion = lib.mkDefault "24.05";
 }
