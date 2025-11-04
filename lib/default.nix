@@ -22,7 +22,9 @@ let
     inputs.nixpkgs.lib.nixosSystem {
       system = hostConfig.platform;
       specialArgs = {
-        inherit inputs hostname username;
+        inherit inputs stateVersion;
+        hostname = hostName;
+        username = hostConfig.user;
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
       };
@@ -68,7 +70,9 @@ let
     inputs.nix-darwin.lib.darwinSystem {
       system = hostConfig.platform;
       specialArgs = {
-        inherit inputs hostname username;
+        inherit inputs stateVersion;
+        hostname = hostName;
+        username = hostConfig.user;
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
       };
