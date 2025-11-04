@@ -1,12 +1,10 @@
-
-
 { lib, ... }:
 
 {
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/mmc-AJTD4R_0x0760e283";
+        device = "/dev/mmcblk0";
         type = "disk";
         content = {
           type = "gpt";
