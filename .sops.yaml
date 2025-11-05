@@ -19,7 +19,7 @@
 # sops updatekeys secrets/secrets.yaml
 keys:
   - &user_xrs444 age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
-  - &host_xsvr1 age1xhkk62xyufr3a222epq0kfes9yffxyplme8sjfgv6fjes6xdvgjspkwske
+  - &host_xsvr1 age12mu8ddlt7zuesua7qjdwucmf2rj8srxj9dv54h33t200cg4l8vlsvdh2v0
   - &host_xsvr2 age1lyv34gqknhrpwy5c0e64hcumfkkacxf2vhmqtuf2r5fgv7x2wyhs943evx
   - &host_xsvr3 age1sud7hw2gdteg8u3fru6sc5u783w9ll38u5thw3u9yfmpu9xw9udq2vl0ka
   - &host_xts1 age1u8za690m39g80xpfwwj4l3lsfwsyhst6hh9jxw7vn63dtue6c9qs7tu4de
