@@ -2,7 +2,6 @@
 
 let
   cfg = config.services.comin-custom;
-  hostname = config.networking.hostName;
   
 in
 
@@ -20,6 +19,7 @@ with lib;
   config = mkIf cfg.enable {
     services.comin = {
       enable = true;
+      hostname = config.networking.hostName;  # Explicitly set the hostname
       remotes = [
         {
           name = "origin";
