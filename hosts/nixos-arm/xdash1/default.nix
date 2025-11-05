@@ -15,6 +15,8 @@
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
   ];
 
+  networking.hostName = hostname;
+
   # Explicitly disable ZFS for ARM board
   boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
 

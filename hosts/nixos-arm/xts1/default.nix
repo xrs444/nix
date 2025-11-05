@@ -14,8 +14,7 @@
 #    ./network.nix
   ];
 
-  # Explicitly set hostname
-  networking.hostName = lib.mkForce "xts1";
+  networking.hostName = hostname;
 
   # Bootloader configuration for Raspberry Pi
   boot.loader.grub.enable = lib.mkForce false;

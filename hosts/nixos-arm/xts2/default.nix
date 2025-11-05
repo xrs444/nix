@@ -13,6 +13,8 @@
 #    ./network.nix
   ];
 
+  networking.hostName = hostname;
+
   boot = {
     initrd = {
       availableKernelModules = [

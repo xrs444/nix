@@ -18,5 +18,7 @@
     ./vms.nix
   ];
 
+  networking.hostName = hostname;
+
 }
 

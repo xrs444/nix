@@ -17,4 +17,6 @@
   ];
   nixpkgs.hostPlatform = platform;
 
+  networking.hostName = hostname;
+
 }

@@ -16,6 +16,8 @@
     ./vms.nix
   ];
 
+  networking.hostName = hostname;
+
   boot = {
     initrd = {
       availableKernelModules = [

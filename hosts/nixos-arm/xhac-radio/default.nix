@@ -15,6 +15,8 @@
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
   ];
 
+  networking.hostName = hostname;
+
   environment.systemPackages = with pkgs; [
     mpd
     mpc-cli
