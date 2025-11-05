@@ -23,6 +23,13 @@ lib.mkIf isProvisioningServer {
     mode = "0400";
   };
 
+  sops.secrets."idm_admin_password" = {
+    sopsFile = ../../../secrets/idm.yaml;
+    owner = "kanidm";
+    group = "kanidm";
+    mode = "0400";
+  };
+
   # Add kanidm-provision CLI tool for xsvr1
   environment.systemPackages = with pkgs; [
     kanidm-provision  # Separate CLI package from overlay
