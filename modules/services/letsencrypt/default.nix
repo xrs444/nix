@@ -25,13 +25,6 @@ in
       group = "acme";
       mode = "0400";
     };
-    cloudflare_email = {
-      sopsFile = ../../../secrets/cloudflare.yaml;
-      key = "email";
-      owner = "acme";
-      group = "acme";
-      mode = "0400";
-    };
   };
 
   # ACME config: xsvr1 generates all host certs + idm.xrs444.net
@@ -40,10 +33,10 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      environmentFile = pkgs.writeText "cloudflare-env" ''
-        CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
-        CLOUDFLARE_EMAIL_FILE=${config.sops.secrets.cloudflare_email.path}
-      '';
+      # Fix: Use DNS_API_TOKEN, not EMAIL+API_KEY
+      credentialFiles = {
+        "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets.cloudflare_dns_api_token.path;
+      };
     };
     certs = lib.mkMerge (
       # Host certificates
