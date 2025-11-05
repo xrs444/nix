@@ -75,10 +75,13 @@ in
         kanidmService = lib.optional isKanidmServer "acme-idm.${domain}.service";
         allServices = hostServices ++ kanidmService;
         
-        # Create dependency chain: each service waits for the previous one
+        # Create dependency chain with delays
         orderedServices = lib.imap0 (i: svc:
           lib.nameValuePair svc {
             after = lib.optional (i > 0) (lib.elemAt allServices (i - 1));
+            serviceConfig = lib.mkIf (i > 0) {
+              ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
+            };
           }
         ) allServices;
       in
