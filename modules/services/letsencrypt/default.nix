@@ -42,7 +42,7 @@ in
       '';
       extraLegoFlags = [
         "--dns.resolvers=1.1.1.1:53"
-        "--dns.disable-cp"  # Disable checking authoritative nameservers
+        "--dns.disable-cp"
       ];
     };
     certs = lib.mkMerge (
@@ -55,6 +55,24 @@ in
       })
     );
   };
+
+  # Add ordering to prevent concurrent ACME requests
+  systemd.services = lib.mkIf isPrimaryServer (
+    let
+      # Create ordered list of services
+      hostServices = map (h: "acme-${h}.${domain}.service") allHosts;
+      kanidmService = lib.optional isKanidmServer "acme-idm.${domain}.service";
+      allServices = hostServices ++ kanidmService;
+      
+      # Create dependency chain: each service waits for the previous one
+      orderedServices = lib.imap0 (i: svc:
+        lib.nameValuePair svc {
+          after = lib.optional (i > 0) (lib.elemAt allServices (i - 1));
+        }
+      ) allServices;
+    in
+    lib.listToAttrs orderedServices
+  );
 
   # Ensure acme user/group exists everywhere
   users.users.acme = {
