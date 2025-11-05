@@ -36,6 +36,7 @@ lib.mkIf isProvisioningServer {
       enable = true;
       # Admin account configuration using SOPS secret
       adminPasswordFile = config.sops.secrets."admin_password".path;
+      idmAdminPasswordFile =  config.sops.secrets."idm_admin_password".path;
       
       # Create groups
       groups = {
