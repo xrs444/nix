@@ -33,10 +33,15 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      dnsResolver = "1.1.1.1:53";  # Use Cloudflare's DNS directly
+      dnsResolver = "1.1.1.1:53";
       credentialFiles = {
         "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets.cloudflare_dns_api_token.path;
       };
+      # Increase propagation timeout and polling interval
+      extraLegoFlags = [
+        "--dns.disable-cp"  # Disable CP (Cloudflare Proxy) check
+        "--dns-timeout" "180"  # 3 minutes timeout
+      ];
     };
     certs = lib.mkMerge (
       # Host certificates
