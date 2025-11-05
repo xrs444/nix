@@ -19,7 +19,7 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   
   # AMD-specific settings
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault true;
+  hardware.cpu.amd.updateMicrocode = lib.mkForce true;
   
   # AMD virtualization
   boot.initrd.kernelModules = lib.mkDefault [
