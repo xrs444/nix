@@ -20,6 +20,11 @@
     ../modules/users
   ];
 
+  # Configure sops-nix to use the age key file
+  sops = {
+    age.keyFile = "/var/lib/private/sops/age/keys.txt";
+  };
+
   # Overlays are now applied in lib/default.nix at the nixpkgs instantiation level
   # This ensures they're available before any module evaluation happens
 
