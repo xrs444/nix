@@ -40,6 +40,10 @@ in
         CLOUDFLARE_POLLING_INTERVAL=15
         CLOUDFLARE_TTL=120
       '';
+      extraLegoFlags = [
+        "--dns.resolvers=1.1.1.1:53"
+        "--dns.disable-cp"  # Disable checking authoritative nameservers
+      ];
     };
     certs = lib.mkMerge (
       # Host certificates
