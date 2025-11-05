@@ -33,7 +33,7 @@ in
     defaults = {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
-      # Fix: Use DNS_API_TOKEN, not EMAIL+API_KEY
+      dnsResolver = "1.1.1.1:53";  # Use Cloudflare's DNS directly
       credentialFiles = {
         "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets.cloudflare_dns_api_token.path;
       };
