@@ -34,14 +34,12 @@ in
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
       dnsResolver = "1.1.1.1:53";
-      credentialFiles = {
-        "CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets.cloudflare_dns_api_token.path;
-      };
-      # Increase propagation timeout and polling interval
-      extraLegoFlags = [
-        "--dns.disable-cp"  # Disable CP (Cloudflare Proxy) check
-        "--dns-timeout" "180"  # 3 minutes timeout
-      ];
+      credentialsFile = pkgs.writeText "cloudflare-creds" ''
+        CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
+        CLOUDFLARE_PROPAGATION_TIMEOUT=300
+        CLOUDFLARE_POLLING_INTERVAL=15
+        CLOUDFLARE_TTL=120
+      '';
     };
     certs = lib.mkMerge (
       # Host certificates
