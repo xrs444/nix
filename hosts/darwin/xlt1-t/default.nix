@@ -41,16 +41,6 @@
       KeyRepeat = 1;
     };
   };
-
-    nix.linux-builder = {
-    enable = true;
-    ephemeral = true;
-    maxJobs = 4;
-    config = {
-      virtualisation.cores = lib.mkForce 4;
-      virtualisation.memorySize = lib.mkForce 8192;
-    };
-  };
   
   # Manual PAM configuration for Touch ID (if needed)
   environment.etc."pam.d/sudo_local".text = ''
