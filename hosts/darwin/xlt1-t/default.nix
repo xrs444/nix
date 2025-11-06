@@ -41,7 +41,10 @@
       KeyRepeat = 1;
     };
   };
-  
+
+  extra-experimental-features = external-builders;
+  external-builders = [{"systems":["aarch64-linux","x86_64-linux"],"program":"/usr/local/bin/determinate-nixd","args":["builder"]}];
+
   # Manual PAM configuration for Touch ID (if needed)
   environment.etc."pam.d/sudo_local".text = ''
     # Written by nix-darwin for Touch ID support
