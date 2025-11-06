@@ -15,6 +15,7 @@
 
   # Set system state version
   system.stateVersion = 5;
+  nix.enable = false;
 
     # Configure nixpkgs
   nixpkgs = {
