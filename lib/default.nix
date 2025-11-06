@@ -86,7 +86,7 @@ let
           ];
           nixpkgs.config.allowUnfree = true;
         }
-        ../hosts/base-darwin.nix
+        ../hosts/darwin/default.nix
         (../hosts/darwin + "/${hostName}")
         inputs.home-manager.darwinModules.home-manager
         {
