@@ -13,9 +13,6 @@
 }:
 {
 
-  # Enable the Nix daemon
-  services.nix-daemon.enable = true;
-
   # Set system state version
   system.stateVersion = 5;
 
