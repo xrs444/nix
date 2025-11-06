@@ -94,7 +94,7 @@
         desktop = "gnome";
       };
       xlt1-t = {
-        user = "thomas-local";
+        user = "xrs444";
         platform = "aarch64-darwin";
         type = "darwin";
         desktop = "aqua";
