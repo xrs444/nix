@@ -47,8 +47,8 @@
     ephemeral = true;
     maxJobs = 4;
     config = {
-      virtualisation.cores = 4;
-      virtualisation.memorySize = 8192;
+      virtualisation.cores = lib.mkForce 4;
+      virtualisation.memorySize = lib.mkForce 8192;
     };
   };
   
