@@ -15,7 +15,7 @@
   # Set the hostname
   networking.hostName = hostname;
   networking.computerName = hostname;
-  system.primaryUser = xrs444;
+  system.primaryUser = "xrs444";
   
   # macOS-specific settings
   system.defaults = {
