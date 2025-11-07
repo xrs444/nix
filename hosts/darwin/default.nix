@@ -12,6 +12,13 @@
   ...
 }:
 {
+  imports = [
+    ../../modules/packages-common/default.nix
+    ../../modules/packages-darwin/default.nix
+    ../../modules/packages-darwin/brew-packages.nix
+    ../../modules/packages-workstation/default.nix
+  ];
+
 
   # Set system state version
   system.stateVersion = 5;
