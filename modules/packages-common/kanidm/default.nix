@@ -10,5 +10,5 @@ in
     environment.systemPackages = with pkgs; [
       kanidmPackage
     ];
-  };
+  }
 
