@@ -36,10 +36,8 @@
         "VS Code"
       ];
     };
-    
-    #Control Center configuration
 
-    controlCenter = {
+    controlcenter = {
       BatteryShowPercentage = true;
     };
 
