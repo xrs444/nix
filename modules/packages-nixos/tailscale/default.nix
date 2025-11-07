@@ -1,11 +1,9 @@
-{ config, lib, pkgs, ... }:
-
+{ config, hostname, isWorkstation, lib, pkgs, username, platform, ... }:
 let
-  cfg = config.services.tailscale-custom;
-  hostname = config.networking.hostName;
-  
-  installOn = [
-  ];
+  isDarwin = pkgs.stdenv.isDarwin;
+  tsClients = [ "xsvr1" "xsvr2" "xsvr3" "xtl1-t-nixos" "xlt1-t" ];
+  enableTailscale = lib.elem "${hostname}" tsClients;
+
 in
 
 with lib;
