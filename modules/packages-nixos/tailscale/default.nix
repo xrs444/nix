@@ -5,26 +5,33 @@ let
   hostname = config.networking.hostName;
   
   installOn = [
-    "xtl1-t-nixos"
-    "xlt1-t"
   ];
 in
 
 with lib;
 
 {
-  options.services.tailscale-custom = {
-    enable = mkOption {
-      type = types.bool;
-      default = lib.elem hostname installOn;
-      description = "Enable custom Tailscale configuration";
-    };
-  };
-
-  config = mkIf cfg.enable {
-    services.tailscale.enable = true;
-    environment.systemPackages = with pkgs; [
-      # tailscale-related packages
+  services.tailscale = [
+      { enable = true; }
+      # Only on NixOS hosts
+      (lib.mkIf (!isDarwin) {
+        extraUpFlags = [
+          "--operator=${username}"
+          "--accept-routes"
+        ];
+        extraSetFlags = [
+          "--operator=${username}"
+          "--accept-routes"
+        ];
+      })
     ];
+
+    environment.systemPackages = with pkgs;
+      lib.optionals isWorkstation [ trayscale ];
   };
 }
+
+
+
+
+
