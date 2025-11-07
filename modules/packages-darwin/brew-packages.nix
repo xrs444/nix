@@ -38,6 +38,10 @@
       "syncthing"
       "zoom"
     ];
+
+    taps = [
+      "Adembc/lazyssh"
+    ];
     
     # Mac App Store applications
     masApps = {
