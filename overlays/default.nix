@@ -3,7 +3,6 @@ let
   unstablePkgs = system: inputs.nixpkgs-unstable.legacyPackages.${system};
 in
 [
-  (import ./lazyssh.nix)
   # Overlay for kanidm-related package pinning/modification
   (final: prev: {
     # Override default kanidm to use 1.7 from unstable
