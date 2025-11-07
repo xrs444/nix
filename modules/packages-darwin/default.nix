@@ -67,7 +67,7 @@
     # Multimedia
     lame
 #    opus
-    theora
+#    theora
     x264
     
     # Browsers & Communication
