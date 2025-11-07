@@ -66,16 +66,10 @@
     x264
     
     # Browsers & Communication
-    firefox
     thunderbird
-    
-    # Development Tools
-    vscode
-    postman
     
     # Utilities
     iterm2
-    raycast
     wireshark
     openscad
     powershell

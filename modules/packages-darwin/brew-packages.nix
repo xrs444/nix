@@ -18,6 +18,7 @@
       "beeper"
       "betterdisplay"
       "elgato-stream-deck"
+      "firefox"
       "ghostty"
       "google-drive"
       "handbrake-app"
@@ -27,10 +28,13 @@
       "lulu"
       "minecraft"
       "naps2"
+      "postman"
       "qmk-toolbox"
       "raspberry-pi-imager"
+      "raycast"
       "sf-symbols"
       "syncthing-app"
+      "visual-studio-code"
       "zoom"
     ];
 
