@@ -28,7 +28,7 @@
       tilesize = 36;
       largesize = 48;
       scroll-to-open = true;
-      ppersistent-apps = [
+      persistent-apps = [
         "Finder"
         "Visual Studio Code"
         "Firefox"
