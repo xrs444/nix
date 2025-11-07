@@ -20,13 +20,10 @@
       "beeper"
       "betterdisplay"
       "elgato-stream-deck"
-      "firewalla"
       "ghostty"
       "google-drive"
       "handbrake"
       "headlamp"
-      "huiontablet"
-      "ice"
       "jabra-direct"
       "jettison"
       "lulu"
@@ -48,16 +45,13 @@
       "Bitwarden" = 1352778147;
       "Brother P-touch Editor" = 1453365242;
       "Clean Email" = 1441250616;
-      "Cricut Design Space" = 6466179127;
       "CrystalFetch" = 6454431289;
       "Duplicate File Finder" = 1032755628;
       "HP" = 1474276998;
       "Kindle" = 302584613;
       "Tailscale" = 1475387142;
       "Telegram" = 747648890;
-      "TrainerRoad" = 1056599398;
       "UTM" = 1538878817;
-      "Windows App" = 1295203466;
       "WireGuard" = 1451685025;
     };
     
