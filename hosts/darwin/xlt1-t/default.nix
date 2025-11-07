@@ -19,8 +19,7 @@
   
   # macOS-specific settings
   system.defaults = {
-    # Dark Mode
-    appearance = "Dark";
+    
     menuExtraClock.Show24Hour = true;
     # Dock configuration
     dock = {
