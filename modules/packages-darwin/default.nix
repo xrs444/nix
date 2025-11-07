@@ -66,7 +66,7 @@
     
     # Multimedia
     lame
-    opus
+#    opus
     theora
     x264
     
