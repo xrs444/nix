@@ -13,4 +13,12 @@ in
   environment.systemPackages = with pkgs; [
     # Add NixOS-specific packages here
   ];
+    
+  services.kanidm = {
+    enableClient = true;
+      clientSettings = {
+        uri = kanidmServerUri;
+        verify_ca = true;
+      };
+    };
 }
