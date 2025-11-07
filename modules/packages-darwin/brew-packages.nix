@@ -7,8 +7,6 @@
     
     # Packages installed via `brew install`
     brews = [
-      "anylinuxfs" 
-      "sshfs-mac"
     ];
     
     # GUI applications installed via `brew install --cask`
@@ -22,7 +20,7 @@
       "elgato-stream-deck"
       "ghostty"
       "google-drive"
-      "handbrake"
+      "handbrake-app"
       "headlamp"
       "jabra-direct"
       "jettison"
@@ -32,12 +30,12 @@
       "qmk-toolbox"
       "raspberry-pi-imager"
       "sf-symbols"
-      "syncthing"
+      "syncthing-app"
       "zoom"
     ];
 
     taps = [
-      "Adembc/lazyssh"
+#      "Adembc/lazyssh"
     ];
     
     # Mac App Store applications
