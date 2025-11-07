@@ -21,13 +21,11 @@
     openjdk
     rbenv
     ruby
-    rust
     
     # Kubernetes & Cloud Native
     cilium-cli
     cmctl
     flux
-    helm
     hubble
     kubectl
     kubeseal
@@ -73,14 +71,7 @@
     
     # Development Tools
     vscode
-    github-desktop
     postman
-    
-    # Media & Productivity
-    vlc
-    calibre
-    obsidian
-    logseq
     
     # Utilities
     iterm2
