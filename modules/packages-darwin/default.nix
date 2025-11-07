@@ -40,7 +40,7 @@
     baobab
     chezmoi
     fish
-    lazyssh
+ #   lazyssh
     mas
     nmap
     sops
