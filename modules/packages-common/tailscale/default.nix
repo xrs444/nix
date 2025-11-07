@@ -6,22 +6,6 @@ let
 in
 {
   config = lib.mkIf enableTailscale {
-    services.tailscale = lib.mkMerge [
-      { enable = true; }
-      # Only on NixOS hosts
-      (lib.mkIf (!isDarwin) {
-        extraUpFlags = [
-          "--operator=${username}"
-          "--accept-routes"
-        ];
-        extraSetFlags = [
-          "--operator=${username}"
-          "--accept-routes"
-        ];
-      })
-    ];
-
-    environment.systemPackages = with pkgs;
-      lib.optionals isWorkstation [ trayscale ];
+     environment.systemPackages = with pkgs; [ tailscale ];
   };
 }
