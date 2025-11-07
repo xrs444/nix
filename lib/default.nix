@@ -31,11 +31,7 @@ let
       modules = [
         # Apply overlays at the nixpkgs instantiation level - FIRST
         {
-          nixpkgs.overlays = [
-            allOverlays.additions
-            allOverlays.modifications
-            allOverlays.unstable-packages
-          ];
+          nixpkgs.overlays = allOverlays;
           nixpkgs.config.allowUnfree = true;
         }
         # Set kanidm package in a separate module that has access to pkgs
@@ -79,11 +75,7 @@ let
       modules = [
         # Apply overlays for Darwin too
         {
-          nixpkgs.overlays = [
-            allOverlays.additions
-            allOverlays.modifications
-            allOverlays.unstable-packages
-          ];
+          nixpkgs.overlays = allOverlays;
           nixpkgs.config.allowUnfree = true;
         }
         ../hosts/darwin/default.nix
@@ -111,11 +103,7 @@ let
       pkgs = import inputs.nixpkgs {
         system = hostConfig.platform;
         config.allowUnfree = true;
-        overlays = [
-          allOverlays.additions
-          allOverlays.modifications
-          allOverlays.unstable-packages
-        ];
+        nixpkgs.overlays = allOverlays;
       };
       extraSpecialArgs = {
         inherit inputs outputs stateVersion;
