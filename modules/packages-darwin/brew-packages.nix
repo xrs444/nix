@@ -7,6 +7,9 @@
     
     # Packages installed via `brew install`
     brews = [
+      "helm"
+      "lazyssh"
+      "ice"
     ];
     
     # GUI applications installed via `brew install --cask`
@@ -36,6 +39,10 @@
       "syncthing-app"
       "visual-studio-code"
       "zoom"
+      "bettertouchtool"
+      "calibre"
+      "vlc"
+
     ];
 
     taps = [

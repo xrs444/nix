@@ -19,24 +19,51 @@
   
   # macOS-specific settings
   system.defaults = {
+    # Dark Mode
+    appearance = "Dark";
+    menuExtraClock.Show24Hour = true;
     # Dock configuration
     dock = {
       autohide = true;
       orientation = "left";
       tilesize = 36;
+      largesize = 48;
+      scroll-to-open = true;
+      Persistant-apps = [
+        "Finder"
+        "Visual Studio Code"
+        "Firefox"
+        "GhostTTY"
+        "VS Code"
+      ];
     };
     
+    #Control Center configuration
+
+    controlCenter = {
+      BatteryShowPercentage = true;
+    };
+
     # Finder configuration
     finder = {
       AppleShowAllExtensions = true;
       FXPreferredViewStyle = "clmv"; # Column view
       ShowPathbar = true;
       ShowStatusBar = true;
+      _FXShowPosixPathInTitle = true;
+      AppleShowAllFiles = true;
+      FXRemoveOldTrashItems = true;
+      ShowExternalHardDrivesOnDesktop = false;
+      ShowPathbar = true;
+      ShowRemovableMediaOnDesktop = false;
+
     };
     
     # System UI configuration
     NSGlobalDomain = {
       AppleShowAllExtensions = true;
+      AppleShowAllFiles = true;
+      
       InitialKeyRepeat = 14;
       KeyRepeat = 1;
     };
