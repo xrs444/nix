@@ -3,8 +3,6 @@ let
   unstablePkgs = system: inputs.nixpkgs-unstable.legacyPackages.${system};
 in
 [
-  # Add the custom lazyssh overlay as a function taking final and prev
-  (import ./lazyssh.nix)
 
   # Overlay for kanidm-related package pinning/modification
   (final: prev: {
