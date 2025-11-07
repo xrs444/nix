@@ -62,7 +62,7 @@
     NSGlobalDomain = {
       AppleShowAllExtensions = true;
       AppleShowAllFiles = true;
-      
+      AppleInterfaceStyle = "Dark";
       InitialKeyRepeat = 14;
       KeyRepeat = 1;
     };
