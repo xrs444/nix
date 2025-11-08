@@ -64,13 +64,6 @@
     };
   };
 
-    "com.apple.desktopservices" = {
-      # Avoid creating .DS_Store files on network or USB volumes
-      DSDontWriteNetworkStores = true;
-      DSDontWriteUSBStores = true;
-    };
-    "com.apple.TimeMachine".DoNotOfferNewDisksForBackup = true;
-
   # When GA:
   #extra-experimental-features = external-builders
   #external-builders = [{"systems":["aarch64-linux","x86_64-linux"],"program":"/usr/local/bin/determinate-nixd","args":["builder"]}]
