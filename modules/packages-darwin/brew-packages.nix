@@ -40,7 +40,7 @@
       "visual-studio-code"
       "zoom"
       "bettertouchtool"
-      "calibre"
+#      "calibre"
       "vlc"
 
     ];

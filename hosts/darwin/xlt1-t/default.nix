@@ -33,7 +33,7 @@
         "Visual Studio Code"
         "Firefox"
         "GhostTTY"
-        "VS Code"
+
       ];
     };
 
