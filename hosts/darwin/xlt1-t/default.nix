@@ -70,7 +70,6 @@
       DSDontWriteUSBStores = true;
     };
     "com.apple.TimeMachine".DoNotOfferNewDisksForBackup = true;
-    "com.apple.ImageCapture".disableHotPlug = true;
 
   # When GA:
   #extra-experimental-features = external-builders
