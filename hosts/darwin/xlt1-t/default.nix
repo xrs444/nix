@@ -33,7 +33,6 @@
         "Visual Studio Code"
         "Firefox"
         "GhostTTY"
-
       ];
     };
 
@@ -64,6 +63,14 @@
       KeyRepeat = 1;
     };
   };
+
+    "com.apple.desktopservices" = {
+      # Avoid creating .DS_Store files on network or USB volumes
+      DSDontWriteNetworkStores = true;
+      DSDontWriteUSBStores = true;
+    };
+    "com.apple.TimeMachine".DoNotOfferNewDisksForBackup = true;
+    "com.apple.ImageCapture".disableHotPlug = true;
 
   # When GA:
   #extra-experimental-features = external-builders
