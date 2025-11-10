@@ -10,6 +10,7 @@
   environment.systemPackages = with pkgs; [
     # Add common packages here
     openssl
+    micro
 
   ];
 }
