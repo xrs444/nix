@@ -95,7 +95,7 @@ else
           virtualRouterId = 52;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
-            { addr = "${gatewayVipAddress}/24"; }
+            { addr = "${gatewayVipAddress}/24"; dev = "bond0"; label = "bond0:vip1"; }
           ];
           extraConfig = ''
             authentication {
@@ -114,7 +114,7 @@ else
           virtualRouterId = 53;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
-            { addr = "${kanidmVipAddress}/24"; }
+            { addr = "${kanidmVipAddress}/24"; dev = "bond0"; label = "bond0:vip2"; }
           ];
           extraConfig = ''
             authentication {
