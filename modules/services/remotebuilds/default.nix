@@ -27,21 +27,17 @@ in
     group = "root";
     mode = "0600";
   };
-} //
 
-lib.mkIf (lib.elem config.networking.hostName builder) {
+  ## Server configuration
+  boot.binfmt.emulatedSystems = lib.mkIf (lib.elem config.networking.hostName builder) [ "aarch64-linux" ];
 
-## Server
-
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
-
-  nix.settings.system-features = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
+  nix.settings.system-features = lib.mkIf (lib.elem config.networking.hostName builder) [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
 
   # Create builders group for local organization
-  users.groups.builders = {};
+  users.groups.builders = lib.mkIf (lib.elem config.networking.hostName builder) {};
 
   # Keep the legacy builder user for backwards compatibility
-  users.users.builder = {
+  users.users.builder = lib.mkIf (lib.elem config.networking.hostName builder) {
     isNormalUser = true;
     home = "/home/builder";
     createHome = true;
@@ -54,7 +50,7 @@ lib.mkIf (lib.elem config.networking.hostName builder) {
   };
 
   # Additional sudo rules specific to build server (supplement the common kanidm rules)
-  security.sudo.extraRules = [
+  security.sudo.extraRules = lib.mkIf (lib.elem config.networking.hostName builder) [
     # Legacy builder user - keep for backwards compatibility
     {
       users = [ "builder" ];
@@ -67,13 +63,8 @@ lib.mkIf (lib.elem config.networking.hostName builder) {
     }
   ];
 
-} //
-
-lib.mkIf (lib.elem config.networking.hostName buildclient) {
-
-## Client
-
-  nix = {
+  ## Client configuration
+  nix = lib.mkIf (lib.elem config.networking.hostName buildclient) {
     buildMachines = [
       # Legacy builder with SSH key authentication (for backwards compatibility)
       ({ 
@@ -108,5 +99,4 @@ lib.mkIf (lib.elem config.networking.hostName buildclient) {
       builders-use-substitutes = true
     '';
   };
-
 }
