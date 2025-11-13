@@ -62,16 +62,15 @@ services.samba = {
       "force group" = "groupname";
     };
   };
-      "tm_share" = {
-        "path" = "/zfs/timemachine";
-        "valid users" = "username";
+      "tm_xlt1-t" = {
+        "path" = "/zfs/timemachine/xlt1-t";
+        "valid users" = "xrs444";
         "public" = "no";
         "writeable" = "yes";
-        "force user" = "username";
         "fruit:aapl" = "yes";
         "fruit:time machine" = "yes";
         "vfs objects" = "catia fruit streams_xattr";
-    };
+      };
 };
 
 services.samba-wsdd = {
