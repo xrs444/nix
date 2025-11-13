@@ -25,7 +25,7 @@
     # Kubernetes & Cloud Native
     cilium-cli
     cmctl
-    flux
+    fluxcd
     hubble
     kubectl
     kubeseal

@@ -14,12 +14,19 @@
   # Only import user specific configuration if they have bespoke settings
   imports =
     [
+      inputs.catppuccin.homeManagerModules.catppuccin
       ./common/shell
     ]
     ++ lib.optional (builtins.isString desktop) ./common/desktop
     ++ lib.optional (builtins.pathExists (
       ./. + "/common/users/${username}"
     )) ./common/users/${username};
+
+  # Enable Catppuccin theme globally
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+  };
 
   home = {
     inherit username stateVersion;
@@ -30,6 +37,4 @@
     );
   };
 
-  # Remove this entire nixpkgs section when using home-manager.useGlobalPkgs = true
-  # nixpkgs configuration is handled at the system level instead
 }

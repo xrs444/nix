@@ -15,9 +15,24 @@
     };
     fish = {
       enable = true;
-    }
+    };
     starship.enable = true;
   };
+
+  # Install non-standard fonts
+  home.packages = with pkgs; [
+    # Nerd Fonts for terminal and coding
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
+    nerd-fonts.meslo-lg
+    nerd-fonts.hack
+    nerd-fonts.iosevka
+    nerd-fonts.space-mono
+    nerd-fonts.symbols-only
+  ];
+
+  # Enable font configuration
+  fonts.fontconfig.enable = true;
 
   # Set default shell preferences
   home.sessionVariables = {
