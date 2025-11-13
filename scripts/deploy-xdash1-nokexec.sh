@@ -36,11 +36,14 @@ read -r
 
 # Use nixos-anywhere with the --phases option to skip kexec
 echo_info "Starting deployment (skipping kexec phase)..."
-echo_info "Building locally on your Mac and copying to target..."
+echo_info "Building on xsvr1 remote builder..."
+
+# The --vm-test flag builds locally with QEMU support
 nixos-anywhere \
     --flake ".#${HOST}" \
     --no-reboot \
     --phases "disko,install" \
+    --option builders "ssh://thomas-local@xsvr1.xrs444.net aarch64-linux,x86_64-linux - 16 1" \
     "${TARGET_USER}@${TARGET_IP}"
 
 EXIT_CODE=$?

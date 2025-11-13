@@ -50,13 +50,27 @@ echo_info "Step 3: Partitioning disk with disko..."
 echo_warn "THIS WILL WIPE /dev/mmcblk0!"
 sleep 3
 
-# Build the disko script locally for aarch64-linux
-echo_info "Building disko configuration..."
-DISKO_SCRIPT=$(nix build --print-out-paths --system aarch64-linux ".#nixosConfigurations.${HOST}.config.system.build.diskoScript")
+# Build the disko script - let nix decide where to build it
+echo_info "Building disko configuration (this may use remote builders or emulation)..."
+DISKO_SCRIPT=$(nix build --print-out-paths ".#nixosConfigurations.${HOST}.config.system.build.diskoScript" 2>&1)
 
-# Copy disko script to target
-echo_info "Copying disko script to target..."
-scp "${DISKO_SCRIPT}" "${TARGET_USER}@${TARGET_IP}:/tmp/disko-script"
+if [ $? -ne 0 ]; then
+    echo_warn "Local build failed, trying to build on target..."
+    # Copy flake to target and build there
+    echo_info "Copying flake to target..."
+    ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p /tmp/nixos-config"
+    scp -r "${FLAKE_DIR}"/* "${TARGET_USER}@${TARGET_IP}:/tmp/nixos-config/"
+    
+    echo_info "Building disko on target..."
+    ssh "${TARGET_USER}@${TARGET_IP}" "cd /tmp/nixos-config && nix build .#nixosConfigurations.${HOST}.config.system.build.diskoScript --out-link /tmp/disko-script"
+    
+    DISKO_SCRIPT="/tmp/disko-script"
+else
+    # Copy disko script to target
+    echo_info "Copying disko script to target..."
+    scp "${DISKO_SCRIPT}" "${TARGET_USER}@${TARGET_IP}:/tmp/disko-script"
+    DISKO_SCRIPT="/tmp/disko-script"
+fi
 
 # Run disko on target
 echo_info "Running disko (this will partition and format the disk)..."
@@ -64,14 +78,20 @@ ssh "${TARGET_USER}@${TARGET_IP}" 'chmod +x /tmp/disko-script && /tmp/disko-scri
 
 # Step 4: Build and install NixOS
 echo_info "Step 4: Building NixOS configuration..."
-SYSTEM=$(nix build --print-out-paths --system aarch64-linux ".#nixosConfigurations.${HOST}.config.system.build.toplevel")
 
-echo_info "Installing NixOS to /mnt..."
-ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p /mnt"
+# Try building locally first, fall back to building on target
+SYSTEM=$(nix build --print-out-paths ".#nixosConfigurations.${HOST}.config.system.build.toplevel" 2>&1)
 
-# Copy closure to target
-echo_info "Copying system closure to target (this may take a while)..."
-nix copy --to "ssh://${TARGET_USER}@${TARGET_IP}" "${SYSTEM}"
+if [ $? -ne 0 ]; then
+    echo_warn "Local build failed, building on target instead..."
+    ssh "${TARGET_USER}@${TARGET_IP}" "cd /tmp/nixos-config && nix build .#nixosConfigurations.${HOST}.config.system.build.toplevel --out-link /tmp/system"
+    SYSTEM="/tmp/system"
+    BUILT_ON_TARGET=true
+else
+    BUILT_ON_TARGET=false
+    echo_info "Copying system closure to target (this may take a while)..."
+    nix copy --to "ssh://${TARGET_USER}@${TARGET_IP}" "${SYSTEM}"
+fi
 
 # Install NixOS
 echo_info "Running nixos-install..."
