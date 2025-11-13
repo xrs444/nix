@@ -42,15 +42,15 @@
     ];
   };
 
-  # Root filesystem configuration
-  fileSystems."/" = {
+  # Root filesystem configuration (can be overridden by disko)
+  fileSystems."/" = lib.mkDefault {
     device = "/dev/disk/by-label/NIXOS_SD";
     fsType = "ext4";
     options = [ "noatime" ];
   };
 
-  # Boot partition
-  fileSystems."/boot" = {
+  # Boot partition (can be overridden by disko)
+  fileSystems."/boot" = lib.mkDefault {
     device = "/dev/disk/by-label/FIRMWARE";
     fsType = "vfat";
     options = [ "fmask=0022" "dmask=0022" ];

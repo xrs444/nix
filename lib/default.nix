@@ -27,6 +27,7 @@ let
         username = hostConfig.user;
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
+        isWorkstation = (hostConfig.desktop or null) != null;
       };
       modules = [
         # Apply overlays at the nixpkgs instantiation level - FIRST
