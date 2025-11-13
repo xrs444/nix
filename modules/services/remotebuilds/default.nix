@@ -55,7 +55,7 @@ in
       commands = [
         {
           command = "ALL";
-          options = [ "NOPASSWD" "!su" ];
+          options = [ "NOPASSWD" ];
         }
       ];
     }
