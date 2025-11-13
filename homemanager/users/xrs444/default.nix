@@ -13,8 +13,10 @@
         core.editor = "micro";
       };
     };
+    fish = {
+      enable = true;
+    }
     starship.enable = true;
-    fish.enable = true;  # Enable fish shell
   };
 
   # Set default shell preferences
