@@ -16,7 +16,7 @@ in
   ];
     
   services.kanidm = {
-    enableClient = true;
+    enableClient = lib.mkDefault true;
       clientSettings = {
         uri = kanidmServerUri;
         verify_ca = true;
