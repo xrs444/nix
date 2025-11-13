@@ -38,7 +38,6 @@ lib.mkMerge [
   (lib.mkIf isPrimaryServer {
     services.kanidm = {
       enableServer = true;
-      enableClient = false;
       enablePam = false;
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
@@ -76,7 +75,6 @@ lib.mkMerge [
   (lib.mkIf isReplicaServer {
     services.kanidm = {
       enableServer = true;
-      enableClient = false;
       enablePam = false;
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
