@@ -36,11 +36,10 @@ read -r
 
 # Use nixos-anywhere with the --phases option to skip kexec
 echo_info "Starting deployment (skipping kexec phase)..."
+echo_info "Building locally on your Mac and copying to target..."
 nixos-anywhere \
     --flake ".#${HOST}" \
-    --build-on-remote \
     --no-reboot \
-    --option substitute false \
     --phases "disko,install" \
     "${TARGET_USER}@${TARGET_IP}"
 
