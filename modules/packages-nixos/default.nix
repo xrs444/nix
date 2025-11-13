@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
+  kanidmServerUri = "https://idm.xrs444.net";
   currentDir = ./.; # Represents the current directory
   isDirectoryAndNotTemplate = name: type: type == "directory" && name != "_template";
   directories = lib.filterAttrs isDirectoryAndNotTemplate (builtins.readDir currentDir);

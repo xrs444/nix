@@ -9,24 +9,23 @@ in
 with lib;
 
 {
-  services.tailscale = [
-      { enable = true; }
-      # Only on NixOS hosts
-      (lib.mkIf (!isDarwin) {
-        extraUpFlags = [
-          "--operator=${username}"
-          "--accept-routes"
-        ];
-        extraSetFlags = [
-          "--operator=${username}"
-          "--accept-routes"
-        ];
-      })
-    ];
+  services.tailscale = mkMerge [
+    { enable = true; }
+    # Only on NixOS hosts
+    (mkIf (!isDarwin) {
+      extraUpFlags = [
+        "--operator=${username}"
+        "--accept-routes"
+      ];
+      extraSetFlags = [
+        "--operator=${username}"
+        "--accept-routes"
+      ];
+    })
+  ];
 
-    environment.systemPackages = with pkgs;
-      lib.optionals isWorkstation [ trayscale ];
-  };
+  environment.systemPackages = with pkgs;
+    lib.optionals isWorkstation [ trayscale ];
 }
 
 
