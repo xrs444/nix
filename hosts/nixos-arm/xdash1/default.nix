@@ -12,7 +12,7 @@
     ../common/hardware-orangepi.nix
     ../common/boot.nix
     ./network.nix
-    "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+    ./disks.nix
   ];
 
   networking.hostName = hostname;
@@ -48,11 +48,5 @@
 
   # Auto-login for kiosk
   services.getty.autologinUser = "xdash1";
-
-  # SD image will auto-expand root partition on first boot
-  sdImage = {
-    compressImage = false;  # Set to true if you want .img.zst
-    expandOnBoot = true;    # Auto-expand to fill SD card
-  };
 }
 

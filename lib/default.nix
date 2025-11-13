@@ -41,6 +41,7 @@ let
         ../hosts/base-nixos.nix
         ../modules/services
         ../modules/packages-nixos
+        inputs.disko.nixosModules.disko
         inputs.home-manager.nixosModules.home-manager
         {
           home-manager = {
