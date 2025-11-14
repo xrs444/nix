@@ -26,6 +26,8 @@
   catppuccin = {
     enable = true;
     flavor = "mocha";
+    # Disable delta integration as it's causing conflicts
+    delta.enable = lib.mkForce false;
   };
 
   home = {
