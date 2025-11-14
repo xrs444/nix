@@ -38,7 +38,7 @@ lib.mkMerge [
   (lib.mkIf isPrimaryServer {
     services.kanidm = {
       enableServer = true;
-      enablePam = true;
+      enablePam = lib.mkForce true;
       enableClient = true;
       unixSettings = {
         pam_allowed_login_groups = [ "posix_users" ];
