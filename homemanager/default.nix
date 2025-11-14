@@ -26,9 +26,10 @@
   catppuccin = {
     enable = true;
     flavor = "mocha";
-    # Disable delta integration as it's causing conflicts
-    delta.enable = lib.mkForce false;
   };
+
+  # Explicitly disable programs that catppuccin tries to configure but don't exist
+  programs.delta.enable = lib.mkForce false;
 
   home = {
     inherit username stateVersion;
