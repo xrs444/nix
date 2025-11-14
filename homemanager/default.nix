@@ -28,8 +28,10 @@
     flavor = "mocha";
   };
 
-  # Explicitly disable programs that catppuccin tries to configure but don't exist
-  programs.delta.enable = lib.mkForce false;
+  # Enable delta to satisfy catppuccin but disable it
+  programs.delta = {
+    enable = false;
+  };
 
   home = {
     inherit username stateVersion;
