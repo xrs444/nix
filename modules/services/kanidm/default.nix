@@ -51,7 +51,8 @@ lib.mkMerge [
         tls_chain = "/var/lib/acme/idm.xrs444.net/cert.pem";
         tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
         log_level = "info";
-        # role = "WriteReplica";  # Commented out - not needed for primary, will set up replication manually
+        replicationbindaddress = "0.0.0.0:8444";
+        replication_origin = kanidmServerUri;
         online_backup = {
           path = "/var/lib/kanidm/backups";
           schedule = "0 2 * * *";
@@ -74,7 +75,7 @@ lib.mkMerge [
     
     # Open firewall ports
     networking.firewall = {
-      allowedTCPPorts = [ 443 3636 ];
+      allowedTCPPorts = [ 443 3636 8444 ];  # Added 8444 for replication
     };
   })
 
@@ -91,6 +92,7 @@ lib.mkMerge [
         tls_chain = "/var/lib/acme/idm.xrs444.net/cert.pem";
         tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
         log_level = "info";
+        replicationbindaddress = "0.0.0.0:8444";
         # role will be set during replica initialization
         online_backup = {
           path = "/var/lib/kanidm/backups";
@@ -111,7 +113,7 @@ lib.mkMerge [
     
     # Open firewall ports
     networking.firewall = {
-      allowedTCPPorts = [ 443 3636 ];
+      allowedTCPPorts = [ 443 3636 8444 ];  # Added 8444 for replication
     };
   })
 
