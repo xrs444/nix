@@ -94,12 +94,14 @@ lib.mkMerge [
         tls_chain = "/var/lib/acme/idm.xrs444.net/cert.pem";
         tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
         log_level = "info";
-        replicationbindaddress = "0.0.0.0:8444";
-        # role will be set during replica initialization
         online_backup = {
           path = "/var/lib/kanidm/backups";
           schedule = "0 2 * * *";
           versions = 7;
+        };
+        replication = {
+          origin = kanidmServerUri;
+          bindaddress = "0.0.0.0:8444";
         };
       };
     };
