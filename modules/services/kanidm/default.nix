@@ -39,6 +39,10 @@ lib.mkMerge [
     services.kanidm = {
       enableServer = true;
       enablePam = true;
+      enableClient = true;
+      unixSettings = {
+        pam_allowed_login_groups = [ "posix_users" ];
+      };
       serverSettings = {
         bindaddress = "0.0.0.0:8443";
         ldapbindaddress = "0.0.0.0:3636";
@@ -54,16 +58,10 @@ lib.mkMerge [
           versions = 7;
         };
       };
+      clientSettings = {
+        uri = kanidmServerUri;
+      };
     };
-    
-    # Kanidm PAM and NSS configuration
-    services.kanidm.clientSettings = {
-      uri = kanidmServerUri;
-    };
-    
-    # Enable NSS integration for user/group lookups
-    system.nssDatabases.passwd = [ "kanidm" ];
-    system.nssDatabases.group = [ "kanidm" ];
     
     # Ensure kanidm starts after ACME certificate generation
     systemd.services.kanidm = {
