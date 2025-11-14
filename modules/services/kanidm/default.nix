@@ -44,7 +44,7 @@ lib.mkMerge [
         pam_allowed_login_groups = [ "posix_users" ];
       };
       serverSettings = {
-        bindaddress = "0.0.0.0:8443";
+        bindaddress = "0.0.0.0:443";
         ldapbindaddress = "0.0.0.0:3636";
         origin = kanidmServerUri;
         domain = "idm.xrs444.net";
@@ -74,7 +74,7 @@ lib.mkMerge [
     
     # Open firewall ports
     networking.firewall = {
-      allowedTCPPorts = [ 8443 3636 ];
+      allowedTCPPorts = [ 443 3636 ];
     };
   })
 
@@ -84,7 +84,7 @@ lib.mkMerge [
       enableServer = true;
       enablePam = false;
       serverSettings = {
-        bindaddress = "0.0.0.0:8443";
+        bindaddress = "0.0.0.0:443";
         ldapbindaddress = "0.0.0.0:3636";
         origin = kanidmServerUri;
         domain = "idm.xrs444.net";
