@@ -83,6 +83,14 @@ lib.mkMerge [
 
   # Replica server configuration (xsvr2)
   (lib.mkIf isReplicaServer {
+    sops.secrets.kanidm_replication_cert = {
+      sopsFile = ../../secrets/kanidm_replication_cert.yaml;
+      key = "replication_cert";
+      owner = "kanidm";
+      group = "kanidm";
+      mode = "0400";
+    };
+
     services.kanidm = {
       enableServer = true;
       enablePam = false;
@@ -102,6 +110,7 @@ lib.mkMerge [
         replication = {
           origin = kanidmServerUri;
           bindaddress = "0.0.0.0:8444";
+          manual_cert = builtins.readFile config.sops.secrets.kanidm_replication_cert.path;
         };
       };
     };
