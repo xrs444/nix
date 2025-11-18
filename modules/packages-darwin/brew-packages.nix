@@ -41,8 +41,8 @@
       "zoom"
       "bettertouchtool"
       "via"
-#      "calibre"
-#      "vlc"
+      "calibre"
+      "vlc"
 
     ];
 
