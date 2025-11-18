@@ -88,7 +88,7 @@ lib.mkMerge [
   # Replica server configuration (xsvr2)
   (lib.mkIf isReplicaServer {
     sops.secrets.kanidm_replication_cert = {
-      sopsFile = ./secrets/kanidm_replication_cert.yaml;
+      sopsFile = "${toString ../../../secrets/kanidm_replication_cert.yaml}";
       key = "replication_cert";
       owner = "kanidm";
       group = "kanidm";
