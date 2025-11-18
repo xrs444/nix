@@ -4,6 +4,10 @@
   # Homebrew packages that don't have Nix equivalents or work better via Homebrew
   homebrew = {
     enable = true;
+      # Homebrew taps required for some packages
+      taps = [
+        "qmk/qmk"
+      ];
     
     # Packages installed via `brew install`
     brews = [
