@@ -5,8 +5,12 @@
 , ...
 }:
 let
-  # Import overlays once for use across all configurations
-  allOverlays = import ../overlays { inherit inputs; };
+  # Import overlays as a set for use across all configurations
+  overlays = {
+    kanidm = import ../overlays/kanidm.nix { inherit inputs; };
+    pkgs = import ../overlays/pkgs.nix { inherit inputs; };
+    unstable = import ../overlays/unstable.nix { inherit inputs; };
+  };
   
   # Build NixOS configurations
   mkNixosConfig = hostName: hostConfig:
@@ -32,7 +36,7 @@ let
       modules = [
         # Apply overlays at the nixpkgs instantiation level - FIRST
         {
-          nixpkgs.overlays = allOverlays;
+          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
           nixpkgs.config.allowUnfree = true;
         }
         # Set kanidm package in a separate module that has access to pkgs
@@ -77,7 +81,7 @@ let
       modules = [
         # Apply overlays for Darwin too
         {
-          nixpkgs.overlays = allOverlays;
+          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
           nixpkgs.config.allowUnfree = true;
         }
         ../hosts/darwin/default.nix
@@ -105,7 +109,7 @@ let
       pkgs = import inputs.nixpkgs {
         system = hostConfig.platform;
         config.allowUnfree = true;
-        nixpkgs.overlays = allOverlays;
+        nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
       };
       extraSpecialArgs = {
         inherit inputs outputs stateVersion;
