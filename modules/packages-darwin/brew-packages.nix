@@ -25,7 +25,7 @@
       "ghostty"
       "google-drive"
       "handbrake-app"
-#      "headlamp" currently broken
+      "headlamp"
       "jabra-direct"
       "jettison"
       "lulu"
