@@ -104,20 +104,25 @@ let
     };
 
   # Build home-manager configurations
-  mkHome = hostName: hostConfig:
-    inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = import inputs.nixpkgs {
-        system = hostConfig.platform;
-        config.allowUnfree = true;
-        nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
+    mkHome = hostName: hostConfig:
+      let
+        hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = import inputs.nixpkgs {
+            system = hostConfig.platform;
+            config.allowUnfree = true;
+            nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
+          };
+          extraSpecialArgs = {
+            inherit inputs outputs stateVersion;
+            username = hostConfig.user;
+            desktop = hostConfig.desktop or null;
+          };
+          modules = [ ../homemanager ];
+        };
+      in {
+        config = hmConfig;
+        activationPackage = hmConfig.activationPackage;
       };
-      extraSpecialArgs = {
-        inherit inputs outputs stateVersion;
-        username = hostConfig.user;
-        desktop = hostConfig.desktop or null;
-      };
-      modules = [ ../homemanager ];
-    };
 
   # Filter hosts by type
   nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
