@@ -14,7 +14,6 @@
       "helm"
       "lazyssh"
       "ice"
-      "qmk/qmk/qmk"
     ];
     
     # GUI applications installed via `brew install --cask`

@@ -15,6 +15,9 @@
     };
     fish = {
       enable = true;
+        shellAliases = {
+          nix-sh = "fish $HOME/.local/bin/nix-sh.fish";
+        };
     };
     starship.enable = true;
   };
@@ -33,6 +36,12 @@
 
   # Enable font configuration
   fonts.fontconfig.enable = true;
+
+    # Deploy nix-sh.fish selector script to ~/.local/bin
+    home.file.".local/bin/nix-sh.fish" = {
+      source = ../../../../scripts/nix-sh.fish;
+      executable = true;
+    };
 
   # Set default shell preferences
   home.sessionVariables = {
