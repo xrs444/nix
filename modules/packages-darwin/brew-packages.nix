@@ -46,10 +46,6 @@
 
     ];
 
-    taps = [
-#      "Adembc/lazyssh"
-    ];
-    
     # Mac App Store applications
     masApps = {
       "Bitwarden" = 1352778147;
@@ -60,7 +56,6 @@
       "HP" = 1474276998;
       "Kindle" = 302584613;
       "Tailscale" = 1475387142;
-      "Telegram" = 747648890;
       "UTM" = 1538878817;
       "WireGuard" = 1451685025;
     };

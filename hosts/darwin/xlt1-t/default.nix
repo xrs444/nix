@@ -28,11 +28,11 @@
       tilesize = 36;
       largesize = 48;
       scroll-to-open = true;
-        persistent-apps = [
+      persistent-apps = [
           "Visual Studio Code.app"
           "Firefox.app"
           "Ghostty.app"
-        ];
+      ];
     };
 
     controlcenter = {
