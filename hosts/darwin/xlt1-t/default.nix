@@ -29,7 +29,6 @@
       largesize = 48;
       scroll-to-open = true;
       persistent-apps = [
-        "Finder"
         "Visual Studio Code"
         "Firefox"
         "GhostTTY"
