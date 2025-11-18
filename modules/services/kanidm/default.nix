@@ -67,10 +67,14 @@ lib.mkMerge [
     };
     
     # Ensure kanidm starts after ACME certificate generation
-    systemd.services.kanidm = {
-      after = [ "acme-finished-idm.xrs444.net.target" ];
-      wants = [ "acme-finished-idm.xrs444.net.target" ];
-    };
+      systemd.services.kanidm = {
+        after = [ "acme-finished-idm.xrs444.net.target" ];
+        wants = [ "acme-finished-idm.xrs444.net.target" ];
+      } // lib.optionalAttrs (config ? sops.secrets.kanidm_replication_cert) {
+        environment = {
+          KANIDM_REPLICATION_CERT_PATH = config.sops.secrets.kanidm_replication_cert.path;
+        };
+      };
     
     # Ensure kanidm can read TLS certificates
     users.users.kanidm.extraGroups = [ "acme" ];
@@ -110,7 +114,7 @@ lib.mkMerge [
         replication = {
           origin = kanidmServerUri;
           bindaddress = "0.0.0.0:8444";
-          manual_cert = builtins.readFile config.sops.secrets.kanidm_replication_cert.path;
+            manual_cert_path = config.sops.secrets.kanidm_replication_cert.path;
         };
       };
     };
