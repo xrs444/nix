@@ -121,6 +121,10 @@
       tailscale = import ./modules/packages-nixos/tailscale;
     };
     formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-    overlays = { default = import ./overlays/default.nix { inherit inputs; }; };
+    overlays = {
+      kanidm = import ./overlays/kanidm.nix { inherit inputs; };
+      pkgs = import ./overlays/pkgs.nix { inherit inputs; };
+      unstable = import ./overlays/unstable.nix { inherit inputs; };
+    };
   };
 }
