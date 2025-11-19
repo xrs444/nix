@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, stateVersion, ... }: {
   
   home.stateVersion = stateVersion;
   programs = {
