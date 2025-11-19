@@ -1,13 +1,12 @@
 { config, lib, pkgs, ... }:
 {
-  imports =
-    [
-      ../common/hardware-orangepi.nix
-      ../common/boot.nix
-      ./network.nix
-      "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-    ]
-    ++ lib.optional (!config.minimalImage) ../../../modules/services/letsencrypt;
+  imports = [
+    ../common/hardware-orangepi.nix
+    ../common/boot.nix
+    ./network.nix
+    "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+    (lib.mkIf (!config.minimalImage) ../../../modules/services/letsencrypt)
+  ];
 
    networking.hostName = "xdash1";
 
