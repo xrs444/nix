@@ -4,7 +4,7 @@
     ../common/hardware-orangepi.nix
     ../common/boot.nix
     ./network.nix
-  ] ++ lib.optional (!config.minimalImage) ../../../modules/services/letsencrypt/default.nix;
+  ] ++ lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt/default.nix;
   ];
 
    networking.hostName = "xdash1";
