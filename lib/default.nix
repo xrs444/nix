@@ -117,7 +117,7 @@ let
             username = hostConfig.user;
             desktop = hostConfig.desktop or null;
           };
-          modules = [ ../homemanager ];
+          modules = [ ../homemanager/users/${hostName}/default.nix ];
         };
       in {
         config = hmConfig;
