@@ -5,7 +5,7 @@
     ../common/default.nix
 #    ../common/hardware-orangepi.nix
 #    ../common/boot.nix
-#    ./network.nix
+    ./network.nix
   ];
 
   networking.hostName = "xdash1";
