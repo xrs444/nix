@@ -11,6 +11,12 @@ let
   flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
 in
 {
+  # Option to build a minimal image (skip heavy modules)
+  options.minimalImage = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+    description = "Build a minimal image for initial boot, skipping heavy modules.";
+  };
   # Common Nix configuration
   nix = {
     settings = {
