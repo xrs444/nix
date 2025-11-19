@@ -56,7 +56,7 @@ in
     );
   };
 
-  # Ensure acme user/group exists everywhere
+  # Ensure acme user/group exists only on relevant hosts
   users.users.acme = {
     isSystemUser = true;
     group = "acme";
