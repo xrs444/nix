@@ -108,23 +108,28 @@
     allOverlays = import ./overlays { inherit inputs; };
 
   in
-  {
-    homeConfigurations = lib.mkAllHomes;
-
-    nixosConfigurations = lib.mkAllNixosConfigs;
-    darwinConfigurations = lib.mkAllDarwinConfigs;
-
-    # Custom packages; accessible via 'nix build', 'nix shell', etc
-    nixosModules = {
-      cockpit = import ./modules/packages-nixos/cockpit;
-      comin = import ./modules/packages-nixos/comin;
-      tailscale = import ./modules/packages-nixos/tailscale;
-    };
-    formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-    overlays = {
-      kanidm = import ./overlays/kanidm.nix { inherit inputs; };
-      pkgs = import ./overlays/pkgs.nix { inherit inputs; };
-      unstable = import ./overlays/unstable.nix { inherit inputs; };
-    };
-  };
+  let
+    allHomes = lib.mkAllHomes;
+  in
+  (
+    {
+      homeConfigurations = allHomes;
+      nixosConfigurations = lib.mkAllNixosConfigs;
+      darwinConfigurations = lib.mkAllDarwinConfigs;
+      nixosModules = {
+        cockpit = import ./modules/packages-nixos/cockpit;
+        comin = import ./modules/packages-nixos/comin;
+        tailscale = import ./modules/packages-nixos/tailscale;
+      };
+      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+      overlays = {
+        kanidm = import ./overlays/kanidm.nix { inherit inputs; };
+        pkgs = import ./overlays/pkgs.nix { inherit inputs; };
+        unstable = import ./overlays/unstable.nix { inherit inputs; };
+      };
+    }
+    // inputs.nixpkgs.lib.mapAttrs
+      (name: value: { "homeConfigurations.${name}.activationPackage" = value.activationPackage; })
+      allHomes
+  );
 }
