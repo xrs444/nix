@@ -27,9 +27,5 @@
     age.keyFile = "/var/lib/private/sops/age/keys.txt";
   };
 
-  # Overlays are now applied in lib/default.nix at the nixpkgs instantiation level
-  # This ensures they're available before any module evaluation happens
-
-  # Minimal config just to test
   system.stateVersion = stateVersion;
 }

@@ -8,6 +8,7 @@
 }:
 {
   imports = [
+    ../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/boot.nix
     ../common/performance.nix

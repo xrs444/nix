@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 {
   imports = [
+    ../../base-nixos.nix
     ../common/default.nix
     ../common/hardware-orangepi.nix
     ../common/boot.nix
