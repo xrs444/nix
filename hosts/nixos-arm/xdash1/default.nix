@@ -5,7 +5,6 @@
     ../common/hardware-orangepi.nix
     ../common/boot.nix
     ./network.nix
-    ../../../modules/services/letsencrypt
   ];
 
   networking.hostName = "xdash1";
