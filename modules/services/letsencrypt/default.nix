@@ -69,15 +69,19 @@ in
   };
 
   # Ensure acme user/group exists only on relevant hosts
-  users.users.acme = lib.mkIf (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text)) {
-    isSystemUser = true;
-    group = "acme";
-    home = "/var/lib/acme";
-    createHome = true;
-    openssh.authorizedKeys.keyFiles = [
-      (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-    ];
-  };
+  users.users = lib.mkMerge [
+    (lib.mkIf (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text)) {
+      acme = {
+        isSystemUser = true;
+        group = "acme";
+        home = "/var/lib/acme";
+        createHome = true;
+        openssh.authorizedKeys.keyFiles = [
+          (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
+        ];
+      };
+    })
+  ];
   users.groups.acme = {};
 
 
