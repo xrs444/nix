@@ -13,6 +13,7 @@ let
   domain = "xrs444.net";
   isPrimaryServer = hostname == "xsvr1";
   isKanidmServer = lib.elem hostname kanidmNodes;
+  isSdImageBuild = config ? system && config.system ? build && config.system.build ? sdImage;
 in
 
 {
@@ -69,14 +70,14 @@ in
   };
 
   # Ensure acme user/group exists only on relevant hosts
-  users.users.acme = {
+  users.users.acme = lib.mkIf (!isSdImageBuild) {
     isSystemUser = true;
     group = "acme";
     home = "/var/lib/acme";
     createHome = true;
-      openssh.authorizedKeys.keyFiles = [
-        (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-      ];
+    openssh.authorizedKeys.keyFiles = [
+      (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
+    ];
   };
   users.groups.acme = {};
 
