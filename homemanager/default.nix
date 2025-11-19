@@ -22,17 +22,6 @@
       ./. + "/common/users/${username}"
     )) ./common/users/${username};
 
-  # Enable Catppuccin theme globally
-  # catppuccin = {
-  #   enable = true;
-  #   flavor = "mocha";
-  # };
-
-  # Enable delta to satisfy catppuccin but disable it
-  # programs.delta = {
-  #   enable = false;
-  # };
-
   home = {
     inherit username stateVersion;
     homeDirectory = lib.mkForce (

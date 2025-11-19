@@ -51,4 +51,11 @@
     EDITOR = "micro";
     BROWSER = "firefox";
   };
+
+  # Enable Catppuccin theme globally
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+  };
+
 }
