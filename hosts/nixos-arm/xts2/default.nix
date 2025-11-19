@@ -8,6 +8,7 @@
 }:
 {
   imports = [
+    ../../base-nixos.nix
     ../common/boot.nix
     ./disks.nix
 #    ./network.nix

@@ -8,6 +8,7 @@
 }:
 {
   imports = [
+    ../../base-nixos.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ../common/boot.nix
     ./disks.nix

@@ -10,6 +10,7 @@
 } @ args:
 {
   imports = [
+    ../../base-nixos.nix
     ../common/hardware-arm64-server.nix
     ./disks.nix
     ./desktop.nix

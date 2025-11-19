@@ -9,6 +9,7 @@
 }:
 {
   imports = [
+    ../../base-nixos.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-3
     ../common/boot.nix
     ./network.nix
