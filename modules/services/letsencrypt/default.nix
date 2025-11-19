@@ -34,6 +34,7 @@ in
         owner = "acme";
         group = "acme";
         mode = "0400";
+        format = "string";
       };
     }
   ];
