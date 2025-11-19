@@ -132,7 +132,26 @@ let
 in
 {
   # Generate all configurations
-  mkAllNixosConfigs = inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
+  mkAllNixosConfigs =
+    let
+      # Normal configs
+      normal = inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
+      # Minimal configs: add a module that sets minimalImage = true
+      minimal = inputs.nixpkgs.lib.mapAttrs (
+        hostName: hostConfig:
+          mkNixosConfig hostName (hostConfig // {
+            extraModules = [ { minimalImage = true; } ];
+          })
+      ) nixosHosts;
+    in
+      normal // (inputs.nixpkgs.lib.mapAttrs' (
+        hostName: _:
+          { name = hostName + "-minimal";
+            value = mkNixosConfig hostName (nixosHosts.${hostName} // {
+              extraModules = [ { minimalImage = true; } ];
+            });
+          }
+      ) nixosHosts);
   mkAllDarwinConfigs = inputs.nixpkgs.lib.mapAttrs mkDarwinConfig darwinHosts;
   mkAllHomes = inputs.nixpkgs.lib.mapAttrs mkHome hosts;
 
