@@ -44,7 +44,7 @@ let
           services.kanidm.package = inputs.nixpkgs.lib.mkOverride 900 pkgs.kanidm_1_7;
         })
         ../hosts/base-nixos.nix
-        ../modules/services
+        ../modules/services/default.nix
         ../modules/packages-nixos
         inputs.disko.nixosModules.disko
         inputs.home-manager.nixosModules.home-manager
