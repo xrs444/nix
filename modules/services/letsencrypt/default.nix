@@ -16,16 +16,27 @@ let
 in
 
 {
-  # SOPS secrets for Cloudflare (only on primary)
-  sops.secrets = lib.mkIf isPrimaryServer {
-    cloudflare_dns_api_token = {
-      sopsFile = ../../../secrets/cloudflare.yaml;
-      key = "dns_api_token";
-      owner = "acme";
-      group = "acme";
-      mode = "0400";
-    };
-  };
+  # SOPS secrets for Cloudflare (only on primary) and acme SSH key (all hosts)
+  sops.secrets = lib.mkMerge [
+    (lib.mkIf isPrimaryServer {
+      cloudflare_dns_api_token = {
+        sopsFile = ../../../secrets/cloudflare.yaml;
+        key = "dns_api_token";
+        owner = "acme";
+        group = "acme";
+        mode = "0400";
+      };
+    })
+    {
+      acme_ssh_key = {
+        sopsFile = ../../../secrets/acme.yaml;
+        key = "ssh-key";
+        owner = "acme";
+        group = "acme";
+        mode = "0400";
+      };
+    }
+  ];
 
   # ACME config: xsvr1 generates all host certs + idm.xrs444.net
   security.acme = lib.mkIf isPrimaryServer {
@@ -62,8 +73,10 @@ in
     group = "acme";
     home = "/var/lib/acme";
     createHome = true;
+    openssh.authorizedKeys.keys = [ config.sops.secrets.acme_ssh_key.content ];
   };
   users.groups.acme = {};
+
 
   # Systemd services configuration
   systemd.services = lib.mkMerge [
@@ -80,6 +93,14 @@ in
           lib.nameValuePair svc {
             after = lib.optional (i > 0) (lib.elemAt allServices (i - 1));
             serviceConfig = lib.mkIf (i > 0) {
+          sops.secrets.acme_ssh_key = {
+            sopsFile = ../../../secrets/acme.yaml;
+            key = "ssh-key";
+            owner = "acme";
+            group = "acme";
+            mode = "0400";
+          };
+  
               ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
             };
           }
@@ -115,6 +136,6 @@ in
     timerConfig = {
       OnCalendar = "hourly";
       Persistent = true;
-    };
+            openssh.authorizedKeys.keys = [ config.sops.secrets.acme_ssh_key.content ];
   };
 }
