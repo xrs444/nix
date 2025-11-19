@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 
-{
+lib.mkIf (!config.minimalImage) {
   users.users.acme = {
     isSystemUser = true;
     group = "acme";
