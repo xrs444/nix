@@ -1,6 +1,8 @@
-{ pkgs, stateVersion, ... }: {
-  
+{ pkgs, stateVersion, username, ... }: {
+
   home.stateVersion = stateVersion;
+  home.username = username;
+  home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
   programs = {
     home-manager.enable = true;
     git = {
@@ -40,7 +42,7 @@
 
     # Deploy nix-sh.fish selector script to ~/.local/bin
     home.file.".local/bin/nix-sh.fish" = {
-      source = ../../../../scripts/nix-sh.fish;
+      source = builtins.path { path = ./../../../scripts/nix-sh.fish; };
       executable = true;
     };
 
