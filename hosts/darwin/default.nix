@@ -22,7 +22,12 @@
 
   # Set system state version
   system.stateVersion = 5;
-  nix.enable = false;
+  nix = {
+    enable = false;
+    extraOptions = ''
+      experimental-features = nix-command flakes
+    '';
+  };
 
     # Configure nixpkgs
   nixpkgs = {
