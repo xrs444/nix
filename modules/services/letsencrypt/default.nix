@@ -16,7 +16,7 @@ let
   isSdImageBuild = config ? system && config.system ? build && config.system.build ? sdImage;
 in
 
-{
+lib.mkIf (!config.minimalImage) {
   # SOPS secrets for Cloudflare (only on primary) and acme SSH key (all hosts)
   sops.secrets = lib.mkMerge [
     (lib.mkIf isPrimaryServer {
@@ -82,7 +82,11 @@ in
       };
     })
   ];
-  users.groups.acme = {};
+  users.groups = lib.mkMerge [
+    (lib.mkIf (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text)) {
+      acme = {};
+    })
+  ];
 
 
   # Systemd services configuration

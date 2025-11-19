@@ -5,36 +5,37 @@
     ../common/hardware-orangepi.nix
     ../common/boot.nix
     ./network.nix
+    ../../../modules/services/letsencrypt
   ];
 
-   networking.hostName = "xdash1";
+  networking.hostName = "xdash1";
 
-   boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
+  boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
 
-   environment.systemPackages = with pkgs; [
+  environment.systemPackages = with pkgs; [
     labwc
     firefox
   ];
 
-   users.users.xdash1 = {
+  users.users.xdash1 = {
     isNormalUser = true;
     description = "Dashboard Kiosk User";
     extraGroups = [ "video" ];
     home = "/home/xdash1";
   };
 
-   hardware.graphics.enable = true;
+  hardware.graphics.enable = true;
   services.xserver.enable = false;
 
-   services.cage = {
+  services.cage = {
     enable = true;
     user = "xdash1";
     program = "${pkgs.firefox}/bin/firefox -kiosk -private-window https://hass.xrs444.net";
   };
 
-   services.getty.autologinUser = "xdash1";
+  services.getty.autologinUser = "xdash1";
 
-   sdImage = {
+  sdImage = {
     compressImage = false;
     expandOnBoot = true;
   };
