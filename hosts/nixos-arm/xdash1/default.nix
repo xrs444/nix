@@ -4,7 +4,7 @@
     ../common/hardware-orangepi.nix
     ../common/boot.nix
     ./network.nix
-    "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+    "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
     (lib.mkIf (!config.minimalImage) ../../../modules/services/letsencrypt)
   ];
 
