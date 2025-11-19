@@ -106,6 +106,7 @@ let
   # Build home-manager configurations
     mkHome = hostName: hostConfig:
       let
+        userConfigPath = ../homemanager/users/${hostConfig.user}/default.nix;
         hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
           pkgs = import inputs.nixpkgs {
             system = hostConfig.platform;
@@ -117,7 +118,7 @@ let
             username = hostConfig.user;
             desktop = hostConfig.desktop or null;
           };
-          modules = [ ../homemanager/users/${hostName}/default.nix ];
+          modules = [ userConfigPath ];
         };
       in {
         config = hmConfig;
