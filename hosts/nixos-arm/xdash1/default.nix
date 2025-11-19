@@ -1,45 +1,43 @@
+{ config, lib, pkgs, ... }:
 {
-  { config, lib, pkgs, ... }:
-  {
-    imports =
-      [
-        ../common/hardware-orangepi.nix
-        ../common/boot.nix
-        ./network.nix
-        "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-      ]
-      ++ lib.optional (!config.minimalImage) ../../../modules/services/letsencrypt;
+  imports =
+    [
+      ../common/hardware-orangepi.nix
+      ../common/boot.nix
+      ./network.nix
+      "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+    ]
+    ++ lib.optional (!config.minimalImage) ../../../modules/services/letsencrypt;
 
-    networking.hostName = "xdash1";
+   networking.hostName = "xdash1";
 
-    boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
+   boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
 
-    environment.systemPackages = with pkgs; [
-      labwc
-      firefox
-    ];
+   environment.systemPackages = with pkgs; [
+    labwc
+    firefox
+  ];
 
-    users.users.xdash1 = {
-      isNormalUser = true;
-      description = "Dashboard Kiosk User";
-      extraGroups = [ "video" ];
-      home = "/home/xdash1";
-    };
+   users.users.xdash1 = {
+    isNormalUser = true;
+    description = "Dashboard Kiosk User";
+    extraGroups = [ "video" ];
+    home = "/home/xdash1";
+  };
 
-    hardware.graphics.enable = true;
-    services.xserver.enable = false;
+   hardware.graphics.enable = true;
+  services.xserver.enable = false;
 
-    services.cage = {
-      enable = true;
-      user = "xdash1";
-      program = "${pkgs.firefox}/bin/firefox -kiosk -private-window https://hass.xrs444.net";
-    };
+   services.cage = {
+    enable = true;
+    user = "xdash1";
+    program = "${pkgs.firefox}/bin/firefox -kiosk -private-window https://hass.xrs444.net";
+  };
 
-    services.getty.autologinUser = "xdash1";
+   services.getty.autologinUser = "xdash1";
 
-    sdImage = {
-      compressImage = false;
-      expandOnBoot = true;
-    };
-  }
-
+   sdImage = {
+    compressImage = false;
+    expandOnBoot = true;
+  };
+}
