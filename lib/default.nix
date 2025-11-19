@@ -62,6 +62,7 @@ let
           };
         }
       ]
+      ++ (if hostConfig.platform == "aarch64-linux" then [ (import "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix") ] else [])
       ++ (hostConfig.extraModules or [])
       # Conditionally add host-specific configs
       ++ (if hasNixosConfig then [ nixosPath ] else [])

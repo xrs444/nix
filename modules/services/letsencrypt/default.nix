@@ -9,7 +9,7 @@
 
 let
   allHosts = [ "xsvr1" "xsvr2" "xsvr3" "xcomm1" "xts1" "xts2" ];
-  kanidmNodes = [ "xsvr1" "xsvr2""xsvr3"];
+  kanidmNodes = [ "xsvr1" "xsvr2" "xsvr3"];
   domain = "xrs444.net";
   isPrimaryServer = hostname == "xsvr1";
   isKanidmServer = lib.elem hostname kanidmNodes;
