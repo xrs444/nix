@@ -137,8 +137,13 @@ in
   mkAllNixosConfigs =
     let
       # Normal configs
-      normal = inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
-      # Minimal configs: add a module that sets minimalImage = true
+      normal = inputs.nixpkgs.lib.mapAttrs (
+        hostName: hostConfig:
+          mkNixosConfig hostName (hostConfig // {
+            extraModules = (hostConfig.extraModules or []) ++ [ ../modules/services/letsencrypt/default.nix ];
+          })
+      ) nixosHosts;
+      # Minimal configs: add a module that sets minimalImage = true, do NOT include letsencrypt
       minimal = inputs.nixpkgs.lib.mapAttrs (
         hostName: hostConfig:
           mkNixosConfig hostName (hostConfig // {
