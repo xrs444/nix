@@ -1,5 +1,6 @@
 { pkgs, ... }: {
   
+  home.stateVersion = stateVersion;
   programs = {
     home-manager.enable = true;
     git = {
