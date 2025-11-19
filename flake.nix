@@ -128,8 +128,9 @@
         unstable = import ./overlays/unstable.nix { inherit inputs; };
       };
     }
-    // inputs.nixpkgs.lib.mapAttrs
-      (name: value: { "homeConfigurations.${name}.activationPackage" = value.activationPackage; })
-      allHomes
+    // builtins.listToAttrs (
+      map (name: { name = "homeConfigurations." + name + ".activationPackage"; value = allHomes.${name}.activationPackage; })
+          (builtins.attrNames allHomes)
+    )
   );
 }
