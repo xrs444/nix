@@ -9,7 +9,7 @@
 
   networking.hostName = "xdash1";
 
-    boot.supportedFilesystems = lib.mkForce [ "ext4" "vfat" "xfs" ];
+      boot.supportedFilesystems = [ "vfat" "ext4" ];
 
     environment.systemPackages = with pkgs; [
       labwc
@@ -27,7 +27,7 @@
     services.xserver.enable = false;
 
     services.cage = {
-     enable = true;
+      enable = true;
       user = "xdash1";
       program = "${pkgs.firefox}/bin/firefox -kiosk -private-window https://hass.xrs444.net";
     };
