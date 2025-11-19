@@ -34,5 +34,8 @@
       '';
     };
   };
+
+  nix.settings.trusted-users = [ "root" "builder" ];
+
   
 }
