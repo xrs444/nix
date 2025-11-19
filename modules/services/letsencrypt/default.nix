@@ -73,7 +73,7 @@ in
     group = "acme";
     home = "/var/lib/acme";
     createHome = true;
-    openssh.authorizedKeys.keys = [ config.sops.secrets.acme_ssh_key.content ];
+    openssh.authorizedKeys.keys = [ (builtins.readFile config.sops.secrets.acme_ssh_key.path) ];
   };
   users.groups.acme = {};
 
