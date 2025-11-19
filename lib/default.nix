@@ -62,6 +62,7 @@ let
           };
         }
       ]
+      ++ (hostConfig.extraModules or [])
       # Conditionally add host-specific configs
       ++ (if hasNixosConfig then [ nixosPath ] else [])
       ++ (if hasArmConfig then [ armPath ] else []);
