@@ -59,7 +59,7 @@ let
               desktop = hostConfig.desktop or null;
             };
             users.${hostConfig.user} = import ../homemanager ({
-              inherit config outputs stateVersion username inputs pkgs;
+                inherit outputs stateVersion username inputs;
             } // (if hostConfig ? desktop then { desktop = hostConfig.desktop; } else {}));
           };
         }
