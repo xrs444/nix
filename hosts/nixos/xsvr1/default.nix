@@ -7,19 +7,21 @@
   ...
 }:
 {
-  imports = [
-    ../base-nixos.nix
-    ../common/hardware-amd.nix
-    ../common/boot.nix
-    ../common/performance.nix
-    ./disks.nix
-    ./network.nix
-    ./vms.nix
-    ../../../../modules/services/zfs
-    # Only import letsencrypt if not minimal
-    (lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt)
-    # Add other heavy modules here as needed
-  ];
+  imports =
+    let
+      letsencrypt = lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt;
+    in
+      [
+        ../base-nixos.nix
+        ../common/hardware-amd.nix
+        ../common/boot.nix
+        ../common/performance.nix
+        ./disks.nix
+        ./network.nix
+        ./vms.nix
+        ../../../../modules/services/zfs
+        # Add other heavy modules here as needed
+      ] ++ letsencrypt;
 
   networking.hostName = hostname;
 
