@@ -45,7 +45,7 @@ let
         })
         ../hosts/base-nixos.nix
         ../modules/services/default.nix
-        ../modules/packages-nixos
+        ../modules/packages-nixos/default.nix
         inputs.disko.nixosModules.disko
         inputs.home-manager.nixosModules.home-manager
         {
