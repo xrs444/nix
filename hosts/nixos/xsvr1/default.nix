@@ -1,18 +1,20 @@
-{ hostname, inputs, lib, pkgs, username, ... }:
+{ config, hostname, inputs, lib, pkgs, username, ... }:
 {
   imports = [
     ../../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/boot.nix
     ../common/performance.nix
-    ./disks.nix
+    ./disks.nix # must come before disko module
     ./network.nix
     ./vms.nix
-    ../../../../modules/services/zfs/default.nix
+    ../../../modules/services/zfs
     # Add other heavy modules here as needed
+    inputs.disko.nixosModules.disko
   ];
 
   networking.hostName = hostname;
+
 
   boot = {
     initrd = {

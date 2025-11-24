@@ -16,6 +16,7 @@
 
   networking.hostName = hostname;
 
+
   boot = {
     initrd = {
       availableKernelModules = [

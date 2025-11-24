@@ -1,21 +1,15 @@
-{
-  hostname,
-  inputs,
-  lib,
-  pkgs,
-  username,
-  ...
-}:
+{ config, lib, inputs, hostname, ... }:
 {
   imports = [
     ../../base-nixos.nix
     ../common/hardware-intel.nix
     ../common/boot.nix
     ../common/performance.nix
-    ./disks.nix
     ./network.nix
     ./vms.nix
-    ../../../../modules/services/zfs/default.nix
+    ../../../../modules/services/zfs
+    ./disks.nix
+    inputs.disko.nixosModules.disko
     # Add other heavy modules here as needed
   ];
 

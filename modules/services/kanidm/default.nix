@@ -23,42 +23,42 @@ let
   kanidmServerUri = "https://idm.xrs444.net";
   
 in
-lib.mkMerge [
-
-  # Import provisioning configuration for xsvr1
-  (lib.mkIf isProvisioningHost
-    (import ./provision.nix { inherit config hostname lib pkgs; }))
+{
+  imports = [
+    (lib.mkIf isProvisioningHost (import ./provision.nix { inherit config hostname lib pkgs; }))
+  ];
 
   # Use kanidm_1_7 for xsvr2 (non-provisioning server)
-  (lib.mkIf isReplicaServer {
-    services.kanidm.package = lib.mkDefault pkgs.kanidm_1_7;
-  })
+  config = lib.mkMerge [
+    (lib.mkIf isReplicaServer {
+      services.kanidm.package = lib.mkDefault pkgs.kanidm_1_7;
+    })
 
-  # Primary server configuration (xsvr1)
-  (lib.mkIf isPrimaryServer {
-    services.kanidm = {
-      enableServer = true;
-      enablePam = lib.mkForce true;
-      enableClient = true;
-      unixSettings = {
-        pam_allowed_login_groups = [ "posix_users" ];
-      };
-      serverSettings = {
-        bindaddress = "0.0.0.0:443";
-        ldapbindaddress = "0.0.0.0:3636";
-        origin = kanidmServerUri;
-        domain = "idm.xrs444.net";
-        tls_chain = "/var/lib/acme/idm.xrs444.net/cert.pem";
-        tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
-        log_level = "info";
-        online_backup = {
-          path = "/var/lib/kanidm/backups";
-          schedule = "0 2 * * *";
-          versions = 7;
+    # Primary server configuration (xsvr1)
+    (lib.mkIf isPrimaryServer {
+      services.kanidm = {
+        enableServer = true;
+        enablePam = lib.mkForce true;
+        enableClient = true;
+        unixSettings = {
+          pam_allowed_login_groups = [ "posix_users" ];
         };
-        replication = {
+        serverSettings = {
+          bindaddress = "0.0.0.0:443";
+          ldapbindaddress = "0.0.0.0:3636";
           origin = kanidmServerUri;
-          bindaddress = "0.0.0.0:8444";
+          domain = "idm.xrs444.net";
+          tls_chain = "/var/lib/acme/idm.xrs444.net/cert.pem";
+          tls_key = "/var/lib/acme/idm.xrs444.net/key.pem";
+          log_level = "info";
+          online_backup = {
+            path = "/var/lib/kanidm/backups";
+            schedule = "0 2 * * *";
+            versions = 7;
+          };
+          replication = {
+            origin = kanidmServerUri;
+            bindaddress = "0.0.0.0:8444";
         };
       };
       clientSettings = {
@@ -134,4 +134,5 @@ lib.mkMerge [
     };
   })
 
-]
+  ];
+}

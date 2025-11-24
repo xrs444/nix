@@ -1,32 +1,10 @@
 { config, pkgs, lib, ... }:
-
 let
-  builder= [
-    "xsvr1"
-  ];
-  buildclient = [
-    "xts1"
-    "xts2" 
-    "xdash1"
-  ];
-  
-  # Kanidm authenticated users allowed for remote builds
-  kanidmBuildUsers = [
-    "xrs444"
-    "samantha"
-    "greyson"
-    "rowan"
-  ];
+  builder = [ "xsvr1" ];
+  kanidmBuildUsers = [ "user1" "user2" ]; # Replace with your actual Kanidm build user names
 in
-
 {
-  # Import SOPS secrets
-  sops.secrets.builder-ssh-key = lib.mkIf (lib.elem config.networking.hostName buildclient) {
-    sopsFile = ../../../secrets/builder-ssh-key.yaml;
-    owner = "root";
-    group = "root";
-    mode = "0600";
-  };
+  # Import SOPS secrets (not needed for clients, only for builder)
 
   ## Server configuration
   boot.binfmt.emulatedSystems = lib.mkIf (lib.elem config.networking.hostName builder) [ "aarch64-linux" ];
@@ -48,9 +26,8 @@ in
   };
 
   # Additional sudo rules specific to build server (supplement the common kanidm rules)
-  security.sudo.extraRules = lib.mkIf (lib.elem config.networking.hostName builder) [
-    # Legacy builder user - keep for backwards compatibility
-    {
+  security.sudo.extraRules = (
+    lib.optional (lib.elem config.networking.hostName builder) {
       users = [ "builder" ];
       commands = [
         {
@@ -59,50 +36,30 @@ in
         }
       ];
     }
-  ];
+  ) ++ (
+    map (username: {
+      users = [ username ];
+      commands = [
+        {
+          command = "/nix/store/*/bin/nix";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }) kanidmBuildUsers
+  );
+
+
 
   ## Combined nix configuration for both server and client
   nix = lib.mkMerge [
     # Server-specific settings
     (lib.mkIf (lib.elem config.networking.hostName builder) {
-      settings.system-features = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
+      settings = {
+        system-features = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
+        trusted-users = lib.mkBefore (kanidmBuildUsers ++ [ "builder" ]);
+      };
     })
-    
-    # Client-specific settings
-    (lib.mkIf (lib.elem config.networking.hostName buildclient) {
-      buildMachines = [
-        # Legacy builder with SSH key authentication (for backwards compatibility)
-        ({ 
-          hostName = "xsvr1.lan"; 
-          systems = [ "x86_64-linux" "aarch64-linux" ];
-          protocol = "ssh-ng";
-          maxJobs = 1;
-          speedFactor = 2;
-          supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
-          sshUser = "builder";
-        } // lib.optionalAttrs (config.sops.secrets ? builder-ssh-key) {
-          sshKey = config.sops.secrets.builder-ssh-key.path;
-        })
-      ] ++ 
-      # Kanidm authenticated users - these will authenticate via external kanidm
-      # SSH authentication will be handled by kanidm PAM integration
-      (map (username: {
-        hostName = "xsvr1.lan";
-        systems = [ "x86_64-linux" "aarch64-linux" ];
-        protocol = "ssh-ng";
-        maxJobs = 1;
-        speedFactor = 2;
-        supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
-        sshUser = username;
-        # No SSH key specified - will use kanidm authentication
-        # Users need to be logged in with kanidm session or use SSH agent forwarding
-      }) kanidmBuildUsers);
-      
-      distributedBuilds = true;
-      settings.cores = 0;
-      extraOptions = ''
-        builders-use-substitutes = true
-      '';
-    })
+
+    # No client-specific settings needed; xsvr1 is the only build server
   ];
 }

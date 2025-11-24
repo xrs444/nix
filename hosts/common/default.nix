@@ -17,6 +17,7 @@ in
     default = false;
     description = "Build a minimal image for initial boot, skipping heavy modules.";
   };
+
   # Common Nix configuration
   nix = {
     settings = {
@@ -38,6 +39,11 @@ in
     registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   };
+
+  # Common bootloader and disko settings for NixOS (x86_64)
+  boot.loader.systemd-boot.enable = lib.mkDefault true;
+  boot.loader.efi.canTouchEfiVariables = lib.mkDefault true;
+  disko.enable = lib.mkDefault true;
 
   # Common nixpkgs configuration
   nixpkgs = {

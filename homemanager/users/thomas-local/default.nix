@@ -1,4 +1,5 @@
 { pkgs, ... }: {
+  home.stateVersion = "25.05";
   programs.bash = {
     enable = true;
     enableCompletion = true;

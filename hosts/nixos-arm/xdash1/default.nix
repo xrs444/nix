@@ -10,6 +10,7 @@
 
   networking.hostName = "xdash1";
 
+
 #  boot.supportedFilesystems = [ "vfat" "ext4" ];
 
 #  environment.systemPackages = with pkgs; [

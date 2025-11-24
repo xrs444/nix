@@ -1,22 +1,35 @@
 { config, lib, pkgs, ... }:
 
+
 let
   kanidmServerUri = "https://idm.xrs444.net";
   currentDir = ./.; # Represents the current directory
-  isDirectoryAndNotTemplate = name: type: type == "directory" && name != "_template";
-  directories = lib.filterAttrs isDirectoryAndNotTemplate (builtins.readDir currentDir);
+  hasDefaultNix = name: type:
+    type == "directory" &&
+    (builtins.pathExists (currentDir + "/" + name + "/default.nix"));
+  directories = lib.filterAttrs hasDefaultNix (builtins.readDir currentDir);
   importDirectory = name: (
     let path = currentDir + "/${name}";
+        mod = import path;
     in
-      builtins.trace ("Importing package module: " + toString path) (import path)
+      builtins.trace (
+        "DEBUG: Importing package module: " + toString path + "\nType: " +
+        (if builtins.isAttrs mod then "ATTRSET: " + (builtins.toJSON (builtins.attrNames mod))
+         else if builtins.isList mod then "LIST: " + (builtins.toJSON mod)
+         else if builtins.isPath mod then "PATH: " + toString mod
+         else if builtins.isFunction mod then "FUNCTION"
+         else builtins.toJSON mod)
+      ) mod
   );
 in
 {
-  imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
+  imports = [
+    # All dynamic package imports commented out for binary search
+    # lib.mapAttrsToList (name: _: importDirectory name) directories
+  ];
 
   # NixOS-specific packages
   environment.systemPackages = with pkgs; [
-    # Add NixOS-specific packages here
   ];
     
   services.kanidm = {

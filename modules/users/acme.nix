@@ -1,6 +1,10 @@
 { config, lib, pkgs, ... }:
 
-lib.mkIf (!config.minimalImage) {
+let
+  # Provide a default for minimalImage if not defined
+  minimalImage = if config ? minimalImage then config.minimalImage else false;
+in
+lib.mkIf (!minimalImage) {
   users.users.acme = {
     isSystemUser = true;
     group = "acme";

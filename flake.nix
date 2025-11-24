@@ -102,7 +102,7 @@
       };
     };
 
-    lib = import ./lib { inherit inputs outputs stateVersion hosts; };
+    lib = import ./lib { inherit inputs outputs stateVersion hosts; overlays = allOverlays; };
     
     # Import overlays once
     allOverlays = import ./overlays { inherit inputs; };
@@ -111,26 +111,36 @@
   let
     allHomes = lib.mkAllHomes;
   in
-  (
-    {
-      homeConfigurations = allHomes;
-      nixosConfigurations = lib.mkAllNixosConfigs;
-      darwinConfigurations = lib.mkAllDarwinConfigs;
-      nixosModules = {
-        cockpit = import ./modules/packages-nixos/cockpit;
-        comin = import ./modules/packages-nixos/comin;
-        tailscale = import ./modules/packages-nixos/tailscale;
-      };
-      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
-      overlays = {
-        kanidm = import ./overlays/kanidm.nix { inherit inputs; };
-        pkgs = import ./overlays/pkgs.nix { inherit inputs; };
-        unstable = import ./overlays/unstable.nix { inherit inputs; };
-      };
-    }
-    // builtins.listToAttrs (
-      map (name: { name = "homeConfigurations." + name + ".activationPackage"; value = allHomes.${name}.activationPackage; })
-          (builtins.attrNames allHomes)
-    )
-  );
+  {
+    homeConfigurations = allHomes;
+    nixosConfigurations = lib.mkAllNixosConfigs;
+    darwinConfigurations = lib.mkAllDarwinConfigs;
+    nixosModules = {
+      #cockpit = import ./modules/packages-nixos/cockpit;
+      #comin = import ./modules/packages-nixos/comin;
+      #tailscale = import ./modules/packages-nixos/tailscale;
+      zfs = import ./modules/services/zfs;
+      letsencrypt = import ./modules/services/letsencrypt;
+      kanidm = import ./modules/services/kanidm;
+      Samba = import ./modules/services/Samba;
+      #bind = import ./modules/services/bind;
+      #ffr = import ./modules/services/ffr;
+      #homeassistant = import ./modules/services/homeassistant;
+      #iprouting = import ./modules/services/iprouting;
+      #keepalived = import ./modules/services/keepalived;
+      #kvm = import ./modules/services/kvm;
+      nfs = import ./modules/services/nfs;
+      nixcache = import ./modules/services/nixcache;
+      openssh = import ./modules/services/openssh;
+      remotebuilds = import ./modules/services/remotebuilds;
+      talos = import ./modules/services/talos;
+      tailscaleService = import ./modules/services/tailscale;
+    };
+    formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+    overlays = {
+      kanidm = import ./overlays/kanidm.nix { inherit inputs; };
+      pkgs = import ./overlays/pkgs.nix { inherit inputs; };
+      unstable = import ./overlays/unstable.nix { inherit inputs; };
+    };
+  };
 }

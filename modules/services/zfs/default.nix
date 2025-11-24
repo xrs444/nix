@@ -14,32 +14,28 @@ let
     "xsvr1"
     "xsvr2"
   ];
-
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
   boot.supportedFilesystems = [ "zfs" ];
   environment = {
-    systemPackages = with pkgs; [
-    zfs
-    ];
+    systemPackages = with pkgs; [ zfs ];
     etc = {
-    "vm".source = "/zfs/vm";
-    "vm".target = "/vm";
+      "vm".source = "/zfs/vm";
+      "vm".target = "/vm";
     };
-  }; 
+  };
   services.zfs = {
     autoScrub.enable = true;
   };
-
   services.sanoid = {
-  enable = true;
-  datasets = {
-    "zroot/persist" = {
-       hourly = 50;
-       daily = 15;
-       weekly = 3;
-       monthly = 1;
-       };
+    enable = true;
+    datasets = {
+      "zroot/persist" = {
+        hourly = 50;
+        daily = 15;
+        weekly = 3;
+        monthly = 1;
+      };
     };
   };
-}
+} // {}

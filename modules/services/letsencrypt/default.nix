@@ -14,9 +14,11 @@ let
   isPrimaryServer = hostname == "xsvr1";
   isKanidmServer = lib.elem hostname kanidmNodes;
   isSdImageBuild = config ? system && config.system ? build && config.system.build ? sdImage;
+  # Provide a default for minimalImage if not defined
+  minimalImage = if config ? minimalImage then config.minimalImage else false;
 in
 
-lib.mkIf (!config.minimalImage) {
+lib.mkIf (!minimalImage) {
   # SOPS secrets for Cloudflare (only on primary) and acme SSH key (all hosts)
   sops.secrets = lib.mkMerge [
     (lib.mkIf isPrimaryServer {
@@ -89,56 +91,4 @@ lib.mkIf (!config.minimalImage) {
   ];
 
 
-  # Systemd services configuration
-  systemd.services = lib.mkMerge [
-    # Add ordering to prevent concurrent ACME requests (primary server only)
-    (lib.mkIf isPrimaryServer (
-      let
-        # Create ordered list of services
-        hostServices = map (h: "acme-${h}.${domain}.service") allHosts;
-        kanidmService = lib.optional isKanidmServer "acme-idm.${domain}.service";
-        allServices = hostServices ++ kanidmService;
-        
-        # Create dependency chain with delays
-        orderedServices = lib.imap0 (i: svc:
-          lib.nameValuePair svc {
-            after = lib.optional (i > 0) (lib.elemAt allServices (i - 1));
-            serviceConfig = lib.mkIf (i > 0) {
-              ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
-            };
-          }
-        ) allServices;
-      in
-      lib.listToAttrs orderedServices
-    ))
-
-    # Rsync service: all non-primary hosts pull certs from xsvr1
-    (lib.mkIf (!isPrimaryServer) {
-      pull-certificates = {
-        description = "Pull certificates from xsvr1";
-        after = [ "network-online.target" ];
-        wants = [ "network-online.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          User = "acme";
-          Group = "acme";
-        };
-        script = ''
-          ${pkgs.rsync}/bin/rsync -avz --delete \
-            xsvr1.xrs444.net:/var/lib/acme/ \
-            /var/lib/acme/
-        '';
-      };
-    })
-  ];
-
-  # Rsync timer: all non-primary hosts pull certs hourly
-  systemd.timers.pull-certificates = lib.mkIf (!isPrimaryServer) {
-    description = "Pull certificates from xsvr1 every hour";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "hourly";
-      Persistent = true;
-    };
- };
 }

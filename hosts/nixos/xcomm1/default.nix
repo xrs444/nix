@@ -1,19 +1,13 @@
-{
-  hostname,
-  inputs,
-  lib,
-  pkgs,
-  username,
-  ...
-}:
+{ config, lib, inputs, hostname, ... }:
 {
   imports = [
     ../../../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/audio-pipewire.nix
     ../common/boot.nix
-    ./disks.nix
     ./network.nix
     ./desktop.nix
+    ./disks.nix
+    inputs.disko.nixosModules.disko
   ];
 }

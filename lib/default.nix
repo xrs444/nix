@@ -1,73 +1,36 @@
-{ inputs
-, outputs
-, stateVersion
-, hosts
-, ...
-}:
+{ inputs, outputs, stateVersion, hosts, overlays }:
+
 let
-  # Import overlays as a set for use across all configurations
-  overlays = {
-    kanidm = import ../overlays/kanidm.nix { inherit inputs; };
-    pkgs = import ../overlays/pkgs.nix { inherit inputs; };
-    unstable = import ../overlays/unstable.nix { inherit inputs; };
-  };
-  
+  unstable = import ../overlays/unstable.nix { inherit inputs; };
+in
+rec {
   # Build NixOS configurations
   mkNixosConfig = hostName: hostConfig:
     let
-      # Check if ARM-specific config exists
-      armPath = ../hosts/nixos-arm + "/${hostName}";
-      hasArmConfig = builtins.pathExists armPath;
-      # Check if x86_64-specific config exists
-      nixosPath = ../hosts/nixos + "/${hostName}";
-      hasNixosConfig = builtins.pathExists nixosPath;
-      modulesList = [
-        {
-          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
-          nixpkgs.config.allowUnfree = true;
-        }
-        ({ pkgs, ... }: {
-          services.kanidm.package = inputs.nixpkgs.lib.mkOverride 900 pkgs.kanidm_1_7;
-        })
-        ../hosts/base-nixos.nix
-        ../modules/services/default.nix
-        ../modules/packages-nixos/default.nix
-        inputs.disko.nixosModules.disko
-        inputs.home-manager.nixosModules.home-manager
-        {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            backupFileExtension = "backup";
-            extraSpecialArgs = {
-              inherit inputs outputs stateVersion;
-              username = hostConfig.user;
-              desktop = hostConfig.desktop or null;
-            };
-            users.${hostConfig.user} = import ../homemanager ({
-              inherit outputs stateVersion inputs;
-              username = hostConfig.user;
-            } // (if hostConfig ? desktop then { desktop = hostConfig.desktop; } else {}));
-          };
-        }
-      ]
-      ++ (if hostConfig.platform == "aarch64-linux" then [ (import "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix") ] else [])
-      ++ (hostConfig.extraModules or [])
-      ++ (if hasNixosConfig then [ nixosPath ] else [])
-      ++ (if hasArmConfig then [ armPath ] else []);
+      modulesList = [ ../hosts/nixos/${hostName}/default.nix ];
+      debugModules = builtins.trace (
+        "DEBUG: modulesList for host " + hostName + ":\n" +
+        builtins.concatStringsSep "\n" (map (m: (
+          if builtins.isAttrs m then "ATTRSET: " + (builtins.toJSON (builtins.attrNames m))
+          else if builtins.isList m then "LIST: " + (builtins.toJSON m)
+          else if builtins.isPath m then "PATH: " + toString m
+          else if builtins.isFunction m then "FUNCTION"
+          else builtins.toJSON m
+        )) modulesList)
+      ) modulesList;
     in
-    inputs.nixpkgs.lib.nixosSystem {
-      system = hostConfig.platform;
-      specialArgs = {
-        inherit inputs stateVersion;
-        hostname = hostName;
-        username = hostConfig.user;
-        platform = hostConfig.platform;
-        desktop = hostConfig.desktop or null;
-        isWorkstation = (hostConfig.desktop or null) != null;
+      inputs.nixpkgs.lib.nixosSystem {
+        system = hostConfig.platform;
+        specialArgs = {
+          inherit inputs stateVersion;
+          hostname = hostName;
+          username = hostConfig.user;
+          platform = hostConfig.platform;
+          desktop = hostConfig.desktop or null;
+          isWorkstation = (hostConfig.desktop or null) != null;
+        };
+        modules = debugModules;
       };
-      modules = builtins.trace ("nixosSystem modules for " + hostName + ": " + builtins.toJSON (map (m: if builtins.isPath m then toString m else if builtins.isAttrs m && m ? _type && m._type == "derivation" then m.name else builtins.typeOf m) modulesList)) modulesList;
-    };
 
   # Build Darwin configurations
   mkDarwinConfig = hostName: hostConfig:
@@ -90,7 +53,7 @@ let
               username = hostConfig.user;
               desktop = hostConfig.desktop or null;
             };
-            users.${hostConfig.user} = import ../homemanager;
+            users.${hostConfig.user} = ../homemanager;
           };
         }
       ];
@@ -108,64 +71,40 @@ let
     };
 
   # Build home-manager configurations
-    mkHome = hostName: hostConfig:
-      let
-        userConfigPath = ../homemanager/users/${hostConfig.user}/default.nix;
-        hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = import inputs.nixpkgs {
-            system = hostConfig.platform;
-            config.allowUnfree = true;
-            nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
-          };
-          extraSpecialArgs = {
-            inherit inputs outputs stateVersion;
-            username = hostConfig.user;
-            desktop = hostConfig.desktop or null;
-          };
-          modules = [ userConfigPath ];
+  mkHome = hostName: hostConfig:
+    let
+      userConfigPath = ../homemanager/users/${hostConfig.user}/default.nix;
+      hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
+        pkgs = import inputs.nixpkgs {
+          system = hostConfig.platform;
+          config.allowUnfree = true;
+          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
         };
-      in {
-        config = hmConfig;
-        activationPackage = hmConfig.activationPackage;
+        extraSpecialArgs = {
+          inherit inputs outputs stateVersion;
+          username = hostConfig.user;
+          desktop = hostConfig.desktop or null;
+        };
+        modules = [ userConfigPath ];
       };
+    in {
+      config = hmConfig;
+    };
 
-  # Filter hosts by type
-  nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
-  darwinHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "darwin") hosts;
-
-in
-{
-  # Generate all configurations
+  # Utility functions for flake outputs
   mkAllNixosConfigs =
     let
-      # Normal configs
-      normal = inputs.nixpkgs.lib.mapAttrs (
-        hostName: hostConfig:
-          mkNixosConfig hostName (hostConfig // {
-            extraModules = (hostConfig.extraModules or [])
-              ++ (if hostName == "xsvr1" then [ ../modules/services/letsencrypt/default.nix ] else []);
-          })
-      ) nixosHosts;
-      # Minimal configs: add a module that sets minimalImage = true, do NOT include letsencrypt
-      minimal = inputs.nixpkgs.lib.mapAttrs (
-        hostName: hostConfig:
-          mkNixosConfig hostName (hostConfig // {
-            extraModules = [ { minimalImage = true; } ];
-          })
-      ) nixosHosts;
-    in
-      normal // (inputs.nixpkgs.lib.mapAttrs' (
-        hostName: _:
-          { name = hostName + "-minimal";
-            value = mkNixosConfig hostName (nixosHosts.${hostName} // {
-              extraModules = [ { minimalImage = true; } ];
-            });
-          }
-      ) nixosHosts);
-  mkAllDarwinConfigs = inputs.nixpkgs.lib.mapAttrs mkDarwinConfig darwinHosts;
-  mkAllHomes = inputs.nixpkgs.lib.mapAttrs mkHome hosts;
+      nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
+    in inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
 
-  # Utility to apply function to all systems
+  mkAllDarwinConfigs =
+    let
+      darwinHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "darwin") hosts;
+    in inputs.nixpkgs.lib.mapAttrs mkDarwinConfig darwinHosts;
+
+  mkAllHomes =
+    inputs.nixpkgs.lib.mapAttrs (hostName: hostConfig: mkHome hostName hostConfig) hosts;
+
   forAllSystems = inputs.nixpkgs.lib.genAttrs [
     "x86_64-linux"
     "aarch64-linux"

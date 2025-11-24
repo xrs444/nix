@@ -17,6 +17,7 @@
 
   networking.hostName = hostname;
 
+
   # Bootloader configuration for Raspberry Pi
   boot.loader.grub.enable = lib.mkForce false;
   boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;

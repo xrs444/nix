@@ -39,10 +39,6 @@ if currentNode == null then
   {}
 else
   {
-    # Import Let's Encrypt configuration
-    imports = [
-      ../letsencrypt
-    ];
 
     environment.etc."check-tailscale-subnet.sh" = {
       text = ''

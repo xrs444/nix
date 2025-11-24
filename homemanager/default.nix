@@ -1,14 +1,13 @@
-{
-  config,
-  desktop,
-  lib,
+{ config,
+  desktop ? null,
+  lib ? null,
+  pkgs ? null,
   outputs,
   stateVersion,
   username,
   inputs,
-  pkgs,
   ...
-}:
+  }:
 {
   # Only import desktop configuration if the host is desktop enabled
   # Only import user specific configuration if they have bespoke settings
@@ -24,7 +23,7 @@
 
   home = {
     inherit username;
-    stateVersion = stateVersion or "24.05";
+    stateVersion = if stateVersion != null then stateVersion else "24.05";
     homeDirectory = lib.mkForce (
       if pkgs.stdenv.isDarwin
       then "/Users/${username}"
