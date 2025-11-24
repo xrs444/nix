@@ -140,7 +140,8 @@ in
       normal = inputs.nixpkgs.lib.mapAttrs (
         hostName: hostConfig:
           mkNixosConfig hostName (hostConfig // {
-            extraModules = (hostConfig.extraModules or []) ++ [ ../modules/services/letsencrypt/default.nix ];
+            extraModules = (hostConfig.extraModules or [])
+              ++ (if hostName == "xsvr1" then [ ../modules/services/letsencrypt/default.nix ] else []);
           })
       ) nixosHosts;
       # Minimal configs: add a module that sets minimalImage = true, do NOT include letsencrypt

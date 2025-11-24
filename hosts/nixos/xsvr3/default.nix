@@ -8,7 +8,7 @@
 }:
 {
   imports = [
-    ../base-nixos.nix
+    ../../base-nixos.nix
     ../common/hardware-intel.nix
     ../common/boot.nix
     ../common/performance.nix

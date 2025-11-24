@@ -1,27 +1,16 @@
+{ hostname, inputs, lib, pkgs, username, ... }:
 {
-  hostname,
-  inputs,
-  lib,
-  pkgs,
-  username,
-  ...
-}:
-{
-  imports =
-    let
-      letsencrypt = lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt;
-    in
-      [
-        ../base-nixos.nix
-        ../common/hardware-amd.nix
-        ../common/boot.nix
-        ../common/performance.nix
-        ./disks.nix
-        ./network.nix
-        ./vms.nix
-        ../../../../modules/services/zfs
-        # Add other heavy modules here as needed
-      ] ++ letsencrypt;
+  imports = [
+    ../../base-nixos.nix
+    ../common/hardware-amd.nix
+    ../common/boot.nix
+    ../common/performance.nix
+    ./disks.nix
+    ./network.nix
+    ./vms.nix
+    ../../../../modules/services/zfs/default.nix
+    # Add other heavy modules here as needed
+  ];
 
   networking.hostName = hostname;
 
@@ -43,6 +32,5 @@
   };
 
   nix.settings.trusted-users = [ "root" "builder" ];
-
-  
 }
+

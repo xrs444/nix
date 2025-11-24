@@ -19,14 +19,14 @@
       letsencrypt = lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt;
     in
       [
-        ../base-nixos.nix
+        ../../base-nixos.nix
         ../common/hardware-amd.nix
         ../common/boot.nix
         ../common/performance.nix
         ./disks.nix
         ./network.nix
         ./vms.nix
-        ../../../../modules/services/zfs
+        ../../../../modules/services/zfs/default.nix
         # Add other heavy modules here as needed
       ] ++ letsencrypt;
 
