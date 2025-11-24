@@ -23,7 +23,8 @@
     )) ./common/users/${username};
 
   home = {
-    inherit username stateVersion;
+    inherit username;
+    stateVersion = stateVersion or "24.05";
     homeDirectory = lib.mkForce (
       if pkgs.stdenv.isDarwin
       then "/Users/${username}"
