@@ -1,17 +1,11 @@
-# Common NixOS-specific configuration
-# This module provides base configurations that are common across NixOS hosts
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, hostname, inputs, username, ... }:
 {
-
   options.minimalImage = lib.mkOption {
     type = lib.types.bool;
     default = false;
     description = "If true, build a minimal image (skip heavy modules like letsencrypt).";
   };
-}
 
-{ hostname, inputs, lib, pkgs, username, ... }:
-{
   imports =
     let
       letsencrypt = lib.optional (!config.minimalImage) ../../../../modules/services/letsencrypt;

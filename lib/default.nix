@@ -18,28 +18,14 @@ let
       # Check if ARM-specific config exists
       armPath = ../hosts/nixos-arm + "/${hostName}";
       hasArmConfig = builtins.pathExists armPath;
-      
       # Check if x86_64-specific config exists
       nixosPath = ../hosts/nixos + "/${hostName}";
       hasNixosConfig = builtins.pathExists nixosPath;
-    in
-    inputs.nixpkgs.lib.nixosSystem {
-      system = hostConfig.platform;
-      specialArgs = {
-        inherit inputs stateVersion;
-        hostname = hostName;
-        username = hostConfig.user;
-        platform = hostConfig.platform;
-        desktop = hostConfig.desktop or null;
-        isWorkstation = (hostConfig.desktop or null) != null;
-      };
-      modules = [
-        # Apply overlays at the nixpkgs instantiation level - FIRST
+      modulesList = [
         {
           nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
           nixpkgs.config.allowUnfree = true;
         }
-        # Set kanidm package in a separate module that has access to pkgs
         ({ pkgs, ... }: {
           services.kanidm.package = inputs.nixpkgs.lib.mkOverride 900 pkgs.kanidm_1_7;
         })
@@ -67,14 +53,10 @@ let
       ]
       ++ (if hostConfig.platform == "aarch64-linux" then [ (import "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix") ] else [])
       ++ (hostConfig.extraModules or [])
-      # Conditionally add host-specific configs
       ++ (if hasNixosConfig then [ nixosPath ] else [])
       ++ (if hasArmConfig then [ armPath ] else []);
-    };
-
-  # Build Darwin configurations
-  mkDarwinConfig = hostName: hostConfig:
-    inputs.nix-darwin.lib.darwinSystem {
+    in
+    inputs.nixpkgs.lib.nixosSystem {
       system = hostConfig.platform;
       specialArgs = {
         inherit inputs stateVersion;
@@ -82,9 +64,15 @@ let
         username = hostConfig.user;
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
+        isWorkstation = (hostConfig.desktop or null) != null;
       };
-      modules = [
-        # Apply overlays for Darwin too
+      modules = builtins.trace ("nixosSystem modules for " + hostName + ": " + builtins.toJSON (map (m: if builtins.isPath m then toString m else if builtins.isAttrs m && m ? _type && m._type == "derivation" then m.name else builtins.typeOf m) modulesList)) modulesList;
+    };
+
+  # Build Darwin configurations
+  mkDarwinConfig = hostName: hostConfig:
+    let
+      modulesList = [
         {
           nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
           nixpkgs.config.allowUnfree = true;
@@ -106,6 +94,17 @@ let
           };
         }
       ];
+    in
+    inputs.nix-darwin.lib.darwinSystem {
+      system = hostConfig.platform;
+      specialArgs = {
+        inherit inputs stateVersion;
+        hostname = hostName;
+        username = hostConfig.user;
+        platform = hostConfig.platform;
+        desktop = hostConfig.desktop or null;
+      };
+      modules = builtins.trace ("darwinSystem modules for " + hostName + ": " + builtins.toJSON (map (m: if builtins.isPath m then toString m else if builtins.isAttrs m && m ? _type && m._type == "derivation" then m.name else builtins.typeOf m) modulesList)) modulesList;
     };
 
   # Build home-manager configurations
