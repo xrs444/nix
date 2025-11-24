@@ -2,8 +2,6 @@
 # This module provides base configurations that are common across NixOS hosts
 { config, lib, pkgs, ... }:
 {
-  imports = [
-  ];
 
   options.minimalImage = lib.mkOption {
     type = lib.types.bool;
