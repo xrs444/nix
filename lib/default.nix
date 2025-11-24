@@ -7,7 +7,14 @@ rec {
   # Build NixOS configurations
   mkNixosConfig = hostName: hostConfig:
     let
-      modulesList = [ ../hosts/nixos/${hostName}/default.nix ];
+      isArm = hostConfig.platform == "aarch64-linux";
+      overlaysList = import ../overlays/all.nix { inherit inputs; };
+      modulesList = [
+        { nixpkgs.overlays = overlaysList;
+          nixpkgs.config.allowUnfree = true;
+        }
+        (if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix)
+      ];
       debugModules = builtins.trace (
         "DEBUG: modulesList for host " + hostName + ":\n" +
         builtins.concatStringsSep "\n" (map (m: (

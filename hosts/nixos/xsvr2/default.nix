@@ -1,4 +1,4 @@
-{ config, lib, inputs, hostname, ... }:
+{ config, hostname, inputs, lib, pkgs, username, platform, ... }:
 {
   imports = [
     ../../base-nixos.nix
@@ -7,11 +7,10 @@
     ../common/performance.nix
     ./network.nix
     ./vms.nix
-    ../../../../modules/services/zfs
+    ../../../modules/services/zfs
     ./disks.nix
-    inputs.disko.nixosModules.disko
-    # Add other heavy modules here as needed
   ];
+  # Add other heavy modules here as needed
 
   networking.hostName = hostname;
 

@@ -38,6 +38,9 @@
     inherit (self) outputs;
     stateVersion = "25.05";
 
+    # Import overlays as a list from a single file
+    allOverlays = import ./overlays/all.nix { inherit inputs; };
+
     # Unified host definitions
     hosts = {
       xsvr1 = {
@@ -69,7 +72,7 @@
       };
       xts2 = {
         user = "thomas-local";
-        platform = "x86_64-linux";
+        platform = "aarch64-linux";
         type = "nixos";
       };
       xcomm1 = {
@@ -102,10 +105,11 @@
       };
     };
 
-    lib = import ./lib { inherit inputs outputs stateVersion hosts; overlays = allOverlays; };
-    
-    # Import overlays once
-    allOverlays = import ./overlays { inherit inputs; };
+
+    lib = import ./lib {
+      inherit inputs outputs stateVersion hosts;
+      overlays = allOverlays;
+    };
 
   in
   let

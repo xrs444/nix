@@ -8,6 +8,7 @@
   hostname,
   username,
   stateVersion,
+  overlays,
   ...
 }:
 {
