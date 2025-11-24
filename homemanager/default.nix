@@ -14,7 +14,7 @@
   # Only import user specific configuration if they have bespoke settings
   imports =
     [
-      inputs.catppuccin.homeManagerModules.catppuccin
+      # inputs.catppuccin.homeManagerModules.catppuccin
       ./common/shell
     ]
     ++ lib.optional (builtins.isString desktop) ./common/desktop
