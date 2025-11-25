@@ -24,6 +24,16 @@
     };
     starship.enable = true;
   };
+  
+    # Apps
+    imports = [
+      ../../common/apps/gitkraken
+      ../../common/apps/vscode
+    ];
+
+    # Ensure gitkraken and vscode are installed only for xrs444
+    programs.gitkraken.enable = true;
+    programs.vscode.enable = true;
 
   # Install non-standard fonts
   home.packages = with pkgs; [
