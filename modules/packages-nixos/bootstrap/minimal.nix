@@ -10,8 +10,10 @@
 
   # Enable SSH for debugging (optional, can be removed)
   services.openssh.enable = lib.mkDefault true;
-  services.openssh.passwordAuthentication = lib.mkDefault false;
-  services.openssh.permitRootLogin = lib.mkDefault "yes";
+  services.openssh.settings = {
+    PasswordAuthentication = lib.mkDefault false;
+    PermitRootLogin = lib.mkDefault "yes";
+  };
 
   # Enable comin for remote configuration
   services.comin.enable = true;
