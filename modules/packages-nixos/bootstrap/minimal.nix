@@ -16,8 +16,7 @@
   # Enable comin for remote configuration
   services.comin.enable = true;
 
-  # Disable all other services
-  systemd.services = lib.mkForce {};
+  # Do not disable all services; allow comin and others to run
   users.users.root.password = ""; # No password for root (use SSH keys)
 
   # Optionally, set a minimal hostname
