@@ -96,7 +96,6 @@ let
         <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
         ${if vm.firmware == "efi" then ''
           <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
-          <nvram template='/run/libvirt/nix-ovmf/OVMF_VARS.fd'>/var/lib/libvirt/qemu/nvram/${vm.name}_VARS.fd</nvram>
         '' else ""}
         <boot dev='hd'/>
         <boot dev='cdrom'/>
