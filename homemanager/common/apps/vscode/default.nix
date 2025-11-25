@@ -231,7 +231,4 @@ lib.mkMerge [
     package = pkgs.unstable.vscode;
   };
 }
-(lib.mkIf isLinux {
-  services.vscode-server.enable = true;
-})
-]
+
