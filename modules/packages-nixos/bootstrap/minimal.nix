@@ -15,6 +15,7 @@
 
   # Enable comin for remote configuration
   services.comin.enable = true;
+  services.comin.remotes = config.services.comin.remotes;
 
   # Do not disable all services; allow comin and others to run
   users.users.root.password = ""; # No password for root (use SSH keys)
