@@ -17,17 +17,34 @@ rec {
         pkgs = import inputs.nixpkgs {
           system = hostConfig.platform;
           config.allowUnfree = true;
-          nixpkgs.overlays = overlays;
+          overlays = overlays ++ [
+            (final: prev: {
+              unstable = import inputs.nixpkgs-unstable {
+                system = final.system;
+                config.allowUnfree = true;
+              };
+            })
+          ];
         };
         extraSpecialArgs = {
           inherit inputs outputs stateVersion;
           username = hostConfig.user;
           desktop = hostConfig.desktop or null;
+          platform = hostConfig.platform;
         };
-        modules = [ userConfigPath ];
+        modules = [
+          ({ config, specialArgs, ... }: {
+            home.username = specialArgs.username;
+            home.homeDirectory = if specialArgs.platform == "aarch64-darwin" || specialArgs.platform == "x86_64-darwin"
+              then "/Users/${specialArgs.username}"
+              else "/home/${specialArgs.username}";
+          })
+          userConfigPath
+        ];
       };
     in {
       config = hmConfig;
+      pkgs = hmConfig.pkgs;
     };
 
   # Build Darwin configurations

@@ -120,6 +120,11 @@
     homeConfigurations = allHomes;
     nixosConfigurations = lib.mkAllNixosConfigs;
     darwinConfigurations = lib.mkAllDarwinConfigs;
+    checks = lib.forAllSystems (system:
+      inputs.nixpkgs.lib.mapAttrs
+        (name: cfg: cfg.config.activationPackage)
+        (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.system == system) allHomes)
+    );
     nixosModules = {
       cockpit = import ./modules/packages-nixos/cockpit;
       comin = import ./modules/packages-nixos/comin;
