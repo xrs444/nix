@@ -148,4 +148,3 @@
     };
   };
 }
-~/.config/nix/nix.conf
