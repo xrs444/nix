@@ -31,5 +31,4 @@
   security.acme.certs = {};
   services.nginx.enable = lib.mkDefault false;
   services.nginx.virtualHosts = {};
-  services.letsencrypt.enable = lib.mkDefault false;
 }
