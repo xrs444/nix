@@ -42,7 +42,7 @@
 
   specialisation.minimal.configuration = import ../../../modules/packages-nixos/bootstrap/minimal.nix;
   nixpkgs.config.allowUnfree = true;
-  sops.secrets."wireless-secrets" = {
-    sopsFile = ../../../../secrets/wan-wifi.yaml;
-  };
+    sops.secrets."wireless-secrets" = {
+      sopsFile = ../../../secrets/wan-wifi.yaml;
+    };
 }
