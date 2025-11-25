@@ -15,7 +15,13 @@
 
   # Enable comin for remote configuration
   services.comin.enable = true;
-  services.comin.remotes = config.services.comin.remotes;
+  services.comin.remotes = [
+    {
+      name = "origin";
+      url = "https://github.com/xrs444/nix.git";
+      branches.main.name = "main";
+    }
+  ];
 
   # Do not disable all services; allow comin and others to run
   users.users.root.password = ""; # No password for root (use SSH keys)
