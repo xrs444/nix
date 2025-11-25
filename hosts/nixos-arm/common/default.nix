@@ -22,5 +22,6 @@
     # Platform default for ARM systems (can be overridden by hardware-specific modules)
     nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
     sdImage.populateRootCommands = "";
+    sdImage.populateFirmwareCommands = "";
   };
 }
