@@ -32,4 +32,6 @@
       };
     };
   };
+
+  fileSystems."/".device = lib.mkForce "/dev/disk/by-partlabel/disk-main-root";
 }

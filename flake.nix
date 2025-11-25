@@ -119,8 +119,6 @@
     homeConfigurations = allHomes;
     nixosConfigurations = lib.mkAllNixosConfigs;
     darwinConfigurations = lib.mkAllDarwinConfigs;
-    # Expose minimal SD image for xdash1 as a top-level output
-    minimalSdImage = lib.mkAllNixosConfigs.xdash1.config.system.build.sdImageSpecialisation.minimal;
     nixosModules = {
       cockpit = import ./modules/packages-nixos/cockpit;
       comin = import ./modules/packages-nixos/comin;
