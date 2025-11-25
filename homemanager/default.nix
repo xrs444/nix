@@ -17,9 +17,8 @@
       ./common/shell
     ]
     ++ lib.optional (builtins.isString desktop) ./common/desktop
-    ++ lib.optional (builtins.pathExists (
-      ./. + "/common/users/${username}"
-    )) ./common/users/${username};
+    ++ lib.optional (builtins.pathExists (./. + "/common/users/${username}")) ./common/users/${username}
+    ++ lib.optional (builtins.pathExists (./. + "/users/${username}")) ./users/${username};
 
   home = {
     inherit username;
