@@ -37,10 +37,10 @@
 
   services.getty.autologinUser = "xdash1";
 
-  sdImage = {
-    compressImage = false;
-    expandOnBoot = true;
-  };
+  # To build a minimal SD image for bootstrap, run:
+  # nix build .#nixosConfigurations.xdash1.config.system.build.sdImageSpecialisation.minimal
+
+  specialisation.minimal.configuration = import ../../../modules/packages-nixos/bootstrap/minimal.nix;
   nixpkgs.config.allowUnfree = true;
   sops.secrets."wireless-secrets" = {
     sopsFile = ../../../../secrets/wan-wifi.yaml;

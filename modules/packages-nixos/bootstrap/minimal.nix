@@ -1,0 +1,28 @@
+# Minimal bootstrap module for ARM SD image
+# Only enables networking and comin for initial provisioning
+
+{ config, pkgs, lib, ... }:
+{
+  # Only enable the absolute minimum for remote provisioning
+  networking.useDHCP = lib.mkDefault true;
+  networking.networkmanager.enable = lib.mkDefault true;
+  networking.wireless.enable = lib.mkDefault true;
+
+  # Enable SSH for debugging (optional, can be removed)
+  services.openssh.enable = lib.mkDefault true;
+  services.openssh.passwordAuthentication = lib.mkDefault false;
+  services.openssh.permitRootLogin = lib.mkDefault "yes";
+
+  # Enable comin for remote configuration
+  services.comin.enable = true;
+
+  # Disable all other services
+  systemd.services = lib.mkForce {};
+  users.users.root.password = ""; # No password for root (use SSH keys)
+
+  # Optionally, set a minimal hostname
+  networking.hostName = lib.mkDefault "bootstrap-arm";
+
+  # Optionally, skip heavy modules (letsencrypt, etc.)
+  minimalImage = true;
+}

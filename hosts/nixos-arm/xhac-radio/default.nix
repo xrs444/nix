@@ -35,11 +35,8 @@
     '';
   };
 
-  # SD image configuration
-  sdImage = {
-    compressImage = false;
-    expandOnBoot = true;
-  };
+  # To build a bootable SD image for this host, run:
+  # nix build .#nixosConfigurations.xhac-radio.config.system.build.sdImage
   nixpkgs.config.allowUnfree = true;
 }
 
