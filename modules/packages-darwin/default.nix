@@ -12,7 +12,6 @@
     # Development tools
     age
     ansible
-    ansible-lint
     git
     go
     hugo

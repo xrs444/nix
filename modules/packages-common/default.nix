@@ -11,6 +11,6 @@
     # Add common packages here
     openssl
     micro
-      sops
+    sops
   ];
 }

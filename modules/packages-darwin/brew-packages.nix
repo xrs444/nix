@@ -41,7 +41,6 @@
       "raycast"
       "sf-symbols"
       "syncthing-app"
-      "visual-studio-code"
       "zoom"
       "bettertouchtool"
       "via"
@@ -58,8 +57,8 @@
       "CrystalFetch" = 6454431289;
       "Duplicate File Finder" = 1032755628;
       "HP" = 1474276998;
-      "Kindle" = 302584613;
-      "Tailscale" = 1475387142;
+#      "Kindle" = 302584613;
+#      "Tailscale" = 1475387142;
       "UTM" = 1538878817;
       "WireGuard" = 1451685025;
     };
