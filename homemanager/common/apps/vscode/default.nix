@@ -132,7 +132,7 @@ in
           vscode-marketplace.github.copilot-chat
           vscode-marketplace.github.vscode-github-actions
           vscode-marketplace.github.vscode-pull-request-github
-          vscode-marketplace.hashicorp.terraform
+#          vscode-marketplace.hashicorp.terraform
           vscode-marketplace.janisdd.vscode-edit-csv
           vscode-marketplace.jeff-hykin.better-dockerfile-syntax
           vscode-marketplace.jeff-hykin.better-shellscript-syntax
