@@ -15,5 +15,6 @@
   ];
 
   networking.hostName = hostname;
+  nixpkgs.config.allowUnfree = true;
 }
 

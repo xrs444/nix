@@ -1,2 +1,2 @@
 { inputs, ... }:
-(final: _prev: import ../pkgs { pkgs = final; })
+(final: prev: import ../pkgs { pkgs = prev; })

@@ -11,7 +11,7 @@
     ../../base-nixos.nix
     ../common/boot.nix
     ./disks.nix
-#    ./network.nix
+  #    ./network.nix
   ];
 
   networking.hostName = hostname;
@@ -25,4 +25,5 @@
     };
   };
 
+  nixpkgs.config.allowUnfree = true;
 }

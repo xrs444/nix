@@ -1,43 +1,34 @@
 { inputs, outputs, stateVersion, hosts, overlays }:
 
-let
-  unstable = import ../overlays/unstable.nix { inherit inputs; };
-in
 rec {
-  # Build NixOS configurations
-  mkNixosConfig = hostName: hostConfig:
+    mkAllNixosConfigs =
+      let
+        nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
+      in inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
+
+    mkAllDarwinConfigs =
+      let
+        darwinHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "darwin") hosts;
+      in inputs.nixpkgs.lib.mapAttrs mkDarwinConfig darwinHosts;
+  mkHome = hostName: hostConfig:
     let
-      isArm = hostConfig.platform == "aarch64-linux";
-      overlaysList = import ../overlays/all.nix { inherit inputs; };
-      modulesList = [
-        { nixpkgs.overlays = overlaysList;
-          nixpkgs.config.allowUnfree = true;
-        }
-        (if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix)
-      ];
-      debugModules = builtins.trace (
-        "DEBUG: modulesList for host " + hostName + ":\n" +
-        builtins.concatStringsSep "\n" (map (m: (
-          if builtins.isAttrs m then "ATTRSET: " + (builtins.toJSON (builtins.attrNames m))
-          else if builtins.isList m then "LIST: " + (builtins.toJSON m)
-          else if builtins.isPath m then "PATH: " + toString m
-          else if builtins.isFunction m then "FUNCTION"
-          else builtins.toJSON m
-        )) modulesList)
-      ) modulesList;
-    in
-      inputs.nixpkgs.lib.nixosSystem {
-        system = hostConfig.platform;
-        specialArgs = {
-          inherit inputs stateVersion;
-          hostname = hostName;
-          username = hostConfig.user;
-          platform = hostConfig.platform;
-          desktop = hostConfig.desktop or null;
-          isWorkstation = (hostConfig.desktop or null) != null;
+      userConfigPath = ../homemanager/users/${hostConfig.user}/default.nix;
+      hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
+        pkgs = import inputs.nixpkgs {
+          system = hostConfig.platform;
+          config.allowUnfree = true;
+          nixpkgs.overlays = overlays;
         };
-        modules = debugModules;
+        extraSpecialArgs = {
+          inherit inputs outputs stateVersion;
+          username = hostConfig.user;
+          desktop = hostConfig.desktop or null;
+        };
+        modules = [ userConfigPath ];
       };
+    in {
+      config = hmConfig;
+    };
 
   # Build Darwin configurations
   mkDarwinConfig = hostName: hostConfig:
@@ -78,37 +69,46 @@ rec {
     };
 
   # Build home-manager configurations
-  mkHome = hostName: hostConfig:
+  mkNixosConfig = hostName: hostConfig:
     let
-      userConfigPath = ../homemanager/users/${hostConfig.user}/default.nix;
-      hmConfig = inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = import inputs.nixpkgs {
-          system = hostConfig.platform;
-          config.allowUnfree = true;
-          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
-        };
-        extraSpecialArgs = {
-          inherit inputs outputs stateVersion;
+      isArm = hostConfig.platform == "aarch64-linux";
+      # List of ARM hosts with disks.nix
+      armHostsWithDisko = [ "xts1" "xts2" "xdash1" "xlt1-t-vnixos" ];
+      modulesList =
+        [
+          { nixpkgs.overlays = overlays; }
+        ]
+        ++ (
+          if isArm && builtins.elem hostName armHostsWithDisko then
+            [ inputs.disko.nixosModules.disko ]
+          else []
+        )
+        ++ [
+          (if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix)
+        ];
+      debugModules = builtins.trace (
+        "DEBUG: modulesList for host " + hostName + ":\n" +
+        builtins.concatStringsSep "\n" (map (m: (
+          if builtins.isAttrs m then "ATTRSET: " + (builtins.toJSON (builtins.attrNames m))
+          else if builtins.isList m then "LIST: " + (builtins.toJSON m)
+          else if builtins.isPath m then "PATH: " + toString m
+          else if builtins.isFunction m then "FUNCTION"
+          else builtins.toJSON m
+        )) modulesList)
+      ) modulesList;
+    in
+      inputs.nixpkgs.lib.nixosSystem {
+        system = hostConfig.platform;
+        specialArgs = {
+          inherit inputs stateVersion;
+          hostname = hostName;
           username = hostConfig.user;
+          platform = hostConfig.platform;
           desktop = hostConfig.desktop or null;
+          isWorkstation = (hostConfig.desktop or null) != null;
         };
-        modules = [ userConfigPath ];
+        modules = debugModules;
       };
-    in {
-      config = hmConfig;
-    };
-
-  # Utility functions for flake outputs
-  mkAllNixosConfigs =
-    let
-      nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
-    in inputs.nixpkgs.lib.mapAttrs mkNixosConfig nixosHosts;
-
-  mkAllDarwinConfigs =
-    let
-      darwinHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "darwin") hosts;
-    in inputs.nixpkgs.lib.mapAttrs mkDarwinConfig darwinHosts;
-
   mkAllHomes =
     inputs.nixpkgs.lib.mapAttrs (hostName: hostConfig: mkHome hostName hostConfig) hosts;
 

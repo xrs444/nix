@@ -34,5 +34,6 @@
   };
 
   nix.settings.trusted-users = [ "root" "builder" ];
+  nixpkgs.config.allowUnfree = true;
 }
 

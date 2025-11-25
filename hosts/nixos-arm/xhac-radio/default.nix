@@ -9,7 +9,7 @@
 }:
 {
   imports = [
-    ../../../base-nixos.nix
+    ../../base-nixos.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-3
     ../common/boot.nix
     ./network.nix
@@ -40,5 +40,6 @@
     compressImage = false;
     expandOnBoot = true;
   };
+  nixpkgs.config.allowUnfree = true;
 }
 

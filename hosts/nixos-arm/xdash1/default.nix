@@ -1,10 +1,11 @@
 { config, lib, pkgs, ... }:
 {
   imports = [
-    ../../../base-nixos.nix
+    ../../base-nixos.nix
     ../common/default.nix
-#    ../common/hardware-orangepi.nix
-#    ../common/boot.nix
+  #    ../common/hardware-orangepi.nix
+  #    ../common/boot.nix
+    ./disks.nix
     ./network.nix
   ];
 
@@ -40,4 +41,5 @@
 #    compressImage = false;
 #    expandOnBoot = true;
 #  };
+  nixpkgs.config.allowUnfree = true;
 }

@@ -10,4 +10,5 @@
     ./disks.nix
     inputs.disko.nixosModules.disko
   ];
+  nixpkgs.config.allowUnfree = true;
 }

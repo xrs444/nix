@@ -12,7 +12,7 @@
     inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ../common/boot.nix
     ./disks.nix
-#    ./network.nix
+  #    ./network.nix
   ];
 
   networking.hostName = hostname;
@@ -45,4 +45,5 @@
   ];
 
   hardware.i2c.enable = true;
+  nixpkgs.config.allowUnfree = true;
 }
