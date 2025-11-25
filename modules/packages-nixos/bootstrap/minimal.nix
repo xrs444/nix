@@ -25,4 +25,11 @@
 
   # Optionally, skip heavy modules (letsencrypt, etc.)
   minimalImage = true;
+
+  # Explicitly disable ACME/letsencrypt for minimal image
+  security.acme.acceptTerms = false;
+  security.acme.certs = {};
+  services.nginx.enable = lib.mkDefault false;
+  services.nginx.virtualHosts = {};
+  services.letsencrypt.enable = lib.mkDefault false;
 }
