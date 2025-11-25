@@ -35,7 +35,7 @@ rec {
     let
       modulesList = [
         {
-          nixpkgs.overlays = [ overlays.kanidm overlays.pkgs overlays.unstable ];
+          nixpkgs.overlays = overlays;
           nixpkgs.config.allowUnfree = true;
         }
         ../hosts/darwin/default.nix
