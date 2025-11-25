@@ -8,7 +8,7 @@
 {
   home.file = {
     "${config.home.homeDirectory}/.gitkraken/themes/catppuccin_mocha.jsonc".text =
-      builtins.readFile ../gitkraken-catppuccin-mocha-blue-upstream.json;
+      builtins.readFile ./catppuccin-mocha-blue-upstream.json;
   };
   home.packages = with pkgs; [
     gitkraken
