@@ -47,10 +47,7 @@ in
 
   # Common nixpkgs configuration
   nixpkgs = {
-    overlays = [
-      outputs.overlays.additions
-      outputs.overlays.unstable-packages
-    ];
+    # overlays = [ ... ]; # Removed undefined overlays (additions, unstable-packages)
     config = {
       allowUnfree = true;
     };
