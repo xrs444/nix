@@ -17,7 +17,6 @@ let
     else
       throw "Unsupported platform";
 in
-lib.mkMerge [
 {
   programs.vscode = {
     enable = true;

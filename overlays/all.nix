@@ -4,6 +4,7 @@
 # Exports all overlays as a list for use in flake.nix
 { inputs }:
 [
+  (inputs.nix-vscode-extensions.overlays.default)
   (import ./kanidm.nix { inherit inputs; })
   (import ./pkgs.nix { inherit inputs; })
   (import ./unstable.nix { inherit inputs; })
