@@ -65,7 +65,7 @@ rec {
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
       };
-      modules = builtins.trace ("darwinSystem modules for " + hostName + ": " + builtins.toJSON (map (m: if builtins.isPath m then toString m else if builtins.isAttrs m && m ? _type && m._type == "derivation" then m.name else builtins.typeOf m) modulesList)) modulesList;
+      modules = modulesList;
     };
 
   # Build home-manager configurations
@@ -86,16 +86,7 @@ rec {
         ++ [
           (if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix)
         ];
-      debugModules = builtins.trace (
-        "DEBUG: modulesList for host " + hostName + ":\n" +
-        builtins.concatStringsSep "\n" (map (m: (
-          if builtins.isAttrs m then "ATTRSET: " + (builtins.toJSON (builtins.attrNames m))
-          else if builtins.isList m then "LIST: " + (builtins.toJSON m)
-          else if builtins.isPath m then "PATH: " + toString m
-          else if builtins.isFunction m then "FUNCTION"
-          else builtins.toJSON m
-        )) modulesList)
-      ) modulesList;
+      debugModules = modulesList;
     in
       inputs.nixpkgs.lib.nixosSystem {
         system = hostConfig.platform;
@@ -107,7 +98,7 @@ rec {
           desktop = hostConfig.desktop or null;
           isWorkstation = (hostConfig.desktop or null) != null;
         };
-        modules = debugModules;
+        modules = modulesList;
       };
   mkAllHomes =
     inputs.nixpkgs.lib.mapAttrs (hostName: hostConfig: mkHome hostName hostConfig) hosts;

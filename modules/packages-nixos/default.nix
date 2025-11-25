@@ -12,14 +12,7 @@ let
     let path = currentDir + "/${name}";
         mod = import path;
     in
-      builtins.trace (
-        "DEBUG: Importing package module: " + toString path + "\nType: " +
-        (if builtins.isAttrs mod then "ATTRSET: " + (builtins.toJSON (builtins.attrNames mod))
-         else if builtins.isList mod then "LIST: " + (builtins.toJSON mod)
-         else if builtins.isPath mod then "PATH: " + toString mod
-         else if builtins.isFunction mod then "FUNCTION"
-         else builtins.toJSON mod)
-      ) mod
+      mod
   );
 in
 {
