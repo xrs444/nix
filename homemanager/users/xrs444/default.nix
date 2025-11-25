@@ -32,11 +32,12 @@
     ];
 
     # Ensure gitkraken and vscode are installed only for xrs444
-    programs.gitkraken.enable = true;
+    # programs.gitkraken.enable = true; # Removed: not a valid Home Manager option
     programs.vscode.enable = true;
 
   # Install non-standard fonts
   home.packages = with pkgs; [
+    gitkraken
     # Nerd Fonts for terminal and coding
     nerd-fonts.jetbrains-mono
     nerd-fonts.fira-code
