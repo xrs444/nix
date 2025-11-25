@@ -80,7 +80,7 @@ rec {
         ]
         ++ (
           if isArm && builtins.elem hostName armHostsWithDisko then
-            [ inputs.disko.nixosModules.disko ]
+            [ inputs.disko.nixosModules.disko (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix")) ]
           else []
         )
         ++ [
