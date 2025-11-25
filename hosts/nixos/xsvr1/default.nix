@@ -9,6 +9,7 @@
     ./network.nix
     ./vms.nix
     ../../../modules/services/zfs
+    ../../../modules/services/remotebuilds/default.nix
     # Add other heavy modules here as needed
     inputs.disko.nixosModules.disko
   ];
