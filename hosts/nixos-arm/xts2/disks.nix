@@ -1,5 +1,4 @@
 
-
 { lib, ... }:
 
 {
@@ -33,5 +32,9 @@
         };
       };
     };
+  };
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/by-id/mmc-SR128_0xeec59d30";
+    fsType = lib.mkForce "xfs";
   };
 }

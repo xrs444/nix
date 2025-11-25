@@ -1,3 +1,4 @@
+
 { lib, ... }:
 
 {
@@ -31,5 +32,9 @@
         };
       };
     };
+  };
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/mmcblk0";
+    fsType = lib.mkForce "xfs";
   };
 }

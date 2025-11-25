@@ -1,7 +1,3 @@
-# nvme-CT500P3PSSD8_241748806E5C - System
-# nvme-CT1000P3SSD8_24414B6FE363 - Longhorn
-#
-
 { lib, ... }:
 
 {
@@ -35,5 +31,9 @@
         };
       };
     };
+  };
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/disk/by-id/nvme-CT500P3PSSD8_241748806E5C";
+    fsType = lib.mkForce "xfs";
   };
 }

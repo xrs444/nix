@@ -1,5 +1,3 @@
-# ata-SAMSUNG_SSD_830_Series_S0XXNEAC706979
-
 { lib, ... }:
 
 {
@@ -33,5 +31,9 @@
         };
       };
     };
+  };
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/sda";
+    fsType = lib.mkForce "xfs";
   };
 }

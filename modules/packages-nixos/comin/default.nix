@@ -27,11 +27,10 @@ with lib;
           branches.main.name = "main";
         }
       ];
-      };
-      systemd.services.comin.serviceConfig = {
-        Restart = "always";
-        RestartSec = 5;
-      };
+    };
+    systemd.services.comin.serviceConfig = {
+      Restart = "always";
+      RestartSec = 5;
     };
   };
 }

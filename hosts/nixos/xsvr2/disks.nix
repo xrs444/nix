@@ -1,9 +1,4 @@
-# ata-CT1000BX500SSD1_2434E9882FCF - System
-# ata-CT1000BX500SSD1_2434E988331E - System
-# ata-CT1000MX500SSD1_2323E6E0F5AD - longhorn
-
 { lib, ... }:
-
 {
   disko.devices = {
     disk = {
@@ -26,7 +21,7 @@
                 ];
               };
             };
-            mdadm = {
+            primary = {
               size = "100%";
               content = {
                 type = "mdraid";
@@ -49,7 +44,7 @@
                 format = "vfat";
               };
             };
-            mdadm = {
+            primary = {
               size = "100%";
               content = {
                 type = "mdraid";
@@ -60,23 +55,28 @@
         };
       };
     };
-
     mdadm = {
       root_fs = {
         type = "mdadm";
         level = 1;
         content = {
           type = "gpt";
-          partitions.primary = {
-            size = "100%";
-            content = {
-             type = "filesystem";
-             format = "xfs";
-             mountpoint = "/";
+          partitions = {
+            root = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "xfs";
+                mountpoint = "/";
+              };
             };
           };
         };
       };
     };
+  };
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/md/root_fs";
+    fsType = lib.mkForce "xfs";
   };
 }
