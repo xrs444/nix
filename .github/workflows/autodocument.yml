@@ -1,0 +1,39 @@
+# Docs-Clippy GitHub Action
+
+name: Docs-Clippy Documentation Agent
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  docs-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@v25
+
+      - name: Read Docs-Clippy prompt
+        id: get_prompt
+        run: |
+          PROMPT_FILE="homemanager/common/apps/vscode/docs-clippy.chatmode.md"
+          echo "prompt<<EOF" >> $GITHUB_ENV
+          cat "$PROMPT_FILE" >> $GITHUB_ENV
+          echo "\n---\nFor each folder in the repository, create or update a README.md file that lists all files in that folder and provides a brief, accessible overview of what the configuration in that folder does. Use clear, friendly technical writing. If a README.md already exists, update it with a file listing and improved overview. Output nothing else." >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Copilot Chat - Generate Documentation
+        uses: github/copilot-chat-action@v1
+        with:
+          prompt: ${{ env.prompt }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload generated READMEs
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-clippy-readmes
+          path: '**/README-desc.md'
