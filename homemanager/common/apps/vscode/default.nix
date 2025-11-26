@@ -1,8 +1,4 @@
 
-home.file."${config.xdg.configHome}/Code/User/snippets" = {
-  source = ./prompts;
-  recursive = true;
-};
 {
   config,
   lib,
@@ -24,6 +20,11 @@ in
 
   home = {
     file = {
+      # Copy all prompts as VS Code snippets (Wimpress method, if needed for an extension)
+      "${config.xdg.configHome}/Code/User/snippets" = {
+        source = ./prompts;
+        recursive = true;
+      };
       "${vscodeUserDir}/mcp.json".text = builtins.readFile ./mcp.json;
       "${vscodeUserDir}/prompts/copilot.instructions.md".text =
         builtins.readFile ./copilot.instructions.md;
@@ -57,22 +58,13 @@ in
         builtins.readFile ./review-pull-request-feedback.prompt.md;
       "${vscodeUserDir}/prompts/review-tests.prompt.md".text = builtins.readFile ./review-tests.prompt.md;
       "${vscodeUserDir}/prompts/update-docs.prompt.md".text = builtins.readFile ./update-docs.prompt.md;
-      "${config.home.homeDirectory}/.gitkraken/themes/catppuccin_mocha.jsonc".text =
-        builtins.readFile ./gitkraken-catppuccin-mocha-blue-upstream.json;
-      "${config.home.homeDirectory}/.local/share/libgedit-gtksourceview-300/styles/catppuccin-mocha.xml".text =
-        builtins.readFile ./gedit-catppuccin-mocha.xml;
     };
     # Packages that are used by some of the extensions below
     packages = with pkgs; [
       bash-language-server
       unstable.github-mcp-server
-      gitkraken
-      gk-cli
       go
       gopls
-      luaformatter
-      luajit
-      lua-language-server
       unstable.mcp-nixos
       meld
       nil
@@ -83,7 +75,6 @@ in
       uv
       shellcheck
       shfmt
-      stylua
     ];
   };
 
