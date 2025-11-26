@@ -13,7 +13,10 @@
 
   home.packages = with pkgs; [
     desktop-file-utils
-    nerdfonts
+    pkgs.nerd-fonts.fira-code
+    pkgs.nerd-fonts.hack
+    pkgs.nerd-fonts.ubuntu
+    pkgs.nerd-fonts.space-mono
   ];
 
   fonts.fontconfig.enable = true;

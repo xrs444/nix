@@ -35,6 +35,9 @@
   imports = [
     ../../common/apps/gitkraken
     ../../common/apps/vscode
+    ./shell/git.nix
+    ./shell/starship.nix
+    ./shell/tmux.nix
   ];
 
   # Ensure gitkraken and vscode are installed only for xrs444
@@ -52,6 +55,7 @@
     nerd-fonts.iosevka
     nerd-fonts.space-mono
     nerd-fonts.symbols-only
+    direnv
     teams # Microsoft Teams (official client)
   ];
 

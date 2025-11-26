@@ -161,6 +161,7 @@ in
         "telemetry.telemetryLevel" = "off";
         "update.mode" = "none";
         "vsicons.dontShowNewVersionMessage" = true;
+        "workbench.iconTheme" = "vscode-icons";
         "workbench.tree.indent" = 20;
         "workbench.startupEditor" = "none";
         "workbench.editor.empty.hint" = "hidden";
