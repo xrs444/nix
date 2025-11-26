@@ -20,44 +20,39 @@ in
 
   home = {
     file = {
-      # Copy all prompts as VS Code snippets (Wimpress method, if needed for an extension)
-      "${config.xdg.configHome}/Code/User/snippets" = {
-        source = ./prompts;
-        recursive = true;
-      };
       "${vscodeUserDir}/mcp.json".text = builtins.readFile ./mcp.json;
-      "${vscodeUserDir}/prompts/copilot.instructions.md".text =
+      "${vscodeUserDir}/copilot.instructions.md".text =
         builtins.readFile ./copilot.instructions.md;
-      "${vscodeUserDir}/prompts/dilbert.chatmode.md".text = builtins.readFile ./dilbert.chatmode.md;
-      "${vscodeUserDir}/prompts/gonzales.chatmode.md".text = builtins.readFile ./gonzales.chatmode.md;
-      "${vscodeUserDir}/prompts/linus.chatmode.md".text = builtins.readFile ./linus.chatmode.md;
-      "${vscodeUserDir}/prompts/luthor.chatmode.md".text = builtins.readFile ./luthor.chatmode.md;
-      "${vscodeUserDir}/prompts/nixpert.chatmode.md".text = builtins.readFile ./nixpert.chatmode.md;
-      "${vscodeUserDir}/prompts/otto.chatmode.md".text = builtins.readFile ./otto.chatmode.md;
-      "${vscodeUserDir}/prompts/penry.chatmode.md".text = builtins.readFile ./penry.chatmode.md;
-      "${vscodeUserDir}/prompts/tessl.chatmode.md".text = builtins.readFile ./tessl.chatmode.md;
-      "${vscodeUserDir}/prompts/velma.chatmode.md".text = builtins.readFile ./velma.chatmode.md;
-      "${vscodeUserDir}/prompts/create-code.prompt.md".text = builtins.readFile ./create-code.prompt.md;
-      "${vscodeUserDir}/prompts/create-conventional-commit.prompt.md".text =
+      "${vscodeUserDir}/code-clippy.chatmode.md".text = builtins.readFile ./code-clippy.chatmode.md;
+      "${vscodeUserDir}/fast-clippy.chatmode.md".text = builtins.readFile ./fast-clippy.chatmode.md;
+      "${vscodeUserDir}/git-clippy.chatmode.md".text = builtins.readFile ./git-clippy.chatmode.md;
+      "${vscodeUserDir}/clear-clippy.chatmode.md".text = builtins.readFile ./clear-clippy.chatmode.md;
+      "${vscodeUserDir}/nix-clippy.chatmode.md".text = builtins.readFile ./nix-clippy.chatmode.md;
+      "${vscodeUserDir}/test-clippy.chatmode.md".text = builtins.readFile ./test-clippy.chatmode.md;
+      "${vscodeUserDir}/review-clippy.chatmode.md".text = builtins.readFile ./review-clippy.chatmode.md;
+      "${vscodeUserDir}/tessl.chatmode.md".text = builtins.readFile ./tessl.chatmode.md;
+      "${vscodeUserDir}/docs-clippy.chatmode.md".text = builtins.readFile ./docs-clippy.chatmode.md;
+      "${vscodeUserDir}/create-code.prompt.md".text = builtins.readFile ./create-code.prompt.md;
+      "${vscodeUserDir}/create-conventional-commit.prompt.md".text =
         builtins.readFile ./create-conventional-commit.prompt.md;
-      "${vscodeUserDir}/prompts/create-readme.prompt.md".text =
+      "${vscodeUserDir}/create-readme.prompt.md".text =
         builtins.readFile ./create-readme.prompt.md;
-      "${vscodeUserDir}/prompts/memory-load.prompt.md".text = builtins.readFile ./memory-load.prompt.md;
-      "${vscodeUserDir}/prompts/memory-save.prompt.md".text = builtins.readFile ./memory-save.prompt.md;
-      "${vscodeUserDir}/prompts/offboard.prompt.md".text = builtins.readFile ./offboard.prompt.md;
-      "${vscodeUserDir}/prompts/onboard.prompt.md".text = builtins.readFile ./onboard.prompt.md;
-      "${vscodeUserDir}/prompts/orientate.prompt.md".text = builtins.readFile ./orientate.prompt.md;
-      "${vscodeUserDir}/prompts/plan-code.prompt.md".text = builtins.readFile ./plan-code.prompt.md;
-      "${vscodeUserDir}/prompts/plan-docs.prompt.md".text = builtins.readFile ./plan-docs.prompt.md;
-      "${vscodeUserDir}/prompts/review-code.prompt.md".text = builtins.readFile ./review-code.prompt.md;
-      "${vscodeUserDir}/prompts/review-naming.prompt.md".text =
+      "${vscodeUserDir}/memory-load.prompt.md".text = builtins.readFile ./memory-load.prompt.md;
+      "${vscodeUserDir}/memory-save.prompt.md".text = builtins.readFile ./memory-save.prompt.md;
+      "${vscodeUserDir}/offboard.prompt.md".text = builtins.readFile ./offboard.prompt.md;
+      "${vscodeUserDir}/onboard.prompt.md".text = builtins.readFile ./onboard.prompt.md;
+      "${vscodeUserDir}/orientate.prompt.md".text = builtins.readFile ./orientate.prompt.md;
+      "${vscodeUserDir}/plan-code.prompt.md".text = builtins.readFile ./plan-code.prompt.md;
+      "${vscodeUserDir}/plan-docs.prompt.md".text = builtins.readFile ./plan-docs.prompt.md;
+      "${vscodeUserDir}/review-code.prompt.md".text = builtins.readFile ./review-code.prompt.md;
+      "${vscodeUserDir}/review-naming.prompt.md".text =
         builtins.readFile ./review-naming.prompt.md;
-      "${vscodeUserDir}/prompts/review-performance.prompt.md".text =
+      "${vscodeUserDir}/review-performance.prompt.md".text =
         builtins.readFile ./review-performance.prompt.md;
-      "${vscodeUserDir}/prompts/review-pull-request-feedback.prompt.md".text =
+      "${vscodeUserDir}/review-pull-request-feedback.prompt.md".text =
         builtins.readFile ./review-pull-request-feedback.prompt.md;
-      "${vscodeUserDir}/prompts/review-tests.prompt.md".text = builtins.readFile ./review-tests.prompt.md;
-      "${vscodeUserDir}/prompts/update-docs.prompt.md".text = builtins.readFile ./update-docs.prompt.md;
+      "${vscodeUserDir}/review-tests.prompt.md".text = builtins.readFile ./review-tests.prompt.md;
+      "${vscodeUserDir}/update-docs.prompt.md".text = builtins.readFile ./update-docs.prompt.md;
     };
     # Packages that are used by some of the extensions below
     packages = with pkgs; [

@@ -35,14 +35,14 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubToken}"
       }
     },
-    "mcp-google-cse": {
-      "command": "uvx",
-      "args": ["mcp-google-cse"],
-      "env": {
-        "API_KEY": "${input:googleSearchApiKey}",
-        "ENGINE_ID": "${input:googleSearchEngineID}"
-      }
-    },
+    // "mcp-google-cse": {
+    //  "command": "uvx",
+    //  "args": ["mcp-google-cse"],
+    //  "env": {
+    //    "API_KEY": "${input:googleSearchApiKey}",
+    //    "ENGINE_ID": "${input:googleSearchEngineID}"
+    //  }
+    //},
     "memory": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"],
@@ -68,11 +68,11 @@
     //    "TAVILY_API_KEY": "${input:tavilyApiKey}"
     //  }
     //},
-    "tessl": {
-      "type": "stdio",
-      "command": "tessl",
-      "args": ["mcp"]
-    },
+    //"tessl": {
+    //  "type": "stdio",
+    //  "command": "tessl",
+    //  "args": ["mcp"]
+    //},
     "time": {
       "command": "uvx",
       "args": ["mcp-server-time"]
