@@ -1,4 +1,10 @@
-{ pkgs, stateVersion, username, ... }: {
+{
+  pkgs,
+  stateVersion,
+  username,
+  ...
+}:
+{
 
   home.stateVersion = stateVersion;
   home.username = username;
@@ -18,22 +24,22 @@
     };
     fish = {
       enable = true;
-        shellAliases = {
-          nix-sh = "fish $HOME/.local/bin/nix-sh.fish";
-        };
+      shellAliases = {
+        nix-sh = "fish $HOME/.local/bin/nix-sh.fish";
+      };
     };
     starship.enable = true;
   };
-  
-    # Apps
-    imports = [
-      ../../common/apps/gitkraken
-      ../../common/apps/vscode
-    ];
 
-    # Ensure gitkraken and vscode are installed only for xrs444
-    # programs.gitkraken.enable = true; # Removed: not a valid Home Manager option
-    programs.vscode.enable = true;
+  # Apps
+  imports = [
+    ../../common/apps/gitkraken
+    ../../common/apps/vscode
+  ];
+
+  # Ensure gitkraken and vscode are installed only for xrs444
+  # programs.gitkraken.enable = true; # Removed: not a valid Home Manager option
+  programs.vscode.enable = true;
 
   # Install non-standard fonts
   home.packages = with pkgs; [
@@ -46,16 +52,17 @@
     nerd-fonts.iosevka
     nerd-fonts.space-mono
     nerd-fonts.symbols-only
+    teams # Microsoft Teams (official client)
   ];
 
   # Enable font configuration
   fonts.fontconfig.enable = true;
 
-    # Deploy nix-sh.fish selector script to ~/.local/bin
-    home.file.".local/bin/nix-sh.fish" = {
-      source = builtins.path { path = ./../../../scripts/nix-sh.fish; };
-      executable = true;
-    };
+  # Deploy nix-sh.fish selector script to ~/.local/bin
+  home.file.".local/bin/nix-sh.fish" = {
+    source = builtins.path { path = ./../../../scripts/nix-sh.fish; };
+    executable = true;
+  };
 
   # Set default shell preferences
   home.sessionVariables = {

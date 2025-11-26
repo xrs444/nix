@@ -6,7 +6,3 @@
 .DS_Store
 # Exclude build and result symlinks
 result
-# Do NOT exclude any NixOS config files
-!nix/hosts/base-nixos.nix
-!nix/hosts/**/default.nix
-!nix/hosts/**/disks.nix
