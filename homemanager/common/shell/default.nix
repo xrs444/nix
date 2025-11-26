@@ -13,5 +13,9 @@ in
   home.packages = with pkgs; [
     age
     sops
+    kustomize
+    kubeconform
+    yamllint
+    pre-commit
   ];
 }

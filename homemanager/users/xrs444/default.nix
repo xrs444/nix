@@ -57,6 +57,11 @@
     nerd-fonts.symbols-only
     direnv
     teams # Microsoft Teams (official client)
+    # Flux/Kustomize/CI tools for xrs444
+    kustomize
+    kubeconform
+    yamllint
+    pre-commit
   ];
 
   # Enable font configuration
