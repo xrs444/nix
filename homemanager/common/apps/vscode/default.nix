@@ -33,9 +33,10 @@ in
         builtins.readFile ./test-clippy.chatmode.md;
       "${vscodeUserDir}/prompts/review-clippy.chatmode.md".text =
         builtins.readFile ./review-clippy.chatmode.md;
-      "${vscodeUserDir}/prompts/tessl.chatmode.md".text = builtins.readFile ./tessl.chatmode.md;
       "${vscodeUserDir}/prompts/docs-clippy.chatmode.md".text =
         builtins.readFile ./docs-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/kube-clippy.chatmode.md".text =
+        builtins.readFile ./kube-clippy.chatmode.md;
       "${vscodeUserDir}/prompts/create-code.prompt.md".text = builtins.readFile ./create-code.prompt.md;
       "${vscodeUserDir}/prompts/create-conventional-commit.prompt.md".text =
         builtins.readFile ./create-conventional-commit.prompt.md;
