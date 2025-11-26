@@ -1,4 +1,3 @@
-
 {
   config,
   lib,
@@ -21,38 +20,44 @@ in
   home = {
     file = {
       "${vscodeUserDir}/mcp.json".text = builtins.readFile ./mcp.json;
-      "${vscodeUserDir}/copilot.instructions.md".text =
+      "${vscodeUserDir}/prompts/copilot.instructions.md".text =
         builtins.readFile ./copilot.instructions.md;
-      "${vscodeUserDir}/code-clippy.chatmode.md".text = builtins.readFile ./code-clippy.chatmode.md;
-      "${vscodeUserDir}/fast-clippy.chatmode.md".text = builtins.readFile ./fast-clippy.chatmode.md;
-      "${vscodeUserDir}/git-clippy.chatmode.md".text = builtins.readFile ./git-clippy.chatmode.md;
-      "${vscodeUserDir}/clear-clippy.chatmode.md".text = builtins.readFile ./clear-clippy.chatmode.md;
-      "${vscodeUserDir}/nix-clippy.chatmode.md".text = builtins.readFile ./nix-clippy.chatmode.md;
-      "${vscodeUserDir}/test-clippy.chatmode.md".text = builtins.readFile ./test-clippy.chatmode.md;
-      "${vscodeUserDir}/review-clippy.chatmode.md".text = builtins.readFile ./review-clippy.chatmode.md;
-      "${vscodeUserDir}/tessl.chatmode.md".text = builtins.readFile ./tessl.chatmode.md;
-      "${vscodeUserDir}/docs-clippy.chatmode.md".text = builtins.readFile ./docs-clippy.chatmode.md;
-      "${vscodeUserDir}/create-code.prompt.md".text = builtins.readFile ./create-code.prompt.md;
-      "${vscodeUserDir}/create-conventional-commit.prompt.md".text =
+      "${vscodeUserDir}/prompts/code-clippy.chatmode.md".text =
+        builtins.readFile ./code-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/fast-clippy.chatmode.md".text =
+        builtins.readFile ./fast-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/git-clippy.chatmode.md".text = builtins.readFile ./git-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/clear-clippy.chatmode.md".text =
+        builtins.readFile ./clear-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/nix-clippy.chatmode.md".text = builtins.readFile ./nix-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/test-clippy.chatmode.md".text =
+        builtins.readFile ./test-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/review-clippy.chatmode.md".text =
+        builtins.readFile ./review-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/tessl.chatmode.md".text = builtins.readFile ./tessl.chatmode.md;
+      "${vscodeUserDir}/prompts/docs-clippy.chatmode.md".text =
+        builtins.readFile ./docs-clippy.chatmode.md;
+      "${vscodeUserDir}/prompts/create-code.prompt.md".text = builtins.readFile ./create-code.prompt.md;
+      "${vscodeUserDir}/prompts/create-conventional-commit.prompt.md".text =
         builtins.readFile ./create-conventional-commit.prompt.md;
-      "${vscodeUserDir}/create-readme.prompt.md".text =
+      "${vscodeUserDir}/prompts/create-readme.prompt.md".text =
         builtins.readFile ./create-readme.prompt.md;
-      "${vscodeUserDir}/memory-load.prompt.md".text = builtins.readFile ./memory-load.prompt.md;
-      "${vscodeUserDir}/memory-save.prompt.md".text = builtins.readFile ./memory-save.prompt.md;
-      "${vscodeUserDir}/offboard.prompt.md".text = builtins.readFile ./offboard.prompt.md;
-      "${vscodeUserDir}/onboard.prompt.md".text = builtins.readFile ./onboard.prompt.md;
-      "${vscodeUserDir}/orientate.prompt.md".text = builtins.readFile ./orientate.prompt.md;
-      "${vscodeUserDir}/plan-code.prompt.md".text = builtins.readFile ./plan-code.prompt.md;
-      "${vscodeUserDir}/plan-docs.prompt.md".text = builtins.readFile ./plan-docs.prompt.md;
-      "${vscodeUserDir}/review-code.prompt.md".text = builtins.readFile ./review-code.prompt.md;
-      "${vscodeUserDir}/review-naming.prompt.md".text =
+      "${vscodeUserDir}/prompts/memory-load.prompt.md".text = builtins.readFile ./memory-load.prompt.md;
+      "${vscodeUserDir}/prompts/memory-save.prompt.md".text = builtins.readFile ./memory-save.prompt.md;
+      "${vscodeUserDir}/prompts/offboard.prompt.md".text = builtins.readFile ./offboard.prompt.md;
+      "${vscodeUserDir}/prompts/onboard.prompt.md".text = builtins.readFile ./onboard.prompt.md;
+      "${vscodeUserDir}/prompts/orientate.prompt.md".text = builtins.readFile ./orientate.prompt.md;
+      "${vscodeUserDir}/prompts/plan-code.prompt.md".text = builtins.readFile ./plan-code.prompt.md;
+      "${vscodeUserDir}/prompts/plan-docs.prompt.md".text = builtins.readFile ./plan-docs.prompt.md;
+      "${vscodeUserDir}/prompts/review-code.prompt.md".text = builtins.readFile ./review-code.prompt.md;
+      "${vscodeUserDir}/prompts/review-naming.prompt.md".text =
         builtins.readFile ./review-naming.prompt.md;
-      "${vscodeUserDir}/review-performance.prompt.md".text =
+      "${vscodeUserDir}/prompts/review-performance.prompt.md".text =
         builtins.readFile ./review-performance.prompt.md;
-      "${vscodeUserDir}/review-pull-request-feedback.prompt.md".text =
+      "${vscodeUserDir}/prompts/review-pull-request-feedback.prompt.md".text =
         builtins.readFile ./review-pull-request-feedback.prompt.md;
-      "${vscodeUserDir}/review-tests.prompt.md".text = builtins.readFile ./review-tests.prompt.md;
-      "${vscodeUserDir}/update-docs.prompt.md".text = builtins.readFile ./update-docs.prompt.md;
+      "${vscodeUserDir}/prompts/review-tests.prompt.md".text = builtins.readFile ./review-tests.prompt.md;
+      "${vscodeUserDir}/prompts/update-docs.prompt.md".text = builtins.readFile ./update-docs.prompt.md;
     };
     # Packages that are used by some of the extensions below
     packages = with pkgs; [
@@ -80,8 +85,8 @@ in
       enableUpdateCheck = false;
       userSettings = {
         "terminal.integrated.defaultProfile.osx" = "fish";
-        "terminal.integrated.env.linux" = {};
-        "terminal.integrated.env.osx" = {};
+        "terminal.integrated.env.linux" = { };
+        "terminal.integrated.env.osx" = { };
         "editor.fontFamily" = "'SpaceMono Nerd Font Mono', Menlo, Monaco, 'Courier New', monospace";
         "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
         "git.enableSmartCommit" = true;
@@ -104,7 +109,10 @@ in
         "editor.guides.bracketPairsHorizontal" = true;
         "editor.inlineSuggest.enabled" = true;
         "editor.renderWhitespace" = "all";
-        "editor.rulers" = [ 80 88 ];
+        "editor.rulers" = [
+          80
+          88
+        ];
         "editor.semanticHighlighting.enabled" = true;
         "explorer.confirmDragAndDrop" = false;
         "extensions.ignoreRecommendations" = true;
@@ -169,69 +177,70 @@ in
         "workbench.startupEditor" = "none";
         "workbench.editor.empty.hint" = "hidden";
         "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
-            You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
+          You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
 
-            Commits must follow the Conventional Commits 1.0.0 specification and be further refined using the rules outlined below.
+          Commits must follow the Conventional Commits 1.0.0 specification and be further refined using the rules outlined below.
 
-            The commit message must include the following fields: "type", "description", "body".
-            The commit message must be in the format:
-            <type>([optional scope]): <description>
+          The commit message must include the following fields: "type", "description", "body".
+          The commit message must be in the format:
+          <type>([optional scope]): <description>
 
-            [body]
+          [body]
 
-            [optional footer(s)]
+          [optional footer(s)]
 
-            - "type": Choose one of the following:
-              - feat: MUST be used when commits that introduce new features or functionalities to the project (this correlates with MINOR in Semantic Versioning)
-              - fix: MUST be used when commits address bug fixes or resolve issues in the project (this correlates with PATCH in Semantic Versioning)
-              - types other than feat: and fix: can be used in your commit messages:
-                - build: Used when a commit affects the build system or external dependencies. It includes changes to build scripts, build configurations, or build tools used in the project
-                - chore: Typically used for routine or miscellaneous tasks related to the project, such as code reformatting, updating dependencies, or making general project maintenance
-                - ci: CI stands for continuous integration. This type is used for changes to the project's continuous integration or deployment configurations, scripts, or infrastructure
-                - docs: Documentation plays a vital role in software projects. The docs type is used for commits that update or add documentation, including readme files, API documentation, user guides or code comments that act as documentation
-                - i18n: This type is used for commits that involve changes related to internationalization or localization. It includes changes to localization files, translations, or internationalization-related configurations.
-                - perf: Short for performance, this type is used when a commit improves the performance of the code or optimizes certain functionalities
-                - refactor: Commits typed as refactor involve making changes to the codebase that neither fix a bug nor add a new feature. Refactoring aims to improve code structure, organization, or efficiency without changing external behavior
-                - revert: Commits typed as revert are used to undo previous commits. They are typically used to reverse changes made in previous commits
-                - style: The style type is used for commits that focus on code style changes, such as formatting, indentation, or whitespace modifications. These commits do not affect the functionality of the code but improve its readability and maintainability
-                - test: Used for changes that add or modify test cases, test frameworks, or other related testing infrastructure.
-            - "description": A very brief summary line (max 72 characters). Do not end with a period. Use imperative mood (e.g., 'add feature' not 'added feature').
-            - "body": A more detailed explanation of the changes, focusing on what problem this commit solves and why this change was necessary. Small changes can be a concise, specific sentence. Larger changes should be a bulleted list of concise, specific changes. Include optional footers like BREAKING CHANGE here.
+          - "type": Choose one of the following:
+            - feat: MUST be used when commits that introduce new features or functionalities to the project (this correlates with MINOR in Semantic Versioning)
+            - fix: MUST be used when commits address bug fixes or resolve issues in the project (this correlates with PATCH in Semantic Versioning)
+            - types other than feat: and fix: can be used in your commit messages:
+              - build: Used when a commit affects the build system or external dependencies. It includes changes to build scripts, build configurations, or build tools used in the project
+              - chore: Typically used for routine or miscellaneous tasks related to the project, such as code reformatting, updating dependencies, or making general project maintenance
+              - ci: CI stands for continuous integration. This type is used for changes to the project's continuous integration or deployment configurations, scripts, or infrastructure
+              - docs: Documentation plays a vital role in software projects. The docs type is used for commits that update or add documentation, including readme files, API documentation, user guides or code comments that act as documentation
+              - i18n: This type is used for commits that involve changes related to internationalization or localization. It includes changes to localization files, translations, or internationalization-related configurations.
+              - perf: Short for performance, this type is used when a commit improves the performance of the code or optimizes certain functionalities
+              - refactor: Commits typed as refactor involve making changes to the codebase that neither fix a bug nor add a new feature. Refactoring aims to improve code structure, organization, or efficiency without changing external behavior
+              - revert: Commits typed as revert are used to undo previous commits. They are typically used to reverse changes made in previous commits
+              - style: The style type is used for commits that focus on code style changes, such as formatting, indentation, or whitespace modifications. These commits do not affect the functionality of the code but improve its readability and maintainability
+              - test: Used for changes that add or modify test cases, test frameworks, or other related testing infrastructure.
+          - "description": A very brief summary line (max 72 characters). Do not end with a period. Use imperative mood (e.g., 'add feature' not 'added feature').
+          - "body": A more detailed explanation of the changes, focusing on what problem this commit solves and why this change was necessary. Small changes can be a concise, specific sentence. Larger changes should be a bulleted list of concise, specific changes. Include optional footers like BREAKING CHANGE here.
 
-            Guidelines for writing the commit message:
-            - The <description> must be in English
-            - The [optional scope] must be in English
-            - The <description> must be imperative mood
-            - The <description> must avoid capitalization
-            - The <description> will not have a period at the end
-            - The <description> will have a maximum of 72 characters including any spaces or special characters
-            - The <description> must avoid using the <type> as the first word
-            - Follow the <description> with a blank line, then the [body].
-            - The [body] must be in English
-            - The [body] should provide a more detailed explanation. Small changes as one sentence, larger changes as a bulleted list.
-            - The [body] should explain what and why
-            - The [body] will be objective
-            - Bullet points in the [body] start with "-"
-            - The [optional footer(s)] can be used for things like referencing issues or indicating breaking changes.
+          Guidelines for writing the commit message:
+          - The <description> must be in English
+          - The [optional scope] must be in English
+          - The <description> must be imperative mood
+          - The <description> must avoid capitalization
+          - The <description> will not have a period at the end
+          - The <description> will have a maximum of 72 characters including any spaces or special characters
+          - The <description> must avoid using the <type> as the first word
+          - Follow the <description> with a blank line, then the [body].
+          - The [body] must be in English
+          - The [body] should provide a more detailed explanation. Small changes as one sentence, larger changes as a bulleted list.
+          - The [body] should explain what and why
+          - The [body] will be objective
+          - Bullet points in the [body] start with "-"
+          - The [optional footer(s)] can be used for things like referencing issues or indicating breaking changes.
 
-            Specification for Conventional Commits:
-            - Commits MUST be prefixed with a type, which consists of a noun, feat, fix, etc., followed by the OPTIONAL scope, OPTIONAL !, and REQUIRED terminal colon and space.
-            - A scope MAY be provided after a type. A scope MUST consist of a noun describing a section of the codebase surrounded by parenthesis, e.g., fix(parser):
-            - A description MUST immediately follow the colon and space after the type/scope prefix. The description is a short summary of the code changes, e.g., fix: array parsing issue when multiple spaces were contained in string.
-            - A longer commit body MAY be provided after the short description, providing additional contextual information about the code changes. The body MUST begin one blank line after the description.
-            - A commit body is free-form and MAY consist of any number of newline separated paragraphs.
-            - One or more footers MAY be provided one blank line after the body. Each footer MUST consist of a word token, followed by either a :<space> or <space># separator, followed by a string value (this is inspired by the git trailer convention).
-            - A footer's token MUST use - in place of whitespace characters, e.g., Acked-by (this helps differentiate the footer section from a multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY also be used as a token.
-            - A footer's value MAY contain spaces and newlines, and parsing MUST terminate when the next valid footer token/separator pair is observed.
-            - Breaking changes MUST be indicated in the type/scope prefix of a commit, or as an entry in the footer.
-            - If included as a footer, a breaking change MUST consist of the uppercase text BREAKING CHANGE, followed by a colon, space, and description, e.g., BREAKING CHANGE: environment variables now take precedence over config files.
-            - If included in the type/scope prefix, breaking changes MUST be indicated by a ! immediately before the :. If ! is used, BREAKING CHANGE: MAY be omitted from the footer section, and the commit description SHALL be used to describe the breaking change.
-            - The units of information that make up Conventional Commits MUST NOT be treated as case sensitive by implementors, with the exception of BREAKING CHANGE which MUST be uppercase.
-            - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
-          '';
+          Specification for Conventional Commits:
+          - Commits MUST be prefixed with a type, which consists of a noun, feat, fix, etc., followed by the OPTIONAL scope, OPTIONAL !, and REQUIRED terminal colon and space.
+          - A scope MAY be provided after a type. A scope MUST consist of a noun describing a section of the codebase surrounded by parenthesis, e.g., fix(parser):
+          - A description MUST immediately follow the colon and space after the type/scope prefix. The description is a short summary of the code changes, e.g., fix: array parsing issue when multiple spaces were contained in string.
+          - A longer commit body MAY be provided after the short description, providing additional contextual information about the code changes. The body MUST begin one blank line after the description.
+          - A commit body is free-form and MAY consist of any number of newline separated paragraphs.
+          - One or more footers MAY be provided one blank line after the body. Each footer MUST consist of a word token, followed by either a :<space> or <space># separator, followed by a string value (this is inspired by the git trailer convention).
+          - A footer's token MUST use - in place of whitespace characters, e.g., Acked-by (this helps differentiate the footer section from a multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY also be used as a token.
+          - A footer's value MAY contain spaces and newlines, and parsing MUST terminate when the next valid footer token/separator pair is observed.
+          - Breaking changes MUST be indicated in the type/scope prefix of a commit, or as an entry in the footer.
+          - If included as a footer, a breaking change MUST consist of the uppercase text BREAKING CHANGE, followed by a colon, space, and description, e.g., BREAKING CHANGE: environment variables now take precedence over config files.
+          - If included in the type/scope prefix, breaking changes MUST be indicated by a ! immediately before the :. If ! is used, BREAKING CHANGE: MAY be omitted from the footer section, and the commit description SHALL be used to describe the breaking change.
+          - The units of information that make up Conventional Commits MUST NOT be treated as case sensitive by implementors, with the exception of BREAKING CHANGE which MUST be uppercase.
+          - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
+        '';
       };
       extensions =
-         with pkgs; [
+        with pkgs;
+        [
           vscode-marketplace.bmalehorn.vscode-fish
           vscode-marketplace.budparr.language-hugo-vscode
           vscode-marketplace.catppuccin.catppuccin-vsc
@@ -247,7 +256,7 @@ in
           vscode-marketplace.github.copilot-chat
           vscode-marketplace.github.vscode-github-actions
           vscode-marketplace.github.vscode-pull-request-github
-#          vscode-marketplace.hashicorp.terraform
+          #          vscode-marketplace.hashicorp.terraform
           vscode-marketplace.janisdd.vscode-edit-csv
           vscode-marketplace.jeff-hykin.better-dockerfile-syntax
           vscode-marketplace.jeff-hykin.better-shellscript-syntax
@@ -345,4 +354,3 @@ in
     package = pkgs.unstable.vscode;
   };
 }
-
