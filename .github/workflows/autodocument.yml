@@ -42,8 +42,17 @@ jobs:
             )
           done
 
-      - name: Upload generated READMEs
-        uses: actions/upload-artifact@v4
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b docs-clippy/update-readmes || git checkout docs-clippy/update-readmes
+          git add '**/readme-doc.md'
+          git commit -m "docs: auto-generate readme-doc.md files" || echo "No changes to commit"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
         with:
-          name: docs-clippy-readmes
-          path: '**/readme-doc.md'
+          branch: docs-clippy/update-readmes
+          title: "docs: auto-generate readme-doc.md files"
+          body: "Automated documentation update for folder READMEs."
