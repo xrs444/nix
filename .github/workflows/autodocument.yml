@@ -23,7 +23,7 @@ jobs:
           PROMPT_FILE="homemanager/common/apps/vscode/docs-clippy.chatmode.md"
           echo "prompt<<EOF" >> $GITHUB_ENV
           cat "$PROMPT_FILE" >> $GITHUB_ENV
-          echo "\n---\nFor each folder in the repository, create or update a README.md file that lists all files in that folder and provides a brief, accessible overview of what the configuration in that folder does. Use clear, friendly technical writing. If a README.md already exists, update it with a file listing and improved overview. Output nothing else." >> $GITHUB_ENV
+          echo "\n---\nFor each folder in the repository, create or update a README-doc.md file that lists all files in that folder and provides a brief, accessible overview of what the configuration in that folder does. Use clear, friendly technical writing. If a README-doc.md already exists, update it with a file listing and improved overview. Output nothing else." >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Generate folder READMEs
@@ -45,6 +45,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.AUTODOC }}
           commit-message: "docs: auto-generate readme-doc.md files"
           branch: docs-clippy/update-readmes
           title: "docs: auto-generate readme-doc.md files"
