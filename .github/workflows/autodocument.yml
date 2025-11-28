@@ -26,9 +26,19 @@ jobs:
           echo "\n---\nFor each folder in the repository:\n- Create or update a README-doc.md file.\n- List all files in that folder.\n- For each file, read its contents and generate a concise, accessible summary of what the file does or configures, in the context of the overall repository.\n- Provide a brief, high-level overview of the folder’s purpose, based on the file summaries and the folder’s role in the repository.\n- Use clear, friendly technical writing.\n- If a README-doc.md already exists, update it with the new file listing and improved summaries/overview.\n- Output nothing else." >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+
       - name: Generate folder READMEs
         run: |
           python3 .github/scripts/generate_readmes.py
+
+      - name: List generated README files
+        run: |
+          find . -name 'readme-doc.md' -exec ls -l {} \;
+
+      - name: Show git status and diff
+        run: |
+          git status
+          git diff
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
