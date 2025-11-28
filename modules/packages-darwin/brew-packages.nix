@@ -4,18 +4,19 @@
   # Homebrew packages that don't have Nix equivalents or work better via Homebrew
   homebrew = {
     enable = true;
-      # Homebrew taps required for some packages
-      taps = [
-        "qmk/qmk"
-      ];
-    
+    # Homebrew taps required for some packages
+    taps = [
+      "qmk/qmk"
+    ];
+
     # Packages installed via `brew install`
     brews = [
       "helm"
       "lazyssh"
       "ice"
+      "mas"
     ];
-    
+
     # GUI applications installed via `brew install --cask`
     casks = [
       "amethyst"
@@ -57,12 +58,12 @@
       "CrystalFetch" = 6454431289;
       "Duplicate File Finder" = 1032755628;
       "HP" = 1474276998;
-#      "Kindle" = 302584613;
-#      "Tailscale" = 1475387142;
+      "Kindle" = 302584613;
+      "Tailscale" = 1475387142;
       "UTM" = 1538878817;
       "WireGuard" = 1451685025;
     };
-    
+
     # Automatically update Homebrew and packages
     onActivation = {
       autoUpdate = true;
