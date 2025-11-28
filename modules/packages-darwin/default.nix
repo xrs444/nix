@@ -9,18 +9,20 @@
 
   # Darwin-specific packages (Nix packages)
   environment.systemPackages = with pkgs; [
-    # Development tools
     age
-    ansible
     git
-    go
+    wget
+    fish
+    lame
+    x264
+
     hugo
     lua
     nodejs
     openjdk
-    rbenv
     ruby
-    
+    ansible
+
     # Kubernetes & Cloud Native
     cilium-cli
     cmctl
@@ -30,26 +32,21 @@
     kubeseal
     kustomize
     talosctl
-    
+
     # System utilities
     arping
-    atuin
     baobab
     chezmoi
-    fish
-    mas
+
     nmap
     sops
-    starship
     sshpass
     tfswitch
-    tmux
     tree
-    wget
+
     yamllint
     yq
-    yt-dlp
-    
+
     # Compression & archives
     _7zz
     brotli
@@ -59,20 +56,18 @@
     wimlib
     xz
     zstd
-    
+
     # Multimedia
-    lame
-    x264
-    
+
     # Browsers & Communication
     thunderbird
-    
+
     # Utilities
     iterm2
     wireshark
     openscad
     powershell
-    
+
     # Other utilities
     pipx
     virtualenv

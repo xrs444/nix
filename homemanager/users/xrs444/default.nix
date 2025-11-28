@@ -29,6 +29,11 @@
       };
     };
     starship.enable = true;
+    go.enable = true;
+    rbenv.enable = true;
+    atuin.enable = true;
+    tmux.enable = true;
+    yt-dlp.enable = true;
   };
 
   # Apps
@@ -62,6 +67,46 @@
     kubeconform
     yamllint
     pre-commit
+    # Add any CLI or GUI apps not supported as Home Manager modules here
+    hugo
+    lua
+    nodejs
+    openjdk
+    ruby
+    ansible
+    cilium-cli
+    cmctl
+    fluxcd
+    hubble
+    kubectl
+    kubeseal
+    kustomize
+    talosctl
+    arping
+    baobab
+    chezmoi
+    nmap
+    sops
+    sshpass
+    tfswitch
+    tree
+    yamllint
+    yq
+    _7zz
+    brotli
+    lz4
+    lzo
+    p7zip
+    wimlib
+    xz
+    zstd
+    thunderbird
+    iterm2
+    wireshark
+    openscad
+    powershell
+    pipx
+    virtualenv
   ];
 
   # Enable font configuration
