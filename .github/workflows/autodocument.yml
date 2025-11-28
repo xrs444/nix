@@ -57,6 +57,7 @@ jobs:
           token: ${{ secrets.AUTODOC }}
           commit-message: "docs: auto-generate readme-doc.md files"
           branch: docs-clippy/update-readmes
+          base: main
           title: "docs: auto-generate readme-doc.md files"
           body: "Automated documentation update for folder READMEs."
           add-paths: '**/readme-doc.md'
