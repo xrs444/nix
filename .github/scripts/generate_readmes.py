@@ -1,0 +1,47 @@
+import os
+
+def summarize_content(content, filename):
+    """
+    Basic summarizer: returns the first non-empty line or a generic message.
+    Replace this with an LLM/API call for smarter summaries.
+    """
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    if not lines:
+        return f"No content to summarize in {filename}."
+    # For config/code, try to return a meaningful first line
+    return lines[0][:200] + ("..." if len(lines[0]) > 200 else "")
+
+def generate_readme_for_folder(folder):
+    files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and f != 'readme-doc.md']
+    readme_path = os.path.join(folder, 'readme-doc.md')
+    with open(readme_path, 'w') as readme:
+        readme.write(f"# {os.path.basename(folder)}\n\n")
+        readme.write("## Files\n\n")
+        for f in files:
+            readme.write(f"- {f}\n")
+        readme.write("\n## File Summaries\n\n")
+        for f in files:
+            file_path = os.path.join(folder, f)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+                    content = file.read()
+                summary = summarize_content(content, f)
+            except Exception as e:
+                summary = f"Could not read file: {e}"
+            readme.write(f"### {f}\n{summary}\n\n")
+        # Folder overview: join summaries for a high-level overview
+        readme.write("## Overview\n\n")
+        if files:
+            readme.write("This folder contains the following files with their respective purposes summarized above.\n")
+        else:
+            readme.write("This folder is currently empty.\n")
+
+def main():
+    for root, dirs, files in os.walk('.', topdown=True):
+        # Skip .git, .github, and hidden folders
+        if any(part.startswith('.') for part in root.split(os.sep)):
+            continue
+        generate_readme_for_folder(root)
+
+if __name__ == "__main__":
+    main()
