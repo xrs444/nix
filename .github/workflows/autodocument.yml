@@ -23,7 +23,7 @@ jobs:
           PROMPT_FILE="homemanager/common/apps/vscode/docs-clippy.chatmode.md"
           echo "prompt<<EOF" >> $GITHUB_ENV
           cat "$PROMPT_FILE" >> $GITHUB_ENV
-          echo "\n---\nFor each folder in the repository, create or update a README-doc.md file that lists all files in that folder and provides a brief, accessible overview of what the configuration in that folder does. Use clear, friendly technical writing. If a README-doc.md already exists, update it with a file listing and improved overview. Output nothing else." >> $GITHUB_ENV
+          echo "\n---\nFor each folder in the repository:\n- Create or update a README-doc.md file.\n- List all files in that folder.\n- For each file, read its contents and generate a concise, accessible summary of what the file does or configures, in the context of the overall repository.\n- Provide a brief, high-level overview of the folder’s purpose, based on the file summaries and the folder’s role in the repository.\n- Use clear, friendly technical writing.\n- If a README-doc.md already exists, update it with the new file listing and improved summaries/overview.\n- Output nothing else." >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Generate folder READMEs
