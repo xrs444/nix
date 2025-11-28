@@ -11,19 +11,15 @@ jobs:
   docs-clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        id: checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: docs-clippy/update-readmes
-
-      - name: Fallback to main if branch does not exist
-        if: failure() && steps.checkout.outcome == 'failure'
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
+
+      - name: Create or switch to update branch
+        run: |
+          git checkout -B docs-clippy/update-readmes
 
       - name: Set up Nix
         uses: cachix/install-nix-action@v25
