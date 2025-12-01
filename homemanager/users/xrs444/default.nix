@@ -122,6 +122,9 @@
   home.sessionVariables = {
     EDITOR = "micro";
     BROWSER = "firefox";
+    SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
+    KUBECONFIG = "/Users/xrs444/k8s/config";
+    TALOSCONFIG = "Users/xrs444/Repositories/HomeProd/talos/config.yaml";
   };
 
   # Enable Catppuccin theme globally
