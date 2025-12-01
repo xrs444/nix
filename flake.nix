@@ -123,7 +123,7 @@
     in
     {
       homeConfigurations = allHomes;
-      nixosConfigurations = lib.mkAllNixosConfigs;
+      nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
       devShells = lib.forAllSystems (system: {
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };

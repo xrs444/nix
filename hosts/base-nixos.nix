@@ -21,11 +21,15 @@
     ../modules/users
   ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Configure sops-nix to use the age key file
   sops = {
-    age.keyFile = "/var/lib/private/sops/age/keys.txt";
+    age.keyFile = "/etc/ssh/sops-age-key.txt";
+    defaultSopsFile = "/secrets/wan-wifi.yaml";
   };
 
   system.stateVersion = stateVersion;

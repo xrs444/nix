@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ../../base-nixos.nix
@@ -11,8 +16,10 @@
 
   networking.hostName = "xdash1";
 
-
-  boot.supportedFilesystems = [ "vfat" "ext4" ];
+  boot.supportedFilesystems = [
+    "vfat"
+    "ext4"
+  ];
 
   environment.systemPackages = with pkgs; [
     labwc
@@ -37,12 +44,6 @@
 
   services.getty.autologinUser = "xdash1";
 
-  # To build a minimal SD image for bootstrap, run:
-  # nix build .#nixosConfigurations.xdash1.config.system.build.sdImageSpecialisation.minimal
-
-  specialisation.minimal.configuration = import ../../../modules/packages-nixos/bootstrap/minimal.nix;
   nixpkgs.config.allowUnfree = true;
-    sops.secrets."wireless-secrets" = {
-      sopsFile = ../../../secrets/wan-wifi.yaml;
-    };
+  # sops.secrets."wireless-secrets" removed (was wan-wifi.yaml, now split or unused)
 }
