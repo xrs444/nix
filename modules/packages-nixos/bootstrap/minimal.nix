@@ -33,9 +33,6 @@
     }
   ];
 
-  # Do not disable all services; allow comin and others to run
-  users.users.root.password = ""; # No password for root (use SSH keys)
-
   # Optionally, set a minimal hostname
   networking.hostName = lib.mkDefault "bootstrap-arm";
 
