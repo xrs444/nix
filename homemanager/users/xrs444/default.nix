@@ -125,6 +125,7 @@
     SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
     KUBECONFIG = "/Users/xrs444/k8s/config";
     TALOSCONFIG = "Users/xrs444/Repositories/HomeProd/talos/config.yaml";
+    PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
   };
 
   # Enable Catppuccin theme globally
