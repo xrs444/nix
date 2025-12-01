@@ -1,0 +1,18 @@
+[
+  ../../modules/services/Samba
+  ../../modules/services/bind
+  ../../modules/services/ffr
+  ../../modules/services/homeassistant
+  ../../modules/services/iprouting
+  ../../modules/services/kanidm
+  ../../modules/services/keepalived
+  ../../modules/services/kvm
+  ../../modules/services/letsencrypt
+  ../../modules/services/nfs
+  ../../modules/services/nixcache
+  ../../modules/services/openssh
+  ../../modules/services/remotebuilds
+  ../../modules/services/tailscale
+  ../../modules/services/talos
+  ../../modules/services/zfs
+]
