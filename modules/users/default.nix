@@ -2,6 +2,7 @@
 {
   imports = [
     ./thomas-local.nix
+    ./builder.nix
     ./acme.nix
   ];
 
