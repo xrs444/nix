@@ -130,9 +130,15 @@
       });
       checks = lib.forAllSystems (
         system:
-        inputs.nixpkgs.lib.mapAttrs (name: cfg: cfg.config.activationPackage) (
-          inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.system == system) allHomes
-        )
+        let
+          validHomes = inputs.nixpkgs.lib.filterAttrs (
+            _: cfg: cfg ? config && cfg.config ? activationPackage
+          ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.system == system) allHomes);
+        in
+        inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
+          name = name;
+          value = cfg.config.activationPackage;
+        }) validHomes
       );
       nixosModules = {
         cockpit = import ./modules/packages-nixos/cockpit;

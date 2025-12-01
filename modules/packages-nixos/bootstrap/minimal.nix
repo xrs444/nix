@@ -25,7 +25,7 @@
   users.users.builder = {
     isNormalUser = true;
     home = "/home/builder";
-    shell = pkgs.zsh;
+    shell = pkgs.bash;
     openssh.authorizedKeys.keys = [
       # xsvr1 builder_key.pub
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJlAKBOsKmCa0yY0FKOD3dr8uEq4elGokEpWZYVMVkp builder@remote-builds"
