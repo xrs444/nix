@@ -1,4 +1,22 @@
 {
+  config = {
+    # SOPS secrets for kanidm provisioning
+    sops.secrets.kanidm_admin_password = {
+      sopsFile = "${toString ../../../secrets/idm.yaml}";
+      key = "admin_password";
+      owner = "kanidm";
+      group = "kanidm";
+      mode = "0400";
+    };
+    sops.secrets.kanidm_idm_admin_password = {
+      sopsFile = "${toString ../../../secrets/idm.yaml}";
+      key = "idm_admin_password";
+      owner = "kanidm";
+      group = "kanidm";
+      mode = "0400";
+    };
+  };
+{
   config,
   hostname,
   lib,
@@ -31,6 +49,22 @@ in
 
   # Use overlayed pkgs.kanidm for both servers
   config = lib.mkMerge [
+    (lib.mkIf isKanidmServer {
+      sops.secrets.kanidm_admin_password = {
+        sopsFile = "${toString ../../../secrets/idm.yaml}";
+        key = "admin_password";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_idm_admin_password = {
+        sopsFile = "${toString ../../../secrets/idm.yaml}";
+        key = "idm_admin_password";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+    })
     (lib.mkIf isReplicaServer {
       services.kanidm.package = lib.mkForce pkgs.kanidm;
     })
