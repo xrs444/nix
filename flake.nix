@@ -1,6 +1,9 @@
 {
   nixConfig = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
   };
   description = "nixos configuration";
   inputs = {
