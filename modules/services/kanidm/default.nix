@@ -1,22 +1,4 @@
 {
-  config = {
-    # SOPS secrets for kanidm provisioning
-    sops.secrets.kanidm_admin_password = {
-      sopsFile = "${toString ../../../secrets/idm.yaml}";
-      key = "admin_password";
-      owner = "kanidm";
-      group = "kanidm";
-      mode = "0400";
-    };
-    sops.secrets.kanidm_idm_admin_password = {
-      sopsFile = "${toString ../../../secrets/idm.yaml}";
-      key = "idm_admin_password";
-      owner = "kanidm";
-      group = "kanidm";
-      mode = "0400";
-    };
-  };
-{
   config,
   hostname,
   lib,
