@@ -1,11 +1,6 @@
 { pkgs, lib, ... }:
 {
 
-  networking = {
-    hostId = "8f9996ca";
-    useNetworkd = true;
-  };
-
   systemd.network = {
     enable = true;
     netdevs = {
@@ -153,7 +148,7 @@
       };
       "65-bond0.16" = {
         matchConfig.Name = "bond0.16";
-        networkConfig = { 
+        networkConfig = {
           Bridge = "bridge16";
           LinkLocalAddressing = "no";
         };
@@ -163,7 +158,7 @@
       };
       "70-bridge21" = {
         matchConfig.Name = "bridge21";
-        bridgeConfig = {};
+        bridgeConfig = { };
         networkConfig = {
           LinkLocalAddressing = "no";
           IPMasquerade = "no";
@@ -174,7 +169,7 @@
       };
       "75-bridge16" = {
         matchConfig.Name = "bridge16";
-        bridgeConfig = {};
+        bridgeConfig = { };
         networkConfig = {
           LinkLocalAddressing = "no";
           IPMasquerade = "no";
@@ -185,7 +180,7 @@
       };
       "80-bridge17" = {
         matchConfig.Name = "bridge17";
-        bridgeConfig = {};
+        bridgeConfig = { };
         networkConfig = {
           LinkLocalAddressing = "no";
           IPMasquerade = "no";
@@ -196,8 +191,8 @@
       };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
-        address = [ "172.20.3.202/24"];
-        bridgeConfig = {};
+        address = [ "172.20.3.202/24" ];
+        bridgeConfig = { };
         networkConfig = {
           LinkLocalAddressing = "no";
           IPMasquerade = "no";

@@ -1,100 +1,45 @@
 {
-  config,
-  hostname,
-  lib,
-  pkgs,
-  ...
-}:
-
-let
-  # Only xsvr1 should handle provisioning to avoid conflicts
-  isProvisioningServer = hostname == "xsvr1";
-
-  kanidmServerUri = "https://idm.xrs444.net";
-in
-
-lib.mkIf isProvisioningServer {
-
-  # SOPS secrets for Kanidm admin password
-  sops.secrets."admin_password" = {
-    sopsFile = ../../../secrets/idm.yaml;
-    owner = "kanidm";
-    group = "kanidm";
-    mode = "0400";
-  };
-
-  sops.secrets."idm_admin_password" = {
-    sopsFile = ../../../secrets/idm.yaml;
-    owner = "kanidm";
-    group = "kanidm";
-    mode = "0400";
-  };
-
-  # Add kanidm-provision CLI tool for xsvr1
-  environment.systemPackages = with pkgs; [
-    kanidm-provision # Separate CLI package from overlay
-  ];
-
-  services.kanidm = {
-    # Use the secret provisioning package for xsvr1
-    package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
-
-    provision = {
-      enable = true;
-      # Admin account configuration using SOPS secret
-      adminPasswordFile = config.sops.secrets."admin_password".path;
-      idmAdminPasswordFile = config.sops.secrets."idm_admin_password".path;
-
-      # Create groups
-      groups = {
-        # Apps
-        "lubelogger" = { };
-        "lubelogger-admin" = { };
-        # Client Access
-        "xlt1-t" = { };
-        "xlt1-t-admin" = { };
-        "xlt2-s" = { };
-        "xlt2-s-admin" = { };
-        "xdt1-t" = { };
-        "xdt1-t-admin" = { };
-      };
-
-      # Create OAuth2 clients for app authentication
-      clients = {
-        # CraftyController OAuth2 client
-        "craftycontroller" = {
-          displayName = "CraftyController";
-          redirectUris = [
-            "https://crafty.xrs444.net/oauth2/callback"
-          ];
-          scopes = [
-            "openid"
-            "email"
-            "profile"
-          ];
-          # Optionally, set additional client config here
-        };
-        # Longhorn OAuth2 client
-        "longhorn-oauth2" = {
-          displayName = "Longhorn UI";
-          redirectUris = [
-            "https://longhorn.xrs444.net/oauth2/callback"
-          ];
-          scopes = [
-            "openid"
-            "email"
-            "profile"
-          ];
-        };
-      };
-
-      # Create persons/users
-      persons = {
-        "xrs444" = {
-          displayName = "xrs444";
-          legalName = "xrs444";
-          mailAddresses = [ "xrs444@xrs444.net" ];
-        };
+  services.kanidm.provision = {
+    enable = true;
+    adminPasswordFile = "/run/secrets/kanidm_admin_password";
+    idmAdminPasswordFile = "/run/secrets/kanidm_idm_admin_password";
+    groups = {
+      "lubelogger" = { };
+      "lubelogger-admin" = { };
+      "xlt1-t" = { };
+      "xlt1-t-admin" = { };
+      "xlt2-s" = { };
+      "xlt2-s-admin" = { };
+      "xdt1-t" = { };
+      "xdt1-t-admin" = { };
+    };
+    #    systems = {
+    #      oauth2 = {
+    #        "craftycontroller" = {
+    #          displayName = "CraftyController";
+    #          originUrl = "https://crafty.xrs444.net";
+    #          scopeMaps = {
+    #            openid = [ ];
+    #            email = [ ];
+    #            profile = [ ];
+    #          };
+    #        };
+    #        "longhorn-oauth2" = {
+    #          displayName = "Longhorn UI";
+    #          originUrl = "https://longhorn.xrs444.net";
+    #          scopeMaps = {
+    #            openid = [ ];
+    #            email = [ ];
+    #            profile = [ ];
+    #          };
+    #        };
+    #      };
+    #    };
+    persons = {
+      "xrs444" = {
+        displayName = "xrs444";
+        legalName = "xrs444";
+        mailAddresses = [ "xrs444@xrs444.net" ];
       };
     };
   };

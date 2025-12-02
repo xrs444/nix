@@ -1,4 +1,12 @@
-{ config, hostname, inputs, lib, pkgs, username, ... }:
+{
+  config,
+  hostname,
+  inputs,
+  lib,
+  pkgs,
+  username,
+  ...
+}:
 {
   imports = [
     ../../base-nixos.nix
@@ -14,8 +22,11 @@
     inputs.disko.nixosModules.disko
   ];
 
-  networking.hostName = hostname;
-
+  networking = {
+    hostName = hostname;
+    hostId = "0814bb9a";
+    useNetworkd = true;
+  };
 
   boot = {
     initrd = {
@@ -34,7 +45,9 @@
     };
   };
 
-  nix.settings.trusted-users = [ "root" "builder" ];
+  nix.settings.trusted-users = [
+    "root"
+    "builder"
+  ];
   nixpkgs.config.allowUnfree = true;
 }
-

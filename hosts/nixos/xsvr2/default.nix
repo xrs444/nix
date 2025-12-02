@@ -1,4 +1,13 @@
-{ config, hostname, inputs, lib, pkgs, username, platform, ... }:
+{
+  config,
+  hostname,
+  inputs,
+  lib,
+  pkgs,
+  username,
+  platform,
+  ...
+}:
 {
   imports = [
     ../../base-nixos.nix
@@ -12,10 +21,14 @@
   ];
   # Add other heavy modules here as needed
 
-  networking.hostName = hostname;
+  networking = {
+    hostName = hostname;
+    hostId = "8f9996ca";
+    useNetworkd = true;
+  };
 
   boot = {
-    zfs.extraPools = [ "zpool-xsvr2" ];    
+    zfs.extraPools = [ "zpool-xsvr2" ];
     swraid = {
       enable = true;
       mdadmConf = ''

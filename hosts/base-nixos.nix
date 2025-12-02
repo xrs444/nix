@@ -19,7 +19,7 @@
     inputs.disko.nixosModules.disko
     inputs.comin.nixosModules.comin
     ../modules/users
-    ../hosts/nixos/common/services.nix
+    ../modules/services/services.nix
   ];
 
   nix.settings.experimental-features = [
