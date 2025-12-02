@@ -1,4 +1,7 @@
 {
+  nixConfig = {
+    experimental-features = [ "nix-command" "flakes" ];
+  };
   description = "nixos configuration";
   inputs = {
     agenix.url = "github:ryantm/agenix";
