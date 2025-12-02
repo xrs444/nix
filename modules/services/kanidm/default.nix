@@ -33,14 +33,14 @@ in
   config = lib.mkMerge [
     (lib.mkIf isKanidmServer {
       sops.secrets.kanidm_admin_password = {
-        sopsFile = builtins.toString (./../../../secrets/idm.yaml);
+        sopsFile = ../../../secrets/idm.yaml;
         key = "admin_password";
         owner = "kanidm";
         group = "kanidm";
         mode = "0400";
       };
       sops.secrets.kanidm_idm_admin_password = {
-        sopsFile = builtins.toString (./../../../secrets/idm.yaml);
+        sopsFile = ../../../secrets/idm.yaml;
         key = "idm_admin_password";
         owner = "kanidm";
         group = "kanidm";
@@ -111,7 +111,7 @@ in
     # Replica server configuration (xsvr2)
     (lib.mkIf isReplicaServer {
       sops.secrets.kanidm_replication_cert = {
-        sopsFile = builtins.toString (./../../../secrets/kanidm_replication_cert.yaml);
+        sopsFile = ../../../secrets/kanidm_replication_cert.yaml;
         key = "replication_cert";
         owner = "kanidm";
         group = "kanidm";
