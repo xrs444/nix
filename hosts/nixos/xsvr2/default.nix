@@ -21,11 +21,9 @@
   ];
   # Add other heavy modules here as needed
 
-  networking = {
-    hostName = hostname;
-    hostId = "8f9996ca";
-    useNetworkd = true;
-  };
+  networking.hostName = hostname;
+  networking.hostId = "8f9996ca";
+  networking.useNetworkd = true;
 
   boot = {
     zfs.extraPools = [ "zpool-xsvr2" ];

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, hostname, ... }:
 {
   imports = [
     ../../base-nixos.nix
@@ -11,4 +11,8 @@
   };
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = false;
+
+  networking.hostName = hostname;
+  networking.hostId = "0814bb9a";
+  networking.useNetworkd = true;
 }

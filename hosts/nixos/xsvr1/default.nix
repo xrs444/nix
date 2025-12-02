@@ -22,11 +22,9 @@
     inputs.disko.nixosModules.disko
   ];
 
-  networking = {
-    hostName = hostname;
-    hostId = "0814bb9a";
-    useNetworkd = true;
-  };
+  networking.hostName = hostname;
+  networking.hostId = "0814bb9a";
+  networking.useNetworkd = true;
 
   boot = {
     initrd = {
