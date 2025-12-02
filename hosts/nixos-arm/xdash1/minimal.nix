@@ -10,5 +10,6 @@
   ];
 
   # Optionally override or add minimal-only options here
+  minimalImage = true;
   environment.systemPackages = with pkgs; [ labwc ];
 }
