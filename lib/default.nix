@@ -185,6 +185,7 @@ rec {
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
         isWorkstation = (hostConfig.desktop or null) != null;
+        minimalImage = true;
       };
       modules = modulesList;
     };
@@ -219,6 +220,7 @@ rec {
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
         isWorkstation = (hostConfig.desktop or null) != null;
+        minimalImage = true;
       };
       modules = modulesList;
     };

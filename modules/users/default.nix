@@ -1,10 +1,17 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  minimalImage,
+  ...
+}:
+
 {
   imports = [
     ./thomas-local.nix
-    ./builder.nix
-    ./acme.nix
-  ];
+  ]
+  ++ lib.optional (!minimalImage) ./builder.nix
+  ++ lib.optional (!minimalImage) ./acme.nix;
 
   # Global/non-user-specific settings
   security.sudo.wheelNeedsPassword = true;
