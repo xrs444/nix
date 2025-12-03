@@ -10,7 +10,7 @@
   imports = [
     ../../base-nixos.nix
     ../common/boot.nix
-    ../../modules/overrides/raspberrypi4.nix
+    ./modules/overrides/raspberrypi4.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-4
     #    ./network.nix
   ];
