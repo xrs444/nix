@@ -47,7 +47,6 @@
     device = "/dev/disk/by-label/NIXOS_SD";
     fsType = "ext4";
     options = [ "noatime" ];
-    neededForBoot = true;
   };
 
   # Boot partition (can be overridden by disko)

@@ -1,18 +1,15 @@
-{
-  config,
-  lib,
-  pkgs,
-  hostname,
-  ...
-}:
-{
-  imports = [
-    ../../base-nixos.nix
-    ../common/default.nix
-    ../common/hardware-orangepi.nix
-    ../common/boot.nix
-    ./network.nix
-  ];
+{ config, pkgs, hostname, ... }:
+
+  {
+    imports = [
+      ../../base-nixos.nix
+      ../common/default.nix
+      ../common/hardware-orangepi.nix
+      ../common/boot.nix
+      ./network.nix
+      ../../modules/sdImage/custom.nix
+      (import (builtins.fetchTarball "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz") {}).nixosModules.sops
+    ];
 
   networking.hostName = hostname;
 
