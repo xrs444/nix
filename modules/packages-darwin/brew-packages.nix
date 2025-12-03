@@ -47,6 +47,7 @@
       "via"
       "calibre"
       "vlc"
+      "google-chrome"
 
     ];
 

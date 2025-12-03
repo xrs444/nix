@@ -10,15 +10,14 @@
   imports = [
     ../../base-nixos.nix
     ../common/boot.nix
-    ../../../../modules/overrides/raspberrypi4.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-4
+    (import (inputs.self + /modules/overrides/raspberrypi4.nix))
     #    ./network.nix
   ];
 
   networking.hostName = hostname;
 
   # Bootloader configuration for Raspberry Pi
-  boot.loader.grub.enable = lib.mkForce false;
   boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;
 
   # Ensure boot partition is writable during rebuild

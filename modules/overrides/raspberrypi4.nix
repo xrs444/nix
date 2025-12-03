@@ -1,8 +1,9 @@
 { lib, ... }:
 {
   # Mask obsolete options to prevent build errors from upstream hardware module
-  boot.binfmtMiscRegistrations = lib.mkForce null;
+  boot.binfmt.registrations = lib.mkForce { };
   boot.bootMount = lib.mkForce null;
+  boot.loader.grub.device = lib.mkForce null;
   boot.loader.grub.bootDevice = lib.mkForce null;
 
   # Mask deprecated systemd Watchdog options
