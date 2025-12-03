@@ -139,7 +139,7 @@
         let
           validHomes = inputs.nixpkgs.lib.filterAttrs (
             _: cfg: cfg ? config && cfg.config ? activationPackage
-          ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.system == system) allHomes);
+          ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) allHomes);
         in
         inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
           name = name;

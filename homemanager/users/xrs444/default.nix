@@ -13,13 +13,13 @@
     home-manager.enable = true;
     git = {
       enable = true;
-      userName = "Thomas Letherby";
-      userEmail = "xrs444@xrs444.net";
-      ignores = [ ".DS_Store" ];
-      extraConfig = {
+      settings = {
+        user.name = "Thomas Letherby";
+        user.email = "xrs444@xrs444.net";
+        ignores = [ ".DS_Store" ];
         init.defaultBranch = "main";
         pull.rebase = false;
-        core.editor = "micro";
+        core.editor = "nano";
       };
     };
     fish = {
@@ -40,7 +40,6 @@
   imports = [
     ../../common/apps/gitkraken
     ../../common/apps/vscode
-    ./shell/git.nix
     ./shell/starship.nix
     ./shell/tmux.nix
   ];

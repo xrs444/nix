@@ -4,11 +4,6 @@
   services = {
     xserver = {
       enable = true;
-      displayManager.gdm = {
-        enable = true;
-        wayland = true;
-      };
-      desktopManager.gnome.enable = true;
       xkb = {
         layout = "us";
         variant = "";
@@ -16,7 +11,7 @@
     };
     libinput.enable = true;
   };
-  
+
   programs = {
     firefox.enable = true;
     gnupg.agent = {
@@ -30,7 +25,7 @@
     simple-scan
     cheese
     gnome-music
-    epiphany 
+    epiphany
     geary
     evince
     gnome-characters
@@ -47,12 +42,14 @@
     gnome-tour
   ];
 
-  environment.systemPackages = with pkgs; [
-    gnome-remote-desktop
-  ];
+  services.displayManager.gdm = {
+    enable = true;
+    wayland = true;
+  };
+  services.desktopManager.gnome.enable = true;
 
   services.gnome.gnome-remote-desktop.enable = true;
   networking.firewall.allowedTCPPorts = [ 3389 ];
   networking.firewall.allowedUDPPorts = [ 3389 ];
-  
+
 }
