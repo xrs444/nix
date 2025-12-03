@@ -13,7 +13,6 @@
   ++ lib.optional (!minimalImage) ./builder.nix
   ++ lib.optional (!minimalImage) ./acme.nix;
 
-  # Global/non-user-specific settings
   security.sudo.wheelNeedsPassword = true;
 
   services.openssh = {

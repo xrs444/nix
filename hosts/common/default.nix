@@ -19,26 +19,19 @@ in
   };
 
   # Common Nix configuration
-  nix = {
-    settings = {
-      # Core Nix settings
-      experimental-features = "flakes nix-command";
-      flake-registry = "";
-      trusted-users = [
-        "root"
-        "${username}"
-      ];
-      warn-dirty = false;
-      # Default cache configuration for all systems
-      substituters = [
-        "http://nixcache.xrs444.net?priority=10"
-        "https://cache.nixos.org?priority=20"
-      ];
-    };
-    # Flake registry and nixPath setup
-    registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-    nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-  };
+  nix.settings.experimental-features = "flakes nix-command";
+  nix.settings.flake-registry = "";
+  nix.settings.trusted-users = [
+    "root"
+    "${username}"
+  ];
+  nix.settings.warn-dirty = false;
+  nix.settings.substituters = [
+    "http://nixcache.xrs444.net?priority=10"
+    "https://cache.nixos.org?priority=20"
+  ];
+  nix.registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+  nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
 
   # Common bootloader and disko settings for NixOS (x86_64)
   boot.loader.systemd-boot.enable = lib.mkDefault true;
@@ -46,10 +39,5 @@ in
   disko.enable = lib.mkDefault true;
 
   # Common nixpkgs configuration
-  nixpkgs = {
-    # overlays = [ ... ]; # Removed undefined overlays (additions, unstable-packages)
-    config = {
-      allowUnfree = true;
-    };
-  };
+  nixpkgs.config.allowUnfree = true;
 }

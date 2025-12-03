@@ -21,8 +21,6 @@
     AuthorizedKeysFile = ".ssh/authorized_keys";
   };
 
-  # builder user is now defined globally in modules/users/builder.nix
-
   # Enable comin for remote configuration
   services.comin.enable = true;
   services.comin.remotes = [
@@ -32,8 +30,5 @@
       branches.main.name = "main";
     }
   ];
-
-  # Optionally, set a minimal hostname
-  networking.hostName = lib.mkDefault "bootstrap-arm";
 
 }

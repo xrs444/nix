@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  hostname,
   ...
 }:
 {
@@ -10,11 +11,10 @@
     ../common/default.nix
     ../common/hardware-orangepi.nix
     ../common/boot.nix
-    ./disks.nix
     ./network.nix
   ];
 
-  networking.hostName = "xdash1";
+  networking.hostName = hostname;
 
   boot.supportedFilesystems = [
     "vfat"
@@ -45,5 +45,5 @@
   services.getty.autologinUser = "xdash1";
 
   nixpkgs.config.allowUnfree = true;
-  # sops.secrets."wireless-secrets" removed (was wan-wifi.yaml, now split or unused)
+
 }
