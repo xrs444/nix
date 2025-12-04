@@ -174,7 +174,7 @@ rec {
           if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix
         )
       ];
-      debugModules = modulesList;
+
     in
     inputs.nixpkgs.lib.nixosSystem {
       system = hostConfig.platform;
