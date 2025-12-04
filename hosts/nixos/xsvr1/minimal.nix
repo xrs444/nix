@@ -1,9 +1,14 @@
-{ pkgs, hostname, ... }:
+{
+  pkgs,
+  hostname,
+  inputs,
+  ...
+}:
 {
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    ../../../modules/packages-nixos/bootstrap/minimal.nix
+    (import (inputs.self + /modules/sdImage/custom.nix))
   ];
   fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";

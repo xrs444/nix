@@ -4,14 +4,18 @@
   lib,
   pkgs,
   username,
+  config,
   ...
 }:
 {
   imports = [
+    (import (inputs.self + /modules/packages-common/default.nix))
     ../../base-nixos.nix
     ../common/boot.nix
     ../common/hardware-rpi.nix
+    (import (inputs.self + /modules/hardware/RaspberryPi4/default.nix))
     #    ./network.nix
+    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
   ];
 
   networking.hostName = hostname;
@@ -27,8 +31,6 @@
     rm -f /nix/var/nix/profiles/system
     ln -sf /nix/var/nix/profiles/system-profiles/xts1 /nix/var/nix/profiles/system
   '';
-
-  # hardware config now provided by ../common/hardware-rpi.nix
 
   environment.systemPackages = with pkgs; [
     libraspberrypi

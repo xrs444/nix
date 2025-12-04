@@ -23,7 +23,7 @@
     32767 # mountd
     32769 # lockd
   ];
-  networking.allowedUDPPorts = [
+  networking.firewall.allowedUDPPorts = [
     2049 # NFS
     111 # RPC portmapper
     20048 # NFS mountd

@@ -22,34 +22,38 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
     OVMF
   ];
 
-programs.virt-manager.enable = true;
-users.groups.libvirtd.members = ["thomas-local"];
+  programs.virt-manager.enable = true;
+  users.groups.libvirtd.members = [ "thomas-local" ];
 
-virtualisation = { 
-  libvirtd = {
-    enable = true;
-    onBoot = "start";
-    onShutdown = "shutdown";
-    qemu = {
-      package = pkgs.qemu_kvm;
-      runAsRoot = true;
-      ovmf = {
-        enable = true;
-        packages = [ pkgs.OVMF.fd ];
+  virtualisation = {
+    libvirtd = {
+      enable = true;
+      onBoot = "start";
+      onShutdown = "shutdown";
+      qemu = {
+        package = pkgs.qemu_kvm;
+        runAsRoot = true;
       };
+      allowedBridges = [
+        "bridge16"
+        "bridge17"
+        "bridge21"
+        "bridge22"
+      ];
+      extraConfig = ''
+        listen_tls = 0
+        listen_tcp = 1
+        listen_addr = "0.0.0.0"
+        auth_tcp = "none"  # Warning: Use only in trusted networks
+        unix_sock_group = "libvirtd"
+        unix_sock_rw_perms = "0770"
+      '';
     };
-    allowedBridges = [ "bridge16" "bridge17" "bridge21" "bridge22" ];
-    extraConfig = ''
-      listen_tls = 0
-      listen_tcp = 1
-      listen_addr = "0.0.0.0"
-      auth_tcp = "none"  # Warning: Use only in trusted networks
-      unix_sock_group = "libvirtd"
-      unix_sock_rw_perms = "0770"
-    '';
   };
-};
 
-# Open firewall ports
-networking.firewall.allowedTCPPorts = [ 16509 5900 ];  # libvirt and VNC
+  # Open firewall ports
+  networking.firewall.allowedTCPPorts = [
+    16509
+    5900
+  ]; # libvirt and VNC
 }

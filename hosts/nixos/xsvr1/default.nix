@@ -1,9 +1,9 @@
 {
   config,
-  hostname,
-  inputs,
   lib,
   pkgs,
+  hostname,
+  inputs,
   username,
   ...
 }:
@@ -16,10 +16,10 @@
     ./disks.nix # must come before disko module
     ./network.nix
     ./vms.nix
-    ../../../modules/services/zfs
-    ../../../modules/services/remotebuilds/default.nix
+    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
     # Add other heavy modules here as needed
     inputs.disko.nixosModules.disko
+    (import (inputs.self + /modules/packages-common/default.nix))
   ];
 
   networking.hostName = hostname;

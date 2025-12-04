@@ -1,7 +1,19 @@
-{ config, hostname, isWorkstation, lib, pkgs, username, platform, ... }:
+{
+  config,
+  hostname,
+  isWorkstation,
+  lib,
+  pkgs,
+  username,
+  platform,
+  ...
+}:
 let
   isDarwin = pkgs.stdenv.isDarwin;
-  tsClients = [ "xsvr1" "xsvr2" "xsvr3" "xtl1-t-nixos" "xlt1-t" ];
+  tsClients = [
+    "xtl1-t-nixos"
+    "xlt1-t"
+  ];
   enableTailscale = lib.elem "${hostname}" tsClients;
 
 in
@@ -24,11 +36,5 @@ with lib;
     })
   ];
 
-  environment.systemPackages = with pkgs;
-    lib.optionals isWorkstation [ trayscale ];
+  environment.systemPackages = with pkgs; lib.optionals isWorkstation [ trayscale ];
 }
-
-
-
-
-

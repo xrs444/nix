@@ -2,8 +2,8 @@
   config,
   pkgs,
   hostname,
-  self,
   inputs,
+  lib,
   ...
 }:
 
@@ -11,13 +11,14 @@
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    (import (inputs.self + /modules/packages-nixos/hardware/OrangePiZero3/default.nix))
+    (import (inputs.self + /modules/hardware/OrangePiZero3/default.nix))
     ../common/boot.nix
     ./network.nix
     (import (inputs.self + /modules/sdImage/custom.nix))
+    (import (inputs.self + /modules/packages-common/default.nix))
     inputs.sops-nix.nixosModules.sops
+    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
   ];
-
   networking.hostName = hostname;
 
   boot.supportedFilesystems = [

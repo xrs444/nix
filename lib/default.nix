@@ -186,6 +186,7 @@ rec {
         desktop = hostConfig.desktop or null;
         isWorkstation = (hostConfig.desktop or null) != null;
         minimalImage = true;
+        lib = inputs.nixpkgs.lib;
       };
       modules = modulesList;
     };
