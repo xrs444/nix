@@ -1,22 +1,12 @@
 { config, pkgs, ... }:
 
 {
-  services = {
-    xserver = {
-      enable = true;
-      displayManager.gdm = {
-        enable = true;
-        wayland = true;
-      };
-      desktopManager.gnome.enable = true;
-      xkb = {
-        layout = "us";
-        variant = "";
-      };
-    };
-    libinput.enable = true;
-  };
-  
+  services.xserver.enable = true;
+  # Modern display manager and desktop manager options
+  services.displayManager.gdm.enable = true;
+  services.displayManager.gdm.wayland = true;
+  services.desktopManager.gnome.enable = true;
+
   programs = {
     firefox.enable = true;
     gnupg.agent = {
@@ -30,7 +20,7 @@
     simple-scan
     cheese
     gnome-music
-    epiphany 
+    epiphany
     geary
     evince
     gnome-characters
@@ -55,5 +45,5 @@
   services.gnome.gnome-remote-desktop.enable = true;
   networking.firewall.allowedTCPPorts = [ 3389 ];
   networking.firewall.allowedUDPPorts = [ 3389 ];
-  
+
 }

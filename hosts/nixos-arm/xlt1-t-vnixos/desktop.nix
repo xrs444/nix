@@ -4,31 +4,31 @@
   services = {
     xserver = {
       enable = true;
-      displayManager.gdm = {
-        enable = true;
-        wayland = true;
-      };
-      desktopManager.gnome.enable = true;
       xkb = {
         layout = "us";
         variant = "";
       };
     };
-    
     libinput.enable = true;
-  };  programs = {
+    displayManager.gdm = {
+      enable = true;
+      wayland = true;
+    };
+    desktopManager.gnome.enable = true;
+  };
+  programs = {
     firefox.enable = true;
     gnupg.agent = {
       enable = true;
-       enableSSHSupport = true;
-     };
-   };
+      enableSSHSupport = true;
+    };
+  };
   environment.gnome.excludePackages = with pkgs; [
     gnome-calculator
     simple-scan
     cheese
     gnome-music
-    epiphany 
+    epiphany
     geary
     evince
     gnome-characters
@@ -43,11 +43,11 @@
     gnome-contacts
     gnome-photos
     gnome-tour
-    ];
+  ];
 
-    environment.systemPackages = with pkgs; [
-      gnome-remote-desktop
-    ];
+  environment.systemPackages = with pkgs; [
+    gnome-remote-desktop
+  ];
 
   services.gnome.gnome-remote-desktop.enable = true;
   networking.firewall.allowedTCPPorts = [ 3389 ];

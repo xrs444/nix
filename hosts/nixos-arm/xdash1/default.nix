@@ -1,15 +1,22 @@
-{ config, pkgs, hostname, ... }:
+{
+  config,
+  pkgs,
+  hostname,
+  self,
+  inputs,
+  ...
+}:
 
-  {
-    imports = [
-      ../../base-nixos.nix
-      ../common/default.nix
-      ../common/hardware-orangepi.nix
-      ../common/boot.nix
-      ./network.nix
-      ../../modules/sdImage/custom.nix
-      (import (builtins.fetchTarball "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz") {}).nixosModules.sops
-    ];
+{
+  imports = [
+    ../../base-nixos.nix
+    ../common/default.nix
+    (import (inputs.self + /modules/packages-nixos/hardware/OrangePiZero3/default.nix))
+    ../common/boot.nix
+    ./network.nix
+    (import (inputs.self + /modules/sdImage/custom.nix))
+    inputs.sops-nix.nixosModules.sops
+  ];
 
   networking.hostName = hostname;
 
@@ -23,6 +30,8 @@
     firefox
   ];
 
+  programs.labwc.enable = true;
+
   users.users.xdash1 = {
     isNormalUser = true;
     description = "Dashboard Kiosk User";
@@ -31,7 +40,10 @@
   };
 
   hardware.graphics.enable = true;
+
   services.xserver.enable = false;
+  services.displayManager.defaultSession = "labwc";
+  services.displayManager.sddm.enable = false;
 
   services.cage = {
     enable = true;

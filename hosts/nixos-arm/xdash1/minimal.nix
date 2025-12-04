@@ -3,6 +3,7 @@
   lib,
   stateVersion,
   hostname,
+  inputs,
   ...
 }:
 assert hostname != null && hostname != "";
@@ -11,7 +12,7 @@ assert hostname != null && hostname != "";
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    ../common/hardware-orangepi.nix
+    (import (inputs.self + /modules/packages-nixos/hardware/OrangePiZero3/default.nix))
     ../common/boot.nix
     ../../../modules/packages-nixos/bootstrap/minimal.nix
   ];

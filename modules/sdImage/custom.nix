@@ -15,14 +15,9 @@
   };
 
   environment.etc."wpa_supplicant.conf".text =
-    let
-      wifi = config.sops.secrets.wifi.content;
-    in
     ''
-      network={
-        ssid="${wifi.SSID}"
-        psk="${wifi.PSK}"
-      }
+      # Use wpa_supplicant's include directive to load secrets from SOPS-managed file
+      include="${config.sops.secrets.wifi.path}"
     '';
 
   # Custom systemd service for first boot
@@ -32,9 +27,6 @@
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${pkgs.bash}/bin/bash -c 'echo First boot!'";
-    };
-    install = {
-      WantedBy = [ "multi-user.target" ];
     };
   };
 
