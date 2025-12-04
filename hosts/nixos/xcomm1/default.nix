@@ -3,12 +3,10 @@
   lib,
   pkgs,
   inputs,
-  hostname,
   ...
 }:
 {
   imports = [
-    (import (inputs.self + /modules/packages-common/default.nix))
     ../../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/audio-pipewire.nix
@@ -17,7 +15,7 @@
     ./desktop.nix
     ./disks.nix
     inputs.disko.nixosModules.disko
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    # Common imports are now handled by hosts/common/default.nix
   ];
   nixpkgs.config.allowUnfree = true;
 }

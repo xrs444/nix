@@ -16,10 +16,9 @@
     ./disks.nix # must come before disko module
     ./network.nix
     ./vms.nix
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
     # Add other heavy modules here as needed
     inputs.disko.nixosModules.disko
-    (import (inputs.self + /modules/packages-common/default.nix))
+    # Common imports are now handled by hosts/common/default.nix
   ];
 
   networking.hostName = hostname;

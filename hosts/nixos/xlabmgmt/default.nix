@@ -8,7 +8,6 @@
 }:
 {
   imports = [
-    (import (inputs.self + /modules/packages-common/default.nix))
     ../../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/boot.nix
@@ -17,7 +16,7 @@
     #    ./network.nix
     ./disks.nix
     inputs.disko.nixosModules.disko
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    # Common imports are now handled by hosts/common/default.nix
   ];
   # Add other heavy modules here as needed
 

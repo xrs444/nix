@@ -9,12 +9,11 @@
 }:
 {
   imports = [
-    (import (inputs.self + /modules/packages-common/default.nix))
     ../../base-nixos.nix
     ../common/boot.nix
     ./disks.nix
     #    ./network.nix
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    # Common imports are now handled by hosts/common/default.nix
   ];
 
   networking.hostName = hostname;

@@ -1,11 +1,17 @@
 {
   config,
   hostname,
+  lib,
+  pkgs,
+  username,
+  ...
+}:
+{
+  hostname,
   isWorkstation,
   lib,
   pkgs,
   username,
-  platform,
   ...
 }:
 let
@@ -14,14 +20,14 @@ let
     "xtl1-t-nixos"
     "xlt1-t"
   ];
-  enableTailscale = lib.elem "${hostname}" tsClients;
+  enableTailscale = lib.elem hostname tsClients;
 
 in
 
 with lib;
 
 {
-  services.tailscale = mkMerge [
+  services.tailscale = mkIf enableTailscale (mkMerge [
     { enable = true; }
     # Only on NixOS hosts
     (mkIf (!isDarwin) {
@@ -34,7 +40,7 @@ with lib;
         "--accept-routes"
       ];
     })
-  ];
+  ]);
 
-  environment.systemPackages = with pkgs; lib.optionals isWorkstation [ trayscale ];
+  environment.systemPackages = lib.optionals (isWorkstation && enableTailscale) [ pkgs.trayscale ];
 }

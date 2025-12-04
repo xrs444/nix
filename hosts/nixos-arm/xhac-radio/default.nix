@@ -8,13 +8,12 @@
 }:
 {
   imports = [
-    (import (inputs.self + /modules/packages-common/default.nix))
     ../../base-nixos.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-3
     ../common/boot.nix
     ./network.nix
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    # Common imports are now handled by hosts/common/default.nix
   ];
 
   networking.hostName = hostname;

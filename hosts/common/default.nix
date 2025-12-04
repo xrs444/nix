@@ -3,7 +3,7 @@
   config,
   inputs,
   lib,
-  outputs,
+  pkgs,
   username ? "thomas-local",
   ...
 }:
@@ -11,6 +11,11 @@ let
   flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
 in
 {
+  imports = [
+    (import (inputs.self + /modules/packages-common/default.nix) { inherit config lib pkgs; })
+    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    # Add other truly universal imports here
+  ];
   # Option to build a minimal image (skip heavy modules)
   options.minimalImage = lib.mkOption {
     type = lib.types.bool;
