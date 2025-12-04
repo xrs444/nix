@@ -8,7 +8,6 @@
 ## File Summaries
 
 ### default.nix
-{
 
 ## Overview
 

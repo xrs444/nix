@@ -1,3 +1,4 @@
+# Summary: NixOS host configuration for xsvr3, imports hardware, boot, desktop, and VM modules.
 {
   inputs,
   hostname,

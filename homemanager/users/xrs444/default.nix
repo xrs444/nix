@@ -1,3 +1,4 @@
+# Summary: Home Manager configuration for user 'xrs444', setting up shell, git, and common development tools for Darwin and Linux systems.
 {
   pkgs,
   stateVersion,

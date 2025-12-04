@@ -1,3 +1,4 @@
+# Summary: Darwin/macOS host configuration, imports common and platform-specific package modules.
 {
   config,
   hostname,

@@ -1,3 +1,4 @@
+# Summary: NixOS ARM host configuration for xlt1-t-vnixos, imports hardware, disk, and desktop modules.
 {
   hostname,
   inputs,

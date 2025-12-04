@@ -1,3 +1,4 @@
+# Summary: NixOS module for IP routing, enables IP forwarding for selected hosts in the cluster.
 {
   config,
   hostname,
@@ -17,9 +18,9 @@ let
 in
 lib.mkIf (lib.elem "${hostname}" installOn) {
 
-    # Enable IP forwarding
-    boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = lib.mkForce 1;
-      "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
-    };
+  # Enable IP forwarding
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = lib.mkForce 1;
+    "net.ipv6.conf.all.forwarding" = lib.mkForce 1;
+  };
 }

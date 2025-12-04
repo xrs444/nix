@@ -1,3 +1,4 @@
+# Summary: NixOS module for Keepalived, configures high-availability IP failover for cluster nodes.
 {
   config,
   hostname,
@@ -36,7 +37,7 @@ let
 in
 
 if currentNode == null then
-  {}
+  { }
 else
   {
 
@@ -91,7 +92,11 @@ else
           virtualRouterId = 52;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
-            { addr = "${gatewayVipAddress}/24"; dev = "bond0"; label = "bond0:vip1"; }
+            {
+              addr = "${gatewayVipAddress}/24";
+              dev = "bond0";
+              label = "bond0:vip1";
+            }
           ];
           extraConfig = ''
             authentication {
@@ -110,7 +115,11 @@ else
           virtualRouterId = 53;
           priority = currentNode.keepalivedPriority;
           virtualIps = [
-            { addr = "${kanidmVipAddress}/24"; dev = "bond0"; label = "bond0:vip2"; }
+            {
+              addr = "${kanidmVipAddress}/24";
+              dev = "bond0";
+              label = "bond0:vip2";
+            }
           ];
           extraConfig = ''
             authentication {

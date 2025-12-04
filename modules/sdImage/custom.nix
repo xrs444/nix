@@ -1,3 +1,4 @@
+# Summary: NixOS custom SD image module, configures networking, SSH, and system settings for image builds.
 {
   config,
   pkgs,

@@ -1,3 +1,4 @@
+# Summary: NixOS host configuration for xsvr1, imports hardware, boot, disk, network, and VM modules.
 {
   config,
   lib,

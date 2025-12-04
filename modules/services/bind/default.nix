@@ -1,3 +1,4 @@
+# Summary: NixOS module for Bind DNS service, enables and configures DNS forwarding for specified hosts.
 {
   config,
   hostname,
@@ -21,7 +22,7 @@ in
       cacheNetworks = [
         "172.16.0.0/12"
         "100.64.0.0/10"
-        ];
+      ];
       zones = {
         "lab.xrs444.net" = {
           master = true;
@@ -35,11 +36,11 @@ in
                                              1w   ; Expire
                                              1h)  ; Negative Cache TTL
                          IN      NS      ns1
-  
+
             @                 IN      A       172.25.2.251
-  
+
             ns1               IN      A       172.25.2.251
-  
+
             xlabmgmt          IN      A       172.25.2.251
 
             xntnx1            IN      A       172.25.1.10

@@ -1,3 +1,4 @@
+# Summary: NixOS module for Kanidm client, installs Kanidm package and configures environment for Darwin and Linux.
 { config, hostname, lib, pkgs, ... }:
 
 let

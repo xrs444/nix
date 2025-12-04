@@ -1,3 +1,4 @@
+# Summary: NixOS module for Tailscale VPN client, enables Tailscale for NixOS and Darwin hosts.
 {
   config,
   hostname,

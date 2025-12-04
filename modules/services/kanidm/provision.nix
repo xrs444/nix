@@ -1,3 +1,4 @@
+# Summary: Kanidm provision module for NixOS, manages group and password provisioning for identity management.
 {
   services.kanidm.provision = {
     enable = true;

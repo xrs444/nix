@@ -1,3 +1,4 @@
+# Summary: NixOS module for OpenSSH, enables SSH service and configures authentication and firewall settings.
 { ... }:
 {
   services.openssh = {

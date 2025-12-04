@@ -1,3 +1,4 @@
+# Summary: NixOS module for KVM virtualization, installs QEMU and virt-manager for selected hosts.
 {
   config,
   hostname,

@@ -1,3 +1,4 @@
+# Summary: Common NixOS configuration for x86_64 hosts, imports base modules and sets hostname.
 {
   config,
   lib,

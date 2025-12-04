@@ -1,3 +1,4 @@
+# Summary: NixOS host configuration for xlabmgmt, imports hardware, boot, VM guest, and disk modules.
 {
   config,
   lib,

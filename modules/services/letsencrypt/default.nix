@@ -1,3 +1,4 @@
+# Summary: NixOS module for Let's Encrypt, manages certificate issuance and renewal for multiple hosts.
 {
   config,
   hostname,

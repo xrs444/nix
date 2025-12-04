@@ -1,3 +1,4 @@
+# Summary: Hardware configuration for Raspberry Pi 5, sets kernel and boot options for RPi5 boards.
 {
   lib,
   pkgs,

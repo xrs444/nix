@@ -1,3 +1,4 @@
+# Summary: NixOS module for Home Assistant, configures firewall and enables service for selected hosts.
 {
   config,
   hostname,

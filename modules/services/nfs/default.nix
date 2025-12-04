@@ -1,3 +1,4 @@
+# Summary: NixOS module for NFS server, enables NFS and configures exports and firewall for selected hosts.
 {
   hostname,
   lib,

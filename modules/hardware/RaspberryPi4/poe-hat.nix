@@ -1,3 +1,4 @@
+# Summary: Hardware configuration for Raspberry Pi 4 POE Hat, enables device tree overlays and power management options.
 { config, lib, ... }:
 
 let

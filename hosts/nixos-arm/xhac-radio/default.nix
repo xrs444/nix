@@ -1,3 +1,4 @@
+# Summary: NixOS ARM host configuration for xhac-radio, imports hardware, boot, network, and SD image modules.
 {
   hostname,
   inputs,

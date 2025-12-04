@@ -1,3 +1,4 @@
+# Summary: NixOS module for Tailscale VPN client, enables Tailscale for selected hosts and platforms.
 { config, hostname, isWorkstation, lib, pkgs, username, platform, ... }:
 let
   isDarwin = pkgs.stdenv.isDarwin;

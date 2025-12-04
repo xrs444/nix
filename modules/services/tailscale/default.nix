@@ -1,3 +1,4 @@
+# Summary: NixOS module for Tailscale VPN, configures advanced exit node settings for selected hosts.
 {
   config,
   hostname,
@@ -9,8 +10,11 @@
 }:
 let
   # Exit nodes that need advanced Tailscale configuration
-  tsExitNodes = [ "xts1" "xts2" ];
-  
+  tsExitNodes = [
+    "xts1"
+    "xts2"
+  ];
+
 in
 {
   # Advanced Tailscale configuration for exit nodes (NixOS only)
@@ -34,7 +38,7 @@ in
       openFirewall = true;
       useRoutingFeatures = "both";
     };
-    
+
     networking.firewall.checkReversePath = "loose";
 
     services.networkd-dispatcher = {
@@ -55,7 +59,13 @@ in
         ts-vip = {
           interface = "eth0";
           virtualRouterId = 51;
-          priority = if hostname == "xts1" then 101 else if hostname == "xts2" then 100 else 99;
+          priority =
+            if hostname == "xts1" then
+              101
+            else if hostname == "xts2" then
+              100
+            else
+              99;
           state = if hostname == "xts1" then "MASTER" else "BACKUP";
           virtualIps = [
             { addr = "172.18.10.100/24"; }

@@ -1,3 +1,4 @@
+# Summary: Common NixOS ARM configuration, sets base options and imports modules for ARM hosts.
 # Common NixOS ARM-specific configuration
 # This module provides base configurations that are common across NixOS ARM hosts
 {

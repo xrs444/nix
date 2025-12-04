@@ -1,3 +1,4 @@
+# Summary: Hardware configuration for Orange Pi Zero 3, sets bootloader and system options for Allwinner H618 SoC.
 # Orange Pi Zero 3 hardware configuration
 # Uses Allwinner H618 SoC
 {

@@ -6,6 +6,10 @@ def summarize_content(content, filename):
     Replace this with an LLM/API call for smarter summaries.
     """
     lines = [line.rstrip() for line in content.splitlines()]
+    # Look for a '# Summary:' header in comments
+    for line in lines:
+        if line.strip().startswith("# Summary:"):
+            return line.strip("# ").replace("Summary:", "").strip()
     # Try to extract leading comment block (e.g., for Nix, Python, shell)
     comment_lines = []
     for line in lines:

@@ -1,3 +1,4 @@
+# Summary: NixOS module for ZFS filesystem support, enables ZFS and configures environment for selected hosts.
 {
   config,
   hostname,
@@ -38,4 +39,5 @@ lib.mkIf (lib.elem "${hostname}" installOn) {
       };
     };
   };
-} // {}
+}
+// { }

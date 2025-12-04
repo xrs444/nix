@@ -1,3 +1,4 @@
+# Summary: Nix flake entrypoint for HomeProd, defines inputs, outputs, and configuration for NixOS and Darwin systems.
 {
   nixConfig = {
     experimental-features = [

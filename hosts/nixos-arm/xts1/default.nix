@@ -1,3 +1,4 @@
+# Summary: NixOS ARM host configuration for xts1, imports boot, hardware, and Raspberry Pi modules.
 {
   hostname,
   inputs,

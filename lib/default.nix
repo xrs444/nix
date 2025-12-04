@@ -1,3 +1,4 @@
+# Summary: Core Nix library for HomeProd, provides functions for Home Manager and NixOS configuration generation.
 {
   inputs,
   outputs,

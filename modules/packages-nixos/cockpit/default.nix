@@ -1,3 +1,4 @@
+# Summary: NixOS module for Cockpit web console, enables and configures Cockpit for selected hosts.
 { config, lib, pkgs, ... }:
 
 let

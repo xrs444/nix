@@ -1,3 +1,4 @@
+# Summary: Home Manager configuration for user 'thomas-local', sets up bash shell and basic packages.
 { pkgs, ... }:
 {
   home.stateVersion = "25.05";

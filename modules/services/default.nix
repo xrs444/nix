@@ -1,3 +1,4 @@
+# Summary: Aggregates and imports all service modules for NixOS configuration.
 {
   config,
   lib,

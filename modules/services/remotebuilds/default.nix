@@ -1,3 +1,4 @@
+# Summary: NixOS module for remote builds, configures builder hosts and SOPS secrets for distributed builds.
 {
   config,
   pkgs,

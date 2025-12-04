@@ -1,3 +1,4 @@
+# Summary: NixOS ARM host configuration for xts2, imports boot and disk modules.
 {
   hostname,
   inputs,

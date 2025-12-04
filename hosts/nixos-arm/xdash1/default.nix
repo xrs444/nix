@@ -1,3 +1,4 @@
+# Summary: NixOS ARM host configuration for xdash1, imports Orange Pi hardware, boot, network, and SD image modules.
 {
   pkgs,
   hostname,

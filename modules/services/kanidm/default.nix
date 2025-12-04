@@ -1,3 +1,4 @@
+# Summary: NixOS module for Kanidm identity management service, configures server and replica roles for cluster hosts.
 {
   config,
   hostname,

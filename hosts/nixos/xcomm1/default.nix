@@ -1,3 +1,4 @@
+# Summary: NixOS host configuration for xcomm1, imports hardware, audio, and disk modules.
 {
   config,
   lib,

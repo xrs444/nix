@@ -1,3 +1,4 @@
+# Summary: Base NixOS configuration shared by x86_64 and ARM hosts, sets options and imports core modules.
 # Base NixOS configuration shared between x86_64 and ARM platforms
 {
   lib,

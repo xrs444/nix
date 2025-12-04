@@ -1,3 +1,4 @@
+# Summary: NixOS module for common packages, imports submodules and adds system-wide utilities.
 {
   pkgs,
   lib,
