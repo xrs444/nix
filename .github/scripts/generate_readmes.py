@@ -5,11 +5,19 @@ def summarize_content(content, filename):
     Basic summarizer: returns the first non-empty line or a generic message.
     Replace this with an LLM/API call for smarter summaries.
     """
-    lines = [line.strip() for line in content.splitlines() if line.strip()]
-    if not lines:
-        return f"No content to summarize in {filename}."
-    # For config/code, try to return a meaningful first line
-    return lines[0][:200] + ("..." if len(lines[0]) > 200 else "")
+    lines = [line.rstrip() for line in content.splitlines()]
+    # Try to extract leading comment block (e.g., for Nix, Python, shell)
+    comment_lines = []
+    for line in lines:
+        if line.strip().startswith("#"):
+            comment_lines.append(line.strip("# ").rstrip())
+        elif comment_lines:
+            break  # Stop at first non-comment after a comment block
+    if comment_lines:
+        return " ".join(comment_lines)
+    # Fallback: show first 5 non-empty lines
+    snippet = "\n".join([l for l in lines if l.strip()][:5])
+    return snippet if snippet else f"No content to summarize in {filename}."
 
 import datetime
 
