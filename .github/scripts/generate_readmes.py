@@ -42,7 +42,9 @@ def generate_readme_for_folder(folder):
             readme.write("This folder is currently empty.\n")
 
 def main():
-    for root, dirs, files in os.walk('.', topdown=True):
+    # Always walk from repo root, even if run from a subfolder
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    for root, dirs, files in os.walk(repo_root, topdown=True):
         # Skip .git, .github, and hidden folders
         if any(part.startswith('.') for part in root.split(os.sep)):
             continue
