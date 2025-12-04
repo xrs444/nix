@@ -1,27 +1,16 @@
-{
-  config,
-  hostname,
-  inputs,
-  lib,
-  pkgs,
-  username,
-  platform,
-  desktop,
-  ...
-}:
-{
+{ config, hostname, inputs, lib, pkgs, username, platform, desktop, ... }:
+let
+  base = import ../default.nix { inherit lib pkgs platform username; };
+in
+base // {
   # Host-specific configuration for xlt1-t (MacBook)
-  
-  # Set the hostname
   networking.hostName = hostname;
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
-  
+
   # macOS-specific settings
   system.defaults = {
-    
     menuExtraClock.Show24Hour = true;
-    # Dock configuration
     dock = {
       autohide = true;
       orientation = "left";
@@ -34,26 +23,21 @@
           "Ghostty.app"
       ];
     };
-
     controlcenter = {
       BatteryShowPercentage = true;
     };
-
-    # Finder configuration
     finder = {
       AppleShowAllExtensions = true;
       FXPreferredViewStyle = "clmv"; # Column view
       ShowStatusBar = true;
       _FXShowPosixPathInTitle = true;
+      FXPreferredViewStyle = "clmv";
       AppleShowAllFiles = true;
       FXRemoveOldTrashItems = true;
       ShowExternalHardDrivesOnDesktop = false;
       ShowPathbar = true;
       ShowRemovableMediaOnDesktop = false;
-
     };
-    
-    # System UI configuration
     NSGlobalDomain = {
       AppleShowAllExtensions = true;
       AppleShowAllFiles = true;
@@ -62,10 +46,6 @@
       KeyRepeat = 1;
     };
   };
-
-  # When GA:
-  #extra-experimental-features = external-builders
-  #external-builders = [{"systems":["aarch64-linux","x86_64-linux"],"program":"/usr/local/bin/determinate-nixd","args":["builder"]}]
 
   # Manual PAM configuration for Touch ID (if needed)
   environment.etc."pam.d/sudo_local".text = ''
@@ -92,5 +72,5 @@
     '';
 
   environment.shells = with pkgs; [ bashInteractive zsh fish ];
-
+}
 }

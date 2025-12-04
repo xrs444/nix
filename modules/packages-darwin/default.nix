@@ -71,5 +71,6 @@
     # Other utilities
     pipx
     virtualenv
+    ollama
   ];
 }

@@ -92,6 +92,8 @@ in
         "catppuccin-icons.hidesExplorerArrows" = false;
         "catppuccin-icons.specificFolders" = true;
         "catppuccin-icons.monochrome" = false;
+        "files.autoSave" = "afterDelay";
+        "files.autoSaveDelay" = 60000;
         "chat.mcp.autostart" = "newAndOutdated";
         "chat.mcp.discovery.enabled" = true;
         "chat.mcp.enabled" = true;

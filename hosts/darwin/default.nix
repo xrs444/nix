@@ -1,15 +1,9 @@
 # Summary: Darwin/macOS host configuration, imports common and platform-specific package modules.
 {
-  config,
-  hostname,
-  inputs,
   lib,
-  outputs,
   pkgs,
   platform,
-  stateVersion,
   username,
-  desktop,
   ...
 }:
 {
@@ -34,13 +28,6 @@
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
 
-  };
-
-  # Basic system configuration
-  system.defaults = {
-    dock.autohide = true;
-    finder.AppleShowAllExtensions = true;
-    finder.FXPreferredViewStyle = "clmv";
   };
 
   # Enable home-manager integration
