@@ -1,4 +1,4 @@
-{ config, ... }:
+{ ... }:
 {
   # Minimal stub: define root filesystem for xhac-radio
   fileSystems."/" = {

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ ... }:
 
 {
   # Homebrew packages that don't have Nix equivalents or work better via Homebrew

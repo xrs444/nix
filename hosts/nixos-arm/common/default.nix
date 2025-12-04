@@ -1,9 +1,7 @@
 # Common NixOS ARM-specific configuration
 # This module provides base configurations that are common across NixOS ARM hosts
 {
-  config,
   lib,
-  pkgs,
   ...
 }:
 {

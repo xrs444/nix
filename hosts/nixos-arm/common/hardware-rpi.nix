@@ -1,9 +1,7 @@
 # Raspberry Pi hardware configuration
 # Suitable for Raspberry Pi 4 and later models
 {
-  config,
   lib,
-  pkgs,
   ...
 }:
 {

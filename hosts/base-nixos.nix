@@ -1,14 +1,8 @@
 # Base NixOS configuration shared between x86_64 and ARM platforms
 {
-  config,
   lib,
-  pkgs,
   inputs,
-  outputs,
-  hostname,
-  username,
   stateVersion,
-  overlays,
   ...
 }:
 {

@@ -227,11 +227,14 @@ rec {
     };
   forAllHosts =
     f:
+    let
+      nixosHosts = builtins.filter (host: hosts.${host}.type == "nixos") (builtins.attrNames hosts);
+    in
     builtins.listToAttrs (
       map (host: {
         name = "${host}-minimal";
         value = f host hosts.${host};
-      }) (builtins.attrNames hosts)
+      }) nixosHosts
     );
   forAllSystems = inputs.nixpkgs.lib.genAttrs [
     "x86_64-linux"
