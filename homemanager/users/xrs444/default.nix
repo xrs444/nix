@@ -17,11 +17,11 @@
       settings = {
         user.name = "Thomas Letherby";
         user.email = "xrs444@xrs444.net";
-        ignores = [ ".DS_Store" ];
         init.defaultBranch = "main";
         pull.rebase = false;
         core.editor = "nano";
       };
+      ignores = [ ".DS_Store" ];
     };
     fish = {
       enable = true;

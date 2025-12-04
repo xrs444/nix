@@ -1,8 +1,9 @@
 { config, hostname, inputs, lib, pkgs, username, platform, desktop, ... }:
-let
-  base = import ../default.nix { inherit lib pkgs platform username; };
-in
-base // {
+{
+  imports = [
+    ../default.nix
+  ];
+
   # Host-specific configuration for xlt1-t (MacBook)
   networking.hostName = hostname;
   networking.computerName = hostname;
@@ -71,5 +72,4 @@ base // {
     '';
 
   environment.shells = with pkgs; [ bashInteractive zsh fish ];
-}
 }
