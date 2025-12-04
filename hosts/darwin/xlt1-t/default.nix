@@ -28,7 +28,6 @@ base // {
     };
     finder = {
       AppleShowAllExtensions = true;
-      FXPreferredViewStyle = "clmv"; # Column view
       ShowStatusBar = true;
       _FXShowPosixPathInTitle = true;
       FXPreferredViewStyle = "clmv";
