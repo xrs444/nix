@@ -20,7 +20,7 @@
 
   environment.systemPackages = with pkgs; [
     mpd
-    mpc-cli
+    mpc
   ];
 
   # Enable MPD for internet radio
@@ -39,4 +39,3 @@
   # nix build .#nixosConfigurations.xhac-radio.config.system.build.sdImage
   nixpkgs.config.allowUnfree = true;
 }
-

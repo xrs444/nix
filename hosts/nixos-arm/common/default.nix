@@ -12,10 +12,12 @@
     ./performance.nix
   ];
 
-  options.minimalImage = lib.mkOption {
-    type = lib.types.bool;
-    default = false;
-    description = "If true, build a minimal image (skip heavy modules like letsencrypt).";
+  options = {
+    minimalImage = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "If true, build a minimal image (skip heavy modules like letsencrypt).";
+    };
   };
 
   config = {

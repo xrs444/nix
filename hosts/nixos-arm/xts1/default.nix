@@ -9,19 +9,16 @@
 {
   imports = [
     ../../base-nixos.nix
-    inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ../common/boot.nix
-    ./disks.nix
-  #    ./network.nix
+    ../common/hardware-rpi.nix
+    #    ./network.nix
   ];
 
   networking.hostName = hostname;
 
-
   # Bootloader configuration for Raspberry Pi
-  boot.loader.grub.enable = lib.mkForce false;
   boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;
-  
+
   # Ensure boot partition is writable during rebuild
   boot.loader.generic-extlinux-compatible.configurationLimit = 10;
 
@@ -31,13 +28,7 @@
     ln -sf /nix/var/nix/profiles/system-profiles/xts1 /nix/var/nix/profiles/system
   '';
 
-  hardware = {
-    raspberry-pi."4".apply-overlays-dtmerge.enable = true;
-    deviceTree = {
-      enable = true;
-      filter = "*rpi-4-*.dtb";
-    };
-  };
+  # hardware config now provided by ../common/hardware-rpi.nix
 
   environment.systemPackages = with pkgs; [
     libraspberrypi

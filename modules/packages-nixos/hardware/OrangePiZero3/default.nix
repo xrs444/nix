@@ -12,17 +12,17 @@
     loader = {
       # Explicitly disable GRUB for ARM boards
       grub.enable = lib.mkForce false;
-      
+
       systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = lib.mkForce false;
-      
+
       # Use the generic extlinux compatible loader
       generic-extlinux-compatible.enable = lib.mkDefault true;
     };
-    
+
     # Use mainline kernel for Orange Pi Zero 3 (Allwinner H618)
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    
+
     # Orange Pi Zero 3 specific kernel modules
     initrd.availableKernelModules = [
       "usbhid"
@@ -33,7 +33,7 @@
       "sun4i_i2s"
       "sun8i_emac"
     ];
-    
+
     # Kernel parameters for Orange Pi Zero 3
     kernelParams = [
       "console=ttyS0,115200n8"
@@ -43,19 +43,22 @@
   };
 
   # Root filesystem configuration (can be overridden by disko)
-  # fileSystems."/" = lib.mkDefault {
-  #   device = "/dev/disk/by-label/NIXOS_SD";
-  #   fsType = "ext4";
-  #   options = [ "noatime" ];
-  # };
+  fileSystems."/" = lib.mkForce {
+    device = "/dev/disk/by-label/NIXOS_SD";
+    fsType = "ext4";
+    options = [ "noatime" ];
+  };
 
   # Boot partition (can be overridden by disko)
-  # fileSystems."/boot" = lib.mkDefault {
-  #   device = "/dev/disk/by-label/FIRMWARE";
-  #   fsType = "vfat";
-  #   options = [ "fmask=0022" "dmask=0022" ];
-  # };
-  
+  fileSystems."/boot" = lib.mkForce {
+    device = "/dev/disk/by-label/FIRMWARE";
+    fsType = "vfat";
+    options = [
+      "fmask=0022"
+      "dmask=0022"
+    ];
+  };
+
   # Power management for ARM SoC
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
 

@@ -1,10 +1,20 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   users.users."thomas-local" = {
     isNormalUser = true;
     description = "thomas-local user";
-    extraGroups = [ "wheel" "networkmanager" "docker" "libvirtd" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "docker"
+      "libvirtd"
+    ];
     shell = pkgs.bashInteractive;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKuEzwE067tav1hJ44etyUMBlgPIeNqRn4E1+zPt7dK"
@@ -15,7 +25,7 @@
     group = "thomas-local";
   };
 
-  users.groups.thomas-local = {};
+  users.groups.thomas-local = { };
 
   # Disable Kanidm PAM completely when using local authentication
   services.kanidm.enablePam = false;

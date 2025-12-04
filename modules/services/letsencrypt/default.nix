@@ -8,12 +8,23 @@
 }:
 
 let
-  allHosts = [ "xsvr1" "xsvr2" "xsvr3" "xcomm1" "xts1" "xts2" ];
-  kanidmNodes = [ "xsvr1" "xsvr2" "xsvr3"];
+  allHosts = [
+    "xsvr1"
+    "xsvr2"
+    "xsvr3"
+    "xcomm1"
+    "xts1"
+    "xts2"
+  ];
+  kanidmNodes = [
+    "xsvr1"
+    "xsvr2"
+    "xsvr3"
+  ];
   domain = "xrs444.net";
   isPrimaryServer = hostname == "xsvr1";
   isKanidmServer = lib.elem hostname kanidmNodes;
-  isSdImageBuild = config ? system && config.system ? build && config.system.build ? sdImage;
+  isSdImageBuild = config ? platform && config.system ? build && config.system.build ? sdImage;
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;
 in
@@ -61,34 +72,45 @@ lib.mkIf (!minimalImage) {
     };
     certs = lib.mkMerge (
       # Host certificates
-      (map (h: { "${h}.${domain}" = { extraDomainNames = []; }; }) allHosts)
+      (map (h: {
+        "${h}.${domain}" = {
+          extraDomainNames = [ ];
+        };
+      }) allHosts)
       ++
-      # Kanidm shared certificate
-      (lib.optional isKanidmServer {
-        "idm.${domain}" = { extraDomainNames = []; };
-      })
+        # Kanidm shared certificate
+        (lib.optional isKanidmServer {
+          "idm.${domain}" = {
+            extraDomainNames = [ ];
+          };
+        })
     );
   };
 
   # Ensure acme user/group exists only on relevant hosts
   users.users = lib.mkMerge [
-    (lib.mkIf (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text)) {
-      acme = {
-        isSystemUser = true;
-        group = "acme";
-        home = "/var/lib/acme";
-        createHome = true;
-        openssh.authorizedKeys.keyFiles = [
-          (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-        ];
-      };
-    })
+    (lib.mkIf
+      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
+      {
+        acme = {
+          isSystemUser = true;
+          group = "acme";
+          home = "/var/lib/acme";
+          createHome = true;
+          openssh.authorizedKeys.keyFiles = [
+            (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
+          ];
+        };
+      }
+    )
   ];
   users.groups = lib.mkMerge [
-    (lib.mkIf (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text)) {
-      acme = {};
-    })
+    (lib.mkIf
+      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
+      {
+        acme = { };
+      }
+    )
   ];
-
 
 }

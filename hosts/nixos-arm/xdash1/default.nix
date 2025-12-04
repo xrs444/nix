@@ -1,23 +1,36 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  pkgs,
+  hostname,
+  self,
+  inputs,
+  ...
+}:
+
 {
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    ../common/hardware-orangepi.nix
+    (import (inputs.self + /modules/packages-nixos/hardware/OrangePiZero3/default.nix))
     ../common/boot.nix
-    ./disks.nix
     ./network.nix
+    (import (inputs.self + /modules/sdImage/custom.nix))
+    inputs.sops-nix.nixosModules.sops
   ];
 
-  networking.hostName = "xdash1";
+  networking.hostName = hostname;
 
-
-  boot.supportedFilesystems = [ "vfat" "ext4" ];
+  boot.supportedFilesystems = [
+    "vfat"
+    "ext4"
+  ];
 
   environment.systemPackages = with pkgs; [
     labwc
     firefox
   ];
+
+  programs.labwc.enable = true;
 
   users.users.xdash1 = {
     isNormalUser = true;
@@ -27,7 +40,10 @@
   };
 
   hardware.graphics.enable = true;
+
   services.xserver.enable = false;
+  services.displayManager.defaultSession = "labwc";
+  services.displayManager.sddm.enable = false;
 
   services.cage = {
     enable = true;
@@ -37,12 +53,6 @@
 
   services.getty.autologinUser = "xdash1";
 
-  # To build a minimal SD image for bootstrap, run:
-  # nix build .#nixosConfigurations.xdash1.config.system.build.sdImageSpecialisation.minimal
-
-  specialisation.minimal.configuration = import ../../../modules/packages-nixos/bootstrap/minimal.nix;
   nixpkgs.config.allowUnfree = true;
-    sops.secrets."wireless-secrets" = {
-      sopsFile = ../../../secrets/wan-wifi.yaml;
-    };
+
 }

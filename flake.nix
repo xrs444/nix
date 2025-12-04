@@ -1,4 +1,10 @@
 {
+  nixConfig = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+  };
   description = "nixos configuration";
   inputs = {
     agenix.url = "github:ryantm/agenix";
@@ -8,12 +14,12 @@
     comin.inputs.nixpkgs.follows = "nixpkgs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-25.11";
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.05";
+    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.11";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -123,16 +129,22 @@
     in
     {
       homeConfigurations = allHomes;
-      nixosConfigurations = lib.mkAllNixosConfigs;
+      nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
       devShells = lib.forAllSystems (system: {
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };
       });
       checks = lib.forAllSystems (
         system:
-        inputs.nixpkgs.lib.mapAttrs (name: cfg: cfg.config.activationPackage) (
-          inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.system == system) allHomes
-        )
+        let
+          validHomes = inputs.nixpkgs.lib.filterAttrs (
+            _: cfg: cfg ? config && cfg.config ? activationPackage
+          ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) allHomes);
+        in
+        inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
+          name = name;
+          value = cfg.config.activationPackage;
+        }) validHomes
       );
       nixosModules = {
         cockpit = import ./modules/packages-nixos/cockpit;

@@ -12,5 +12,6 @@
     openssl
     micro
     sops
+    git
   ];
 }

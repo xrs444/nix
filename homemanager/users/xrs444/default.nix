@@ -13,13 +13,13 @@
     home-manager.enable = true;
     git = {
       enable = true;
-      userName = "Thomas Letherby";
-      userEmail = "xrs444@xrs444.net";
-      ignores = [ ".DS_Store" ];
-      extraConfig = {
+      settings = {
+        user.name = "Thomas Letherby";
+        user.email = "xrs444@xrs444.net";
+        ignores = [ ".DS_Store" ];
         init.defaultBranch = "main";
         pull.rebase = false;
-        core.editor = "micro";
+        core.editor = "nano";
       };
     };
     fish = {
@@ -29,13 +29,17 @@
       };
     };
     starship.enable = true;
+    go.enable = true;
+    rbenv.enable = true;
+    atuin.enable = true;
+    tmux.enable = true;
+    yt-dlp.enable = true;
   };
 
   # Apps
   imports = [
     ../../common/apps/gitkraken
     ../../common/apps/vscode
-    ./shell/git.nix
     ./shell/starship.nix
     ./shell/tmux.nix
   ];
@@ -62,6 +66,46 @@
     kubeconform
     yamllint
     pre-commit
+    # Add any CLI or GUI apps not supported as Home Manager modules here
+    hugo
+    lua
+    nodejs
+    openjdk
+    ruby
+    ansible
+    cilium-cli
+    cmctl
+    fluxcd
+    hubble
+    kubectl
+    kubeseal
+    kustomize
+    talosctl
+    arping
+    baobab
+    chezmoi
+    nmap
+    sops
+    sshpass
+    tfswitch
+    tree
+    yamllint
+    yq
+    _7zz
+    brotli
+    lz4
+    lzo
+    p7zip
+    wimlib
+    xz
+    zstd
+    thunderbird
+    iterm2
+    wireshark
+    openscad
+    powershell
+    pipx
+    virtualenv
   ];
 
   # Enable font configuration
@@ -77,6 +121,10 @@
   home.sessionVariables = {
     EDITOR = "micro";
     BROWSER = "firefox";
+    SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
+    KUBECONFIG = "/Users/xrs444/k8s/config";
+    TALOSCONFIG = "Users/xrs444/Repositories/HomeProd/talos/config.yaml";
+    PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
   };
 
   # Enable Catppuccin theme globally
