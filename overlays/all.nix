@@ -7,5 +7,4 @@
   (import ./pkgs.nix { inherit inputs; })
   (import ./unstable.nix { inherit inputs; })
   (import ./unfree.nix { inherit inputs; })
-  (import ./patch-grub-bootDevice.nix)
 ]
