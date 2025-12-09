@@ -30,7 +30,6 @@
 
   };
 
-  # Enable home-manager integration
   users.users.${username} = {
     name = username;
     home = "/Users/${username}";
