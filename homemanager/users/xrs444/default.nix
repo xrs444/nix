@@ -32,7 +32,7 @@
     starship.enable = true;
     go.enable = true;
     rbenv.enable = true;
-    atuin.enable = true;
+#    atuin.enable = true;
     tmux.enable = true;
     yt-dlp.enable = true;
   };

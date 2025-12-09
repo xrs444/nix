@@ -1,4 +1,14 @@
-{ config, hostname, inputs, lib, pkgs, username, platform, desktop, ... }:
+{
+  config,
+  hostname,
+  inputs,
+  lib,
+  pkgs,
+  username,
+  platform,
+  desktop,
+  ...
+}:
 {
   imports = [
     ../default.nix
@@ -8,6 +18,7 @@
   networking.hostName = hostname;
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
+  hardware.keyboard.qmk.enable = true;
 
   # macOS-specific settings
   system.defaults = {
@@ -19,9 +30,9 @@
       largesize = 48;
       scroll-to-open = true;
       persistent-apps = [
-          "Visual Studio Code.app"
-          "Firefox.app"
-          "Ghostty.app"
+        "Visual Studio Code.app"
+        "Firefox.app"
+        "Ghostty.app"
       ];
     };
     controlcenter = {
@@ -60,7 +71,7 @@
       . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
     fi
     # End Nix
-    '';
+  '';
 
   programs.fish.enable = true;
   programs.fish.shellInit = ''
@@ -69,7 +80,14 @@
       source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
     end
     # End Nix
-    '';
+  '';
 
-  environment.shells = with pkgs; [ bashInteractive zsh fish ];
+  environment.shells = with pkgs; [
+    bashInteractive
+    zsh
+    fish
+  ];
+  users.users.xrs444 = {
+    shell = pkgs.fish;
+  };
 }

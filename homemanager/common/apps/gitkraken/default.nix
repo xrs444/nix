@@ -12,6 +12,6 @@
   };
   home.packages = with pkgs; [
     gitkraken
-    gk-cli
+    #    gk-cli
   ];
 }
