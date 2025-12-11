@@ -1,25 +1,18 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  ...
+}:
 
 let
-  cfg = config.services.comin-custom;
   isXsvr3 = config.networking.hostName == "xsvr3";
 in
 
-with lib;
-
 {
-  options.services.comin-custom = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable custom Comin configuration";
-    };
-  };
-
-  config = mkIf cfg.enable {
+  config = {
     services.comin = {
       enable = true;
-      hostname = config.networking.hostName;  # Explicitly set the hostname
+      hostname = config.networking.hostName; # Explicitly set the hostname
       remotes = [
         {
           name = "origin";
