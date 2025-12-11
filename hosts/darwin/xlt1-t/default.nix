@@ -18,7 +18,6 @@
   networking.hostName = hostname;
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
-  hardware.keyboard.qmk.enable = true;
 
   # macOS-specific settings
   system.defaults = {
@@ -87,7 +86,4 @@
     zsh
     fish
   ];
-  users.users.xrs444 = {
-    shell = pkgs.fish;
-  };
 }

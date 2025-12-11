@@ -5,6 +5,7 @@
     ../packages-common/kanidm
     ./tailscale
     ./brew-packages.nix
+    ./qmk/default.nix
   ];
 
   # Darwin-specific packages (Nix packages)
