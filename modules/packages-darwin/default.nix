@@ -38,7 +38,7 @@
     arping
     baobab
     chezmoi
-
+    home-manager
     nmap
     sops
     sshpass

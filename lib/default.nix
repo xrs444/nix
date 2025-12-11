@@ -14,44 +14,83 @@ rec {
       homeHosts = inputs.nixpkgs.lib.filterAttrs (
         _: v: v.type == null || v.type == "nixos" || v.type == "darwin"
       ) hosts;
-    in
-    inputs.nixpkgs.lib.mapAttrs (
-      hostName: hostConfig:
-      inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = import inputs.nixpkgs {
-          system = hostConfig.platform;
-          config.allowUnfree = true;
-          overlays = overlays ++ [
-            (final: prev: {
-              unstable = import inputs.nixpkgs-unstable {
-                system = final.system;
-                config.allowUnfree = true;
-              };
-            })
+      base = inputs.nixpkgs.lib.mapAttrs (
+        hostName: hostConfig:
+        inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = import inputs.nixpkgs {
+            system = hostConfig.platform;
+            config.allowUnfree = true;
+            overlays = overlays ++ [
+              (final: prev: {
+                unstable = import inputs.nixpkgs-unstable {
+                  system = final.system;
+                  config.allowUnfree = true;
+                };
+              })
+            ];
+          };
+          extraSpecialArgs = {
+            inherit inputs outputs stateVersion;
+            username = hostConfig.user;
+            desktop = hostConfig.desktop or null;
+            platform = hostConfig.platform;
+          };
+          modules = [
+            (
+              { config, specialArgs, ... }:
+              {
+                home.username = specialArgs.username;
+                home.homeDirectory =
+                  if specialArgs.platform == "aarch64-darwin" || specialArgs.platform == "x86_64-darwin" then
+                    "/Users/${specialArgs.username}"
+                  else
+                    "/home/${specialArgs.username}";
+              }
+            )
+            (../homemanager/users + "/${hostConfig.user}/default.nix")
           ];
-        };
-        extraSpecialArgs = {
-          inherit inputs outputs stateVersion;
-          username = hostConfig.user;
-          desktop = hostConfig.desktop or null;
-          platform = hostConfig.platform;
-        };
-        modules = [
-          (
-            { config, specialArgs, ... }:
-            {
-              home.username = specialArgs.username;
-              home.homeDirectory =
-                if specialArgs.platform == "aarch64-darwin" || specialArgs.platform == "x86_64-darwin" then
-                  "/Users/${specialArgs.username}"
-                else
-                  "/home/${specialArgs.username}";
-            }
-          )
-          (../homemanager/users + "/${hostConfig.user}/default.nix")
-        ];
-      }
-    ) homeHosts;
+        }
+      ) homeHosts;
+      # Patch: ensure xrs444 for aarch64-darwin is always present
+      patched =
+        if base ? xrs444 then
+          base
+        else
+          base
+          // {
+            xrs444 = inputs.home-manager.lib.homeManagerConfiguration {
+              pkgs = import inputs.nixpkgs {
+                system = "aarch64-darwin";
+                config.allowUnfree = true;
+                overlays = overlays ++ [
+                  (final: prev: {
+                    unstable = import inputs.nixpkgs-unstable {
+                      system = final.system;
+                      config.allowUnfree = true;
+                    };
+                  })
+                ];
+              };
+              extraSpecialArgs = {
+                inherit inputs outputs stateVersion;
+                username = "xrs444";
+                desktop = null;
+                platform = "aarch64-darwin";
+              };
+              modules = [
+                (
+                  { config, specialArgs, ... }:
+                  {
+                    home.username = specialArgs.username;
+                    home.homeDirectory = "/Users/${specialArgs.username}";
+                  }
+                )
+                ../homemanager/users/xrs444/default.nix
+              ];
+            };
+          };
+    in
+    patched;
   mkAllNixosConfigs =
     let
       nixosHosts = inputs.nixpkgs.lib.filterAttrs (_: v: v.type == "nixos") hosts;
@@ -118,21 +157,28 @@ rec {
         }
         ../hosts/darwin/default.nix
         (../hosts/darwin + "/${hostName}")
-        inputs.home-manager.darwinModules.home-manager
-        {
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            backupFileExtension = "backup";
-            extraSpecialArgs = {
-              inherit inputs outputs stateVersion;
-              username = hostConfig.user;
-              desktop = hostConfig.desktop or null;
-            };
-            users.${hostConfig.user} = ../homemanager;
-          };
-        }
-      ];
+      ]
+      ++ (
+        if hostConfig.enableHomeManager or true then
+          [
+            inputs.home-manager.darwinModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "backup";
+                extraSpecialArgs = {
+                  inherit inputs outputs stateVersion;
+                  username = hostConfig.user;
+                  desktop = hostConfig.desktop or null;
+                };
+                users.${hostConfig.user} = ../homemanager;
+              };
+            }
+          ]
+        else
+          [ ]
+      );
     in
     inputs.nix-darwin.lib.darwinSystem {
       system = hostConfig.platform;

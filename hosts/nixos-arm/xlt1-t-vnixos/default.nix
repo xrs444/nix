@@ -6,10 +6,9 @@
   pkgs,
   username,
   platform,
-  system,
   config,
   ...
-}@args:
+}:
 {
   imports = [
     ../../base-nixos.nix

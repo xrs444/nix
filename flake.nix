@@ -111,6 +111,7 @@
           platform = "aarch64-darwin";
           type = "darwin";
           desktop = "aqua";
+          enableHomeManager = false;
         };
       };
 
