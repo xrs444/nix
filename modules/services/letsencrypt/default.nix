@@ -25,8 +25,7 @@ let
   isPrimaryServer = hostname == "xsvr1";
   isKanidmServer = lib.elem hostname kanidmNodes;
   isSdImageBuild =
-    config.pkgs.stdenv.hostPlatform.system ? build
-    && config.pkgs.stdenv.hostPlatform.system.build ? sdImage;
+    pkgs.stdenv.hostPlatform.system ? build && pkgs.stdenv.hostPlatform.system.build ? sdImage;
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;
 in

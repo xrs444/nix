@@ -22,6 +22,9 @@
     inputs.disko.nixosModules.disko
     inputs.comin.nixosModules.comin
     ../modules/users/default.nix
+    ../modules/packages-nixos/default.nix
+    ../modules/services/default.nix
+
   ];
 
   config = {

@@ -15,9 +15,9 @@ let
   importDirectory = name: import (currentDir + "/${name}");
 in
 {
-  imports = lib.mkIf (!config.minimalImage) (
-    lib.mapAttrsToList (name: _: importDirectory name) directories
-  );
+  # Always import all submodules. Do not use config in imports to avoid recursion.
+  # Submodules should use mkIf/mkEnableOption for conditional logic based on config.minimalImage.
+  imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
 
   environment.systemPackages = with pkgs; [ ];
 
