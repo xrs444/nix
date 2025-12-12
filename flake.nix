@@ -16,7 +16,9 @@
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
-    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    # Using PR #150 commit until merged - fixes nix-dev invalid path issue
+    # https://github.com/nix-community/nix-vscode-extensions/pull/150
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions/bd97792786ef43285579d50ef353a4b867756e10";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
