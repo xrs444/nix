@@ -5,6 +5,8 @@
       "nix-command"
       "flakes"
     ];
+    # Increase download buffer to avoid warnings during flake evaluation
+    download-buffer-size = 134217728; # 128 MiB (default is 64 MiB)
   };
   description = "nixos configuration";
   inputs = {

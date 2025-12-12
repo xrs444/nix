@@ -35,7 +35,10 @@ in
     "http://nixcache.xrs444.net?priority=10"
     "https://cache.nixos.org?priority=20"
   ];
-  nix.registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+  # Use proper flake registry without builtins.toFile warnings
+  nix.registry = lib.mapAttrs (_: flake: {
+    flake = flake;
+  }) flakeInputs;
   nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
 
   # Common bootloader and disko settings for NixOS (x86_64)
