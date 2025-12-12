@@ -1,22 +1,18 @@
 # Summary: NixOS module for Cockpit web console, enables and configures Cockpit for selected hosts.
 {
   config,
+  hostRoles ? [ ],
   lib,
   pkgs,
   ...
 }:
 
 let
-  # Get hostname from the system configuration
-  hostname = config.networking.hostName;
-
-  installOn = [
-    "xsvr1"
-  ];
+  hasRole = lib.elem "cockpit" hostRoles;
 in
 
 {
-  config = lib.mkIf (lib.elem hostname installOn) {
+  config = lib.mkIf hasRole {
     services.cockpit = {
       enable = true;
       openFirewall = true;

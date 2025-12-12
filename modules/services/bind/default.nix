@@ -2,6 +2,7 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   platform,
@@ -9,12 +10,10 @@
 }:
 
 let
-  installOn = [
-    "xlabmgmt"
-  ];
+  hasRole = lib.elem "bind" hostRoles;
 in
 {
-  config = lib.mkIf (lib.elem "${hostname}" installOn) {
+  config = lib.mkIf hasRole {
 
     services.bind = {
       enable = true;

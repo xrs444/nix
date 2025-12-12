@@ -1,9 +1,7 @@
 # Common configuration for all systems (NixOS, NixOS-ARM, Darwin)
 {
-  config,
   inputs,
   lib,
-  pkgs,
   username ? "thomas-local",
   ...
 }:
@@ -12,8 +10,8 @@ let
 in
 {
   imports = [
-    (import (inputs.self + /modules/packages-common/default.nix) { inherit config lib pkgs; })
-    (import (inputs.self + /modules/services/default.nix) { inherit config lib pkgs; })
+    ../../modules/packages-common
+    ../../modules/services
     # Add other truly universal imports here
   ];
   # Option to build a minimal image (skip heavy modules)

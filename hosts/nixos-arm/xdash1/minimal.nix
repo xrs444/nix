@@ -1,39 +1,44 @@
+# Summary: Minimal SD image configuration for xdash1, bootstraps with comin for full config deployment.
 {
   pkgs,
+  lib,
   stateVersion,
   hostname,
-  inputs,
+  username,
   ...
 }:
 assert hostname != null && hostname != "";
-
+let
+  disksPath = ./disks.nix;
+  hasDisksConfig = builtins.pathExists disksPath;
+in
 {
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    (import (inputs.self + /modules/hardware/OrangePiZero3/default.nix))
+    ../../../modules/hardware/OrangePiZero3
     ../common/boot.nix
-    (import (inputs.self + /modules/sdImage/custom.nix))
-  ];
+    ../../../modules/sdImage/custom.nix
+  ]
+  ++ lib.optional hasDisksConfig disksPath;
 
-  # Optionally override or add minimal-only options here
-  environment.systemPackages = with pkgs; [ labwc ];
   system.stateVersion = stateVersion;
-
   networking.hostName = hostname;
 
-  users.users.xdash1 = {
+  # Basic user configuration
+  users.users.${username} = {
     isNormalUser = true;
-    home = "/home/xdash1";
-    createHome = true;
-    shell = pkgs.bashInteractive;
-    group = "xdash1";
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
+    shell = lib.mkDefault pkgs.bash;
   };
 
-  users.groups.xdash1 = { };
+  # Enable sudo for wheel group
+  security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  boot.loader.generic-extlinux-compatible.enable = true;
-  boot.loader.grub.enable = false;
+  # Boot configuration handled by sd-image.nix and hardware modules
   boot.supportedFilesystems = [
     "vfat"
     "ext4"

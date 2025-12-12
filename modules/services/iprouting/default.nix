@@ -2,21 +2,16 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   platform,
   ...
 }:
 let
-  installOn = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-    "xts1"
-    "xrs2"
-  ];
+  hasRole = lib.elem "iprouting" hostRoles;
 in
-lib.mkIf (lib.elem "${hostname}" installOn) {
+lib.mkIf hasRole {
 
   # Enable IP forwarding
   boot.kernel.sysctl = {

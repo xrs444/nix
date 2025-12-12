@@ -1,5 +1,6 @@
-# Summary: NixOS module for Home Assistant, configures firewall and enables service for selected hosts.
+# Summary: NixOS module for Home Assistant, installs and configures Home Assistant for selected hosts.
 {
+  hostRoles ? [ ],
   config,
   hostname,
   lib,
@@ -8,11 +9,9 @@
   ...
 }:
 let
-  installOn = [
-    "xsvr1"
-  ];
+  hasRole = lib.elem "homeassistant" hostRoles;
 in
-lib.mkIf (lib.elem "${hostname}" installOn) {
+lib.mkIf hasRole {
 
   networking.firewall.allowedTCPPorts = [
     5900 # VNC

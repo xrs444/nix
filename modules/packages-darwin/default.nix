@@ -3,7 +3,6 @@
 {
   imports = [
     ../packages-common/kanidm
-    ./tailscale
     ./brew-packages.nix
     ./qmk/default.nix
   ];

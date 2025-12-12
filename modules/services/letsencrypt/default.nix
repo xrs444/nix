@@ -2,12 +2,24 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   ...
 }:
 
 let
+  domain = "xrs444.net";
+
+  # Role-based configuration from flake.nix host definitions
+  isPrimaryServer = lib.elem "letsencrypt-primary" hostRoles;
+  isLetsencryptHost = lib.elem "letsencrypt-host" hostRoles || isPrimaryServer;
+  isKanidmServer =
+    lib.elem "kanidm-server" hostRoles
+    || lib.elem "kanidm-primary" hostRoles
+    || lib.elem "kanidm-replica" hostRoles;
+
+  # Generate certificates for all letsencrypt hosts
   allHosts = [
     "xsvr1"
     "xsvr2"
@@ -16,14 +28,6 @@ let
     "xts1"
     "xts2"
   ];
-  kanidmNodes = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-  ];
-  domain = "xrs444.net";
-  isPrimaryServer = hostname == "xsvr1";
-  isKanidmServer = lib.elem hostname kanidmNodes;
   isSdImageBuild =
     pkgs.stdenv.hostPlatform.system ? build && pkgs.stdenv.hostPlatform.system.build ? sdImage;
   # Provide a default for minimalImage if not defined

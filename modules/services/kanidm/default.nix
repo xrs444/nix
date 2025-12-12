@@ -2,26 +2,20 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   ...
 }:
 
 let
-  # Only xsvr1 and xsvr2 should run kanidm servers
-  isKanidmServer = builtins.elem hostname [
-    "xsvr1"
-    "xsvr2"
-  ];
+  # Role-based configuration from flake.nix host definitions
+  isPrimaryServer = lib.elem "kanidm-primary" hostRoles;
+  isReplicaServer = lib.elem "kanidm-replica" hostRoles;
+  isKanidmServer = lib.elem "kanidm-server" hostRoles || isPrimaryServer || isReplicaServer;
 
-  # xsvr1 is the primary server
-  isPrimaryServer = hostname == "xsvr1";
-
-  # xsvr2 is the replica server
-  isReplicaServer = hostname == "xsvr2";
-
-  # Only xsvr1 should run provisioning
-  isProvisioningHost = hostname == "xsvr1";
+  # Only primary should run provisioning
+  isProvisioningHost = isPrimaryServer;
 
   # Kanidm server URI points to the VIP
   kanidmServerUri = "https://idm.xrs444.net";

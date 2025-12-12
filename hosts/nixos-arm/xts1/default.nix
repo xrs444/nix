@@ -1,7 +1,6 @@
 # Summary: NixOS ARM host configuration for xts1, imports boot, hardware, and Raspberry Pi modules.
 {
   hostname,
-  inputs,
   lib,
   pkgs,
   ...
@@ -11,7 +10,7 @@
     ../../base-nixos.nix
     ../common/boot.nix
     ../common/hardware-rpi.nix
-    (import (inputs.self + /modules/hardware/RaspberryPi4/default.nix))
+    ../../../modules/hardware/RaspberryPi4
     #    ./network.nix
     # Common imports are now handled by hosts/common/default.nix
   ];

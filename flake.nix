@@ -54,61 +54,112 @@
       # Import overlays as a list from a single file
       allOverlays = import ./overlays/all.nix { inherit inputs; };
 
-      # Unified host definitions
+      # Unified host definitions with role-based service assignments
       hosts = {
         xsvr1 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          roles = [
+            "kvm"
+            "samba"
+            "zfs"
+            "iprouting"
+            "talos"
+            "kanidm-primary"
+            "letsencrypt-primary"
+            "cockpit"
+            "homeassistant"
+            "tailscale-package"
+          ];
         };
         xsvr2 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          roles = [
+            "kvm"
+            "samba"
+            "zfs"
+            "iprouting"
+            "talos"
+            "kanidm-replica"
+            "letsencrypt-host"
+            "tailscale-package"
+          ];
         };
         xsvr3 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
           desktop = "gnome";
+          roles = [
+            "kvm"
+            "samba"
+            "iprouting"
+            "talos"
+            "kanidm-server"
+            "letsencrypt-host"
+            "tailscale-package"
+          ];
         };
         xlabmgmt = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
           desktop = "gnome";
+          enableHomeManager = false;
+          roles = [ "bind" ];
         };
         xts1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
+          enableHomeManager = false;
+          roles = [
+            "iprouting"
+            "letsencrypt-host"
+            "tailscale-exit-node"
+          ];
         };
         xts2 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
+          enableHomeManager = false;
+          roles = [
+            "letsencrypt-host"
+            "tailscale-exit-node"
+          ];
         };
         xcomm1 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
           desktop = "gnome";
+          roles = [ "letsencrypt-host" ];
         };
         xdash1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
+          enableWifi = true;
+          roles = [ ];
         };
         xhac-radio = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
+          enableHomeManager = false;
+          enableWifi = true;
+          roles = [ ];
         };
         xlt1-t-vnixos = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
           desktop = "gnome";
+          roles = [ ];
         };
         xlt1-t = {
           user = "xrs444";
@@ -116,6 +167,7 @@
           type = "darwin";
           desktop = "aqua";
           enableHomeManager = false;
+          roles = [ "tailscale-client" ];
         };
       };
 
@@ -155,7 +207,6 @@
       nixosModules = {
         cockpit = import ./modules/packages-nixos/cockpit;
         comin = import ./modules/packages-nixos/comin;
-        tailscale = import ./modules/packages-nixos/tailscale;
         zfs = import ./modules/services/zfs;
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;
@@ -171,7 +222,7 @@
         openssh = import ./modules/services/openssh;
         remotebuilds = import ./modules/services/remotebuilds;
         talos = import ./modules/services/talos;
-        tailscaleService = import ./modules/services/tailscale;
+        tailscale = import ./modules/services/tailscale;
       };
       formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
       overlays = {

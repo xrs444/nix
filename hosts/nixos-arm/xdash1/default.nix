@@ -10,10 +10,10 @@
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    (import (inputs.self + /modules/hardware/OrangePiZero3/default.nix))
+    ../../../modules/hardware/OrangePiZero3
     ../common/boot.nix
     ./network.nix
-    (import (inputs.self + /modules/sdImage/custom.nix))
+    ../../../modules/sdImage/custom.nix
     inputs.sops-nix.nixosModules.sops
     # Common imports are now handled by hosts/common/default.nix
   ];

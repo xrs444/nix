@@ -2,21 +2,18 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   platform,
   ...
 }:
 let
-  installOn = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-  ];
+  hasRole = lib.elem "talos" hostRoles;
 
 in
 {
-  config = lib.mkIf (lib.elem "${hostname}" installOn) {
+  config = lib.mkIf hasRole {
     networking.firewall = {
       trustedInterfaces = [
         "bond0.22"

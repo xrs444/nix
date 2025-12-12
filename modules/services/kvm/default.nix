@@ -2,19 +2,16 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   platform,
   ...
 }:
 let
-  installOn = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-  ];
+  hasRole = lib.elem "kvm" hostRoles;
 in
-lib.mkIf (lib.elem "${hostname}" installOn) {
+lib.mkIf hasRole {
 
   environment.systemPackages = with pkgs; [
     qemu

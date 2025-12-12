@@ -2,21 +2,18 @@
 {
   config,
   hostname,
+  hostRoles ? [ ],
   lib,
   pkgs,
   platform,
   ...
 }:
 let
-  installOn = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-  ];
+  hasRole = lib.elem "samba" hostRoles;
 
 in
 {
-  config = lib.mkIf (lib.elem "${hostname}" installOn) {
+  config = lib.mkIf hasRole {
     services.samba = {
       enable = true;
       openFirewall = true;

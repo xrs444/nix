@@ -7,7 +7,7 @@
 
 # Make a host key:
 # sudo mkdir -p /var/lib/private/sops/age
-# sudo age-keygen -o /var/lib/private/sops/age/keys.txt
+# 
 
 # Display the host public key:
 # sudo age-keygen -y /var/lib/private/sops/age/keys.txt
