@@ -32,7 +32,8 @@
       "sun50i_codec_analog"
       "sun8i_codec"
       "sun4i_i2s"
-      "sun8i_emac"
+      # Note: sun8i_emac may not be available in mainline kernel 6.18
+      # Network should work with dwmac-sun8i instead
     ];
 
     # Kernel parameters for Orange Pi Zero 3

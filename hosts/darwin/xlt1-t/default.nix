@@ -57,6 +57,28 @@
     };
   };
 
+  # Remote builders configuration
+  nix.buildMachines = [
+    {
+      hostName = "xsvr1.lan";
+      sshUser = "builder";
+      sshKey = "/Users/xrs444/.ssh/builder_key";
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      maxJobs = 8;
+      speedFactor = 2;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+    }
+  ];
+  nix.distributedBuilds = true;
+
   # Manual PAM configuration for Touch ID (if needed)
   environment.etc."pam.d/sudo_local".text = ''
     # Written by nix-darwin for Touch ID support
