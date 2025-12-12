@@ -14,9 +14,9 @@ let
   importDirectory = name: import (currentDir + "/${name}");
 in
 {
-  config = {
-    imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
+  imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
 
+  config = {
     environment.systemPackages = with pkgs; [
       openssl
       micro

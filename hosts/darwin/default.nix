@@ -14,7 +14,6 @@
     ../../modules/packages-workstation/default.nix
   ];
 
-
   # Set system state version
   system.stateVersion = 5;
   nix = {
@@ -22,9 +21,15 @@
     extraOptions = ''
       experimental-features = nix-command flakes
     '';
+    settings = {
+      trusted-users = [
+        "@admin"
+        username
+      ];
+    };
   };
 
-    # Configure nixpkgs
+  # Configure nixpkgs
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
 
