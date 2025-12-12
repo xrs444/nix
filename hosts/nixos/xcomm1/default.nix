@@ -15,7 +15,6 @@
     ./network.nix
     ./desktop.nix
     ./disks.nix
-    inputs.disko.nixosModules.disko
     # Common imports are now handled by hosts/common/default.nix
   ];
   nixpkgs.config.allowUnfree = true;

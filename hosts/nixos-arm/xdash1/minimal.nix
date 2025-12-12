@@ -22,8 +22,6 @@ assert hostname != null && hostname != "";
 
   networking.hostName = hostname;
 
-  minimalImage = true;
-
   users.users.xdash1 = {
     isNormalUser = true;
     home = "/home/xdash1";

@@ -278,11 +278,11 @@ in
           vscode-marketplace.ms-python.python
           vscode-marketplace.ms-python.vscode-pylance
           vscode-marketplace.ms-python.vscode-python-envs
-          vscode-marketplace.ms-toolsai.jupyter
-          vscode-marketplace.ms-toolsai.jupyter-keymap
-          vscode-marketplace.ms-toolsai.jupyter-renderers
-          vscode-marketplace.ms-toolsai.vscode-jupyter-cell-tags
-          vscode-marketplace.ms-toolsai.vscode-jupyter-slideshow
+          #. vscode-marketplace.ms-toolsai.jupyter
+          #. vscode-marketplace.ms-toolsai.jupyter-keymap
+          #. vscode-marketplace.ms-toolsai.jupyter-renderers
+          #. vscode-marketplace.ms-toolsai.vscode-jupyter-cell-tags
+          #. vscode-marketplace.ms-toolsai.vscode-jupyter-slideshow
           vscode-marketplace.ms-vscode-remote.remote-containers
           vscode-marketplace.ms-vscode-remote.remote-ssh
           vscode-marketplace.ms-vscode-remote.remote-ssh-edit
@@ -330,17 +330,10 @@ in
           vscode-extensions.ms-vscode-remote.vscode-remote-extensionpack
           vscode-marketplace.nefrob.vscode-just-syntax
           vscode-marketplace.nico-castell.linux-desktop-file
-          vscode-marketplace.pixelbyte-studios.pixelbyte-love2d
           vscode-marketplace.pkief.material-product-icons
-          vscode-marketplace.prince781.vala
-          vscode-marketplace.pollywoggames.pico8-ls
-          vscode-marketplace.rust-lang.rust-analyzer
           vscode-marketplace.ryu1kn.partial-diff
           vscode-marketplace.s3anmorrow.openwithkraken
           vscode-marketplace.sanjulaganepola.github-local-actions
-          vscode-marketplace.slevesque.shader
-          vscode-marketplace.trond-snekvik.simple-rst
-          vscode-marketplace.twxs.cmake
           vscode-marketplace.tobiashochguertel.just-formatter
           vscode-marketplace.unifiedjs.vscode-mdx
           vscode-marketplace.viktorzetterstrom.non-breaking-space-highlighter

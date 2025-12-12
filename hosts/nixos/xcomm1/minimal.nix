@@ -1,6 +1,13 @@
-{ pkgs, lib, ... }:
 {
-  imports = [ ../../base-nixos.nix ];
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
+{
+  imports = [
+    ../../base-nixos.nix
+  ];
   # Minimal stub for xcomm1-minimal; add overrides if needed
 
   fileSystems."/" = {

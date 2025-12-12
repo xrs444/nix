@@ -1,11 +1,7 @@
 # Summary: NixOS host configuration for xsvr1, imports hardware, boot, disk, network, and VM modules.
 {
-  config,
-  lib,
-  pkgs,
-  hostname,
   inputs,
-  username,
+  hostname,
   ...
 }:
 {
@@ -14,11 +10,9 @@
     ../common/hardware-amd.nix
     ../common/boot.nix
     ../common/performance.nix
-    ./disks.nix # must come before disko module
+    ./disks.nix
     ./network.nix
     ./vms.nix
-    # Add other heavy modules here as needed
-    inputs.disko.nixosModules.disko
     # Common imports are now handled by hosts/common/default.nix
   ];
 
@@ -31,6 +25,14 @@
       availableKernelModules = [
         "mpt3sas"
         "nvme"
+        "xhci_pci"
+        "ahci"
+        "usbhid"
+        "usb_storage"
+        "sd_mod"
+        "dm_mod"
+        "raid1"
+        "md_mod"
       ];
     };
     zfs.extraPools = [ "zpool-xsvr1" ];

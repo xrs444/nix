@@ -15,10 +15,21 @@
     ./serial.nix
     ./vms.nix
     ./disks.nix
-    inputs.disko.nixosModules.disko
     # Common imports are now handled by hosts/common/default.nix
   ];
-  # Add other heavy modules here as needed
+
+  boot.initrd = {
+    availableKernelModules = [
+      "mpt3sas"
+      "nvme"
+      "xhci_pci"
+      "ahci"
+      "usbhid"
+      "usb_storage"
+      "sd_mod"
+      "dm_mod"
+    ];
+  };
 
   networking.hostName = hostname;
   nixpkgs.config.allowUnfree = true;

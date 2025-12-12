@@ -217,8 +217,20 @@ rec {
           [ ]
       )
       ++ [
-        (
-          if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix
+        (import
+          (
+            if isArm then ../hosts/nixos-arm/${hostName}/default.nix else ../hosts/nixos/${hostName}/default.nix
+          )
+          {
+            inherit inputs stateVersion overlays;
+            hostname = hostName;
+            username = hostConfig.user;
+            platform = hostConfig.platform;
+            desktop = hostConfig.desktop or null;
+            lib = inputs.nixpkgs.lib;
+            config = { };
+            pkgs = import inputs.nixpkgs { system = hostConfig.platform; };
+          }
         )
       ];
 

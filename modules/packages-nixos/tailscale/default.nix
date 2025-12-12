@@ -2,13 +2,6 @@
 {
   config,
   hostname,
-  lib,
-  pkgs,
-  username,
-  ...
-}:
-{
-  hostname,
   isWorkstation,
   lib,
   pkgs,
@@ -16,17 +9,14 @@
   ...
 }:
 let
-  isDarwin = pkgs.stdenv.isDarwin;
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   tsClients = [
     "xtl1-t-nixos"
     "xlt1-t"
   ];
   enableTailscale = lib.elem hostname tsClients;
-
 in
-
 with lib;
-
 {
   services.tailscale = mkIf enableTailscale (mkMerge [
     { enable = true; }

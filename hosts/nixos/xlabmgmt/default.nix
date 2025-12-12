@@ -16,7 +16,6 @@
     ./desktop.nix
     #    ./network.nix
     ./disks.nix
-    inputs.disko.nixosModules.disko
     # Common imports are now handled by hosts/common/default.nix
   ];
   # Add other heavy modules here as needed

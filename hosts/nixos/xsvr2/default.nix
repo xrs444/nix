@@ -1,6 +1,7 @@
 # Summary: NixOS host configuration for xsvr2, imports hardware, boot, VM, and disk modules.
 {
   hostname,
+  inputs,
   ...
 }:
 {
@@ -22,6 +23,20 @@
   networking.useNetworkd = true;
 
   boot = {
+    initrd = {
+      availableKernelModules = [
+        "mpt3sas"
+        "nvme"
+        "xhci_pci"
+        "ahci"
+        "usbhid"
+        "usb_storage"
+        "sd_mod"
+        "dm_mod"
+        "raid1"
+        "md_mod"
+      ];
+    };
     zfs.extraPools = [ "zpool-xsvr2" ];
     swraid = {
       enable = true;

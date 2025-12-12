@@ -14,12 +14,14 @@ let
   importDirectory = name: import (currentDir + "/${name}");
 in
 {
-  imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
+  config = {
+    imports = lib.mapAttrsToList (name: _: importDirectory name) directories;
 
-  environment.systemPackages = with pkgs; [
-    openssl
-    micro
-    sops
-    git
-  ];
+    environment.systemPackages = with pkgs; [
+      openssl
+      micro
+      sops
+      git
+    ];
+  };
 }
