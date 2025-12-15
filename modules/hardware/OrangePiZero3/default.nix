@@ -41,6 +41,9 @@
       "console=ttyS0,115200n8"
       "console=tty0"
       "earlycon=uart,mmio32,0x05000000"
+      "root=/dev/disk/by-label/NIXOS_SD"
+      "rootfstype=ext4"
+      "rootwait"
     ];
   };
 
