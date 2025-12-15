@@ -1,3 +1,7 @@
 # Because Apple.
 .DS_Store
 tmp/
+
+# Nix build results
+result
+result-*
