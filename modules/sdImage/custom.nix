@@ -29,21 +29,28 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHqIkfm1V7YPoB9h/6BhR6UIiZGLxVl0U/XqLGpO3N3d thomas-local@xrs444.net"
     ];
 
-    # WiFi configuration (conditional based on networking.wireless.enable from host config)
-    networking.wireless.secretsFile = lib.mkIf config.networking.wireless.enable (
-      config.sops.secrets."wan-wifi".path
-    );
-    networking.wireless.networks = lib.mkIf config.networking.wireless.enable {
-      # Network name is provided as wan_ssid in secrets file
-      # pskRaw uses ext: prefix for wpa_supplicant's new secrets mechanism
-      "@wan_ssid@" = {
-        pskRaw = "ext:wan_psk";
+    # WiFi configuration via NetworkManager (conditional based on networking.wireless.enable from host config)
+    networking.networkmanager.ensureProfiles.profiles = lib.mkIf config.networking.wireless.enable {
+      "wifi" = {
+        connection.id = "wifi";
+        connection.type = "802-11-wireless";
+        "802-11-wireless".mode = "infrastructure";
+        "802-11-wireless".ssid = config.sops.secrets."wan-wifi-ssid".path;
+        "802-11-wireless-security"."key-mgmt" = "wpa-psk";
+        "802-11-wireless-security".psk = config.sops.secrets."wan-wifi-psk".path;
+        ipv4.method = "auto";
+        ipv6.method = "auto";
       };
     };
 
-    # SOPS secret for WiFi (only if WiFi enabled)
-    sops.secrets."wan-wifi" = lib.mkIf config.networking.wireless.enable {
+    # SOPS secrets for WiFi SSID and PSK (only if WiFi enabled)
+    sops.secrets."wan-wifi-ssid" = lib.mkIf config.networking.wireless.enable {
       sopsFile = ../../secrets/wan-wifi.yaml;
+      key = "SSID";
+    };
+    sops.secrets."wan-wifi-psk" = lib.mkIf config.networking.wireless.enable {
+      sopsFile = ../../secrets/wan-wifi.yaml;
+      key = "PSK";
     };
 
     # Enable comin for automatic configuration deployment
