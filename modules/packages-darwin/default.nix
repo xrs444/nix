@@ -63,10 +63,12 @@
     thunderbird
 
     # Utilities
+    gitkraken
     iterm2
     wireshark
     openscad
     powershell
+    vscode
 
     # Other utilities
     pipx

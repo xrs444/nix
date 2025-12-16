@@ -79,7 +79,7 @@ in
   };
 
   programs.vscode = {
-    enable = true;
+    enable = false; # VS Code installed via system packages, only manage settings
     profiles.default = {
       enableExtensionUpdateCheck = false;
       enableUpdateCheck = false;

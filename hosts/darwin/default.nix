@@ -16,6 +16,10 @@
 
   # Set system state version
   system.stateVersion = 5;
+
+  # Enable fish shell system-wide
+  programs.fish.enable = true;
+
   nix = {
     enable = false;
     extraOptions = ''

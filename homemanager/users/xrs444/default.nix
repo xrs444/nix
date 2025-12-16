@@ -23,35 +23,29 @@
       };
       ignores = [ ".DS_Store" ];
     };
-    fish = {
-      enable = true;
-      shellAliases = {
-        nix-sh = "fish $HOME/.local/bin/nix-sh.fish";
-      };
-    };
+    # Fish configuration is managed by nix-darwin on macOS to prevent PATH issues
+    fish.enable = pkgs.stdenv.isLinux;
     starship.enable = true;
     go.enable = true;
     rbenv.enable = true;
-    atuin.enable = true;
+    atuin = {
+      enable = true;
+      enableFishIntegration = pkgs.stdenv.isLinux;
+      enableZshIntegration = true;
+    };
     tmux.enable = true;
     yt-dlp.enable = true;
   };
 
   # Apps
   imports = [
-    ../../common/apps/gitkraken
     ../../common/apps/vscode
     ./shell/starship.nix
     ./shell/tmux.nix
   ];
 
-  # Ensure gitkraken and vscode are installed only for xrs444
-  # programs.gitkraken.enable = true; # Removed: not a valid Home Manager option
-  programs.vscode.enable = true;
-
   # Install non-standard fonts
   home.packages = with pkgs; [
-    gitkraken
     # Nerd Fonts for terminal and coding
     nerd-fonts.jetbrains-mono
     nerd-fonts.fira-code
@@ -61,13 +55,10 @@
     nerd-fonts.space-mono
     nerd-fonts.symbols-only
     direnv
-    teams # Microsoft Teams (official client)
-    # Flux/Kustomize/CI tools for xrs444
+    teams
     kustomize
     kubeconform
-    yamllint
     pre-commit
-    # Add any CLI or GUI apps not supported as Home Manager modules here
     hugo
     lua
     nodejs
@@ -80,7 +71,6 @@
     hubble
     kubectl
     kubeseal
-    kustomize
     talosctl
     arping
     baobab
@@ -90,8 +80,8 @@
     sshpass
     tfswitch
     tree
-    yamllint
     yq
+    yamllint
     _7zz
     brotli
     lz4
@@ -118,14 +108,17 @@
     executable = true;
   };
 
+  # Prevent Home Manager from overriding PATH
+  home.sessionPath = [ ];
+
   # Set default shell preferences
   home.sessionVariables = {
     EDITOR = "micro";
     BROWSER = "firefox";
     SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
-    KUBECONFIG = "/Users/xrs444/k8s/config";
-    TALOSCONFIG = "Users/xrs444/Repositories/HomeProd/talos/config.yaml";
-    PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+    KUBECONFIG = "/Users/xrs444/k8s/kubeconfig";
+    TALOSCONFIG = "/Users/xrs444/k8s/talosconfig";
+    # PATH is managed by nix-darwin - don't override it
   };
 
   # Enable Catppuccin theme globally

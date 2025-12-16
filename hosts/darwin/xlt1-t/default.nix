@@ -101,6 +101,25 @@
       source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
     end
     # End Nix
+
+    # Add user's nix profile to PATH for Home Manager packages
+    fish_add_path --prepend --global $HOME/.nix-profile/bin
+
+    # Set environment variables for xrs444
+    set -gx EDITOR micro
+    set -gx BROWSER firefox
+    set -gx SOPS_AGE_KEY_FILE $HOME/.config/sops/age/keys.txt
+    set -gx KUBECONFIG $HOME/k8s/kubeconfig
+    set -gx TALOSCONFIG $HOME/k8s/talosconfig
+  '';
+  programs.fish.shellAliases = {
+    nix-sh = "fish $HOME/.local/bin/nix-sh.fish";
+  };
+  programs.fish.interactiveShellInit = ''
+    # Initialize atuin for fish (only if not already initialized)
+    if command -v atuin > /dev/null; and not set -q ATUIN_SESSION
+      atuin init fish | source
+    end
   '';
 
   environment.shells = with pkgs; [
@@ -108,4 +127,15 @@
     zsh
     fish
   ];
+
+  # Start atuin daemon as a LaunchAgent for the user
+  launchd.user.agents.atuin-daemon = {
+    serviceConfig = {
+      ProgramArguments = [ "${pkgs.atuin}/bin/atuin" "daemon" ];
+      KeepAlive = true;
+      RunAtLoad = true;
+      StandardErrorPath = "/tmp/atuin-daemon.stderr";
+      StandardOutPath = "/tmp/atuin-daemon.stdout";
+    };
+  };
 }
