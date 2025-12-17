@@ -10,6 +10,7 @@
     ../../base-nixos.nix
     inputs.nixos-hardware.nixosModules.raspberry-pi-3
     ../common/boot.nix
+    ../common/performance.nix
     ./network.nix
     ./socat.nix
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"

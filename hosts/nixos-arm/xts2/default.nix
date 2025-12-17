@@ -12,6 +12,7 @@
   imports = [
     ../../base-nixos.nix
     ../common/boot.nix
+    ../common/performance.nix
     ./disks.nix
     #    ./network.nix
     # Common imports are now handled by hosts/common/default.nix
