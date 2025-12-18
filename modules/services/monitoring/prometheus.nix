@@ -27,11 +27,20 @@ let
     "xsvr2"
   ];
 
+  # Hosts with bird BGP
+  birdHosts = [
+    "xts1"
+    "xts2"
+  ];
+
   # Generate scrape targets for node_exporter
   nodeTargets = map (host: "${host}:9100") allHosts;
 
   # Generate scrape targets for zfs_exporter
   zfsTargets = map (host: "${host}:9134") zfsHosts;
+
+  # Generate scrape targets for bird_exporter
+  birdTargets = map (host: "${host}:9324") birdHosts;
 
   # Kubernetes monitoring targets
   # TODO: Replace with your actual K8s service IPs or use DNS names
@@ -93,6 +102,16 @@ in
           static_configs = [
             {
               targets = zfsTargets;
+            }
+          ];
+        }
+
+        # Bird BGP exporter - Tailscale exit nodes
+        {
+          job_name = "bird";
+          static_configs = [
+            {
+              targets = birdTargets;
             }
           ];
         }
@@ -298,6 +317,60 @@ in
                   annotations = {
                     summary = "Kubernetes node {{ $labels.node }} not ready";
                     description = "Node has been in a not-ready state for more than 5 minutes.";
+                  };
+                }
+              ];
+            }
+            {
+              name = "bgp_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "BGPSessionDown";
+                  expr = "bird_protocol_up{proto=\"BGP\"} != 1";
+                  for = "2m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "BGP session down on {{ $labels.instance }}";
+                    description = "BGP protocol {{ $labels.name }} on {{ $labels.instance }} is not in Established state.";
+                  };
+                }
+                {
+                  alert = "BGPPeerFlapping";
+                  expr = "rate(bird_protocol_up{proto=\"BGP\"}[15m]) > 0.1";
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "BGP peer flapping on {{ $labels.instance }}";
+                    description = "BGP protocol {{ $labels.name }} is flapping on {{ $labels.instance }}.";
+                  };
+                }
+                {
+                  alert = "TailscaleExitNodeBothDown";
+                  expr = "count(up{job=\"bird\"} == 0) == 2";
+                  for = "3m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "Both Tailscale exit nodes are down";
+                    description = "Both xts1 and xts2 are unreachable. Tailscale exit node service is unavailable.";
+                  };
+                }
+                {
+                  alert = "BirdExporterDown";
+                  expr = "up{job=\"bird\"} == 0";
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Bird exporter down on {{ $labels.instance }}";
+                    description = "Bird exporter on {{ $labels.instance }} has been down for more than 5 minutes.";
                   };
                 }
               ];

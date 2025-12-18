@@ -57,6 +57,7 @@ in
         ethtool
         networkd-dispatcher
         keepalived
+        bird2
       ];
 
       services.tailscale = {
@@ -72,7 +73,10 @@ in
         useRoutingFeatures = "both";
       };
 
-      networking.firewall.checkReversePath = "loose";
+      networking.firewall = {
+        checkReversePath = "loose";
+        allowedTCPPorts = [ 179 ]; # BGP port
+      };
 
       services.networkd-dispatcher = {
         enable = true;
@@ -86,8 +90,123 @@ in
         };
       };
 
+      # Bird BGP configuration for Tailscale exit node redundancy with direct protocol
+      services.bird = {
+        enable = true;
+        config = lib.mkMerge [
+          (lib.mkIf (hostname == "xts1") ''
+            log syslog all;
+            router id 172.18.10.1;
+
+            # Tailscale integration via direct protocol
+            protocol direct {
+              ipv4;
+              interface "tailscale*";
+            }
+
+            # Device protocol for interface tracking
+            protocol device {
+              scan time 10;
+            }
+
+            # BGP protocol for peering with xts2
+            protocol bgp xts2 {
+              local 172.18.10.1 as 65002;
+              neighbor 172.18.10.2 as 65002;
+
+              ipv4 {
+                import all;
+                export where source = RTS_DEVICE;
+              };
+
+              hold time 90;
+              keepalive time 30;
+            }
+
+            # Kernel protocol to sync routes
+            protocol kernel {
+              ipv4 {
+                export all;
+              };
+            }
+          '')
+          (lib.mkIf (hostname == "xts2") ''
+            log syslog all;
+            router id 172.18.10.2;
+
+            # Tailscale integration via direct protocol
+            protocol direct {
+              ipv4;
+              interface "tailscale*";
+            }
+
+            # Device protocol for interface tracking
+            protocol device {
+              scan time 10;
+            }
+
+            # BGP protocol for peering with xts1
+            protocol bgp xts1 {
+              local 172.18.10.2 as 65002;
+              neighbor 172.18.10.1 as 65002;
+
+              ipv4 {
+                import all;
+                export where source = RTS_DEVICE;
+              };
+
+              hold time 90;
+              keepalive time 30;
+            }
+
+            # Kernel protocol to sync routes
+            protocol kernel {
+              ipv4 {
+                export all;
+              };
+            }
+          '')
+        ];
+      };
+
+      # BGP health check script for keepalived
+      environment.etc."check-bgp-session.sh" = {
+        text = ''
+          #!/bin/sh
+          # Check if BIRD daemon is running
+          if ! systemctl is-active --quiet bird.service; then
+            exit 1
+          fi
+
+          # Check if BGP session is established
+          # birdc show protocols checks for Established state
+          ${pkgs.bird2}/bin/birdc show protocols | grep -E 'BGP.*Established' > /dev/null
+
+          exit $?
+        '';
+        mode = "0755";
+      };
+
+      # Bird exporter for Prometheus monitoring
+      services.prometheus.exporters.bird = {
+        enable = true;
+        port = 9324;
+        listenAddress = "0.0.0.0";
+        openFirewall = false;
+      };
+
+      # Keepalived with BGP health monitoring
       services.keepalived = {
         enable = true;
+        vrrpScripts = {
+          check_bgp = {
+            script = "/etc/check-bgp-session.sh";
+            interval = 5; # Check every 5 seconds
+            weight = -50; # Reduce priority by 50 if BGP fails
+            fall = 2; # Require 2 failures before marking down
+            rise = 2; # Require 2 successes before marking up
+          };
+        };
         vrrpInstances = {
           ts-vip = {
             interface = "eth0";
@@ -103,9 +222,32 @@ in
             virtualIps = [
               { addr = "172.18.10.100/24"; }
             ];
+            extraConfig = ''
+              authentication {
+                auth_type PASS
+                auth_pass tsexit
+              }
+              track_script {
+                check_bgp
+              }
+              # Restart bird when becoming MASTER to ensure clean state
+              notify_master "/run/current-system/systemd/bin/systemctl restart bird"
+            '';
           };
         };
       };
+
+      # Open firewall for bird exporter on Tailscale interface
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+        9324 # bird_exporter
+      ];
+
+      # Allow VRRP multicast for keepalived
+      networking.firewall.extraCommands = ''
+        # Allow VRRP multicast
+        iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
+        iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
+      '';
     })
   ];
 }
