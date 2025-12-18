@@ -1,13 +1,8 @@
 # Summary: NixOS module for ZFS filesystem support, enables ZFS and configures environment for selected hosts.
 {
-  config,
-  hostname,
   hostRoles ? [ ],
-  isWorkstation,
   lib,
   pkgs,
-  username,
-  platform,
   ...
 }:
 let

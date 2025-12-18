@@ -1,12 +1,7 @@
 # Summary: NixOS module for Nix binary cache service, sets up cache directory and server configuration for selected hosts.
 {
-  config,
   hostname,
-  isWorkstation,
   lib,
-  pkgs,
-  username,
-  platform,
   ...
 }:
 let

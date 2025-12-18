@@ -1,11 +1,8 @@
 # Summary: NixOS module for Bind DNS service, enables and configures DNS forwarding for specified hosts.
 {
-  config,
-  hostname,
   hostRoles ? [ ],
   lib,
   pkgs,
-  platform,
   ...
 }:
 

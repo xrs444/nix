@@ -1,6 +1,5 @@
 # Summary: Unified Tailscale VPN module supporting client, server, and exit node configurations.
 {
-  config,
   hostname,
   hostRoles ? [ ],
   isWorkstation ? false,

@@ -1,10 +1,7 @@
 # Summary: NixOS module for FFR routing service, sets up node-specific router configurations for cluster hosts.
 {
-  config,
   hostname,
   lib,
-  pkgs,
-  platform,
   ...
 }:
 
@@ -27,14 +24,6 @@ let
 
   frrASN = 65000;
   ciliumASN = 65001;
-  ciliumIPs = [
-    "172.20.3.10"
-    "172.20.3.20"
-    "172.20.3.30"
-  ];
-
-  # List of all node IPs
-  allNodeIPs = map (node: node.ip) (lib.attrValues nodeConfigs);
 
   # Only set currentNode if hostname is in nodeConfigs
   currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;

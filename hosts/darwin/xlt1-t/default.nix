@@ -1,12 +1,6 @@
 {
-  config,
   hostname,
-  inputs,
-  lib,
   pkgs,
-  username,
-  platform,
-  desktop,
   ...
 }:
 {
@@ -131,7 +125,10 @@
   # Start atuin daemon as a LaunchAgent for the user
   launchd.user.agents.atuin-daemon = {
     serviceConfig = {
-      ProgramArguments = [ "${pkgs.atuin}/bin/atuin" "daemon" ];
+      ProgramArguments = [
+        "${pkgs.atuin}/bin/atuin"
+        "daemon"
+      ];
       KeepAlive = true;
       RunAtLoad = true;
       StandardErrorPath = "/tmp/atuin-daemon.stderr";

@@ -1,11 +1,7 @@
 # Summary: NixOS module for Talos, configures firewall and trusted interfaces for Talos cluster hosts.
 {
-  config,
-  hostname,
   hostRoles ? [ ],
   lib,
-  pkgs,
-  platform,
   ...
 }:
 let

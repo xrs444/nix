@@ -1,8 +1,8 @@
 # Summary: Darwin/macOS host configuration, imports common and platform-specific package modules.
 {
   lib,
-  pkgs,
   platform,
+  pkgs,
   username,
   ...
 }:

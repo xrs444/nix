@@ -1,11 +1,7 @@
 # Summary: NixOS module for IP routing, enables IP forwarding for selected hosts in the cluster.
 {
-  config,
-  hostname,
   hostRoles ? [ ],
   lib,
-  pkgs,
-  platform,
   ...
 }:
 let

@@ -15,6 +15,7 @@
     ./nixcache
     ./openssh
     ./remotebuilds
+    ./ser2net
     ./socat
     ./tailscale
     ./talos

@@ -2,7 +2,6 @@
 {
   hostname,
   inputs,
-  pkgs,
   ...
 }:
 {
@@ -12,7 +11,7 @@
     ../common/boot.nix
     ../common/performance.nix
     ./network.nix
-    ./socat.nix
+    ./ser2net.nix
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
     # Common imports are now handled by hosts/common/default.nix
   ];

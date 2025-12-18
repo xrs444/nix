@@ -1,11 +1,7 @@
 # Summary: NixOS module for Home Assistant, installs and configures Home Assistant for selected hosts.
 {
   hostRoles ? [ ],
-  config,
-  hostname,
   lib,
-  pkgs,
-  platform,
   ...
 }:
 let

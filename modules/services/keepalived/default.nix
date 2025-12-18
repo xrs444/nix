@@ -1,10 +1,7 @@
 # Summary: NixOS module for Keepalived, configures high-availability IP failover for cluster nodes.
 {
-  config,
   hostname,
   lib,
-  pkgs,
-  platform,
   ...
 }:
 

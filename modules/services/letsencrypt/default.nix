@@ -1,7 +1,6 @@
 # Summary: NixOS module for Let's Encrypt, manages certificate issuance and renewal for multiple hosts.
 {
   config,
-  hostname,
   hostRoles ? [ ],
   lib,
   pkgs,
@@ -13,7 +12,6 @@ let
 
   # Role-based configuration from flake.nix host definitions
   isPrimaryServer = lib.elem "letsencrypt-primary" hostRoles;
-  isLetsencryptHost = lib.elem "letsencrypt-host" hostRoles || isPrimaryServer;
   isKanidmServer =
     lib.elem "kanidm-server" hostRoles
     || lib.elem "kanidm-primary" hostRoles

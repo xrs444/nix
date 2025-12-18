@@ -1,11 +1,7 @@
 # Summary: NixOS module for Samba file sharing service, enables and configures Samba for selected hosts.
 {
-  config,
-  hostname,
   hostRoles ? [ ],
   lib,
-  pkgs,
-  platform,
   ...
 }:
 let

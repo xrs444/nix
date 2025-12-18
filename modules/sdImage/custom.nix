@@ -3,10 +3,10 @@
 # then pull the full configuration from the git repository.
 {
   config,
-  pkgs,
+  hostname ? null,
   lib,
   minimalImage ? false,
-  hostname ? null,
+  pkgs,
   ...
 }:
 
