@@ -3,10 +3,12 @@
 ## Overview
 
 Alerting in Prometheus consists of two components:
+
 1. **Alert Rules** in Prometheus - Define when alerts should fire
 2. **Alertmanager** - Handles alert notifications and routing
 
 Your setup now includes:
+
 - ✅ Basic alert rules for nodes and Kubernetes
 - ✅ Alertmanager service enabled
 - ✅ Firewall configured for Alertmanager (:9093)
@@ -242,11 +244,13 @@ Instead of hardcoding bot tokens and passwords in your Nix config, use agenix or
 ### Example with agenix
 
 1. **Create encrypted secret:**
+
    ```bash
    echo "smtp_password: your-password-here" | agenix -e alertmanager-smtp.age
    ```
 
 2. **Reference in configuration:**
+
    ```nix
    age.secrets.alertmanager-smtp.file = ../../secrets/alertmanager-smtp.age;
 
@@ -404,16 +408,19 @@ sudo nixos-rebuild switch --flake .#xsvr1
 ## Verification
 
 1. **Check Prometheus loaded rules:**
+
    ```bash
    curl http://localhost:9090/api/v1/rules | jq
    ```
 
 2. **Check Alertmanager status:**
+
    ```bash
    curl http://localhost:9093/api/v1/status | jq
    ```
 
 3. **View active alerts:**
+
    ```bash
    curl http://localhost:9093/api/v1/alerts | jq
    ```
@@ -429,21 +436,25 @@ Alertmanager integrates with Grafana automatically. In Grafana:
 ## Common Alert Expressions
 
 ### High Disk I/O
+
 ```promql
 rate(node_disk_io_time_seconds_total[5m]) > 0.8
 ```
 
 ### Network Saturation
+
 ```promql
 rate(node_network_receive_bytes_total[5m]) > 100000000  # 100MB/s
 ```
 
 ### Service Down
+
 ```promql
 up{job="my-service"} == 0
 ```
 
 ### Container Memory Limit
+
 ```promql
 container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
 ```
