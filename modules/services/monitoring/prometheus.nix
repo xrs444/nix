@@ -3,7 +3,6 @@
   hostname,
   hostRoles ? [ ],
   lib,
-  pkgs,
   ...
 }:
 let
