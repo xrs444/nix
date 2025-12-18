@@ -71,6 +71,7 @@
             "cockpit"
             "homeassistant"
             "tailscale-package"
+            "monitoring-server"
           ];
         };
         xsvr2 = {
@@ -86,6 +87,7 @@
             "kanidm-replica"
             "letsencrypt-host"
             "tailscale-package"
+            "monitoring-client"
           ];
         };
         xsvr3 = {
@@ -101,6 +103,7 @@
             "kanidm-server"
             "letsencrypt-host"
             "tailscale-package"
+            "monitoring-client"
           ];
         };
         xlabmgmt = {
@@ -109,7 +112,10 @@
           type = "nixos";
           desktop = "gnome";
           enableHomeManager = false;
-          roles = [ "bind" ];
+          roles = [
+            "bind"
+            "monitoring-client"
+          ];
         };
         xts1 = {
           user = "thomas-local";
@@ -120,6 +126,7 @@
             "iprouting"
             "letsencrypt-host"
             "tailscale-exit-node"
+            "monitoring-client"
           ];
         };
         xts2 = {
@@ -130,6 +137,7 @@
           roles = [
             "letsencrypt-host"
             "tailscale-exit-node"
+            "monitoring-client"
           ];
         };
         xcomm1 = {
@@ -137,14 +145,17 @@
           platform = "x86_64-linux";
           type = "nixos";
           desktop = "gnome";
-          roles = [ "letsencrypt-host" ];
+          roles = [
+            "letsencrypt-host"
+            "monitoring-client"
+          ];
         };
         xdash1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
           enableWifi = true;
-          roles = [ ];
+          roles = [ "monitoring-client" ];
         };
         xhac-radio = {
           user = "thomas-local";
@@ -152,7 +163,7 @@
           type = "nixos";
           enableHomeManager = false;
           enableWifi = true;
-          roles = [ ];
+          roles = [ "monitoring-client" ];
         };
         xlt1-t-vnixos = {
           user = "thomas-local";

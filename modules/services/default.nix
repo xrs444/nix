@@ -11,6 +11,7 @@
     ./keepalived
     ./kvm
     ./letsencrypt
+    ./monitoring
     ./nfs
     ./nixcache
     ./openssh
