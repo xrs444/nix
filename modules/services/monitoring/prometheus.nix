@@ -38,6 +38,8 @@ let
   k8sTargets = {
     # kube-state-metrics service in monitoring namespace
     kubeStateMetrics = "kube-state-metrics.monitoring.svc.cluster.local:8080";
+    # n8n workflow automation service
+    n8n = "n8n.n8n.svc.cluster.local:5678";
     # Add more K8s targets here as needed
   };
 in
@@ -173,6 +175,21 @@ in
               targets = [ k8sTargets.kubeStateMetrics ];
               labels = {
                 cluster = "home-k8s";
+              };
+            }
+          ];
+        }
+
+        # n8n workflow automation
+        {
+          job_name = "n8n";
+          scrape_interval = "30s";
+          static_configs = [
+            {
+              targets = [ k8sTargets.n8n ];
+              labels = {
+                cluster = "home-k8s";
+                app = "n8n";
               };
             }
           ];

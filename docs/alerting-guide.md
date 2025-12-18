@@ -16,7 +16,7 @@ Your setup now includes:
 ### Node Alerts
 
 - **InstanceDown**: Fires when a monitored host is unreachable for 5+ minutes
-- **HighCPUUsage**: CPU usage above 80% for 10+ minutes  
+- **HighCPUUsage**: CPU usage above 80% for 10+ minutes
 - **HighMemoryUsage**: Memory usage above 90% for 10+ minutes
 - **DiskSpaceLow**: Filesystem below 10% free space
 
@@ -122,7 +122,71 @@ receivers = [
 ];
 ```
 
-### Option 5: Webhook (Custom Integration)
+### Option 5: Telegram Notifications
+
+```nix
+receivers = [
+  {
+    name = "default";
+    telegram_configs = [
+      {
+        bot_token = "YOUR_BOT_TOKEN";  # Get from @BotFather
+        chat_id = YOUR_CHAT_ID;        # Your chat/channel ID (number)
+        parse_mode = "HTML";
+        message = ''
+{{ range .Alerts }}
+<b>{{ .Labels.severity | toUpper }}</b>: {{ .Labels.alertname }}
+{{ .Annotations.summary }}
+{{ .Annotations.description }}
+Instance: {{ .Labels.instance }}
+{{ end }}
+        '';
+      }
+    ];
+  }
+  {
+    name = "critical";
+    telegram_configs = [
+      {
+        bot_token = "YOUR_BOT_TOKEN";
+        chat_id = YOUR_CHAT_ID;
+        parse_mode = "HTML";
+        disable_notifications = false;  # Enable sound for critical
+        message = ''
+🚨 <b>CRITICAL ALERT</b> 🚨
+{{ range .Alerts }}
+<b>{{ .Labels.alertname }}</b>
+{{ .Annotations.summary }}
+{{ .Annotations.description }}
+Instance: {{ .Labels.instance }}
+{{ end }}
+        '';
+      }
+    ];
+  }
+];
+```
+
+**Setup Steps:**
+
+1. **Create a Telegram Bot:**
+   - Message [@BotFather](https://t.me/BotFather) on Telegram
+   - Send `/newbot` and follow the prompts
+   - You'll receive a bot token like: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`
+
+2. **Get Your Chat ID:**
+   - Start a chat with your new bot
+   - Send any message to it
+   - Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+   - Find your `chat_id` in the JSON response (it's a number)
+   - Or use [@userinfobot](https://t.me/userinfobot) to get your chat ID
+
+3. **For Channel/Group Alerts:**
+   - Add your bot to the channel/group as an admin
+   - Get the channel ID (negative number for groups/channels)
+   - Use that as `chat_id`
+
+### Option 6: Webhook (Custom Integration)
 
 ```nix
 receivers = [
@@ -138,9 +202,42 @@ receivers = [
 ];
 ```
 
+## Telegram Example (Complete)
+
+Here's a complete working example for your `prometheus.nix`:
+
+```nix
+receivers = [
+  {
+    name = "default";
+    telegram_configs = [
+      {
+        bot_token = "123456789:ABCdefGHIjklMNOpqrsTUVwxyz";
+        chat_id = 987654321;  # Your personal chat ID
+        parse_mode = "HTML";
+      }
+    ];
+  }
+  {
+    name = "critical";
+    telegram_configs = [
+      {
+        bot_token = "123456789:ABCdefGHIjklMNOpqrsTUVwxyz";
+        chat_id = 987654321;
+        parse_mode = "HTML";
+        disable_notifications = false;
+        message = ''🚨 <b>CRITICAL</b>: {{ .GroupLabels.alertname }}'';
+      }
+    ];
+  }
+];
+```
+
+**Note:** For better security, use secrets management (see below) instead of hardcoding tokens.
+
 ## Secrets Management (Recommended)
 
-Instead of hardcoding passwords in your Nix config, use agenix or sops-nix:
+Instead of hardcoding bot tokens and passwords in your Nix config, use agenix or sops-nix:
 
 ### Example with agenix
 
