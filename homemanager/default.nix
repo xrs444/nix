@@ -1,12 +1,9 @@
 {
-  config,
   desktop ? null,
   lib ? null,
   pkgs ? null,
-  outputs,
   stateVersion,
   username,
-  inputs,
   ...
 }:
 {

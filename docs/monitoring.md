@@ -3,6 +3,7 @@
 ## Overview
 
 Your infrastructure now has Prometheus + Grafana monitoring configured with:
+
 - **xsvr1**: Monitoring server (Prometheus + Grafana)
 - **xsvr2, xsvr3**: Monitoring clients (exporters only)
 
@@ -11,6 +12,7 @@ Your infrastructure now has Prometheus + Grafana monitoring configured with:
 ### Initial Deployment
 
 1. **Commit and push changes:**
+
    ```bash
    git add -A
    git commit -m "Add Prometheus + Grafana monitoring"
@@ -18,6 +20,7 @@ Your infrastructure now has Prometheus + Grafana monitoring configured with:
    ```
 
 2. **Deploy to xsvr1 (monitoring server):**
+
    ```bash
    # SSH to xsvr1
    ssh thomas-local@xsvr1
@@ -28,6 +31,7 @@ Your infrastructure now has Prometheus + Grafana monitoring configured with:
    ```
 
 3. **Deploy to xsvr2 and xsvr3 (monitoring clients):**
+
    ```bash
    # For xsvr2
    ssh thomas-local@xsvr2
@@ -42,8 +46,8 @@ Your infrastructure now has Prometheus + Grafana monitoring configured with:
 
 After deployment, access via Tailscale network:
 
-- **Prometheus**: http://xsvr1:9090
-- **Grafana**: http://xsvr1:3000
+- **Prometheus**: <http://xsvr1:9090>
+- **Grafana**: <http://xsvr1:3000>
   - Default login: `admin` / `admin`
   - Change password on first login
 
@@ -52,6 +56,7 @@ After deployment, access via Tailscale network:
 ### Check Services are Running
 
 On xsvr1:
+
 ```bash
 # Check Prometheus
 sudo systemctl status prometheus
@@ -67,6 +72,7 @@ sudo systemctl status prometheus-zfs-exporter
 ```
 
 On xsvr2/xsvr3:
+
 ```bash
 # Check node exporter
 sudo systemctl status prometheus-node-exporter
@@ -89,7 +95,7 @@ curl http://xsvr3:9100/metrics
 
 ### Verify Prometheus Targets
 
-1. Open http://xsvr1:9090
+1. Open <http://xsvr1:9090>
 2. Navigate to Status → Targets
 3. Verify all targets are "UP":
    - prometheus (localhost:9090)
@@ -100,7 +106,7 @@ curl http://xsvr3:9100/metrics
 
 ### First Steps
 
-1. **Access Grafana**: http://xsvr1:3000
+1. **Access Grafana**: <http://xsvr1:3000>
 2. **Login**: admin/admin (change password)
 3. **Verify Datasource**:
    - Settings → Data Sources
@@ -119,6 +125,7 @@ Recommended community dashboards:
    - Dashboards → Import → Enter ID: 15362
 
 To import:
+
 - Go to Dashboards → Import
 - Enter dashboard ID or upload JSON
 - Select "Prometheus" datasource
@@ -132,9 +139,10 @@ To import:
 
 ## Kubernetes Monitoring
 
-### Overview
+### K8s Overview
 
 Your Kubernetes cluster is now monitored by Prometheus on xsvr1. The setup includes:
+
 - **kube-state-metrics**: Cluster-level metrics (deployments, pods, services, etc.)
 - Metrics accessible via Prometheus and Grafana
 
@@ -151,6 +159,7 @@ Your Kubernetes cluster is now monitored by Prometheus on xsvr1. The setup inclu
 Create the following files in `flux/apps/kube-state-metrics/`:
 
 #### `namespace.yaml`
+
 ```yaml
 apiVersion: v1
 kind: Namespace
@@ -159,9 +168,11 @@ metadata:
 ```
 
 #### `deployment.yaml`
+
 See full content below - includes ServiceAccount, ClusterRole, ClusterRoleBinding, and Deployment
 
 #### `service.yaml`
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -182,6 +193,7 @@ spec:
 ```
 
 #### `kustomization.yaml`
+
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -197,6 +209,7 @@ resources:
 Choose one approach:
 
 **Option A: NodePort Service** (Easiest)
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -215,6 +228,7 @@ spec:
 ```
 
 Then update Prometheus config in `prometheus.nix`:
+
 ```nix
 k8sTargets = {
   kubeStateMetrics = "your-k8s-node-ip:30080";
@@ -222,10 +236,13 @@ k8sTargets = {
 ```
 
 **Option B: LoadBalancer/Ingress** (If you have MetalLB or similar)
+
 Create an ingress or LoadBalancer service and use that endpoint.
 
 **Option C: Tailscale/VPN** (If K8s nodes are on Tailscale)
+
 Use the Tailscale hostname directly:
+
 ```nix
 k8sTargets = {
   kubeStateMetrics = "k8s-node.tailnet:8080";
@@ -253,10 +270,12 @@ flux reconcile kustomization apps
 The Prometheus configuration has already been updated with K8s scrape configs. You just need to:
 
 1. **Update the target address** in `nix/modules/services/monitoring/prometheus.nix`:
+
    - Replace the placeholder in `k8sTargets.kubeStateMetrics`
    - Use the actual IP/hostname based on your chosen exposure method
 
 2. **Deploy to xsvr1**:
+
 ```bash
 # From your development machine
 cd nix
@@ -272,11 +291,12 @@ sudo nixos-rebuild switch --flake .#xsvr1
 
 ### Step 5: Verify Kubernetes Monitoring
 
-1. **Check Prometheus targets**: http://xsvr1:9090/targets
+1. **Check Prometheus targets**: <http://xsvr1:9090/targets>
    - Look for `kube-state-metrics` job
    - Should show status "UP"
 
 2. **Query K8s metrics** in Prometheus:
+
    ```promql
    # Number of pods
    kube_pod_info
@@ -295,16 +315,19 @@ sudo nixos-rebuild switch --flake .#xsvr1
 ### Troubleshooting
 
 **Issue**: Prometheus can't reach kube-state-metrics
+
 - Check network connectivity: `ping` or `curl` from xsvr1
 - Verify K8s service is running: `kubectl get svc -n monitoring`
 - Check firewall rules on K8s nodes
 
 **Issue**: Metrics not showing up
+
 - Verify kube-state-metrics pod is running: `kubectl get pods -n monitoring`
 - Check pod logs: `kubectl logs -n monitoring deployment/kube-state-metrics`
 - Test endpoint directly: `curl http://NODE_IP:30080/metrics`
 
 **Issue**: DNS resolution fails
+
 - If using cluster.local DNS, ensure xsvr1 can resolve K8s DNS
 - Alternative: Use NodePort with direct IP instead
 
@@ -313,10 +336,12 @@ sudo nixos-rebuild switch --flake .#xsvr1
 To get complete K8s monitoring, consider adding:
 
 1. **cAdvisor metrics** (container resource usage):
+
    - Already exposed by kubelet on `/metrics/cadvisor`
    - Add scrape config for kubelet endpoints
 
 2. **API Server metrics**:
+
    ```nix
    {
      job_name = "kube-apiserver";
@@ -331,6 +356,7 @@ To get complete K8s monitoring, consider adding:
    ```
 
 3. **Node metrics from kubelet**:
+
    - Scrape `/metrics` endpoint on each node's kubelet (port 10250)
 
 ## Next Steps
@@ -354,16 +380,18 @@ To get complete K8s monitoring, consider adding:
    - `systemd_exporter`: Detailed systemd metrics
    - `blackbox_exporter`: Endpoint availability checks
 
-## Troubleshooting
+## General Troubleshooting
 
 ### Prometheus Not Scraping Targets
 
 Check firewall rules on client hosts:
+
 ```bash
 sudo nft list ruleset | grep 9100
 ```
 
 Verify Tailscale connectivity:
+
 ```bash
 tailscale status
 ping xsvr2
@@ -382,12 +410,14 @@ sudo journalctl -u grafana -n 100
 ### Missing ZFS Metrics
 
 Verify ZFS pools are imported:
+
 ```bash
 zpool list
 zpool status
 ```
 
 Check ZFS exporter is running:
+
 ```bash
 sudo systemctl status prometheus-zfs-exporter
 curl http://localhost:9134/metrics | grep zfs
