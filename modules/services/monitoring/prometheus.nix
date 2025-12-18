@@ -185,8 +185,190 @@ in
         # - etcd metrics (if running separate from API server)
       ];
 
-      # TODO: Add alerting rules and alertmanager config
-      # rules = [];
+      # Alert rules
+      rules = [
+        (builtins.toJSON {
+          groups = [
+            {
+              name = "node_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "InstanceDown";
+                  expr = "up == 0";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "Instance {{ $labels.instance }} down";
+                    description = "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes.";
+                  };
+                }
+                {
+                  alert = "HighCPUUsage";
+                  expr = ''(100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80'';
+                  for = "10m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "High CPU usage on {{ $labels.instance }}";
+                    description = "CPU usage is above 80% (current value: {{ $value }}%)";
+                  };
+                }
+                {
+                  alert = "HighMemoryUsage";
+                  expr = ''(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90'';
+                  for = "10m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "High memory usage on {{ $labels.instance }}";
+                    description = "Memory usage is above 90% (current value: {{ $value }}%)";
+                  };
+                }
+                {
+                  alert = "DiskSpaceLow";
+                  expr = ''(node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs|vfat"} / node_filesystem_size_bytes) * 100 < 10'';
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Disk space low on {{ $labels.instance }}";
+                    description = "Filesystem {{ $labels.mountpoint }} has less than 10% space remaining (current: {{ $value }}%)";
+                  };
+                }
+              ];
+            }
+            {
+              name = "kubernetes_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "KubernetesPodCrashLooping";
+                  expr = "rate(kube_pod_container_status_restarts_total[15m]) > 0";
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping";
+                    description = "Pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes.";
+                  };
+                }
+                {
+                  alert = "KubernetesPodNotReady";
+                  expr = "kube_pod_status_phase{phase!~\"Running|Succeeded\"} > 0";
+                  for = "15m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready";
+                    description = "Pod has been in a non-ready state for more than 15 minutes.";
+                  };
+                }
+                {
+                  alert = "KubernetesNodeNotReady";
+                  expr = "kube_node_status_condition{condition=\"Ready\",status=\"true\"} == 0";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "Kubernetes node {{ $labels.node }} not ready";
+                    description = "Node has been in a not-ready state for more than 5 minutes.";
+                  };
+                }
+              ];
+            }
+          ];
+        })
+      ];
+
+      # Alertmanager configuration
+      alertmanagers = [
+        {
+          static_configs = [
+            {
+              targets = [ "localhost:9093" ];
+            }
+          ];
+        }
+      ];
+    };
+
+    # Enable and configure Alertmanager
+    services.prometheus.alertmanager = {
+      enable = true;
+      port = 9093;
+      listenAddress = "0.0.0.0";
+      webExternalUrl = "http://xsvr1:9093";
+
+      configuration = {
+        global = {
+          resolve_timeout = "5m";
+        };
+
+        route = {
+          group_by = [
+            "alertname"
+            "cluster"
+            "service"
+          ];
+          group_wait = "10s";
+          group_interval = "10s";
+          repeat_interval = "12h";
+          receiver = "default";
+
+          # Route critical alerts differently
+          routes = [
+            {
+              match = {
+                severity = "critical";
+              };
+              receiver = "critical";
+              repeat_interval = "4h";
+            }
+          ];
+        };
+
+        receivers = [
+          {
+            name = "default";
+            # TODO: Configure your notification channel
+            # Examples in docs/alerting-guide.md:
+            # - email_configs
+            # - slack_configs
+            # - discord_configs
+            # - pushover_configs
+            # - webhook_configs
+          }
+          {
+            name = "critical";
+            # TODO: Configure critical alert notifications
+          }
+        ];
+
+        # Inhibit rules - suppress warnings when critical alert is firing
+        inhibit_rules = [
+          {
+            source_match = {
+              severity = "critical";
+            };
+            target_match = {
+              severity = "warning";
+            };
+            equal = [
+              "alertname"
+              "instance"
+            ];
+          }
+        ];
+      };
     };
   };
 }

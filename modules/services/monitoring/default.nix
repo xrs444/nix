@@ -27,6 +27,7 @@ in
       interfaces.tailscale0 = {
         allowedTCPPorts = [
           9090 # Prometheus
+          9093 # Alertmanager
           3000 # Grafana
         ];
       };
