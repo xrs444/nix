@@ -40,6 +40,7 @@
     gnome-contacts
     gnome-photos
     gnome-tour
+    showtime # Exclude due to gst-plugins-rs build memory issues
   ];
 
   services.displayManager.gdm = {
