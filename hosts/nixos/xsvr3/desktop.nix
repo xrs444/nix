@@ -28,8 +28,6 @@
   environment.systemPackages = with pkgs; [
     # File manager and utilities (provided by LXQt)
     # Additional useful applications
-    firefox
-    gnome-system-monitor # Keep for monitoring
     file-roller # Archive manager
 
     # Remote desktop
