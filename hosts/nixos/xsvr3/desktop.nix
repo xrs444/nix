@@ -20,34 +20,29 @@
     };
   };
 
-  environment.gnome.excludePackages = with pkgs; [
-    gnome-calculator
-    simple-scan
-    cheese
-    gnome-music
-    epiphany
-    geary
-    evince
-    gnome-characters
-    totem
-    tali
-    iagno
-    hitori
-    atomix
-    yelp
-    gnome-maps
-    gnome-weather
-    gnome-contacts
-    gnome-photos
-    gnome-tour
-    showtime # Exclude due to gst-plugins-rs build memory issues
-  ];
-
   services.displayManager.gdm = {
     enable = true;
     wayland = true;
   };
-  services.desktopManager.gnome.enable = true;
+
+  services.desktopManager.gnome = {
+    enable = true;
+    extraGSettingsOverrides = "";
+    extraGSettingsOverridePackages = [ ];
+  };
+
+  # Explicitly install only essential GNOME apps to avoid gst-plugins-rs build issues
+  environment.systemPackages = with pkgs; [
+    nautilus # File manager (moved to top-level)
+    gnome-terminal # Terminal
+    gnome-system-monitor # System monitor
+    gnome-disk-utility # Disk utility
+    gnome-settings-daemon # Settings (moved to top-level)
+    gnome-control-center # Settings UI (moved to top-level)
+    file-roller # Archive manager (moved to top-level)
+    eog # Image viewer (moved to top-level)
+    # Add other GNOME apps here as needed, avoiding those with gst-plugins-rs deps
+  ];
 
   services.gnome.gnome-remote-desktop.enable = true;
   networking.firewall.allowedTCPPorts = [ 3389 ];
