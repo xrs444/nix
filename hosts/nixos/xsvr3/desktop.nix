@@ -27,9 +27,20 @@
 
   services.desktopManager.gnome = {
     enable = true;
-    extraGSettingsOverrides = "";
-    extraGSettingsOverridePackages = [ ];
   };
+
+  # Exclude GNOME packages that depend on gst-plugins-rs (causes OOM during build)
+  environment.gnome.excludePackages = with pkgs; [
+    gnome-contacts # Depends on gst-plugins-rs
+    gnome-music # Depends on gst-plugins-rs
+    cheese # Depends on gst-plugins-rs
+    totem # Video player, depends on gst-plugins-rs
+    epiphany # Web browser
+    geary # Email client
+    gnome-photos # Photo viewer
+    snapshot # Camera app
+    showtime # Media player
+  ];
 
   # Explicitly install only essential GNOME apps to avoid gst-plugins-rs build issues
   environment.systemPackages = with pkgs; [
