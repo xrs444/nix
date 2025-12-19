@@ -22,7 +22,7 @@
 
   # Use LXQt instead of GNOME to avoid heavy build dependencies
   services.displayManager.sddm.enable = true;
-  services.desktopManager.lxqt.enable = true;
+  services.xserver.desktopManager.lxqt.enable = true;
 
   # Essential applications
   environment.systemPackages = with pkgs; [
