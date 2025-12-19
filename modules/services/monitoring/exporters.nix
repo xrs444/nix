@@ -42,54 +42,14 @@ in
     };
 
     # SNMP exporter - for network devices (only on monitoring server)
+    # SNMP exporter disabled temporarily due to config format changes
+    # TODO: Re-enable after generating proper config with snmp_exporter generator
+    # See: https://github.com/prometheus/snmp_exporter/tree/main/generator
     services.prometheus.exporters.snmp = lib.mkIf isMonitoringServer {
-      enable = true;
+      enable = false;
       port = 9116;
       listenAddress = "0.0.0.0";
       openFirewall = false;
-
-      # Basic SNMP exporter config with common modules
-      configuration = {
-        modules = {
-          # Generic network device using standard MIBs
-          if_mib = {
-            walk = [
-              "1.3.6.1.2.1.2" # IF-MIB (interfaces)
-              "1.3.6.1.2.1.31" # IF-MIB extended
-            ];
-            lookups = [
-              {
-                source_indexes = [ "ifIndex" ];
-                lookup = "ifAlias";
-              }
-              {
-                source_indexes = [ "ifIndex" ];
-                lookup = "ifDescr";
-              }
-              {
-                source_indexes = [ "ifIndex" ];
-                lookup = "ifName";
-              }
-            ];
-            overrides = {
-              ifAlias.type = "DisplayString";
-              ifDescr.type = "DisplayString";
-              ifName.type = "DisplayString";
-              ifType.type = "EnumAsInfo";
-            };
-          };
-
-          # Brocade/Ruckus switches (FastIron, ICX series)
-          brocade = {
-            walk = [
-              "1.3.6.1.2.1.1" # System
-              "1.3.6.1.2.1.2" # Interfaces
-              "1.3.6.1.2.1.31" # Interface extended
-              "1.3.6.1.4.1.1991.1.1.2" # Foundry-specific (CPU, memory, temp)
-            ];
-          };
-        };
-      };
     };
 
     # Open firewall for exporters on Tailscale interface

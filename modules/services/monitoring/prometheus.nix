@@ -116,73 +116,75 @@ in
           ];
         }
 
-        # SNMP - Network devices
+        # SNMP - Network devices (DISABLED - exporter needs reconfiguration)
+        # TODO: Re-enable after fixing SNMP exporter config format
+        # See exporters.nix for details
         # Brocade switches
-        {
-          job_name = "snmp-brocade";
-          scrape_interval = "60s";
-          static_configs = [
-            {
-              targets = [
-                # "192.168.1.10" # brocade-7250-1 - Replace with your IPs
-                # "192.168.1.11" # brocade-7250-2
-                # "192.168.1.12" # brocade-6610
-              ];
-            }
-          ];
-          metrics_path = "/snmp";
-          params = {
-            module = [ "brocade" ];
-            # auth = [ "public_v2" ]; # Reference to snmp.yml auth config
-          };
-          relabel_configs = [
-            {
-              source_labels = [ "__address__" ];
-              target_label = "__param_target";
-            }
-            {
-              source_labels = [ "__param_target" ];
-              target_label = "instance";
-            }
-            {
-              target_label = "__address__";
-              replacement = "localhost:9116";
-            }
-          ];
-        }
+        # {
+        #   job_name = "snmp-brocade";
+        #   scrape_interval = "60s";
+        #   static_configs = [
+        #     {
+        #       targets = [
+        #         # "192.168.1.10" # brocade-7250-1 - Replace with your IPs
+        #         # "192.168.1.11" # brocade-7250-2
+        #         # "192.168.1.12" # brocade-6610
+        #       ];
+        #     }
+        #   ];
+        #   metrics_path = "/snmp";
+        #   params = {
+        #     module = [ "brocade" ];
+        #     # auth = [ "public_v2" ]; # Reference to snmp.yml auth config
+        #   };
+        #   relabel_configs = [
+        #     {
+        #       source_labels = [ "__address__" ];
+        #       target_label = "__param_target";
+        #     }
+        #     {
+        #       source_labels = [ "__param_target" ];
+        #       target_label = "instance";
+        #     }
+        #     {
+        #       target_label = "__address__";
+        #       replacement = "localhost:9116";
+        #     }
+        #   ];
+        # }
 
         # Generic network devices (Firewalla, Omada, etc.)
-        {
-          job_name = "snmp-network";
-          scrape_interval = "60s";
-          static_configs = [
-            {
-              targets = [
-                # "192.168.1.1" # firewalla-pro - Replace with your IPs
-                # "192.168.1.20" # omada-controller
-                # "192.168.1.21" # omada-ap-1
-              ];
-            }
-          ];
-          metrics_path = "/snmp";
-          params = {
-            module = [ "if_mib" ];
-          };
-          relabel_configs = [
-            {
-              source_labels = [ "__address__" ];
-              target_label = "__param_target";
-            }
-            {
-              source_labels = [ "__param_target" ];
-              target_label = "instance";
-            }
-            {
-              target_label = "__address__";
-              replacement = "localhost:9116";
-            }
-          ];
-        }
+        # {
+        #   job_name = "snmp-network";
+        #   scrape_interval = "60s";
+        #   static_configs = [
+        #     {
+        #       targets = [
+        #         # "192.168.1.1" # firewalla-pro - Replace with your IPs
+        #         # "192.168.1.20" # omada-controller
+        #         # "192.168.1.21" # omada-ap-1
+        #       ];
+        #     }
+        #   ];
+        #   metrics_path = "/snmp";
+        #   params = {
+        #     module = [ "if_mib" ];
+        #   };
+        #   relabel_configs = [
+        #     {
+        #       source_labels = [ "__address__" ];
+        #       target_label = "__param_target";
+        #     }
+        #     {
+        #       source_labels = [ "__param_target" ];
+        #       target_label = "instance";
+        #     }
+        #     {
+        #       target_label = "__address__";
+        #       replacement = "localhost:9116";
+        #     }
+        #   ];
+        # }
 
         # Kubernetes - kube-state-metrics
         # Provides cluster-level metrics about Kubernetes objects
