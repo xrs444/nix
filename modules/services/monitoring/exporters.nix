@@ -50,42 +50,44 @@ in
 
       # Basic SNMP exporter config with common modules
       configuration = {
-        # Generic network device using standard MIBs
-        if_mib = {
-          walk = [
-            "1.3.6.1.2.1.2" # IF-MIB (interfaces)
-            "1.3.6.1.2.1.31" # IF-MIB extended
-          ];
-          lookups = [
-            {
-              source_indexes = [ "ifIndex" ];
-              lookup = "ifAlias";
-            }
-            {
-              source_indexes = [ "ifIndex" ];
-              lookup = "ifDescr";
-            }
-            {
-              source_indexes = [ "ifIndex" ];
-              lookup = "ifName";
-            }
-          ];
-          overrides = {
-            ifAlias.type = "DisplayString";
-            ifDescr.type = "DisplayString";
-            ifName.type = "DisplayString";
-            ifType.type = "EnumAsInfo";
+        modules = {
+          # Generic network device using standard MIBs
+          if_mib = {
+            walk = [
+              "1.3.6.1.2.1.2" # IF-MIB (interfaces)
+              "1.3.6.1.2.1.31" # IF-MIB extended
+            ];
+            lookups = [
+              {
+                source_indexes = [ "ifIndex" ];
+                lookup = "ifAlias";
+              }
+              {
+                source_indexes = [ "ifIndex" ];
+                lookup = "ifDescr";
+              }
+              {
+                source_indexes = [ "ifIndex" ];
+                lookup = "ifName";
+              }
+            ];
+            overrides = {
+              ifAlias.type = "DisplayString";
+              ifDescr.type = "DisplayString";
+              ifName.type = "DisplayString";
+              ifType.type = "EnumAsInfo";
+            };
           };
-        };
 
-        # Brocade/Ruckus switches (FastIron, ICX series)
-        brocade = {
-          walk = [
-            "1.3.6.1.2.1.1" # System
-            "1.3.6.1.2.1.2" # Interfaces
-            "1.3.6.1.2.1.31" # Interface extended
-            "1.3.6.1.4.1.1991.1.1.2" # Foundry-specific (CPU, memory, temp)
-          ];
+          # Brocade/Ruckus switches (FastIron, ICX series)
+          brocade = {
+            walk = [
+              "1.3.6.1.2.1.1" # System
+              "1.3.6.1.2.1.2" # Interfaces
+              "1.3.6.1.2.1.31" # Interface extended
+              "1.3.6.1.4.1.1991.1.1.2" # Foundry-specific (CPU, memory, temp)
+            ];
+          };
         };
       };
     };
