@@ -13,7 +13,6 @@
   };
 
   programs = {
-    firefox.enable = true;
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
@@ -26,10 +25,8 @@
 
   # Essential applications
   environment.systemPackages = with pkgs; [
-    # File manager and utilities (provided by LXQt)
-    # Additional useful applications
-    file-roller # Archive manager
 
+    file-roller # Archive manager
     # Remote desktop
     xrdp
   ];
