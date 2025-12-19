@@ -18,6 +18,31 @@
     # Common imports are now handled by hosts/common/default.nix
   ];
 
+  # Use xsvr1 as remote builder for heavy packages
+  nix.buildMachines = [
+    {
+      hostName = "xsvr1";
+      sshUser = "builder";
+      sshKey = "/root/.ssh/id_builder";
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      maxJobs = 8;
+      speedFactor = 2;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+      mandatoryFeatures = [ ];
+    }
+  ];
+
+  nix.distributedBuilds = true;
+  nix.settings.builders-use-substitutes = true;
+
   boot.initrd = {
     availableKernelModules = [
       "mpt3sas"
