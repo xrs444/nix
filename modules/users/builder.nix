@@ -8,6 +8,7 @@
     createHome = true;
     home = "/home/builder";
     group = "builder";
+    extraGroups = [ "builders" ];
     openssh.authorizedKeys.keys = [
       (builtins.readFile ../../secrets/builder_key.pub)
     ];
