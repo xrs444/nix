@@ -7,7 +7,7 @@
 
 # Make a host key:
 # sudo mkdir -p /var/lib/private/sops/age
-# 
+#
 
 # Display the host public key:
 # sudo age-keygen -y /var/lib/private/sops/age/keys.txt
@@ -22,7 +22,7 @@ keys:
   - &user_builder age1k0pvf8gqe6cfvsa46y5sdyr5sl8t2gctcyuzt8e3hy7dv40alywsvctjmd
   - &host_xsvr1 age15d2cl7x6uu9nrdh2p5kwqdy93e2jtmq0num003z72che6k2sh35sgfxgcf
   - &host_xsvr2 age1vvlmexpuzeyzrh5g6kau8m4du4pxtqnd9fcmsfw7kqyp27afquvqmszlh3
-  - &host_xsvr3 age12kpf7eej0xhptqlzg7y7wvx2a2reasvjm44wn3laytazddpy5v4sn4q8z4
+  - &host_xsvr3 age1sud7hw2gdteg8u3fru6sc5u783w9ll38u5thw3u9yfmpu9xw9udq2vl0ka
   - &host_xts1 age1u8za690m39g80xpfwwj4l3lsfwsyhst6hh9jxw7vn63dtue6c9qs7tu4de
   - &host_xts2 age1ud88p7dps3dyjwcmdcfhx2557maj33xplllq56dz5f6snzr4m4xq8gcg4z
   - &host_xdash1 age1he72de5qaluhcwfx6untmcst8pd95njsxun0ut9csgvetsj6ryuq9cpgwc
