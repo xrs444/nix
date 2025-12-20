@@ -18,6 +18,22 @@
     # Common imports are now handled by hosts/common/default.nix
   ];
 
+  # Deploy builder SSH key from sops
+  sops.secrets.builder_private_key = {
+    sopsFile = ../../secrets/builder-ssh-key.yaml;
+    path = "/root/.ssh/id_builder";
+    mode = "0600";
+  };
+
+  # Trust xsvr1's host key for remote builds
+  programs.ssh.knownHosts.xsvr1 = {
+    hostNames = [
+      "xsvr1"
+      "xsvr1.lan"
+    ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBT9D+yMvAWQk7DP4X0x3mCBp4sOF+Dl0cLG2K2Trc0W";
+  };
+
   # Use xsvr1 as remote builder for heavy packages
   nix.buildMachines = [
     {

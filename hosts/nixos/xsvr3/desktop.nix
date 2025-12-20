@@ -19,9 +19,9 @@
     };
   };
 
-  # Use LXQt instead of GNOME to avoid heavy build dependencies
-  services.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.lxqt.enable = true;
+  # Use XFCE instead of GNOME/LXQt to avoid heavy build dependencies
+  services.xserver.desktopManager.xfce.enable = true;
+  services.displayManager.lightdm.enable = true;
 
   # Essential applications
   environment.systemPackages = with pkgs; [
@@ -34,7 +34,7 @@
   # Enable xrdp for remote desktop access
   services.xrdp = {
     enable = true;
-    defaultWindowManager = "startlxqt";
+    defaultWindowManager = "xfce4-session";
     openFirewall = true;
   };
 
