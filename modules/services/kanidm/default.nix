@@ -29,15 +29,15 @@ in
       sops.secrets.kanidm_admin_password = {
         sopsFile = ../../../secrets/idm.yaml;
         key = "admin_password";
-        owner = "kanidm";
-        group = "kanidm";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
       sops.secrets.kanidm_idm_admin_password = {
         sopsFile = ../../../secrets/idm.yaml;
         key = "idm_admin_password";
-        owner = "kanidm";
-        group = "kanidm";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
     })

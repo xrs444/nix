@@ -94,7 +94,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
-          desktop = "gnome";
+          desktop = "xfce";
           roles = [
             "kvm"
             "samba"
