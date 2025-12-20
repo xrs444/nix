@@ -48,8 +48,8 @@ lib.mkIf (!minimalImage) {
       acme_ssh_key = {
         sopsFile = ../../../secrets/acme.yaml;
         key = "ssh-key";
-        owner = "acme";
-        group = "acme";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
     }
