@@ -21,7 +21,7 @@
 
   # Use XFCE instead of GNOME/LXQt to avoid heavy build dependencies
   services.xserver.desktopManager.xfce.enable = true;
-  services.displayManager.lightdm.enable = true;
+  services.xserver.displayManager.lightdm.enable = true;
 
   # Essential applications
   environment.systemPackages = with pkgs; [

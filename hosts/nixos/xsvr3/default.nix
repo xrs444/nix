@@ -20,7 +20,7 @@
 
   # Deploy builder SSH key from sops
   sops.secrets.builder_private_key = {
-    sopsFile = ../../secrets/builder-ssh-key.yaml;
+    sopsFile = ../../../secrets/builder-ssh-key.yaml;
     path = "/root/.ssh/id_builder";
     mode = "0600";
   };
