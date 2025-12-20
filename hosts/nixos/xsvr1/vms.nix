@@ -38,7 +38,7 @@ let
       hostNic = "bridge21";
       mac = "52:54:00:8d:2e:ee";
       autostart = true;
-      firmware = "bios"; 
+      firmware = "bios";
       storage = {
         path = "/vm/v-xwifi1/v-xwifi1.qcow2";
       };
@@ -65,7 +65,7 @@ let
         }
       ];
       withVnic = false; # Set to true to enable the virtual NIC
-      pciDevices = [];
+      pciDevices = [ ];
     }
   ];
 
@@ -94,9 +94,14 @@ let
       <vcpu>${vm.vcpu}</vcpu>
       <os>
         <type arch='x86_64' machine='pc-q35-8.1'>hvm</type>
-        ${if vm.firmware == "efi" then ''
-          <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
-        '' else ""}
+        ${
+          if vm.firmware == "efi" then
+            ''
+              <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/edk2-x86_64-code.fd</loader>
+            ''
+          else
+            ""
+        }
         <boot dev='hd'/>
         <boot dev='cdrom'/>
       </os>
@@ -123,36 +128,40 @@ let
           <readonly/>
         </disk>
         ${lib.concatStringsSep "\n" (
-          map makeDriveXml (
-            if vm ? extraDrives && vm.extraDrives != null then vm.extraDrives else []
-          )
+          map makeDriveXml (if vm ? extraDrives && vm.extraDrives != null then vm.extraDrives else [ ])
         )}
         ${lib.concatStringsSep "\n" (
-          map makePciHostdevXml (
-            if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else []
-          )
+          map makePciHostdevXml (if vm ? pciDevices && vm.pciDevices != null then vm.pciDevices else [ ])
         )}
-        ${if vm.withVnic or true then
-          if vm.nicType == "macvtap" then ''
-            <interface type='macvtap'>
-              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
-              <mac address='${vm.mac}'/>
-              <model type='virtio'/>
-            </interface>
-          '' else if vm.nicType == "direct" then ''
-            <interface type='direct' trustGuestRxFilters="yes">
-              <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
-              <mac address='${vm.mac}'/>
-              <model type='virtio'/>
-            </interface>
-          '' else ''
-            <interface type='bridge'>
-              <source bridge='${vm.hostNic}'/>
-              <mac address='${vm.mac}'/>
-              <model type='virtio'/>
-            </interface>
-          ''
-        else ""}
+        ${
+          if vm.withVnic or true then
+            if vm.nicType == "macvtap" then
+              ''
+                <interface type='macvtap'>
+                  <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+                  <mac address='${vm.mac}'/>
+                  <model type='virtio'/>
+                </interface>
+              ''
+            else if vm.nicType == "direct" then
+              ''
+                <interface type='direct' trustGuestRxFilters="yes">
+                  <source dev='${vm.hostNic}' mode='${vm.macvtapMode or "bridge"}'/>
+                  <mac address='${vm.mac}'/>
+                  <model type='virtio'/>
+                </interface>
+              ''
+            else
+              ''
+                <interface type='bridge'>
+                  <source bridge='${vm.hostNic}'/>
+                  <mac address='${vm.mac}'/>
+                  <model type='virtio'/>
+                </interface>
+              ''
+          else
+            ""
+        }
         <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
           <listen type='address' address='127.0.0.1'/>
         </graphics>
@@ -170,10 +179,12 @@ let
   '';
 
   # Create a service for each VM config
-  mkVmConfigService = vm:
+  mkVmConfigService =
+    vm:
     let
       xmlFile = pkgs.writeText "${vm.name}-domain.xml" (makeVmXml vm);
-    in {
+    in
+    {
       name = "libvirt-vm-${vm.name}";
       value = {
         description = "Create libvirt config for ${vm.name}";
@@ -214,10 +225,11 @@ let
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
               # Try to undefine if not running
               if ! virsh domstate "${vm.name}" | grep -q "running"; then
-                ${if vm.firmware == "efi" then
-                  "virsh undefine \"${vm.name}\" --nvram || true"
-                else
-                  "virsh undefine \"${vm.name}\" || true"
+                ${
+                  if vm.firmware == "efi" then
+                    "virsh undefine \"${vm.name}\" --nvram || true"
+                  else
+                    "virsh undefine \"${vm.name}\" || true"
                 }
               fi
             fi
@@ -229,7 +241,10 @@ let
             fi
           '';
         };
-        path = [ pkgs.libvirt pkgs.gawk ];
+        path = [
+          pkgs.libvirt
+          pkgs.gawk
+        ];
         after = [ "libvirtd.service" ];
       };
     };
@@ -238,7 +253,7 @@ let
   # Generate all VM services and watchers
   vmServices = builtins.listToAttrs (map mkVmConfigService vmSpecs);
   vmWatchers = builtins.listToAttrs (map mkVmWatcher vmSpecs);
-  
+
   # Merge all services into one attribute set
   allServices = vmServices // lib.mapAttrs (name: cfg: cfg.service) vmWatchers;
 
