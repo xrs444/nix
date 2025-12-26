@@ -25,7 +25,6 @@
 
   # Configure sops-nix to use the age key file
   sops.age.keyFile = "/etc/ssh/sops-age-key.txt";
-  sops.defaultSopsFile = "/secrets/wan-wifi.yaml";
 
   system.stateVersion = stateVersion;
   nixpkgs.config.allowUnfree = true;
