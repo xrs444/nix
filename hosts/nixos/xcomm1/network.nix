@@ -18,6 +18,6 @@ in
 
   # SOPS secret for Wi-Fi
   sops.secrets."wan-wifi" = {
-    sopsFile = toString ./../../../secrets/wan-wifi.yaml;
+    sopsFile = ./../../../secrets/wan-wifi.yaml;
   };
 }
