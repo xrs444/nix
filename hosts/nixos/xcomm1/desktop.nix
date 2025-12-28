@@ -8,7 +8,10 @@
   services.desktopManager.gnome.enable = true;
 
   programs = {
-    firefox.enable = true;
+    firefox = {
+      enable = true;
+      package = pkgs.firefox-esr;
+    };
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
