@@ -1,0 +1,257 @@
+# HomeProd Nix Management Tasks
+# Run 'just --list' to see all available recipes
+
+# Set shell to fish
+set shell := ["fish", "-c"]
+
+# Default recipe - show help
+default:
+    @just --list
+
+# Variables
+flake_dir := justfile_directory()
+scripts_dir := flake_dir / "scripts"
+
+# Build Operations
+# ================
+
+# Build SD card image for a host (default: xdash1)
+build-sdimage host="xdash1":
+    nix build .#nixosConfigurations.{{host}}.config.system.build.sdImage
+    @echo "SD image built successfully in ./result/sd-image/"
+
+# Build a specific host configuration
+build host:
+    nix build .#nixosConfigurations.{{host}}.config.system.build.toplevel
+    @echo "Build complete for {{host}}"
+
+# Build and cache all xsvr hosts using xsvr1 as remote builder
+build-and-cache-all:
+    #!/usr/bin/env fish
+    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2
+    set -l cache_url "http://nixcache.xrs444.net"
+    set -l remote_builder "ssh-ng://xsvr1"
+    
+    for host in $hosts
+        echo "Building $host on xsvr1..."
+        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --builders $remote_builder
+        echo "Copying $host to cache..."
+        nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel"
+    end
+    
+    echo "All hosts built and cached"
+
+# SD Card Operations
+# ==================
+
+# Write SD card image to device (requires device path like /dev/disk4)
+write-sdcard device:
+    #!/usr/bin/env fish
+    # Find the SD image
+    set -l image (find ./result/sd-image -name "*.img" 2>/dev/null | head -1)
+    
+    if test -z "$image"
+        echo "ERROR: No SD image found in ./result/sd-image/"
+        echo "Build the image first with: just build-sdimage"
+        exit 1
+    end
+    
+    echo "Found image: $image"
+    set -l image_size (du -h $image | cut -f1)
+    echo "Image size: $image_size"
+    
+    # Validate device
+    if not string match -qr '^/dev/disk[0-9]+$' {{device}}
+        echo "ERROR: Invalid device: {{device}}"
+        echo "Device must be in format: /dev/diskN (e.g., /dev/disk4)"
+        exit 1
+    end
+    
+    # Show disk info
+    echo "Target disk info:"
+    diskutil info {{device}} || begin
+        echo "ERROR: Could not get info for {{device}}"
+        exit 1
+    end
+    
+    echo ""
+    echo "⚠️  THIS WILL ERASE ALL DATA ON {{device}} ⚠️"
+    echo "Press Ctrl+C to cancel, or Enter to continue..."
+    read -P ""
+    
+    # Unmount the disk
+    echo "Unmounting {{device}}..."
+    diskutil unmountDisk {{device}}
+    
+    # Write the image (using rdisk for faster raw writes)
+    set -l raw_device (string replace "disk" "rdisk" {{device}})
+    echo "Writing image to $raw_device (this will take several minutes)..."
+    sudo dd if=$image of=$raw_device bs=4m status=progress
+    
+    echo "Ejecting disk..."
+    diskutil eject {{device}}
+    
+    echo "✅ SD card is ready!"
+    echo "You can now remove the SD card and insert it into your device"
+
+# List available disks for SD card writing
+list-disks:
+    @diskutil list
+
+# Deployment Operations
+# ======================
+
+# Deploy xdash1 using nixos-anywhere (standard method with kexec)
+deploy-xdash1 ip user="root":
+    #!/usr/bin/env fish
+    set -l host "xdash1"
+    set -l target_ip "{{ip}}"
+    set -l target_user "{{user}}"
+    
+    # Check if nixos-anywhere is installed
+    if not command -v nixos-anywhere &> /dev/null
+        echo "Installing nixos-anywhere..."
+        nix profile install github:nix-community/nixos-anywhere
+    end
+    
+    echo "Deploying NixOS to $host at $target_ip"
+    echo "⚠️  This will WIPE the target disk and install NixOS!"
+    echo "Press Ctrl+C to cancel, or Enter to continue..."
+    read -P ""
+    
+    echo "Starting nixos-anywhere deployment..."
+    echo "Note: ARM devices may have issues with kexec."
+    
+    nixos-anywhere \
+        --flake ".#$host" \
+        --build-on-remote \
+        --no-reboot \
+        --phases "kexec,disko,install" \
+        "$target_user@$target_ip"
+    
+    if test $status -eq 0
+        echo "Installation complete!"
+        echo "Manually reboot the device:"
+        echo "  ssh $target_user@$target_ip 'reboot'"
+        echo "After reboot, SSH using: ssh thomas-local@$target_ip"
+    else
+        echo "ERROR: Deployment failed"
+        echo "Alternative: Try: just deploy-xdash1-simple {{ip}} {{user}}"
+        exit 1
+    end
+
+# Deploy xdash1 using QEMU emulation (no kexec, slower but more reliable)
+deploy-xdash1-simple ip user="root":
+    #!/usr/bin/env fish
+    set -l host "xdash1"
+    set -l target_ip "{{ip}}"
+    set -l target_user "{{user}}"
+    
+    echo "Deploying xdash1 to $target_ip"
+    echo "⚠️  This will WIPE /dev/mmcblk0!"
+    echo "Building with QEMU emulation (may be slow)"
+    echo "Press Enter to continue or Ctrl+C to cancel..."
+    read -P ""
+    
+    echo "Note: This uses QEMU to build ARM binaries"
+    echo "It will be slow but doesn't require kexec"
+    
+    nix run github:nix-community/nixos-anywhere -- \
+        --flake ".#$host" \
+        --extra-experimental-features "nix-command flakes" \
+        "$target_user@$target_ip"
+
+# Host Management
+# ===============
+
+# Create a new host configuration (platform: nixos or darwin)
+new-host hostname platform:
+    #!/usr/bin/env fish
+    set -l hostname "{{hostname}}"
+    set -l platform "{{platform}}"
+    
+    # Validate platform
+    if test "$platform" != "nixos" -a "$platform" != "darwin"
+        echo "ERROR: Platform must be either 'nixos' or 'darwin'"
+        exit 1
+    end
+    
+    set -l host_dir "{{flake_dir}}/hosts/$platform/$hostname"
+    
+    echo "Creating new host: $hostname (platform: $platform)"
+    
+    # Check if host already exists
+    if test -d "$host_dir"
+        echo "ERROR: Host directory already exists: $host_dir"
+        exit 1
+    end
+    
+    echo "⚠️  This is a simplified version. For full functionality, run:"
+    echo "   {{scripts_dir}}/new-host.sh {{hostname}} {{platform}}"
+    
+    # Create basic structure
+    mkdir -p $host_dir
+    echo "Created host directory: $host_dir"
+    echo "Please add configuration files and update flake.nix"
+
+# Validation & Testing
+# ====================
+
+# Validate flake configuration
+validate:
+    @echo "Validating flake configuration..."
+    nix flake check
+
+# Update flake inputs
+update:
+    @echo "Updating flake inputs..."
+    nix flake update
+
+# Show flake info
+info:
+    @echo "Flake information:"
+    @nix flake metadata
+    @echo ""
+    @echo "Available configurations:"
+    @nix flake show
+
+# Show outdated flake inputs
+outdated:
+    @echo "Checking for outdated inputs..."
+    nix flake metadata --json | jq -r '.locks.nodes | to_entries[] | select(.value.locked) | "\(.key): \(.value.locked.rev // .value.locked.narHash)"'
+
+# Development
+# ===========
+
+# Enter a development shell (from shells/ directory)
+dev shell="default":
+    @echo "Entering {{shell}} development shell..."
+    nix develop {{flake_dir}}/shells#{{shell}}
+
+# Format nix files
+fmt:
+    @echo "Formatting Nix files..."
+    nix fmt
+
+# Cleanup
+# =======
+
+# Clean build artifacts
+clean:
+    @echo "Cleaning build artifacts..."
+    rm -rf result result-*
+    @echo "Cleaned"
+
+# Run garbage collection
+gc:
+    @echo "Running garbage collection..."
+    nix-collect-garbage -d
+
+# Optimize nix store
+optimize:
+    @echo "Optimizing Nix store..."
+    nix-store --optimize
+
+# Full cleanup: remove artifacts, gc, and optimize
+deep-clean: clean gc optimize
+    @echo "Deep clean complete"

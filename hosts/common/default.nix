@@ -39,6 +39,13 @@ in
   }) flakeInputs;
   nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
 
+  # Automated garbage collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
   # Common bootloader and disko settings for NixOS (x86_64)
   boot.loader.systemd-boot.enable = lib.mkDefault true;
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault true;

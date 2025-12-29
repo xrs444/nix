@@ -21,6 +21,7 @@ in
       micro
       sops
       git
+      just # Command runner for project-specific commands
     ];
   };
 }

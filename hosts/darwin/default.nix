@@ -31,6 +31,15 @@
         username
       ];
     };
+    gc = {
+      automatic = true;
+      interval = {
+        Weekday = 0; # Sunday
+        Hour = 2;
+        Minute = 0;
+      };
+      options = "--delete-older-than 30d";
+    };
   };
 
   # Configure nixpkgs
