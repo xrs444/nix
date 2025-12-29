@@ -31,21 +31,28 @@
         username
       ];
     };
-    gc = {
-      automatic = true;
-      interval = {
-        Weekday = 0; # Sunday
-        Hour = 2;
-        Minute = 0;
-      };
-      options = "--delete-older-than 30d";
-    };
   };
 
   # Configure nixpkgs
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
 
+  };
+
+  # Garbage collection via LaunchDaemon (since nix.enable = false)
+  launchd.daemons.nix-gc = {
+    command = "${pkgs.nix}/bin/nix-collect-garbage --delete-older-than 30d";
+    serviceConfig = {
+      StartCalendarInterval = [
+        {
+          Weekday = 0; # Sunday
+          Hour = 2;
+          Minute = 0;
+        }
+      ];
+      StandardOutPath = "/var/log/nix-gc.log";
+      StandardErrorPath = "/var/log/nix-gc.log";
+    };
   };
 
   users.users.${username} = {
