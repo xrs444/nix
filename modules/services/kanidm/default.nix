@@ -47,6 +47,36 @@ in
 
     # Primary server configuration (xsvr1)
     (lib.mkIf isPrimaryServer {
+      # OAuth2 client secrets for provisioning
+      sops.secrets.kanidm_oauth2_nocodb_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_nocodb_secret";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_paperless_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_paperless_secret";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_linkwarden_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_linkwarden_secret";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_longhorn_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_longhorn_secret";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
       services.kanidm = {
         enableServer = true;

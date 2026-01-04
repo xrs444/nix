@@ -6,6 +6,7 @@
 - builder_key.pub
 - secrets.yaml
 - kanidm_replication_cert.yaml
+- kanidm_oauth2_secrets.yaml
 - bgp.yaml
 - wan-wifi.yaml
 - cloudflare.yaml
@@ -22,7 +23,10 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJlAKBOsKmCa0yY0FKOD3dr8uEq4elGokEpWZYVMVkp
 No content to summarize in secrets.yaml.
 
 ### kanidm_replication_cert.yaml
-replication_cert: ENC[AES256_GCM,data:+HvElgnWt1X1Z30eGKy+xDBctzII1EZHOD7vDyYmlHchZYBjKDhUaAGHu2hpL45uQL2kHYaRAKNrYISwMVFrS/ava2j/+GUjynmgmWV1t9j69GgcQVu9sHiTpT53WBAXYOPSwpyyudIUk6+ypmkp+xeNyA59oy0xj/...
+Encrypted certificate for Kanidm replication between primary and replica servers.
+
+### kanidm_oauth2_secrets.yaml
+Encrypted OAuth2 client secrets for Kanidm OIDC integration with applications (NocoDB, Paperless-ngx, Linkwarden).
 
 ### bgp.yaml
 bgp: ENC[AES256_GCM,data:pllOqFgexDYVXLlZB2QGGx83jQI=,iv:qVv66OVhbna1cDGRdv1g98Vl9X59m50Xu3nktQy5jgU=,tag:Qauja1nGRKvkWzcdSL7xlA==,type:str]
