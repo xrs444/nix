@@ -41,6 +41,7 @@
     ../../common/apps/vscode
     ./shell/starship.nix
     ./shell/tmux.nix
+    ./shell/fish.nix
   ];
 
   # Install non-standard fonts
@@ -96,6 +97,7 @@
     powershell
     pipx
     virtualenv
+    just
   ];
 
   # Enable font configuration
