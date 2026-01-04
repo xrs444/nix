@@ -33,7 +33,6 @@
       enableFishIntegration = pkgs.stdenv.isLinux;
       enableZshIntegration = true;
     };
-    tmux.enable = true;
     yt-dlp.enable = true;
   };
 
