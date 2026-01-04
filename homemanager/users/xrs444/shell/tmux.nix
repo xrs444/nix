@@ -4,7 +4,7 @@
     enable = true;
     clock24 = true;
     mouse = true;
-    historyLimit = 10000;
+    historyLimit = 50000;
     extraConfig = "set -g status-bg colour235";
   };
 }
