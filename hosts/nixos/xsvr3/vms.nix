@@ -16,7 +16,7 @@ let
       };
       extraDrives = [
         {
-          path = "/dev/disk/by-id/nvme-CT1000P3SSD8_24414B6FE363";
+          path = "/dev/disk/by-id/nvme-WD_BLACK_SN7100_1TB_25464K800764";
           device = "disk";
           bus = "sata";
           target = "sdb";
