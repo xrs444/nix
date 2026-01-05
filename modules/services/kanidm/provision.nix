@@ -27,9 +27,6 @@
       "linkwarden-admin" = {
         members = [ "admins" ];
       };
-      "x_longhorn" = {
-        members = [ "users" ];
-      };
       "x_longhorn-admin" = {
         members = [ "admins" ];
       };
