@@ -32,11 +32,7 @@
   # Enable sudo for wheel group
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  # Minimal boot configuration
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-  };
+  # Minimal boot configuration - disko handles filesystem configuration
   boot.loader.systemd-boot.enable = lib.mkDefault true;
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault false;
 }
