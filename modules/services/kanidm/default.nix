@@ -29,8 +29,8 @@ in
       sops.secrets.kanidm_admin_password = {
         sopsFile = ../../../secrets/idm.yaml;
         key = "admin_password";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
       sops.secrets.kanidm_idm_admin_password = {
@@ -51,29 +51,29 @@ in
       sops.secrets.kanidm_oauth2_nocodb_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_nocodb_secret";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
       sops.secrets.kanidm_oauth2_paperless_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_paperless_secret";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
       sops.secrets.kanidm_oauth2_linkwarden_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_linkwarden_secret";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
       sops.secrets.kanidm_oauth2_longhorn_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_longhorn_secret";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
 
