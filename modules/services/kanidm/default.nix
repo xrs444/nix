@@ -36,8 +36,8 @@ in
       sops.secrets.kanidm_idm_admin_password = {
         sopsFile = ../../../secrets/idm.yaml;
         key = "idm_admin_password";
-        owner = "root";
-        group = "root";
+        owner = "kanidm";
+        group = "kanidm";
         mode = "0400";
       };
     })
