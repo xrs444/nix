@@ -1,5 +1,3 @@
-{ lib, ... }:
-
 {
   disko.devices = {
     disk = {
@@ -31,9 +29,5 @@
         };
       };
     };
-  };
-  fileSystems."/" = {
-    device = lib.mkForce "/dev/disk/by-id/nvme-CT500P3PSSD8_241748806E5C";
-    fsType = lib.mkForce "xfs";
   };
 }
