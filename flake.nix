@@ -99,7 +99,6 @@
             "samba"
             "iprouting"
             "talos"
-            "kanidm-server"
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
