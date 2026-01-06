@@ -2,6 +2,7 @@
 {
   hostname,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -21,6 +22,63 @@ in
 
     # Add nginx user to builder group so it can read the cache
     users.users.nginx.extraGroups = [ "builder" ];
+
+    # Cleanup old cache entries
+    systemd.services.nixcache-cleanup = {
+      description = "Clean up old Nix binary cache entries";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.writeShellScript "nixcache-cleanup" ''
+          set -euo pipefail
+          CACHE_DIR="/var/public-nix-cache"
+          MAX_AGE_DAYS=30
+          MAX_SIZE_GB=100
+
+          echo "Starting cache cleanup..."
+
+          # Remove files older than MAX_AGE_DAYS
+          echo "Removing files older than $MAX_AGE_DAYS days..."
+          ${pkgs.findutils}/bin/find "$CACHE_DIR" -type f -mtime +$MAX_AGE_DAYS -delete
+
+          # Check cache size and remove oldest files if over limit
+          CURRENT_SIZE=$(${pkgs.coreutils}/bin/du -sb "$CACHE_DIR" | ${pkgs.coreutils}/bin/cut -f1)
+          MAX_SIZE_BYTES=$((MAX_SIZE_GB * 1024 * 1024 * 1024))
+
+          if [ "$CURRENT_SIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "Cache size $CURRENT_SIZE bytes exceeds limit of $MAX_SIZE_BYTES bytes"
+            echo "Removing oldest files..."
+            # Remove oldest 20% of files
+            ${pkgs.findutils}/bin/find "$CACHE_DIR" -type f -printf '%T+ %p\n' | \
+              ${pkgs.coreutils}/bin/sort | \
+              ${pkgs.coreutils}/bin/head -n $(( $(${pkgs.findutils}/bin/find "$CACHE_DIR" -type f | ${pkgs.coreutils}/bin/wc -l) / 5 )) | \
+              ${pkgs.coreutils}/bin/cut -d' ' -f2- | \
+              ${pkgs.findutils}/bin/xargs -r ${pkgs.coreutils}/bin/rm -f
+          fi
+
+          # Remove empty directories
+          ${pkgs.findutils}/bin/find "$CACHE_DIR" -type d -empty -delete
+
+          echo "Cache cleanup completed"
+
+          # Clean up builder's build results (keep only result symlinks, GC handles rest)
+          echo "Cleaning builder work directory..."
+          BUILDER_DIR="/home/builder/nix"
+          if [ -d "$BUILDER_DIR" ]; then
+            ${pkgs.findutils}/bin/find "$BUILDER_DIR" -name 'result*' -type l -mtime +7 -delete
+          fi
+        ''}";
+      };
+    };
+
+    # Run cleanup weekly
+    systemd.timers.nixcache-cleanup = {
+      description = "Timer for Nix binary cache cleanup";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "weekly";
+        Persistent = true;
+      };
+    };
 
     services.nginx = {
       enable = true;
