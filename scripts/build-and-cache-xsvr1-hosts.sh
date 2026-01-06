@@ -3,22 +3,34 @@
 set -euo pipefail
 
 # List all hosts to build
-HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2 xcomm1)
+HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
 
-# Path to your flake
-#FLAKE_PATH="/var/lib/comin/repository"
-FLAKE_PATH="/users/xrs444/Repositories/HomeProd/nix"
+# Remote build host (use builder user for remote builds)
+BUILD_HOST="builder@xsvr1.lan"
+# Path to your flake on the remote host
+REMOTE_FLAKE_PATH="/var/lib/comin/repository"
 # Cache URL
 CACHE_URL="http://nixcache.xrs444.net"
 
-# Remote builder URL
-REMOTE_BUILDER="ssh://builder@xsvr1.lan"
+echo "Building all hosts on xsvr1 and caching them..."
+echo ""
 
+# Build all hosts on xsvr1 directly via SSH
 for HOST in "${HOSTS[@]}"; do
+  echo "====================================="
   echo "Building $HOST on xsvr1..."
-  nix build "$FLAKE_PATH#nixosConfigurations.$HOST.config.system.build.toplevel" --builders "$REMOTE_BUILDER"
+  echo "====================================="
+
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --print-build-logs"
+
+  echo ""
   echo "Copying $HOST to cache..."
-  nix copy --to "$CACHE_URL" "$FLAKE_PATH#nixosConfigurations.$HOST.config.system.build.toplevel"
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix copy --to $CACHE_URL .#nixosConfigurations.$HOST.config.system.build.toplevel"
+
+  echo "✓ $HOST completed"
+  echo ""
 done
 
-echo "All hosts built on xsvr1 and cached."
+echo "====================================="
+echo "All hosts built and cached successfully!"
+echo "====================================="
