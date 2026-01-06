@@ -199,6 +199,14 @@
       nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
       devShells = lib.forAllSystems (system: {
+        default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
+          buildInputs = with inputs.nixpkgs.legacyPackages.${system}; [
+            nixfmt-rfc-style
+            sops
+            age
+            git
+          ];
+        };
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };
       });
       checks = lib.forAllSystems (
