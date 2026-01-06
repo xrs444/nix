@@ -56,6 +56,11 @@
           Type = "oneshot";
           ExecStart = notifyFailure;
         };
+        # Rate limit to prevent notification spam during restart loops
+        unitConfig = {
+          StartLimitIntervalSec = 300; # 5 minutes
+          StartLimitBurst = 1; # Only 1 notification per interval
+        };
       };
 
       # Trigger failure notification when comin fails
