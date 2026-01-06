@@ -209,7 +209,7 @@ rec {
         platform = hostConfig.platform;
         desktop = hostConfig.desktop or null;
         isWorkstation = (hostConfig.desktop or null) != null;
-        minimalImage = true;
+        minimalImage = false;
         hostRoles = hostConfig.roles or [ ];
         lib = inputs.nixpkgs.lib;
       };
