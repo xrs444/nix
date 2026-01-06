@@ -6,7 +6,7 @@
 }:
 let
   ncRunCache = [
-    "xsvr3"
+    "xsvr1"
   ];
 
   isServer = lib.elem "${hostname}" ncRunCache;
@@ -33,7 +33,7 @@ in
         access_log /var/log/nginx/access.log;
       '';
 
-      virtualHosts."nixcache.xrs444.net" = {
+      virtualHosts."xsvr1.lan" = {
         locations."/" = {
           root = "/var/public-nix-cache";
           extraConfig = ''

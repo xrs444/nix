@@ -9,8 +9,8 @@ HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xt
 BUILD_HOST="xsvr1-builder"
 # Path to your flake on the remote host
 REMOTE_FLAKE_PATH="/home/builder/nix"
-# Cache URL
-CACHE_URL="http://nixcache.xrs444.net"
+# Cache directory on xsvr1 (local to the builder)
+CACHE_DIR="/var/public-nix-cache"
 
 GIT_REPO="https://github.com/xrs444/nix"
 GIT_BRANCH="testing"  # Build from testing branch before deploying to main
@@ -44,7 +44,8 @@ for HOST in "${HOSTS[@]}"; do
 
   echo ""
   echo "Copying $HOST to cache..."
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix copy --to $CACHE_URL --accept-flake-config .#nixosConfigurations.$HOST.config.system.build.toplevel"
+  # Copy to local cache directory on xsvr1
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix copy --to 'file:///var/public-nix-cache?compression=zstd' --accept-flake-config .#nixosConfigurations.$HOST.config.system.build.toplevel"
 
   echo "✓ $HOST completed"
   echo ""
