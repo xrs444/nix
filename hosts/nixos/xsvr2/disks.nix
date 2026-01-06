@@ -1,4 +1,3 @@
-{ lib, ... }:
 {
   disko.devices = {
     disk = {
@@ -74,9 +73,5 @@
         };
       };
     };
-  };
-  fileSystems."/" = {
-    device = lib.mkForce "/dev/md/root_fs";
-    fsType = lib.mkForce "xfs";
   };
 }

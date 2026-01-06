@@ -1,4 +1,3 @@
-{ config, lib, ... }:
 {
   config = {
     disko.devices = {
@@ -57,10 +56,25 @@
           };
         };
       };
-    };
-    fileSystems."/" = {
-      device = lib.mkForce "/dev/md/root_fs";
-      fsType = lib.mkForce "xfs";
+      mdadm = {
+        root_fs = {
+          type = "mdadm";
+          level = 1;
+          content = {
+            type = "gpt";
+            partitions = {
+              root = {
+                size = "100%";
+                content = {
+                  type = "filesystem";
+                  format = "xfs";
+                  mountpoint = "/";
+                };
+              };
+            };
+          };
+        };
+      };
     };
   };
 }

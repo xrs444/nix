@@ -12,7 +12,6 @@
     ../../base-nixos.nix
     ../common/hardware-amd.nix
     ../common/boot.nix
-    ./disks.nix
     ./network.nix
     ../../../modules/sdImage/custom.nix
   ];

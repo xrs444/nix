@@ -1,5 +1,3 @@
-{ lib, ... }:
-
 {
   disko.devices = {
     disk = {
@@ -31,9 +29,5 @@
         };
       };
     };
-  };
-  fileSystems."/" = {
-    device = lib.mkForce "/dev/disk/by-id/ata-SAMSUNG_SSD_830_Series_S0XXNEAC706979";
-    fsType = lib.mkForce "xfs";
   };
 }

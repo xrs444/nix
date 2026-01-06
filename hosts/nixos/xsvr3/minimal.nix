@@ -12,7 +12,6 @@
     ../../base-nixos.nix
     ../common/hardware-intel.nix
     ../common/boot.nix
-    ./disks.nix
     ../../../modules/sdImage/custom.nix
   ];
 
@@ -32,7 +31,11 @@
   # Enable sudo for wheel group
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  # Minimal boot configuration - disko handles filesystem configuration
+  # Minimal boot configuration
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "ext4";
+  };
   boot.loader.systemd-boot.enable = lib.mkDefault true;
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault false;
 }

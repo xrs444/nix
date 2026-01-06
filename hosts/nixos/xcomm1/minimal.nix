@@ -10,7 +10,8 @@
 {
   imports = [
     ../../base-nixos.nix
-    ../common/default.nix
+    ../common/hardware-amd.nix
+    ../common/boot.nix
     ../../../modules/sdImage/custom.nix
   ];
 

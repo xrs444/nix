@@ -41,8 +41,14 @@
       "xlt1-t-admin" = { };
       "xlt2-s" = { };
       "xlt2-s-admin" = { };
-      "xdt1-t" = { };
-      "xdt1-t-admin" = { };
+      "xdt2-g" = { };
+      "xdt2-g-admin" = { };
+      "xdt3-r" = { };
+      "xdt3-r-admin" = { };
+      "xcomm1" = { };
+      "xcomm1-admin" = { };
+      "xdash1-admin" = { };
+      "xhac-radio-admin" = { };
     };
     systems = {
       oauth2 = {

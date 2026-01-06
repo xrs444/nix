@@ -10,10 +10,9 @@
 {
   imports = [
     ../../base-nixos.nix
-    ../common/hardware-intel.nix
+    ../common/hardware-amd.nix
     ../common/boot.nix
     ./network.nix
-    ./disks.nix
     ../../../modules/sdImage/custom.nix
   ];
 
