@@ -11,7 +11,7 @@
     ../common/boot.nix
     ../common/performance.nix
     ./network.nix
-    ./desktop.nix
+    #    ./desktop.nix
     ./serial.nix
     ./vms.nix
     ./disks.nix
