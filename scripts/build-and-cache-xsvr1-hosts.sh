@@ -3,16 +3,16 @@
 set -euo pipefail
 
 # List all hosts to build
-HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
+HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2 xcomm1)
 
 # Path to your flake
-FLAKE_PATH="/var/lib/comin/repository"
-
+#FLAKE_PATH="/var/lib/comin/repository"
+FLAKE_PATH="/users/xrs444/Repositories/HomeProd/nix"
 # Cache URL
 CACHE_URL="http://nixcache.xrs444.net"
 
 # Remote builder URL
-REMOTE_BUILDER="ssh-ng://xsvr1"
+REMOTE_BUILDER="ssh://builder@xsvr1.lan"
 
 for HOST in "${HOSTS[@]}"; do
   echo "Building $HOST on xsvr1..."
