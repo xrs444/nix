@@ -11,21 +11,25 @@ BUILD_HOST="xsvr1-builder"
 REMOTE_FLAKE_PATH="/home/builder/nix"
 # Cache URL
 CACHE_URL="http://nixcache.xrs444.net"
-# Git repository URL
-GIT_REPO="https://github.com/xrs444/HomeProd.git"
 
-echo "Building all hosts on xsvr1 and caching them..."
+GIT_REPO="https://github.com/xrs444/nix"
+GIT_BRANCH="testing"  # Build from testing branch before deploying to main
+
+echo "Building all hosts on xsvr1 from ${GIT_BRANCH} branch and caching them..."
 echo ""
 
 # Pull latest config from git
 echo "====================================="
-echo "Pulling latest config from git..."
+echo "Pulling latest config from ${GIT_BRANCH} branch..."
 echo "====================================="
 ssh "$BUILD_HOST" "
   if [ -d $REMOTE_FLAKE_PATH ]; then
-    cd $REMOTE_FLAKE_PATH && nix run nixpkgs#git -- pull
+    cd $REMOTE_FLAKE_PATH &&
+    nix run nixpkgs#git -- fetch origin &&
+    nix run nixpkgs#git -- checkout $GIT_BRANCH &&
+    nix run nixpkgs#git -- pull origin $GIT_BRANCH
   else
-    nix run nixpkgs#git -- clone $GIT_REPO $REMOTE_FLAKE_PATH
+    GIT_TERMINAL_PROMPT=0 nix run nixpkgs#git -- clone -b $GIT_BRANCH $GIT_REPO $REMOTE_FLAKE_PATH
   fi
 "
 
@@ -36,11 +40,11 @@ for HOST in "${HOSTS[@]}"; do
   echo "Building $HOST on xsvr1..."
   echo "====================================="
 
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH/nix && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --print-build-logs"
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --accept-flake-config --print-build-logs"
 
   echo ""
   echo "Copying $HOST to cache..."
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH/nix && nix copy --to $CACHE_URL .#nixosConfigurations.$HOST.config.system.build.toplevel"
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix copy --to $CACHE_URL --accept-flake-config .#nixosConfigurations.$HOST.config.system.build.toplevel"
 
   echo "✓ $HOST completed"
   echo ""

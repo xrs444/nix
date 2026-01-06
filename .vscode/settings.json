@@ -1,5 +1,13 @@
 {
     "cSpell.enabledFileTypes": {
         "nix": false
-    }
+    },
+    // Git configuration for testing workflow
+    "git.defaultBranchName": "testing",
+    "git.branchPrefix": "",
+    "git.postCommitCommand": "none",
+    "git.showPushSuccessNotification": true,
+    // Show current branch prominently
+    "git.decorations.enabled": true,
+    "scm.defaultViewMode": "tree"
 }
