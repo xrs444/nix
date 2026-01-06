@@ -58,24 +58,68 @@
           originLanding = "https://nocodb.xrs444.net";
           allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_nocodb_secret";
+          scopeMaps = {
+            "nocodb" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "nocodb-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
         };
         "oauth2_paperless" = {
           displayName = "Paperless-ngx";
           originUrl = "https://paperless.xrs444.net";
           originLanding = "https://paperless.xrs444.net";
           basicSecretFile = "/run/secrets/kanidm_oauth2_paperless_secret";
+          scopeMaps = {
+            "paperless" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "paperless-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
         };
         "oauth2_linkwarden" = {
           displayName = "Linkwarden";
           originUrl = "https://linkwarden.xrs444.net";
           originLanding = "https://linkwarden.xrs444.net";
           basicSecretFile = "/run/secrets/kanidm_oauth2_linkwarden_secret";
+          scopeMaps = {
+            "linkwarden" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "linkwarden-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
         };
         "oauth2_longhorn" = {
           displayName = "Longhorn UI";
           originUrl = "https://longhorn.xrs444.net";
           originLanding = "https://longhorn.xrs444.net";
           basicSecretFile = "/run/secrets/kanidm_oauth2_longhorn_secret";
+          scopeMaps = {
+            "longhorn-admin" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
         };
       };
     };
