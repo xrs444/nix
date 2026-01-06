@@ -20,14 +20,32 @@
           https://ntfy.xrs444.net/comin
       '';
 
-      # Script to send failure notification
+      # Script to send failure notification with rate limiting
       notifyFailure = pkgs.writeShellScript "comin-notify-failure" ''
-        ${pkgs.curl}/bin/curl -f -s \
+        LOCK_FILE="/run/comin-notify-failure.lock"
+        RATE_LIMIT_SECONDS=300  # 5 minutes
+
+        # Check if we recently sent a notification
+        if [ -f "$LOCK_FILE" ]; then
+          LAST_NOTIFY=$(cat "$LOCK_FILE")
+          CURRENT_TIME=$(date +%s)
+          TIME_DIFF=$((CURRENT_TIME - LAST_NOTIFY))
+
+          if [ $TIME_DIFF -lt $RATE_LIMIT_SECONDS ]; then
+            exit 0  # Skip notification, too soon
+          fi
+        fi
+
+        # Send notification
+        if ${pkgs.curl}/bin/curl -f -s \
           -H "Title: ❌ Config Failed - ${hostName}" \
           -H "Priority: high" \
           -H "Tags: x,warning" \
           -d "Configuration deployment failed on ${hostName}. Check systemd logs: journalctl -u comin -n 50" \
-          https://ntfy.xrs444.net/comin
+          https://ntfy.xrs444.net/comin; then
+          # Record timestamp if successful
+          date +%s > "$LOCK_FILE"
+        fi
       '';
     in
     {
@@ -52,14 +70,11 @@
 
       # Create a service that runs on comin failure
       systemd.services.comin-failure-notify = {
+        description = "Send notification when comin fails";
         serviceConfig = {
           Type = "oneshot";
           ExecStart = notifyFailure;
-        };
-        # Rate limit to prevent notification spam during restart loops
-        unitConfig = {
-          StartLimitIntervalSec = 300; # 5 minutes
-          StartLimitBurst = 1; # Only 1 notification per interval
+          RemainAfterExit = false;
         };
       };
 
