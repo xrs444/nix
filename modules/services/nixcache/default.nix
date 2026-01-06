@@ -13,11 +13,14 @@ let
 in
 {
   config = lib.mkIf isServer {
-    # Create the cache directory
+    # Create the cache directory with builder ownership, nginx in builder group for read access
     systemd.tmpfiles.rules = [
-      "d /var/public-nix-cache 0755 nginx nginx -"
+      "d /var/public-nix-cache 0775 builder builder -"
       "d /tmp/pkgcache 0755 nginx nginx -"
     ];
+
+    # Add nginx user to builder group so it can read the cache
+    users.users.nginx.extraGroups = [ "builder" ];
 
     services.nginx = {
       enable = true;
