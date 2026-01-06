@@ -34,6 +34,17 @@
       enableZshIntegration = true;
     };
     yt-dlp.enable = true;
+    # SSH configuration for thomas-local key
+    ssh = {
+      enable = true;
+      matchBlocks = {
+        "*.lan thomas-local@*" = {
+          user = "thomas-local";
+          identityFile =
+            if pkgs.stdenv.isDarwin then "~/.ssh/thomas-local_key" else "/run/secrets/thomas-local-ssh-key";
+        };
+      };
+    };
   };
 
   # Apps
