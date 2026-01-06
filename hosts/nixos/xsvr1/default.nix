@@ -7,13 +7,13 @@
 {
   imports = [
     ../../base-nixos.nix
+    ../../common
     ../common/hardware-amd.nix
     ../common/boot.nix
     ../common/performance.nix
     ./disks.nix
     ./network.nix
     ./vms.nix
-    # Common imports are now handled by hosts/common/default.nix
   ];
 
   networking.hostName = hostname;

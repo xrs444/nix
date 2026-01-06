@@ -23,6 +23,13 @@
     "flakes"
   ];
 
+  # Automated garbage collection (NixOS only)
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
   # Configure sops-nix to use the age key file
   sops.age.keyFile = "/etc/ssh/sops-age-key.txt";
 
