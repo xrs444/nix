@@ -1,8 +1,11 @@
 # Exclude all backup and temp files, but keep NixOS configs
+
 *.swp
 *.bak
 *.tmp
 *.old
 .DS_Store
+
 # Exclude build and result symlinks
+
 result
