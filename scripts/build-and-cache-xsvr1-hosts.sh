@@ -7,25 +7,33 @@ HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xt
 
 # Remote build host (use builder user via SSH config alias)
 BUILD_HOST="xsvr1-builder"
-# Path to your flake on the remote host
-REMOTE_FLAKE_PATH="/home/builder/nix"
-# Cache URL
-CACHE_URL="http://nixcache.xrs444.net"
-# Git repository URL
-GIT_REPO="https://github.com/xrs444/HomeProd.git"
+# Path to builds on ZFS
+REMOTE_FLAKE_PATH="/zfs/nixcache/builds"
+# Cache directory on xsvr1 ZFS (local to the builder)
+CACHE_DIR="/zfs/nixcache/cache"
 
-echo "Building all hosts on xsvr1 and caching them..."
+# Build limits
+MAX_JOBS="4"  # Limit parallel builds
+MAX_CORES="8"  # Limit cores per build
+
+GIT_REPO="https://github.com/xrs444/nix"
+GIT_BRANCH="testing"  # Build from testing branch before deploying to main
+
+echo "Building all hosts on xsvr1 from ${GIT_BRANCH} branch and caching them..."
 echo ""
 
 # Pull latest config from git
 echo "====================================="
-echo "Pulling latest config from git..."
+echo "Pulling latest config from ${GIT_BRANCH} branch..."
 echo "====================================="
 ssh "$BUILD_HOST" "
   if [ -d $REMOTE_FLAKE_PATH ]; then
-    cd $REMOTE_FLAKE_PATH && nix run nixpkgs#git -- pull
+    cd $REMOTE_FLAKE_PATH &&
+    nix run nixpkgs#git -- fetch origin &&
+    nix run nixpkgs#git -- checkout $GIT_BRANCH &&
+    nix run nixpkgs#git -- pull origin $GIT_BRANCH
   else
-    nix run nixpkgs#git -- clone $GIT_REPO $REMOTE_FLAKE_PATH
+    GIT_TERMINAL_PROMPT=0 nix run nixpkgs#git -- clone -b $GIT_BRANCH $GIT_REPO $REMOTE_FLAKE_PATH
   fi
 "
 
@@ -36,11 +44,12 @@ for HOST in "${HOSTS[@]}"; do
   echo "Building $HOST on xsvr1..."
   echo "====================================="
 
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH/nix && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --print-build-logs"
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --accept-flake-config --print-build-logs --max-jobs $MAX_JOBS --cores $MAX_CORES"
 
   echo ""
   echo "Copying $HOST to cache..."
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH/nix && nix copy --to $CACHE_URL .#nixosConfigurations.$HOST.config.system.build.toplevel"
+  # Copy to ZFS cache directory on xsvr1
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix copy --to 'file:///zfs/nixcache/cache?compression=zstd' --accept-flake-config .#nixosConfigurations.$HOST.config.system.build.toplevel"
 
   echo "✓ $HOST completed"
   echo ""

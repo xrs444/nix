@@ -2,22 +2,86 @@
 {
   hostname,
   lib,
+  pkgs,
   ...
 }:
 let
   ncRunCache = [
-    "xsvr3"
+    "xsvr1"
   ];
 
   isServer = lib.elem "${hostname}" ncRunCache;
 in
 {
   config = lib.mkIf isServer {
-    # Create the cache directory
+    # Create the cache directories on ZFS with builder ownership, nginx in builder group for read access
     systemd.tmpfiles.rules = [
-      "d /var/public-nix-cache 0755 nginx nginx -"
+      "d /zfs/nixcache 0755 root root -"
+      "d /zfs/nixcache/cache 0775 builder builder -"
+      "d /zfs/nixcache/builds 0775 builder builder -"
       "d /tmp/pkgcache 0755 nginx nginx -"
     ];
+
+    # Add nginx user to builder group so it can read the cache
+    users.users.nginx.extraGroups = [ "builder" ];
+
+    # Cleanup old cache entries
+    systemd.services.nixcache-cleanup = {
+      description = "Clean up old Nix binary cache entries";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.writeShellScript "nixcache-cleanup" ''
+          set -euo pipefail
+          CACHE_DIR="/zfs/nixcache/cache"
+          BUILDS_DIR="/zfs/nixcache/builds"
+          MAX_AGE_DAYS=30
+          MAX_SIZE_GB=100
+
+          echo "Starting cache cleanup..."
+
+          # Remove files older than MAX_AGE_DAYS
+          echo "Removing files older than $MAX_AGE_DAYS days..."
+          ${pkgs.findutils}/bin/find "$CACHE_DIR" -type f -mtime +$MAX_AGE_DAYS -delete
+
+          # Check cache size and remove oldest files if over limit
+          CURRENT_SIZE=$(${pkgs.coreutils}/bin/du -sb "$CACHE_DIR" | ${pkgs.coreutils}/bin/cut -f1)
+          MAX_SIZE_BYTES=$((MAX_SIZE_GB * 1024 * 1024 * 1024))
+
+          if [ "$CURRENT_SIZE" -gt "$MAX_SIZE_BYTES" ]; then
+            echo "Cache size $CURRENT_SIZE bytes exceeds limit of $MAX_SIZE_BYTES bytes"
+            echo "Removing oldest files..."
+            # Remove oldest 20% of files
+            ${pkgs.findutils}/bin/find "$CACHE_DIR" -type f -printf '%T+ %p\n' | \
+              ${pkgs.coreutils}/bin/sort | \
+              ${pkgs.coreutils}/bin/head -n $(( $(${pkgs.findutils}/bin/find "$CACHE_DIR" -type f | ${pkgs.coreutils}/bin/wc -l) / 5 )) | \
+              ${pkgs.coreutils}/bin/cut -d' ' -f2- | \
+              ${pkgs.findutils}/bin/xargs -r ${pkgs.coreutils}/bin/rm -f
+          fi
+
+          # Remove empty directories
+          ${pkgs.findutils}/bin/find "$CACHE_DIR" -type d -empty -delete
+
+          echo "Cache cleanup completed"
+
+          # Clean up builds directory
+          echo "Cleaning builds directory..."
+          if [ -d "$BUILDS_DIR" ]; then
+            ${pkgs.findutils}/bin/find "$BUILDS_DIR" -name 'result*' -type l -mtime +7 -delete
+            ${pkgs.findutils}/bin/find "$BUILDS_DIR" -type d -empty -delete
+          fi
+        ''}";
+      };
+    };
+
+    # Run cleanup weekly
+    systemd.timers.nixcache-cleanup = {
+      description = "Timer for Nix binary cache cleanup";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "weekly";
+        Persistent = true;
+      };
+    };
 
     services.nginx = {
       enable = true;
@@ -33,9 +97,9 @@ in
         access_log /var/log/nginx/access.log;
       '';
 
-      virtualHosts."nixcache.xrs444.net" = {
+      virtualHosts."xsvr1.lan" = {
         locations."/" = {
-          root = "/var/public-nix-cache";
+          root = "/zfs/nixcache/cache";
           extraConfig = ''
             expires max;
             add_header Cache-Control $cache_header always;

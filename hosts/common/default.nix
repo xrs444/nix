@@ -31,7 +31,7 @@ in
     ];
     nix.settings.warn-dirty = false;
     nix.settings.substituters = [
-      "http://nixcache.xrs444.net?priority=10"
+      "http://xsvr1.lan?priority=10"
       "https://cache.nixos.org?priority=20"
     ];
     # Use proper flake registry without builtins.toFile warnings
