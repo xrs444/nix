@@ -66,6 +66,11 @@
         Restart = "always";
         RestartSec = 5;
         ExecStartPost = notifySuccess;
+        # Allow time for git operations to complete
+        TimeoutStopSec = "60s";
+        # Ensure clean shutdown
+        KillMode = "mixed";
+        KillSignal = "SIGTERM";
       };
 
       # Create a service that runs on comin failure
