@@ -65,6 +65,12 @@ in
       # Retention settings
       retentionTime = "30d";
 
+      # Ensure clean restarts
+      extraFlags = [
+        "--storage.tsdb.retention.time=30d"
+        "--web.enable-lifecycle"
+      ];
+
       # Global scrape configuration
       globalConfig = {
         scrape_interval = "15s";
@@ -460,6 +466,28 @@ in
             ];
           }
         ];
+      };
+    };
+
+    # Ensure Prometheus service has proper restart behavior
+    systemd.services.prometheus = {
+      serviceConfig = {
+        # Allow time for graceful shutdown
+        TimeoutStopSec = "30s";
+        # Kill any lingering processes
+        KillMode = "mixed";
+        KillSignal = "SIGTERM";
+        # Ensure port is freed on stop
+        RestartSec = "5s";
+      };
+    };
+
+    # Ensure Alertmanager service has proper restart behavior
+    systemd.services.alertmanager = {
+      serviceConfig = {
+        TimeoutStopSec = "30s";
+        KillMode = "mixed";
+        RestartSec = "5s";
       };
     };
   };
