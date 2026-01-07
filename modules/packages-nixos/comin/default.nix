@@ -65,7 +65,8 @@
       systemd.services.comin.serviceConfig = {
         Restart = "always";
         RestartSec = 5;
-        ExecStartPost = notifySuccess;
+        # Use "-" prefix to allow notification to fail without affecting service status
+        ExecStartPost = "-${notifySuccess}";
         # Allow time for git operations to complete
         TimeoutStopSec = "60s";
         # Ensure clean shutdown
