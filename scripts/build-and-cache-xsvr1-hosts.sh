@@ -10,7 +10,11 @@ BUILD_HOST="xsvr1-builder"
 # Path to builds on ZFS
 REMOTE_FLAKE_PATH="/zfs/nixcache/builds"
 # Cache directory on xsvr1 ZFS (local to the builder)
-# CACHE_DIR="/zfs/nixcache/cache"
+CACHE_DIR="/zfs/nixcache/cache"
+
+# Build limits
+MAX_JOBS="4"  # Limit parallel builds
+MAX_CORES="8"  # Limit cores per build
 
 GIT_REPO="https://github.com/xrs444/nix"
 GIT_BRANCH="testing"  # Build from testing branch before deploying to main
@@ -40,7 +44,7 @@ for HOST in "${HOSTS[@]}"; do
   echo "Building $HOST on xsvr1..."
   echo "====================================="
 
-  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --accept-flake-config --print-build-logs"
+  ssh "$BUILD_HOST" "cd $REMOTE_FLAKE_PATH && nix build .#nixosConfigurations.$HOST.config.system.build.toplevel --accept-flake-config --print-build-logs --max-jobs $MAX_JOBS --cores $MAX_CORES"
 
   echo ""
   echo "Copying $HOST to cache..."
