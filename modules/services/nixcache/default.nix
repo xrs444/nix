@@ -14,9 +14,11 @@ let
 in
 {
   config = lib.mkIf isServer {
-    # Create the cache directory with builder ownership, nginx in builder group for read access
+    # Create the cache directories on ZFS with builder ownership, nginx in builder group for read access
     systemd.tmpfiles.rules = [
-      "d /var/public-nix-cache 0775 builder builder -"
+      "d /zfs/nixcache 0755 root root -"
+      "d /zfs/nixcache/cache 0775 builder builder -"
+      "d /zfs/nixcache/builds 0775 builder builder -"
       "d /tmp/pkgcache 0755 nginx nginx -"
     ];
 
@@ -30,7 +32,8 @@ in
         Type = "oneshot";
         ExecStart = "${pkgs.writeShellScript "nixcache-cleanup" ''
           set -euo pipefail
-          CACHE_DIR="/var/public-nix-cache"
+          CACHE_DIR="/zfs/nixcache/cache"
+          BUILDS_DIR="/zfs/nixcache/builds"
           MAX_AGE_DAYS=30
           MAX_SIZE_GB=100
 
@@ -60,11 +63,11 @@ in
 
           echo "Cache cleanup completed"
 
-          # Clean up builder's build results (keep only result symlinks, GC handles rest)
-          echo "Cleaning builder work directory..."
-          BUILDER_DIR="/home/builder/nix"
-          if [ -d "$BUILDER_DIR" ]; then
-            ${pkgs.findutils}/bin/find "$BUILDER_DIR" -name 'result*' -type l -mtime +7 -delete
+          # Clean up builds directory
+          echo "Cleaning builds directory..."
+          if [ -d "$BUILDS_DIR" ]; then
+            ${pkgs.findutils}/bin/find "$BUILDS_DIR" -name 'result*' -type l -mtime +7 -delete
+            ${pkgs.findutils}/bin/find "$BUILDS_DIR" -type d -empty -delete
           fi
         ''}";
       };
@@ -96,7 +99,7 @@ in
 
       virtualHosts."xsvr1.lan" = {
         locations."/" = {
-          root = "/var/public-nix-cache";
+          root = "/zfs/nixcache/cache";
           extraConfig = ''
             expires max;
             add_header Cache-Control $cache_header always;
