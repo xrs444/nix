@@ -19,7 +19,10 @@
   };
 
   programs = {
-    firefox.enable = true;
+    firefox = {
+      enable = true;
+      package = pkgs.firefox;
+    };
     gnome-disks.enable = true;
   };
 
