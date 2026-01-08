@@ -101,8 +101,8 @@ in
           replication = {
             origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
-            # Pull from xsvr2 by IP, partner_cert should handle auth
-            "repl://172.20.1.11:8444" = {
+            # Pull from xsvr2 by hostname, partner_cert handles mutual TLS auth
+            "repl://xsvr2.xrs444.net:8444" = {
               type = "mutual-pull";
               partner_cert = "MIICAzCCAaigAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDFmYjkyMjY0LTBmZjctNDliMC05MGFlLWY5MTU5MDkwMzlhZDAeFw0yNjAxMDgxNzU4MjdaFw0zMDAxMDgxNzU4MjdaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkMWZiOTIyNjQtMGZmNy00OWIwLTkwYWUtZjkxNTkwOTAzOWFkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMsFu0wVzowyIZaytCgPcFJqjh-BDodBEpgfrJtEjo6C4itIJuXYTUmqBWa5zAnpUxlMXn1mz5UXL3oNrI4xC0aN7MHkwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAbBgNVHREEFDASghB4c3ZyMi54cnM0NDQubmV0MAoGCCqGSM49BAMCA0kAMEYCIQCvP3s9DfH81b83-nltMaGlW7yXbmr2o8fj0PtcrKhExQIhAOXAQYkNNJCZWE8zVVSKsZxKYnoUdWRAvfZsNpbsLKW8";
               # Do NOT set automatic_refresh on primary
@@ -167,8 +167,8 @@ in
           replication = {
             origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
-            # Pull from xsvr1 by IP, partner_cert should handle auth
-            "repl://172.20.1.10:8444" = {
+            # Pull from xsvr1 by hostname, partner_cert handles mutual TLS auth
+            "repl://xsvr1.xrs444.net:8444" = {
               type = "mutual-pull";
               partner_cert = "MIICATCCAaigAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDc4ZDcyMzdmLWY0NjEtNGZjNS04OGM5LWE1YWE3NTZkYThjNzAeFw0yNjAxMDgxNzU3MDlaFw0zMDAxMDgxNzU3MDlaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkNzhkNzIzN2YtZjQ2MS00ZmM1LTg4YzktYTVhYTc1NmRhOGM3MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhipxqb9ju7hXOqL_xNvKLbIloXvkuy53wClGXnoY95A0D1nF_QHt7Ml-2Ids3QkHqwsgCdQBb82xFTSMyoObtKN7MHkwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAbBgNVHREEFDASghB4c3ZyMS54cnM0NDQubmV0MAoGCCqGSM49BAMCA0cAMEQCIFLvh5dA0GwM8VUNXWIcckmV7GcORVV8K-jhYktWrbxJAiBjCi0FqNVneSytOGW2KbFuDGfP4aVvLNicqKxjV0cBCg";
               automatic_refresh = true;
