@@ -84,7 +84,7 @@ lib.mkIf (!minimalImage) {
         # Kanidm shared certificate
         (lib.optional isKanidmServer {
           "idm.${domain}" = {
-            extraDomainNames = [ ];
+            extraDomainNames = [ "xsvr1.${domain}" "xsvr2.${domain}" ];
           };
         })
     );
