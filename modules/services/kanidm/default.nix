@@ -161,7 +161,6 @@ in
           replication = {
             origin = kanidmServerUri;
             bindaddress = "0.0.0.0:8444";
-            manual_cert_path = config.sops.secrets.kanidm_replication_cert.path;
           };
         };
       };
