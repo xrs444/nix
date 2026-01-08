@@ -99,10 +99,10 @@ in
             versions = 7;
           };
           replication = {
-            origin = "repl://xsvr1.lan:8444";
+            origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
-            # Pull from xsvr2 (replica)
-            "repl://xsvr2.lan:8444" = {
+            # Pull from xsvr2 directly by IP to avoid VIP routing
+            "repl://172.20.1.11:8444" = {
               type = "mutual-pull";
               partner_cert = "MIICATCCAaagAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDFmYjkyMjY0LTBmZjctNDliMC05MGFlLWY5MTU5MDkwMzlhZDAeFw0yNTExMTQwNDA1MzRaFw0yOTExMTQwNDA1MzRaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkMWZiOTIyNjQtMGZmNy00OWIwLTkwYWUtZjkxNTkwOTAzOWFkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqhDYvRkYlL6Neg_jwKELgQPg83d6R9VBVJotrzNpActY4KqzgRsK7Twsj6mqs5vjoTQ-m17JClRsw6Ggv85eA6N5MHcwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAZBgNVHREEEjAQgg5pZG0ueHJzNDQ0Lm5ldDAKBggqhkjOPQQDAgNJADBGAiEA0X_MsNAWee6cUs1xmvRslRH2w2FhnKeHyrxgxadmm0kCIQCNUXsG1k5LsRVPOpzoq588rpSJgeJXvbSlMGmaVgajCw==";
               # Do NOT set automatic_refresh on primary
@@ -165,10 +165,10 @@ in
             versions = 7;
           };
           replication = {
-            origin = "repl://xsvr2.lan:8444";
+            origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
-            # Pull from xsvr1 (primary) with automatic refresh
-            "repl://xsvr1.lan:8444" = {
+            # Pull from xsvr1 directly by IP to avoid VIP routing
+            "repl://172.20.1.10:8444" = {
               type = "mutual-pull";
               partner_cert = "MIICADCCAaagAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDc4ZDcyMzdmLWY0NjEtNGZjNS04OGM5LWE1YWE3NTZkYThjNzAeFw0yNTExMTQwNDAzNThaFw0yOTExMTQwNDAzNThaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkNzhkNzIzN2YtZjQ2MS00ZmM1LTg4YzktYTVhYTc1NmRhOGM3MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZj-HrOMDxRRmhCSrW0aAdfsn3mGTkgODDTdvppJS8QvntBjQ278C1Wk2TGpvbzofAsAOKWrHdpr35RyTaNsEuaN5MHcwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAZBgNVHREEEjAQgg5pZG0ueHJzNDQ0Lm5ldDAKBggqhkjOPQQDAgNIADBFAiBvVLdviZf377qId3gKWjg-3ytxeJZZvKizNcE41ghC3wIhAJRANhcoIzPLG7pQQNQSZoEoIiiLK0zP_2oHYkYPBXKY";
               automatic_refresh = true;
