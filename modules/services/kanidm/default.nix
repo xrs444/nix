@@ -128,6 +128,29 @@ in
       # Ensure kanidm can read TLS certificates
       users.users.kanidm.extraGroups = [ "acme" ];
 
+      # Add OAuth2 redirect URLs after provisioning
+      # kanidm-provision doesn't support redirect URLs, so we add them manually
+      systemd.services.kanidm-oauth2-redirect-urls = {
+        description = "Add OAuth2 redirect URLs to Kanidm clients";
+        after = [ "kanidm.service" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          # Wait for kanidm to be fully up
+          sleep 5
+
+          # Login as idm_admin
+          export KANIDM_PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
+          echo "$KANIDM_PASSWORD" | ${pkgs.kanidm}/bin/kanidm login -D idm_admin || true
+
+          # Add redirect URLs for oauth2 clients
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
+        '';
+      };
+
       # Open firewall ports
       networking.firewall = {
         allowedTCPPorts = [
