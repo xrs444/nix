@@ -132,6 +132,33 @@ else
       };
     };
 
+    # Enable IP forwarding and configure RPF for asymmetric routing
+    boot.kernel.sysctl = {
+      "net.ipv4.ip_forward" = 1;
+      "net.ipv4.conf.bond0.rp_filter" = 2; # Loose mode RPF
+      "net.ipv4.conf.all.rp_filter" = 2;
+    };
+
+    # Policy-based routing to ensure VIP traffic uses correct gateway
+    networking.iproute2.enable = true;
+    networking.localCommands = ''
+      # Create custom routing table 100 for VIP traffic
+      if ! grep -q "100 vip_routing" /etc/iproute2/rt_tables; then
+        echo "100 vip_routing" >> /etc/iproute2/rt_tables
+      fi
+
+      # Policy routing rules: traffic from VIPs must use table 100
+      ip rule add from ${gatewayVipAddress} table 100 priority 100 2>/dev/null || true
+      ip rule add from ${kanidmVipAddress} table 100 priority 101 2>/dev/null || true
+
+      # Routing table 100: use external router gateway for all traffic
+      ip route add default via 172.20.1.250 dev bond0 table 100 2>/dev/null || true
+      ip route add 172.20.1.0/24 dev bond0 scope link table 100 2>/dev/null || true
+
+      # Flush route cache
+      ip route flush cache 2>/dev/null || true
+    '';
+
     # Open required ports in firewall for VRRP
     networking.firewall = {
       extraCommands = ''
