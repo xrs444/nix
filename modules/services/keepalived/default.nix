@@ -51,6 +51,37 @@ else
       mode = "0755";
     };
 
+    environment.etc."setup-vip-routing.sh" = {
+      text = ''
+        #!/bin/sh
+        # Setup policy-based routing for VIP traffic
+
+        # Ensure routing table exists
+        if ! grep -q "100 vip_routing" /etc/iproute2/rt_tables 2>/dev/null; then
+          echo "100 vip_routing" >> /etc/iproute2/rt_tables
+        fi
+
+        # Remove old rules (if any)
+        ip rule del from ${gatewayVipAddress} table 100 2>/dev/null || true
+        ip rule del from ${kanidmVipAddress} table 100 2>/dev/null || true
+
+        # Add policy routing rules
+        ip rule add from ${gatewayVipAddress} table 100 priority 100
+        ip rule add from ${kanidmVipAddress} table 100 priority 101
+
+        # Setup routing table 100
+        ip route flush table 100 2>/dev/null || true
+        ip route add 172.20.1.0/24 dev bond0 scope link table 100
+        ip route add default via 172.20.1.250 dev bond0 table 100
+
+        # Flush route cache
+        ip route flush cache 2>/dev/null || true
+
+        logger "VIP routing configured for ${gatewayVipAddress} and ${kanidmVipAddress}"
+      '';
+      mode = "0755";
+    };
+
     # Define the script for keepalived to reference
     services.keepalived = {
       enable = true;
@@ -103,7 +134,7 @@ else
             track_script {
               check_tailscale_subnet
             }
-            notify_master "/run/current-system/systemd/bin/systemctl restart frr"
+            notify_master "/etc/setup-vip-routing.sh && /run/current-system/systemd/bin/systemctl restart frr"
           '';
         };
         kanidm-idm = {
@@ -126,7 +157,7 @@ else
             track_script {
               check_tailscale_subnet
             }
-            notify_master "/run/current-system/systemd/bin/systemctl restart kanidm"
+            notify_master "/etc/setup-vip-routing.sh && /run/current-system/systemd/bin/systemctl restart kanidm"
           '';
         };
       };
@@ -139,24 +170,15 @@ else
       "net.ipv4.conf.all.rp_filter" = 2;
     };
 
-    # Policy-based routing to ensure VIP traffic uses correct gateway
+    # Enable iproute2 for policy routing
     networking.iproute2.enable = true;
+
+    # Ensure routing table is configured at boot
     networking.localCommands = ''
-      # Create custom routing table 100 for VIP traffic
-      if ! grep -q "100 vip_routing" /etc/iproute2/rt_tables; then
+      # Create custom routing table entry
+      if ! grep -q "100 vip_routing" /etc/iproute2/rt_tables 2>/dev/null; then
         echo "100 vip_routing" >> /etc/iproute2/rt_tables
       fi
-
-      # Policy routing rules: traffic from VIPs must use table 100
-      ip rule add from ${gatewayVipAddress} table 100 priority 100 2>/dev/null || true
-      ip rule add from ${kanidmVipAddress} table 100 priority 101 2>/dev/null || true
-
-      # Routing table 100: use external router gateway for all traffic
-      ip route add default via 172.20.1.250 dev bond0 table 100 2>/dev/null || true
-      ip route add 172.20.1.0/24 dev bond0 scope link table 100 2>/dev/null || true
-
-      # Flush route cache
-      ip route flush cache 2>/dev/null || true
     '';
 
     # Open required ports in firewall for VRRP
