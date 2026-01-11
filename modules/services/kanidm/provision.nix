@@ -109,7 +109,7 @@
         };
         "oauth2_longhorn" = {
           displayName = "Longhorn UI";
-          originUrl = "https://longhorn.xrs444.net";
+          originUrl = "https://longhorn.xrs444.net/oauth2/callback";
           originLanding = "https://longhorn.xrs444.net";
           allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_longhorn_secret";
