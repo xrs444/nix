@@ -64,7 +64,7 @@ let
           driverType = "raw";
         }
       ];
-      withVnic = false; # Set to true to enable the virtual NIC
+      withVnic = true; # Set to true to enable the virtual NIC
       pciDevices = [ ];
     }
   ];

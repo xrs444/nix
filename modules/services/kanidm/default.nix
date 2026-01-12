@@ -99,8 +99,14 @@ in
             versions = 7;
           };
           replication = {
-            origin = kanidmServerUri;
+            origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
+            # Pull from xsvr2 by hostname, partner_cert handles mutual TLS auth
+            "repl://xsvr2.xrs444.net:8444" = {
+              type = "mutual-pull";
+              partner_cert = "MIICAzCCAaigAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDFmYjkyMjY0LTBmZjctNDliMC05MGFlLWY5MTU5MDkwMzlhZDAeFw0yNjAxMDgxNzU4MjdaFw0zMDAxMDgxNzU4MjdaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkMWZiOTIyNjQtMGZmNy00OWIwLTkwYWUtZjkxNTkwOTAzOWFkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMsFu0wVzowyIZaytCgPcFJqjh-BDodBEpgfrJtEjo6C4itIJuXYTUmqBWa5zAnpUxlMXn1mz5UXL3oNrI4xC0aN7MHkwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAbBgNVHREEFDASghB4c3ZyMi54cnM0NDQubmV0MAoGCCqGSM49BAMCA0kAMEYCIQCvP3s9DfH81b83-nltMaGlW7yXbmr2o8fj0PtcrKhExQIhAOXAQYkNNJCZWE8zVVSKsZxKYnoUdWRAvfZsNpbsLKW8";
+              # Do NOT set automatic_refresh on primary
+            };
           };
         };
         clientSettings = {
@@ -121,6 +127,29 @@ in
 
       # Ensure kanidm can read TLS certificates
       users.users.kanidm.extraGroups = [ "acme" ];
+
+      # Add OAuth2 redirect URLs after provisioning
+      # kanidm-provision doesn't support redirect URLs, so we add them manually
+      systemd.services.kanidm-oauth2-redirect-urls = {
+        description = "Add OAuth2 redirect URLs to Kanidm clients";
+        after = [ "kanidm.service" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          # Wait for kanidm to be fully up
+          sleep 5
+
+          # Login as idm_admin
+          export KANIDM_PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
+          echo "$KANIDM_PASSWORD" | ${pkgs.kanidm}/bin/kanidm login -D idm_admin || true
+
+          # Add redirect URLs for oauth2 clients
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
+        '';
+      };
 
       # Open firewall ports
       networking.firewall = {
@@ -159,9 +188,14 @@ in
             versions = 7;
           };
           replication = {
-            origin = kanidmServerUri;
+            origin = "repl://idm.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
-            manual_cert_path = config.sops.secrets.kanidm_replication_cert.path;
+            # Pull from xsvr1 by hostname, partner_cert handles mutual TLS auth
+            "repl://xsvr1.xrs444.net:8444" = {
+              type = "mutual-pull";
+              partner_cert = "MIICATCCAaigAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDc4ZDcyMzdmLWY0NjEtNGZjNS04OGM5LWE1YWE3NTZkYThjNzAeFw0yNjAxMDgxNzU3MDlaFw0zMDAxMDgxNzU3MDlaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkNzhkNzIzN2YtZjQ2MS00ZmM1LTg4YzktYTVhYTc1NmRhOGM3MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhipxqb9ju7hXOqL_xNvKLbIloXvkuy53wClGXnoY95A0D1nF_QHt7Ml-2Ids3QkHqwsgCdQBb82xFTSMyoObtKN7MHkwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAbBgNVHREEFDASghB4c3ZyMS54cnM0NDQubmV0MAoGCCqGSM49BAMCA0cAMEQCIFLvh5dA0GwM8VUNXWIcckmV7GcORVV8K-jhYktWrbxJAiBjCi0FqNVneSytOGW2KbFuDGfP4aVvLNicqKxjV0cBCg";
+              automatic_refresh = true;
+            };
           };
         };
       };

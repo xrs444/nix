@@ -67,7 +67,6 @@ in
 
       # Ensure clean restarts
       extraFlags = [
-        "--storage.tsdb.retention.time=30d"
         "--web.enable-lifecycle"
       ];
 
