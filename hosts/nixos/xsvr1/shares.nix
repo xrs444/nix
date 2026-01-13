@@ -9,7 +9,7 @@
 
   services.nfs.server = {
     enable = true;
-    createMountPoints = true;
+    createMountPoints = lib.mkForce false;
     exports = ''
       /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0)
       /export/zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
@@ -45,8 +45,9 @@
 
   # Ensure export directory structure exists
   system.activationScripts.nfs4-export = ''
-    mkdir -p /export/zfs/systembackups
-    mkdir -p /export/zfs/media
+    mkdir -p /export/zfs/systembackups/longhorn
+    mkdir -p /export/zfs/media/movies
+    mkdir -p /export/zfs/media/tvshows
   '';
 
   services.nfs.settings = {
@@ -60,9 +61,11 @@
 
   services.samba = {
     enable = true;
-    securityType = "user";
     openFirewall = true;
     settings = {
+      global = {
+        security = "user";
+      };
       "public" = {
         "path" = "/mnt/Shares/Public";
         "browseable" = "yes";
@@ -83,15 +86,15 @@
         "force user" = "username";
         "force group" = "groupname";
       };
-    };
-    "tm_xlt1-t" = {
-      "path" = "/zfs/timemachine/xlt1-t";
-      "valid users" = "xrs444";
-      "public" = "no";
-      "writeable" = "yes";
-      "fruit:aapl" = "yes";
-      "fruit:time machine" = "yes";
-      "vfs objects" = "catia fruit streams_xattr";
+      "tm_xlt1-t" = {
+        "path" = "/zfs/timemachine/xlt1-t";
+        "valid users" = "xrs444";
+        "public" = "no";
+        "writeable" = "yes";
+        "fruit:aapl" = "yes";
+        "fruit:time machine" = "yes";
+        "vfs objects" = "catia fruit streams_xattr";
+      };
     };
   };
 

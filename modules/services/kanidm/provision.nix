@@ -75,6 +75,8 @@
           displayName = "Paperless-ngx";
           originUrl = "https://paperless.xrs444.net";
           originLanding = "https://paperless.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_paperless_secret";
           scopeMaps = {
             "paperless" = [
@@ -111,10 +113,23 @@
           displayName = "Longhorn UI";
           originUrl = "https://longhorn.xrs444.net";
           originLanding = "https://longhorn.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_longhorn_secret";
           scopeMaps = {
             "longhorn-admin" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
+        "oauth2_traefik" = {
+          displayName = "Traefik Dashboard";
+          originUrl = "https://traefik.xrs444.net";
+          originLanding = "https://traefik.xrs444.net";
+          basicSecretFile = "/run/secrets/kanidm_oauth2_traefik_secret";
+          scopeMaps = {
+            "admins" = [
               "openid"
               "profile"
               "email"
