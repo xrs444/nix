@@ -11,6 +11,7 @@
     ../common/boot.nix
     ../common/performance.nix
     ./network.nix
+    ./replication.nix
     ./vms.nix
     ./disks.nix
     # Common imports are now handled by hosts/common/default.nix

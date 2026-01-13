@@ -13,6 +13,7 @@
     ../common/performance.nix
     ./disks.nix
     ./network.nix
+    ./replication.nix
     ./shares.nix
     ./vms.nix
   ];
