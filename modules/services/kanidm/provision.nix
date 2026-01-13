@@ -111,7 +111,6 @@
           displayName = "Longhorn UI";
           originUrl = "https://longhorn.xrs444.net";
           originLanding = "https://longhorn.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_longhorn_secret";
           scopeMaps = {
             "longhorn-admin" = [
