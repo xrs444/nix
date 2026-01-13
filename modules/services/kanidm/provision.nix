@@ -121,6 +121,20 @@
             ];
           };
         };
+        "oauth2_traefik" = {
+          displayName = "Traefik Dashboard";
+          originUrl = "https://traefik.xrs444.net";
+          originLanding = "https://traefik.xrs444.net";
+          basicSecretFile = "/run/secrets/kanidm_oauth2_traefik_secret";
+          scopeMaps = {
+            "admins" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
       };
     };
     persons = {
