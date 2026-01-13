@@ -7,41 +7,48 @@
     ../../../modules/services/zfs/replication.nix
   ];
 
-  # Configure sops secret for syncoid SSH key
+  # Configure sops secret for syncoid SSH key (no path, just extract to default location)
   sops.secrets.syncoid-private-key = {
     sopsFile = ../../../secrets/syncoid-ssh-key.yaml;
     key = "syncoid_private_key";
-    owner = "syncoid";
-    group = "syncoid";
-    mode = "0600";
-    path = "/var/lib/syncoid/.ssh/id_ed25519";
   };
 
   # Disable automatic SSH key generation since we're using sops
   systemd.services.syncoid-ssh-keygen.enable = false;
 
-  # Create SSH directory and public key from sops
+  # Create syncoid user and setup SSH keys from sops
   systemd.services.syncoid-ssh-setup = {
     description = "Setup Syncoid SSH keys from sops";
     wantedBy = [ "multi-user.target" ];
     after = [ "sops-nix.service" ];
+    requires = [ "sops-nix.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
+      # Ensure syncoid user exists
+      if ! id syncoid &>/dev/null; then
+        echo "ERROR: syncoid user does not exist yet"
+        exit 1
+      fi
+
+      # Setup SSH directory
       mkdir -p /var/lib/syncoid/.ssh
       chown syncoid:syncoid /var/lib/syncoid/.ssh
       chmod 700 /var/lib/syncoid/.ssh
+
+      # Copy private key from sops-managed location
+      cp /run/secrets/syncoid-private-key /var/lib/syncoid/.ssh/id_ed25519
+      chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519
+      chmod 600 /var/lib/syncoid/.ssh/id_ed25519
 
       # Extract public key from private key
       ${pkgs.openssh}/bin/ssh-keygen -y -f /var/lib/syncoid/.ssh/id_ed25519 > /var/lib/syncoid/.ssh/id_ed25519.pub
       chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519.pub
       chmod 644 /var/lib/syncoid/.ssh/id_ed25519.pub
     '';
-  };
-
-  # Enable ZFS replication
+  }; # Enable ZFS replication
   services.zfsReplication = {
     enable = true;
 
