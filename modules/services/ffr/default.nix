@@ -2,6 +2,7 @@
 {
   hostname,
   lib,
+  pkgs,
   ...
 }:
 
@@ -79,4 +80,12 @@ else
     networking.firewall = {
       allowedTCPPorts = [ 179 ]; # BGP port
     };
+
+    # Static routes for forwarding pod and LoadBalancer traffic from external gateway to FFR VIP
+    # External router sends traffic to xsvr VIP (172.20.1.101), this forwards to FFR VIP (172.20.3.200)
+    # where BGP peering with Cilium handles final routing to pods
+    networking.localCommands = ''
+      ${pkgs.iproute2}/bin/ip route add 10.244.0.0/16 via 172.20.3.200 dev bridge22 || true
+      ${pkgs.iproute2}/bin/ip route add 172.21.0.0/24 via 172.20.3.200 dev bridge22 || true
+    '';
   }
