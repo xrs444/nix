@@ -83,15 +83,15 @@
         "force user" = "username";
         "force group" = "groupname";
       };
-    };
-    "tm_xlt1-t" = {
-      "path" = "/zfs/timemachine/xlt1-t";
-      "valid users" = "xrs444";
-      "public" = "no";
-      "writeable" = "yes";
-      "fruit:aapl" = "yes";
-      "fruit:time machine" = "yes";
-      "vfs objects" = "catia fruit streams_xattr";
+      "tm_xlt1-t" = {
+        "path" = "/zfs/timemachine/xlt1-t";
+        "valid users" = "xrs444";
+        "public" = "no";
+        "writeable" = "yes";
+        "fruit:aapl" = "yes";
+        "fruit:time machine" = "yes";
+        "vfs objects" = "catia fruit streams_xattr";
+      };
     };
   };
 
