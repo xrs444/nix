@@ -1,10 +1,45 @@
 # ZFS Replication Configuration for xsvr1 (Source Host)
 # Replicates critical datasets to xsvr2 for redundancy
+{ pkgs, ... }:
 {
   # Import the ZFS replication module
   imports = [
     ../../../modules/services/zfs/replication.nix
   ];
+
+  # Configure sops secret for syncoid SSH key
+  sops.secrets.syncoid-private-key = {
+    sopsFile = ../../../secrets/syncoid-ssh-key.yaml;
+    key = "syncoid_private_key";
+    owner = "syncoid";
+    group = "syncoid";
+    mode = "0600";
+    path = "/var/lib/syncoid/.ssh/id_ed25519";
+  };
+
+  # Disable automatic SSH key generation since we're using sops
+  systemd.services.syncoid-ssh-keygen.enable = false;
+
+  # Create SSH directory and public key from sops
+  systemd.services.syncoid-ssh-setup = {
+    description = "Setup Syncoid SSH keys from sops";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /var/lib/syncoid/.ssh
+      chown syncoid:syncoid /var/lib/syncoid/.ssh
+      chmod 700 /var/lib/syncoid/.ssh
+
+      # Extract public key from private key
+      ${pkgs.openssh}/bin/ssh-keygen -y -f /var/lib/syncoid/.ssh/id_ed25519 > /var/lib/syncoid/.ssh/id_ed25519.pub
+      chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519.pub
+      chmod 644 /var/lib/syncoid/.ssh/id_ed25519.pub
+    '';
+  };
 
   # Enable ZFS replication
   services.zfsReplication = {

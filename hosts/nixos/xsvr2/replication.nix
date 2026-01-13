@@ -6,12 +6,17 @@
     ../../../modules/services/zfs/replication.nix
   ];
 
+  # Configure sops secret to read the public key
+  sops.secrets.syncoid-public-key = {
+    sopsFile = ../../../secrets/syncoid-ssh-key.yaml;
+    key = "syncoid_public_key";
+  };
+
   # Enable ZFS replication as target
   services.zfsReplication = {
     enable = true;
-    
-    # SSH public key from xsvr1's syncoid user will be added after first deployment
-    # Get it by running on xsvr1: sudo cat /var/lib/syncoid/.ssh/id_ed25519.pub
-    sshPublicKey = null;  # Will be updated after xsvr1 deployment
+
+    # SSH public key from sops secret
+    sshPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKqkKlOzh/vBBtSh39UpdadSng9CVf3e6WfbUE0bp4cg syncoid@xsvr1";
   };
 }
