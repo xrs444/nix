@@ -45,8 +45,9 @@
 
   # Ensure export directory structure exists
   system.activationScripts.nfs4-export = ''
-    mkdir -p /export/zfs/systembackups
-    mkdir -p /export/zfs/media
+    mkdir -p /export/zfs/systembackups/longhorn
+    mkdir -p /export/zfs/media/movies
+    mkdir -p /export/zfs/media/tvshows
   '';
 
   services.nfs.settings = {
@@ -60,9 +61,11 @@
 
   services.samba = {
     enable = true;
-    securityType = "user";
     openFirewall = true;
     settings = {
+      global = {
+        security = "user";
+      };
       "public" = {
         "path" = "/mnt/Shares/Public";
         "browseable" = "yes";
