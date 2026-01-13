@@ -75,6 +75,7 @@
           displayName = "Paperless-ngx";
           originUrl = "https://paperless.xrs444.net";
           originLanding = "https://paperless.xrs444.net";
+          allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_paperless_secret";
           scopeMaps = {
             "paperless" = [
