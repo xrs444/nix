@@ -13,6 +13,7 @@
     exports = ''
       /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0)
       /export/zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/ingest 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/movies 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
@@ -23,6 +24,13 @@
     {
       what = "/zfs/systembackups/longhorn";
       where = "/export/zfs/systembackups/longhorn";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/ingest";
+      where = "/export/zfs/media/ingest";
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
@@ -46,6 +54,7 @@
   # Ensure export directory structure exists
   system.activationScripts.nfs4-export = ''
     mkdir -p /export/zfs/systembackups/longhorn
+    mkdir -p /export/zfs/media/ingest
     mkdir -p /export/zfs/media/movies
     mkdir -p /export/zfs/media/tvshows
   '';
