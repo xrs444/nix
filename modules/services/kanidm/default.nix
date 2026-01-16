@@ -155,6 +155,7 @@ in
 
           # Add redirect URLs for oauth2 clients
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
         '';
       };
 
