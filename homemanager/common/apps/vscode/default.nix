@@ -263,6 +263,7 @@ in
           vscode-marketplace.github.vscode-pull-request-github
           #          vscode-marketplace.hashicorp.terraform
           vscode-marketplace.janisdd.vscode-edit-csv
+          vscode-marketplace.anthropic.claude-code
           vscode-marketplace.jeff-hykin.better-dockerfile-syntax
           vscode-marketplace.jeff-hykin.better-shellscript-syntax
           vscode-marketplace.jnoortheen.nix-ide
@@ -278,11 +279,6 @@ in
           vscode-marketplace.ms-python.python
           vscode-marketplace.ms-python.vscode-pylance
           vscode-marketplace.ms-python.vscode-python-envs
-          #. vscode-marketplace.ms-toolsai.jupyter
-          #. vscode-marketplace.ms-toolsai.jupyter-keymap
-          #. vscode-marketplace.ms-toolsai.jupyter-renderers
-          #. vscode-marketplace.ms-toolsai.vscode-jupyter-cell-tags
-          #. vscode-marketplace.ms-toolsai.vscode-jupyter-slideshow
           vscode-marketplace.ms-vscode-remote.remote-containers
           vscode-marketplace.ms-vscode-remote.remote-ssh
           vscode-marketplace.ms-vscode-remote.remote-ssh-edit

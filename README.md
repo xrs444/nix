@@ -10,7 +10,7 @@ Two of the servers also act as primary and secondary storage provided by ZFS arr
 
 Each server has a 1TB boot SSD, and for xsvr 1 and 2, this is a Raid1 array, as well as a 1TB SSD for k3s Longhorn storage.
 
-## Servers and roles:
+## Servers and roles
 
 | Server | CPU | Motherboard | RAM | ZFS Storage Array | Extra |
 |--------|-----|-------------|-----|-------------------|-------|
@@ -18,7 +18,7 @@ Each server has a 1TB boot SSD, and for xsvr 1 and 2, this is a Raid1 array, as 
 | xsvr2 | Intel Atom C2750 | SuperMicro| 32 GB | 4 X 2TB ZRAID2 | |
 | xsvr3 | Intel i5 | Lenovo m920x | 16 GB | N/A | |
 
-## Network:
+## Network
 
 Linking this all together is a pair of Brocade 7250s in a stack, with each server having a pair of 10G connections shared between the two, using LACP. the Homelab uses a 6610 fed from this switch and routing and firewall duties are performed by a Firewalla Pro. Wifi and endpoint switching is handled with TP-Link Omada gear.
 
@@ -34,4 +34,4 @@ Linking this all together is a pair of Brocade 7250s in a stack, with each serve
 - Set up Ntfy for alerts
 - Configure Atuin for users
 - Get build sorted for xcomm1 - tries to build the universe!
-- 
+-

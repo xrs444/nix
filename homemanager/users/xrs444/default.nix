@@ -109,6 +109,7 @@
     pipx
     virtualenv
     just
+    claude-code
   ];
 
   # Enable font configuration
