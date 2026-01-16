@@ -60,7 +60,7 @@
     # Multimedia
 
     # Browsers & Communication
-    thunderbird
+    # thunderbird
 
     # Utilities
     gitkraken
