@@ -25,7 +25,7 @@
     );
     # Reverse scroll direction on macOS (disable "Natural" scrolling)
     activation.reverseScrollDirection = lib.mkIf pkgs.stdenv.isDarwin ''
-      defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+      /usr/bin/defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
     '';
   };
 
