@@ -33,7 +33,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "000000001",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -52,7 +52,7 @@
   "panels": [
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -69,7 +69,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -174,7 +174,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -275,7 +275,7 @@
     },
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -292,7 +292,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -398,7 +398,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -520,7 +520,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -651,7 +651,7 @@
     },
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -668,7 +668,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -765,7 +765,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "decimals": 0,
       "fill": 1,
       "fillGradient": 0,
@@ -869,7 +869,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "000000001",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -990,7 +990,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "000000001",
         "definition": "label_values(node_exporter_build_info{job=~\"node-exporter\"}, instance)",
         "hide": 0,
         "includeAll": false,
@@ -1012,7 +1012,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "000000001",
         "definition": "label_values(node_exporter_build_info{instance=~\"$node:(.*)\"}, instance)",
         "hide": 2,
         "includeAll": false,
