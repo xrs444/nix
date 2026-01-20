@@ -33,6 +33,13 @@ let
     "xts2"
   ];
 
+  # Talos VMs (Kubernetes nodes)
+  talosVMs = [
+    "172.20.3.10"
+    "172.20.3.20"
+    "172.20.3.30"
+  ];
+
   # Generate scrape targets for node_exporter
   nodeTargets = map (host: "${host}:9100") allHosts;
 
@@ -42,14 +49,20 @@ let
   # Generate scrape targets for bird_exporter
   birdTargets = map (host: "${host}:9324") birdHosts;
 
+  # Generate scrape targets for Talos node_exporter (port 9100)
+  talosNodeTargets = map (ip: "${ip}:9100") talosVMs;
+
+  # Generate scrape targets for Talos kubelet metrics (port 10250)
+  talosKubeletTargets = map (ip: "${ip}:10250") talosVMs;
+
   # Kubernetes monitoring targets
-  # TODO: Replace with your actual K8s service IPs or use DNS names
   k8sTargets = {
-    # kube-state-metrics service in monitoring namespace
-    kubeStateMetrics = "kube-state-metrics.monitoring.svc.cluster.local:8080";
+    # kube-state-metrics service in monitoring namespace (exposed via NodePort 30080)
+    kubeStateMetrics = "172.20.3.10:30080";
     # n8n workflow automation service
     n8n = "n8n.n8n.svc.cluster.local:5678";
-    # Add more K8s targets here as needed
+    # Kubernetes API server (via first Talos node)
+    apiServer = "172.20.3.10:6443";
   };
 in
 {
@@ -190,6 +203,57 @@ in
         #     }
         #   ];
         # }
+
+        # Talos VMs - node_exporter
+        # System-level metrics from Talos Kubernetes nodes
+        {
+          job_name = "talos-node";
+          static_configs = [
+            {
+              targets = talosNodeTargets;
+              labels = {
+                cluster = "home-k8s";
+                role = "talos-vm";
+              };
+            }
+          ];
+        }
+
+        # Talos VMs - kubelet metrics
+        # Container and pod metrics from kubelet
+        {
+          job_name = "kubelet";
+          scheme = "https";
+          tls_config = {
+            insecure_skip_verify = true;
+          };
+          static_configs = [
+            {
+              targets = talosKubeletTargets;
+              labels = {
+                cluster = "home-k8s";
+              };
+            }
+          ];
+        }
+
+        # Kubernetes API Server
+        # Control plane metrics
+        {
+          job_name = "kubernetes-apiserver";
+          scheme = "https";
+          tls_config = {
+            insecure_skip_verify = true;
+          };
+          static_configs = [
+            {
+              targets = [ k8sTargets.apiServer ];
+              labels = {
+                cluster = "home-k8s";
+              };
+            }
+          ];
+        }
 
         # Kubernetes - kube-state-metrics
         # Provides cluster-level metrics about Kubernetes objects
@@ -436,17 +500,21 @@ in
         receivers = [
           {
             name = "default";
-            # TODO: Configure your notification channel
-            # Examples in docs/alerting-guide.md:
-            # - email_configs
-            # - slack_configs
-            # - discord_configs
-            # - pushover_configs
-            # - webhook_configs
+            webhook_configs = [
+              {
+                url = "http://apprise.monitoring.svc.cluster.local:8000/notify";
+                send_resolved = true;
+              }
+            ];
           }
           {
             name = "critical";
-            # TODO: Configure critical alert notifications
+            webhook_configs = [
+              {
+                url = "http://apprise.monitoring.svc.cluster.local:8000/notify";
+                send_resolved = true;
+              }
+            ];
           }
         ];
 
