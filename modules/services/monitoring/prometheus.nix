@@ -10,27 +10,27 @@ let
 
   # Define all monitored hosts
   allHosts = [
-    "xsvr1"
-    "xsvr2"
-    "xsvr3"
-    "xlabmgmt"
-    "xts1"
-    "xts2"
-    "xcomm1"
-    "xdash1"
-    "xhac-radio"
+    "xsvr1.lan"
+    "xsvr2.lan"
+    "xsvr3.lan"
+    "xlabmgmt.lan"
+    "xts1.lan"
+    "xts2.lan"
+    "xcomm1.lan"
+    "xdash1.lan"
+    "xhac-radio.lan"
   ];
 
   # Hosts with ZFS
   zfsHosts = [
-    "xsvr1"
-    "xsvr2"
+    "xsvr1.lan"
+    "xsvr2.lan"
   ];
 
   # Hosts with bird BGP
   birdHosts = [
-    "xts1"
-    "xts2"
+    "xts1.lan"
+    "xts2.lan"
   ];
 
   # Talos VMs (Kubernetes nodes)
