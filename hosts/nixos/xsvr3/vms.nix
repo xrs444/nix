@@ -5,7 +5,7 @@ let
     {
       name = "v-k8s-xsvr3";
       vcpu = "4";
-      memory = "8";
+      memory = "10";
       nicType = "bridge";
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ff";

@@ -1,0 +1,7 @@
+# Place Grafana dashboard JSON files here
+# Download from https://grafana.com/grafana/dashboards/
+#
+# Recommended dashboards:
+# - Node Exporter Full (1860): https://grafana.com/grafana/dashboards/1860
+# - Kubernetes Cluster Monitoring (315): https://grafana.com/grafana/dashboards/315
+# - ZFS (7845): https://grafana.com/grafana/dashboards/7845

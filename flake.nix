@@ -175,7 +175,7 @@
           platform = "aarch64-darwin";
           type = "darwin";
           desktop = "aqua";
-          enableHomeManager = false;
+          enableHomeManager = true;
           roles = [ "tailscale-client" ];
         };
       };

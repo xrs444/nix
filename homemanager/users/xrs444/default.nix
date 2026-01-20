@@ -71,8 +71,6 @@
     kubeconform
     pre-commit
     hugo
-    lua
-    nodejs
     openjdk
     ruby
     ansible
@@ -85,7 +83,6 @@
     talosctl
     arping
     baobab
-    chezmoi
     nmap
     sops
     sshpass
@@ -101,7 +98,6 @@
     wimlib
     xz
     zstd
-    thunderbird
     iterm2
     wireshark
     openscad
@@ -109,6 +105,7 @@
     pipx
     virtualenv
     just
+    claude-code
   ];
 
   # Enable font configuration

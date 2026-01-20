@@ -2,6 +2,7 @@
 {
   hostname,
   lib,
+  pkgs,
   ...
 }:
 
