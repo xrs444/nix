@@ -23,9 +23,9 @@
       largesize = 48;
       scroll-to-open = true;
       persistent-apps = [
-        "Visual Studio Code.app"
-        "Firefox.app"
-        "Ghostty.app"
+        "/Applications/Visual Studio Code.app"
+        "/Applications/Firefox.app"
+        "/Applications/Ghostty.app"
       ];
     };
     controlcenter = {
