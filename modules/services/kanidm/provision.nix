@@ -95,6 +95,7 @@
           displayName = "Linkwarden";
           originUrl = "https://linkwarden.xrs444.net";
           originLanding = "https://linkwarden.xrs444.net";
+          allowInsecureClientDisablePkce = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_linkwarden_secret";
           scopeMaps = {
             "linkwarden" = [
