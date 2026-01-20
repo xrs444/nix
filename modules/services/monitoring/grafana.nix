@@ -46,6 +46,7 @@ in
             access = "proxy";
             url = "http://localhost:9090";
             isDefault = true;
+            uid = "000000001";
             jsonData = {
               timeInterval = "15s";
             };
