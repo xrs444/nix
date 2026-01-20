@@ -169,6 +169,8 @@ in
         "workbench.tree.indent" = 20;
         "workbench.startupEditor" = "none";
         "workbench.editor.empty.hint" = "hidden";
+        # Kubernetes settings
+        "vs-kubernetes.crd-code-completion" = "enabled";
         # Claude Code specific settings
         "claude.defaultModel" = "claude-sonnet-4-5-20250929";
         "claude.maxTokens" = 200000;
