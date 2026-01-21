@@ -109,12 +109,18 @@
     '';
   };
 
-  # Open firewall ports
+  # Open firewall ports for both IPv4 and IPv6
   networking.firewall.allowedTCPPorts = [
     21 # FTP control
   ];
 
   networking.firewall.allowedTCPPortRanges = [
-    { from = 50000; to = 50100; } # FTP passive mode data
+    { from = 50000; to = 50100; } # FTP passive mode data (IPv4 & IPv6)
   ];
+
+  # Explicitly allow IPv6 as well
+  networking.firewall.extraCommands = ''
+    # Allow FTP data connections for IPv6
+    ip6tables -A nixos-fw -p tcp --dport 50000:50100 -j nixos-fw-accept || true
+  '';
 }
