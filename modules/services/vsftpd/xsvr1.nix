@@ -6,6 +6,9 @@
     sopsFile = ../../../secrets/omada-ftp.yaml;
     key = "hashed_password";
     neededForUsers = true;
+    mode = "0400";
+    owner = "root";
+    group = "root";
   };
 
   # Create the omada FTP user
@@ -64,6 +67,9 @@
       # Local users can login
       local_enable=YES
 
+      # Use PAM for authentication
+      pam_service_name=vsftpd
+
       # Security settings
       ssl_enable=NO
       force_local_logins_ssl=NO
@@ -72,6 +78,7 @@
       # Logging
       xferlog_enable=YES
       xferlog_file=/var/log/vsftpd.log
+      log_ftp_protocol=YES
 
       # Performance
       use_localtime=YES
