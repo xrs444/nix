@@ -75,6 +75,10 @@
     mkdir -p /export/zfs/media/ingest
     mkdir -p /export/zfs/media/movies
     mkdir -p /export/zfs/media/tvshows
+
+    # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
+    chown -R 1001:1001 /zfs/devicebackups
+    chmod 755 /zfs/devicebackups
   '';
 
   services.nfs.settings = {
