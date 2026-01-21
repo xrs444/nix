@@ -24,11 +24,9 @@ Linking this all together is a pair of Brocade 7250s in a stack, with each serve
 
 *** To do:
 
-- Decide if xdt2-g and xdt3-r will use NixOS or Bazzite with Ansible. Decisions decisions!
 - Get minimal images working for rollout to SBC devices
 - Configure logins with Kanidm
 - Configure some form of home dir backup
-- Some sort of access route for shared folders for ingest/access
 - Check ZFS replication and configure offsite
 - Configure Prometheus/Graphana for dashboard and alerts
 - Set up Ntfy for alerts
