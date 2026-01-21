@@ -21,6 +21,19 @@
     hashedPasswordFile = config.sops.secrets."omada-ftp-password".path;
   };
 
+  # Workaround: Ensure password is set in shadow file
+  system.activationScripts.omada-ftp-password = {
+    text = ''
+      # Read the password hash from sops secret
+      if [ -f "${config.sops.secrets."omada-ftp-password".path}" ]; then
+        HASH=$(cat "${config.sops.secrets."omada-ftp-password".path}")
+        # Use usermod to set the password hash
+        ${pkgs.shadow}/bin/usermod -p "$HASH" omada-ftp || true
+      fi
+    '';
+    deps = [ "users" ];
+  };
+
   users.groups.omada-ftp = {};
 
   # Ensure the backup directory exists with correct permissions
@@ -40,7 +53,7 @@
     };
     script = ''
       mkdir -p /zfs/systembackups/omada
-      chown -R omada-ftp:omada-ftp /zfs/systembackups/omada
+      chown omada-ftp:omada-ftp /zfs/systembackups/omada
       chmod 755 /zfs/systembackups/omada
     '';
   };
