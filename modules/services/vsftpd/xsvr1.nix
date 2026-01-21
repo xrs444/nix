@@ -14,7 +14,7 @@
     group = "omada-ftp";
     home = "/zfs/systembackups/omada";
     createHome = true;
-    shell = pkgs.shadow;
+    shell = "${pkgs.shadow}/bin/nologin";
     hashedPasswordFile = config.sops.secrets."omada-ftp-password".path;
   };
 
