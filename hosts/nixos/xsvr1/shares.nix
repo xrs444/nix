@@ -113,6 +113,14 @@
         "fruit:time machine" = "yes";
         "vfs objects" = "catia fruit streams_xattr";
       };
+      "longhorn-backups" = {
+        "path" = "/zfs/systembackups/longhorn";
+        "browseable" = "yes";
+        "read only" = "no";
+        "guest ok" = "yes";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+      };
     };
   };
 
