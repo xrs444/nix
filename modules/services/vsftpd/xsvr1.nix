@@ -87,14 +87,20 @@
       ssl_enable=NO
       force_local_logins_ssl=NO
       force_local_data_ssl=NO
+      seccomp_sandbox=NO
 
       # Logging
       xferlog_enable=YES
       xferlog_file=/var/log/vsftpd.log
       log_ftp_protocol=YES
+      debug_ssl=YES
 
       # Performance
       use_localtime=YES
+
+      # File operations
+      file_open_mode=0755
+      local_umask=022
     '';
   };
 
