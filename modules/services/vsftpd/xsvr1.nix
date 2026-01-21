@@ -67,6 +67,11 @@
     userlistEnable = true;
 
     extraConfig = ''
+      # Listen on both IPv4 and IPv6 (dual-stack)
+      # Setting listen=NO and listen_ipv6=YES enables dual-stack mode
+      listen=NO
+      listen_ipv6=YES
+
       # Chroot users to their home directory
       chroot_local_user=YES
       allow_writeable_chroot=YES
