@@ -4,6 +4,7 @@
   imports = [
     ./Samba
     ./bind
+    ./borgbackup
     ./ffr
     ./homeassistant
     ./iprouting
