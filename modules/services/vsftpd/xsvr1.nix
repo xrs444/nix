@@ -22,8 +22,25 @@
 
   # Ensure the backup directory exists with correct permissions
   systemd.tmpfiles.rules = [
+    "d /zfs/systembackups 0755 root root -"
     "d /zfs/systembackups/omada 0755 omada-ftp omada-ftp -"
   ];
+
+  # Ensure ownership is set after user creation
+  systemd.services.vsftpd-setup = {
+    description = "Setup vsftpd directory permissions";
+    wantedBy = [ "vsftpd.service" ];
+    before = [ "vsftpd.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /zfs/systembackups/omada
+      chown -R omada-ftp:omada-ftp /zfs/systembackups/omada
+      chmod 755 /zfs/systembackups/omada
+    '';
+  };
 
   # Configure vsftpd
   services.vsftpd = {
@@ -46,11 +63,6 @@
 
       # Local users can login
       local_enable=YES
-
-      # Enable passive mode (better for NAT/firewalls)
-      pasv_enable=YES
-      pasv_min_port=50000
-      pasv_max_port=50100
 
       # Security settings
       ssl_enable=NO
