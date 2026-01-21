@@ -263,7 +263,7 @@ deep-clean: clean gc optimize
 extract-thomas-local-key:
     #!/usr/bin/env fish
     set -l key_path "$HOME/.ssh/thomas-local_key"
-    set -l secrets_file "{{flake_dir}}/secrets/thomas-local-ssh-key.yaml"
+    set -l secrets_file "{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
 
     if not test -f "$secrets_file"
         echo "ERROR: Secrets file not found at $secrets_file"
@@ -283,26 +283,39 @@ extract-thomas-local-key:
     echo ""
     echo "Note: The corresponding public key is deployed via NixOS configuration"
 
-# Deploy SSH key to a Bazzite host for Ansible access
-deploy-ssh-key hostname user="$USER" key="$HOME/.ssh/id_ed25519.pub":
+# Deploy thomas-local SSH key (from SOPS) to a Bazzite host for Ansible access
+deploy-ssh-key hostname user="$USER":
     #!/usr/bin/env bash
     set -euo pipefail
 
     HOSTNAME="{{hostname}}"
     INITIAL_USER="{{user}}"
-    SSH_KEY_PATH="{{key}}"
+    SECRETS_FILE="{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
 
-    # Validate SSH key exists
-    if [[ ! -f "$SSH_KEY_PATH" ]]; then
-        echo "ERROR: SSH public key not found: $SSH_KEY_PATH"
-        echo ""
-        echo "Generate a key with: ssh-keygen -t ed25519 -C \"your_email@example.com\""
+    # Extract public key from SOPS-encrypted private key
+    echo "Extracting public key from SOPS..."
+    if [[ ! -f "$SECRETS_FILE" ]]; then
+        echo "ERROR: Secrets file not found: $SECRETS_FILE"
+        exit 1
+    fi
+
+    # Decrypt private key and extract public key using ssh-keygen
+    TMP_KEY=$(mktemp)
+    trap "rm -f $TMP_KEY" EXIT
+
+    sops -d "$SECRETS_FILE" 2>/dev/null | awk '/-----BEGIN/,/-----END/' | sed 's/^    //' > "$TMP_KEY"
+    chmod 600 "$TMP_KEY"
+
+    SSH_PUBLIC_KEY=$(ssh-keygen -y -f "$TMP_KEY")
+
+    if [[ -z "$SSH_PUBLIC_KEY" ]]; then
+        echo "ERROR: Failed to extract public key from private key"
         exit 1
     fi
 
     echo "Deploying SSH key to $HOSTNAME"
     echo "Initial SSH user: $INITIAL_USER"
-    echo "SSH public key: $SSH_KEY_PATH"
+    echo "SSH public key: $SSH_PUBLIC_KEY"
     echo ""
 
     # Test SSH connectivity
@@ -311,35 +324,31 @@ deploy-ssh-key hostname user="$USER" key="$HOME/.ssh/id_ed25519.pub":
         echo "⚠️  Cannot connect with key-based auth, you may need to enter password"
     fi
 
-    # Read the public key
-    SSH_PUBLIC_KEY=$(cat "$SSH_KEY_PATH")
-
     # Create the ansible user setup script
     echo "Creating ansible user on $HOSTNAME..."
-    ssh "$INITIAL_USER@$HOSTNAME" 'bash -c '\''
+    echo "Note: You may be prompted for sudo password"
+
+    ssh -t "$INITIAL_USER@$HOSTNAME" 'bash -c "
         set -euo pipefail
-        if [[ $EUID -ne 0 ]]; then
-            if ! sudo -n true 2>/dev/null; then
-                echo "This script requires sudo privileges."
-            fi
-            SUDO="sudo"
+        if [[ \$EUID -ne 0 ]]; then
+            SUDO=\"sudo\"
         else
-            SUDO=""
+            SUDO=\"\"
         fi
-        echo "Creating ansible user..."
-        $SUDO useradd -m -s /bin/bash -c "Ansible automation user" ansible 2>/dev/null || echo "User ansible already exists"
-        $SUDO usermod -aG wheel ansible
-        echo "ansible ALL=(ALL) NOPASSWD: ALL" | $SUDO tee /etc/sudoers.d/ansible > /dev/null
-        $SUDO chmod 0440 /etc/sudoers.d/ansible
-        $SUDO mkdir -p /home/ansible/.ssh
-        $SUDO chmod 700 /home/ansible/.ssh
-        $SUDO chown ansible:ansible /home/ansible/.ssh
-        echo "Ansible user setup complete"
-    '\''
+        echo \"Creating ansible user...\"
+        \$SUDO useradd -m -s /bin/bash -c \"Ansible automation user\" ansible 2>/dev/null || echo \"User ansible already exists\"
+        \$SUDO usermod -aG wheel ansible
+        echo \"ansible ALL=(ALL) NOPASSWD: ALL\" | \$SUDO tee /etc/sudoers.d/ansible > /dev/null
+        \$SUDO chmod 0440 /etc/sudoers.d/ansible
+        \$SUDO mkdir -p /home/ansible/.ssh
+        \$SUDO chmod 700 /home/ansible/.ssh
+        \$SUDO chown ansible:ansible /home/ansible/.ssh
+        echo \"Ansible user setup complete\"
+    "'
 
     # Deploy SSH key
     echo "Deploying SSH public key..."
-    ssh "$INITIAL_USER@$HOSTNAME" "sudo bash -c 'echo \"$SSH_PUBLIC_KEY\" >> /home/ansible/.ssh/authorized_keys && chmod 600 /home/ansible/.ssh/authorized_keys && chown ansible:ansible /home/ansible/.ssh/authorized_keys && sort -u /home/ansible/.ssh/authorized_keys -o /home/ansible/.ssh/authorized_keys && echo \"SSH key deployed successfully\"'"
+    ssh -t "$INITIAL_USER@$HOSTNAME" "sudo bash -c 'echo \"$SSH_PUBLIC_KEY\" >> /home/ansible/.ssh/authorized_keys && chmod 600 /home/ansible/.ssh/authorized_keys && chown ansible:ansible /home/ansible/.ssh/authorized_keys && sort -u /home/ansible/.ssh/authorized_keys -o /home/ansible/.ssh/authorized_keys && echo \"SSH key deployed successfully\"'"
 
     # Test ansible user connection
     echo "Testing ansible user SSH connection..."

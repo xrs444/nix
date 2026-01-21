@@ -44,6 +44,13 @@ in {
           };
         }
         {
+          name = "Install kanidm-unixd-clients";
+          package = {
+            name = "kanidm-unixd-clients";
+            state = "present";
+          };
+        }
+        {
           name = "Create thomas-local user";
           user = {
             name = "thomas-local";

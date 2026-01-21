@@ -163,6 +163,7 @@ in
         "shellformat.useEditorConfig" = true;
         "telemetry.feedback.enabled" = false;
         "telemetry.telemetryLevel" = "off";
+        "extensions.autoCheckUpdates" = false;
         "update.mode" = "none";
         "vsicons.dontShowNewVersionMessage" = true;
         "workbench.iconTheme" = "vscode-icons";

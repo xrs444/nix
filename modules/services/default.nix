@@ -20,6 +20,7 @@
     ./socat
     ./tailscale
     ./talos
+    ./vsftpd
     ./zfs
   ];
 }
