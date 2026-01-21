@@ -153,9 +153,9 @@ in
           export KANIDM_PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
           echo "$KANIDM_PASSWORD" | ${pkgs.kanidm}/bin/kanidm login -D idm_admin || true
 
-          # Add redirect URLs for oauth2 clients
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
+          # Add redirect URLs for oauth2 clients (using --name to avoid interactive token selection)
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
         '';
       };
 
