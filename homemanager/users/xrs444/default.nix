@@ -37,7 +37,13 @@
     # SSH configuration for thomas-local key
     ssh = {
       enable = true;
+      enableDefaultConfig = false;
       matchBlocks = {
+        # Explicit default configuration to replace removed defaults
+        "*" = {
+          serverAliveInterval = 60;
+          serverAliveCountMax = 3;
+        };
         "*.lan thomas-local@*" = {
           user = "thomas-local";
           identityFile =

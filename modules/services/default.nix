@@ -4,6 +4,7 @@
   imports = [
     ./Samba
     ./bind
+    ./borgbackup
     ./ffr
     ./homeassistant
     ./iprouting
@@ -20,6 +21,7 @@
     ./socat
     ./tailscale
     ./talos
+    ./vsftpd
     ./zfs
   ];
 }

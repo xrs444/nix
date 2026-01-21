@@ -76,6 +76,10 @@
     "time": {
       "command": "uvx",
       "args": ["mcp-server-time"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/xrs444/Repositories/HomeProd"]
     }
   },
   "inputs": [

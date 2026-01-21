@@ -9,8 +9,8 @@ default:
     @just --list
 
 # Variables
-flake_dir := justfile_directory()
-scripts_dir := flake_dir / "scripts"
+scripts_dir := justfile_directory()
+flake_dir := scripts_dir / ".."
 
 # Build Operations
 # ================
@@ -255,3 +255,121 @@ optimize:
 # Full cleanup: remove artifacts, gc, and optimize
 deep-clean: clean gc optimize
     @echo "Deep clean complete"
+
+# SSH & Secrets Management
+# =========================
+
+# Extract thomas-local SSH private key from sops
+extract-thomas-local-key:
+    #!/usr/bin/env fish
+    set -l key_path "$HOME/.ssh/thomas-local_key"
+    set -l secrets_file "{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+
+    if not test -f "$secrets_file"
+        echo "ERROR: Secrets file not found at $secrets_file"
+        exit 1
+    end
+
+    echo "Extracting thomas-local private key from sops..."
+    mkdir -p "$HOME/.ssh"
+
+    # Extract just the key content, removing YAML indentation
+    sops -d "$secrets_file" 2>/dev/null | awk '/-----BEGIN/,/-----END/' | sed 's/^    //' > "$key_path"
+    chmod 600 "$key_path"
+
+    echo "✅ Private key saved to $key_path"
+    echo ""
+    echo "You can now use: ssh thomas-local@hostname"
+    echo ""
+    echo "Note: The corresponding public key is deployed via NixOS configuration"
+
+# Deploy thomas-local SSH key (from SOPS) to a Bazzite host for Ansible access
+deploy-ssh-key hostname user="$USER":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    HOSTNAME="{{hostname}}"
+    INITIAL_USER="{{user}}"
+    SECRETS_FILE="{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+
+    # Extract public key from SOPS-encrypted private key
+    echo "Extracting public key from SOPS..."
+    if [[ ! -f "$SECRETS_FILE" ]]; then
+        echo "ERROR: Secrets file not found: $SECRETS_FILE"
+        exit 1
+    fi
+
+    # Decrypt private key and extract public key using ssh-keygen
+    TMP_KEY=$(mktemp)
+    trap "rm -f $TMP_KEY" EXIT
+
+    sops -d "$SECRETS_FILE" 2>/dev/null | awk '/-----BEGIN/,/-----END/' | sed 's/^    //' > "$TMP_KEY"
+    chmod 600 "$TMP_KEY"
+
+    SSH_PUBLIC_KEY=$(ssh-keygen -y -f "$TMP_KEY")
+
+    if [[ -z "$SSH_PUBLIC_KEY" ]]; then
+        echo "ERROR: Failed to extract public key from private key"
+        exit 1
+    fi
+
+    echo "Deploying SSH key to $HOSTNAME"
+    echo "Initial SSH user: $INITIAL_USER"
+    echo "SSH public key: $SSH_PUBLIC_KEY"
+    echo ""
+
+    # Test SSH connectivity
+    echo "Testing SSH connectivity to $HOSTNAME..."
+    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "$INITIAL_USER@$HOSTNAME" "echo 'SSH connection successful'" 2>/dev/null; then
+        echo "⚠️  Cannot connect with key-based auth, you may need to enter password"
+    fi
+
+    # Create the ansible user setup script
+    echo "Creating ansible user on $HOSTNAME..."
+    echo "Note: You may be prompted for sudo password"
+
+    ssh -t "$INITIAL_USER@$HOSTNAME" 'bash -c "
+        set -euo pipefail
+        if [[ \$EUID -ne 0 ]]; then
+            SUDO=\"sudo\"
+        else
+            SUDO=\"\"
+        fi
+        echo \"Creating ansible user...\"
+        \$SUDO useradd -m -s /bin/bash -c \"Ansible automation user\" ansible 2>/dev/null || echo \"User ansible already exists\"
+        \$SUDO usermod -aG wheel ansible
+        echo \"ansible ALL=(ALL) NOPASSWD: ALL\" | \$SUDO tee /etc/sudoers.d/ansible > /dev/null
+        \$SUDO chmod 0440 /etc/sudoers.d/ansible
+        \$SUDO mkdir -p /home/ansible/.ssh
+        \$SUDO chmod 700 /home/ansible/.ssh
+        \$SUDO chown ansible:ansible /home/ansible/.ssh
+        echo \"Ansible user setup complete\"
+    "'
+
+    # Deploy SSH key
+    echo "Deploying SSH public key..."
+    ssh -t "$INITIAL_USER@$HOSTNAME" "sudo bash -c 'echo \"$SSH_PUBLIC_KEY\" >> /home/ansible/.ssh/authorized_keys && chmod 600 /home/ansible/.ssh/authorized_keys && chown ansible:ansible /home/ansible/.ssh/authorized_keys && sort -u /home/ansible/.ssh/authorized_keys -o /home/ansible/.ssh/authorized_keys && echo \"SSH key deployed successfully\"'"
+
+    # Test ansible user connection
+    echo "Testing ansible user SSH connection..."
+    if ssh -o ConnectTimeout=5 "ansible@$HOSTNAME" "echo 'Ansible user connection successful'" 2>/dev/null; then
+        echo ""
+        echo "✅ SSH key deployment successful!"
+        echo ""
+        echo "You can now connect with: ssh ansible@$HOSTNAME"
+        echo "You can now run Ansible playbooks against $HOSTNAME"
+    else
+        echo ""
+        echo "ERROR: Failed to connect as ansible user"
+        echo "Please check the setup manually"
+        exit 1
+    fi
+
+# Nixable/Bazzite Host Management
+# ================================
+
+# Run nixible playbook for a Bazzite host (xdt1-t, xdt2-g, or xdt3-r)
+run-nixable host:
+    @echo "Running nixible playbook for {{host}}..."
+    @echo "This will be available after nixible is added to flake inputs"
+    @echo "For now, use: nix run .#{{host}}"

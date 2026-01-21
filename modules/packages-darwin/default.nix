@@ -15,7 +15,6 @@
     fish
     lame
     x264
-
     hugo
     lua
     nodejs
@@ -36,14 +35,12 @@
     # System utilities
     arping
     baobab
-    chezmoi
     home-manager
     nmap
     sops
     sshpass
     tfswitch
     tree
-
     yamllint
     yq
 
@@ -56,11 +53,6 @@
     wimlib
     xz
     zstd
-
-    # Multimedia
-
-    # Browsers & Communication
-    # thunderbird
 
     # Utilities
     gitkraken
