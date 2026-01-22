@@ -28,6 +28,7 @@ let
   vipAddress = "172.20.3.200";
   gatewayVipAddress = "172.20.1.101";
   kanidmVipAddress = "172.20.1.110";
+  kanidmClusterVipAddress = "172.20.3.110";
 
   # Only set currentNode if hostname is in nodeConfigs
   currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
@@ -158,6 +159,29 @@ else
               check_tailscale_subnet
             }
             notify_master "/etc/setup-vip-routing.sh && /run/current-system/systemd/bin/systemctl restart kanidm"
+          '';
+        };
+        kanidm-cluster = {
+          state = currentNode.keepalivedState;
+          interface = "bridge22";
+          virtualRouterId = 54;
+          priority = currentNode.keepalivedPriority;
+          virtualIps = [
+            {
+              addr = "${kanidmClusterVipAddress}/24";
+              dev = "bridge22";
+              label = "bridge22:kanidm";
+            }
+          ];
+          extraConfig = ''
+            authentication {
+              auth_type PASS
+              auth_pass kanidmclustervip
+            }
+            track_script {
+              check_tailscale_subnet
+            }
+            notify_master "/run/current-system/systemd/bin/systemctl restart kanidm"
           '';
         };
       };
