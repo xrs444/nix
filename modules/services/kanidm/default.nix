@@ -163,6 +163,9 @@ in
           # Add redirect URLs for oauth2 clients (using --name to avoid interactive token selection)
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_linkwarden https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_paperless https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/ || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_mealie https://mealie.xrs444.net/login || true
         '';
       };
 
