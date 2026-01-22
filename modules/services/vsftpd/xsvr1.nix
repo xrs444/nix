@@ -111,9 +111,12 @@
       # Performance
       use_localtime=YES
 
-      # File operations
-      file_open_mode=0755
+      # File operations - enable all write operations
+      file_open_mode=0666
       local_umask=022
+      write_enable=YES
+      anon_upload_enable=NO
+      anon_mkdir_write_enable=NO
     '';
   };
 
