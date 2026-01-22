@@ -102,6 +102,8 @@
           originUrl = "https://linkwarden.xrs444.net";
           originLanding = "https://linkwarden.xrs444.net";
           allowInsecureClientDisablePkce = true;
+          enableLegacyCrypto = true; # Required for NextAuth compatibility (RS256 instead of ES256)
+          preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_linkwarden_secret";
           scopeMaps = {
             "linkwarden" = [
