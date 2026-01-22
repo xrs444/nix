@@ -30,19 +30,19 @@ let
         path = "/vm/v-xpbx1/v-xpbx1.qcow2";
       };
     }
-    {
-      name = "v-xwifi1";
-      vcpu = "2";
-      memory = "4";
-      nicType = "bridge";
-      hostNic = "bridge21";
-      mac = "52:54:00:8d:2e:ee";
-      autostart = true;
-      firmware = "bios";
-      storage = {
-        path = "/vm/v-xwifi1/v-xwifi1.qcow2";
-      };
-    }
+#    {
+#      name = "v-xwifi1";
+#      vcpu = "2";
+#      memory = "4";
+#      nicType = "bridge";
+#      hostNic = "bridge21";
+#      mac = "52:54:00:8d:2e:ee";
+#      autostart = true;
+#      firmware = "bios";
+#      storage = {
+#        path = "/vm/v-xwifi1/v-xwifi1.qcow2";
+#      };
+#    }
     {
       name = "v-k8s-xsvr1";
       vcpu = "4";

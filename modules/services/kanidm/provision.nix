@@ -36,6 +36,12 @@
       "lubelogger-admin" = {
         members = [ "admins" ];
       };
+      "mealie" = {
+        members = [ "users" ];
+      };
+      "mealie-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -131,6 +137,27 @@
           basicSecretFile = "/run/secrets/kanidm_oauth2_traefik_secret";
           scopeMaps = {
             "admins" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
+        "oauth2_mealie" = {
+          displayName = "Mealie";
+          originUrl = "https://mealie.xrs444.net";
+          originLanding = "https://mealie.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_mealie_secret";
+          scopeMaps = {
+            "mealie" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            "mealie-admin" = [
               "openid"
               "profile"
               "email"
