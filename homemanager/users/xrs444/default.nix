@@ -28,11 +28,6 @@
     starship.enable = true;
     go.enable = true;
     rbenv.enable = true;
-    atuin = {
-      enable = true;
-      enableFishIntegration = pkgs.stdenv.isLinux;
-      enableZshIntegration = true;
-    };
     yt-dlp.enable = true;
     # SSH configuration for thomas-local key
     ssh = {
@@ -56,6 +51,7 @@
   # Apps
   imports = [
     ../../common/apps/vscode
+    ../../common/shell/atuin.nix
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix

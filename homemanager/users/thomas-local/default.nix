@@ -2,6 +2,12 @@
 { pkgs, ... }:
 {
   home.stateVersion = "25.05";
+
+  # Import common configurations
+  imports = [
+    ../../common/shell/atuin.nix
+  ];
+
   programs.bash = {
     enable = true;
     enableCompletion = true;
