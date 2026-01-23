@@ -151,6 +151,8 @@
           originUrl = "https://mealie.xrs444.net";
           originLanding = "https://mealie.xrs444.net";
           allowInsecureClientDisablePkce = true;
+          enableLegacyCrypto = true; # Required for Mealie's OIDC implementation
+          preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_mealie_secret";
           scopeMaps = {
             "mealie" = [
