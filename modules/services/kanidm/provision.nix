@@ -42,6 +42,12 @@
       "mealie-admin" = {
         members = [ "admins" ];
       };
+      "netbox" = {
+        members = [ "users" ];
+      };
+      "netbox-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -166,6 +172,26 @@
               "profile"
               "email"
               "groups"
+            ];
+          };
+        };
+        "oauth2_netbox" = {
+          displayName = "NetBox";
+          originUrl = "https://netbox.xrs444.net";
+          originLanding = "https://netbox.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_netbox_secret";
+          scopeMaps = {
+            "netbox" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "netbox-admin" = [
+              "openid"
+              "profile"
+              "email"
             ];
           };
         };

@@ -90,6 +90,13 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_netbox_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_netbox_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
       services.kanidm = {
@@ -166,6 +173,7 @@ in
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_linkwarden https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak || true
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_paperless https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/ || true
           ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_mealie https://mealie.xrs444.net/login || true
+          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_netbox https://netbox.xrs444.net/oauth/complete/oidc/ || true
         '';
       };
 
