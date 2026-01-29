@@ -248,6 +248,10 @@ in
           tls_config = {
             insecure_skip_verify = true;
           };
+          authorization = {
+            type = "Bearer";
+            credentials_file = "/var/lib/prometheus/k8s-token";
+          };
           static_configs = [
             {
               targets = talosKubeletTargets;
@@ -265,6 +269,10 @@ in
           scheme = "https";
           tls_config = {
             insecure_skip_verify = true;
+          };
+          authorization = {
+            type = "Bearer";
+            credentials_file = "/var/lib/prometheus/k8s-token";
           };
           static_configs = [
             {
