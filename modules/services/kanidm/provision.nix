@@ -36,6 +36,18 @@
       "lubelogger-admin" = {
         members = [ "admins" ];
       };
+      "mealie" = {
+        members = [ "users" ];
+      };
+      "mealie-admin" = {
+        members = [ "admins" ];
+      };
+      "netbox" = {
+        members = [ "users" ];
+      };
+      "netbox-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -96,6 +108,8 @@
           originUrl = "https://linkwarden.xrs444.net";
           originLanding = "https://linkwarden.xrs444.net";
           allowInsecureClientDisablePkce = true;
+          enableLegacyCrypto = true; # Required for NextAuth compatibility (RS256 instead of ES256)
+          preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_linkwarden_secret";
           scopeMaps = {
             "linkwarden" = [
@@ -135,6 +149,49 @@
               "profile"
               "email"
               "groups"
+            ];
+          };
+        };
+        "oauth2_mealie" = {
+          displayName = "Mealie";
+          originUrl = "https://mealie.xrs444.net";
+          originLanding = "https://mealie.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          enableLegacyCrypto = true; # Required for Mealie's OIDC implementation
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_mealie_secret";
+          scopeMaps = {
+            "mealie" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            "mealie-admin" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
+        "oauth2_netbox" = {
+          displayName = "NetBox";
+          originUrl = "https://netbox.xrs444.net";
+          originLanding = "https://netbox.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_netbox_secret";
+          scopeMaps = {
+            "netbox" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "netbox-admin" = [
+              "openid"
+              "profile"
+              "email"
             ];
           };
         };

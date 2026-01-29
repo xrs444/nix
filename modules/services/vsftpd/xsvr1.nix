@@ -88,9 +88,13 @@
       # Use PAM for authentication
       pam_service_name=vsftpd
 
-      # Disable passive mode (not needed for internal network)
-      pasv_enable=NO
+      # Enable passive mode for data connections
+      pasv_enable=YES
       port_enable=YES
+
+      # Passive mode port range
+      pasv_min_port=50000
+      pasv_max_port=50100
 
       # Security settings
       ssl_enable=NO
@@ -107,15 +111,24 @@
       # Performance
       use_localtime=YES
 
-      # File operations
-      file_open_mode=0755
+      # File operations - enable all write operations
+      file_open_mode=0666
       local_umask=022
+      write_enable=YES
+      anon_upload_enable=NO
+      anon_mkdir_write_enable=NO
     '';
   };
 
   # Open firewall ports for both IPv4 and IPv6
-  networking.firewall.allowedTCPPorts = [
-    21 # FTP control
-    20 # FTP data (active mode)
-  ];
+  networking.firewall = {
+    allowedTCPPorts = [
+      21 # FTP control
+      20 # FTP data (active mode)
+    ];
+    # Passive mode port range
+    allowedTCPPortRanges = [
+      { from = 50000; to = 50100; }
+    ];
+  };
 }
