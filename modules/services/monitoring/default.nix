@@ -19,6 +19,7 @@ in
     ./exporters.nix
     ./prometheus.nix
     ./grafana.nix
+    ./promtail.nix
   ];
 
   config = lib.mkIf enableMonitoring {

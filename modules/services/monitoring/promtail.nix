@@ -1,0 +1,109 @@
+# Summary: Promtail configuration for shipping systemd journal logs to Loki
+{
+  hostname,
+  hostRoles ? [ ],
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+let
+  isMonitoringServer = lib.elem "monitoring-server" hostRoles;
+  isMonitoringClient = lib.elem "monitoring-client" hostRoles;
+  enablePromtail = isMonitoringServer || isMonitoringClient;
+
+  # Loki endpoint (in Kubernetes cluster)
+  lokiUrl = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push";
+  # Fallback to external ingress if cluster DNS not accessible
+  lokiFallbackUrl = "https://loki.xrs444.net/loki/api/v1/push";
+in
+{
+  config = lib.mkIf enablePromtail {
+    services.promtail = {
+      enable = true;
+      configuration = {
+        server = {
+          http_listen_port = 9080;
+          grpc_listen_port = 0;
+        };
+
+        positions = {
+          filename = "/var/lib/promtail/positions.yaml";
+        };
+
+        clients = [
+          {
+            # Try cluster-internal endpoint first
+            url = lokiUrl;
+          }
+        ];
+
+        scrape_configs = [
+          # Systemd journal scraping
+          {
+            job_name = "journal";
+            journal = {
+              max_age = "12h";
+              labels = {
+                job = "systemd-journal";
+                host = hostname;
+              };
+            };
+            relabel_configs = [
+              # Extract systemd unit name
+              {
+                source_labels = [ "__journal__systemd_unit" ];
+                target_label = "unit";
+              }
+              # Extract systemd slice
+              {
+                source_labels = [ "__journal__systemd_slice" ];
+                target_label = "slice";
+              }
+              # Extract transport (stdout, stderr, syslog, etc.)
+              {
+                source_labels = [ "__journal__transport" ];
+                target_label = "transport";
+              }
+              # Extract priority/severity
+              {
+                source_labels = [ "__journal_priority" ];
+                target_label = "priority";
+              }
+              # Extract syslog identifier
+              {
+                source_labels = [ "__journal_syslog_identifier" ];
+                target_label = "syslog_identifier";
+              }
+            ];
+          }
+
+          # Additional scrape for important log files not in journal
+          {
+            job_name = "system-logs";
+            static_configs = [
+              {
+                targets = [ "localhost" ];
+                labels = {
+                  job = "system-logs";
+                  host = hostname;
+                  __path__ = "/var/log/*.log";
+                };
+              }
+            ];
+          }
+        ];
+      };
+    };
+
+    # Ensure promtail has permissions to read journal
+    systemd.services.promtail.serviceConfig = {
+      SupplementaryGroups = [ "systemd-journal" ];
+    };
+
+    # Open firewall for promtail metrics endpoint on Tailscale
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+      9080 # promtail metrics
+    ];
+  };
+}
