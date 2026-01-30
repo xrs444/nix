@@ -228,10 +228,10 @@ in
         script = ''
           # Grant receive permissions - syncoid needs these on the target pool
           # Grant on all pools since we don't know which datasets will be replicated
-          for pool in \$(\${pkgs.zfs}/bin/zpool list -H -o name); do
-            \${pkgs.zfs}/bin/zfs allow syncoid \
+          for pool in $(${pkgs.zfs}/bin/zpool list -H -o name); do
+            ${pkgs.zfs}/bin/zfs allow syncoid \
               compression,create,destroy,mount,mountpoint,receive,rollback,snapshot,hold \
-              "\$pool" || true
+              "$pool" || true
           done
         '';
       };
