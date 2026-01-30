@@ -54,12 +54,14 @@ in
     };
 
     # Libvirt exporter - for VM monitoring on KVM hosts
-    services.prometheus.exporters.libvirt = lib.mkIf hasLibvirt {
-      enable = true;
-      port = 9177;
-      listenAddress = "0.0.0.0";
-      openFirewall = false;
-    };
+    # DISABLED: Package has incorrect meta.mainProgram, needs investigation
+    # TODO: Re-enable after fixing package or using custom systemd service
+    # services.prometheus.exporters.libvirt = lib.mkIf hasLibvirt {
+    #   enable = true;
+    #   port = 9177;
+    #   listenAddress = "0.0.0.0";
+    #   openFirewall = false;
+    # };
 
     # SMART disk health exporter - all monitoring hosts
     services.prometheus.exporters.smartctl = {

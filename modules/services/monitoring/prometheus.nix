@@ -318,14 +318,15 @@ in
         }
 
         # Libvirt exporter - VM monitoring
-        {
-          job_name = "libvirt";
-          static_configs = [
-            {
-              targets = libvirtTargets;
-            }
-          ];
-        }
+        # DISABLED: Exporter package has issues, needs investigation
+        # {
+        #   job_name = "libvirt";
+        #   static_configs = [
+        #     {
+        #       targets = libvirtTargets;
+        #     }
+        #   ];
+        # }
 
         # SMART disk health monitoring
         {
