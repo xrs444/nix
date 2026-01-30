@@ -128,8 +128,8 @@ in
       openFirewall = false;
     };
 
-    # Open firewall for exporters on Tailscale interface
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    # Open firewall for exporters on bond0 (LAN interface) for server-to-server monitoring
+    networking.firewall.interfaces.bond0.allowedTCPPorts = [
       9100 # node_exporter
       9633 # smartctl_exporter
     ]
