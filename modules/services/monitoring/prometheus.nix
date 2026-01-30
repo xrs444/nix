@@ -131,6 +131,7 @@ in
         # Node exporter - all hosts
         {
           job_name = "node";
+          honor_labels = true;
           static_configs = [
             {
               targets = nodeTargets;
