@@ -9,10 +9,11 @@ let
   isMonitoringServer = lib.elem "monitoring-server" hostRoles;
 
   # Define all monitored hosts
+  # Use static IPs instead of .lan hostnames to avoid VIP/keepalived routing issues
   allHosts = [
-    "xsvr1.lan"
-    "xsvr2.lan"
-    "xsvr3.lan"
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
+    "172.20.1.30" # xsvr3
     "xlabmgmt.lan"
     "xts1.lan"
     "xts2.lan"
@@ -23,8 +24,8 @@ let
 
   # Hosts with ZFS
   zfsHosts = [
-    "xsvr1.lan"
-    "xsvr2.lan"
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
   ];
 
   # Hosts with bird BGP
@@ -35,9 +36,9 @@ let
 
   # Hosts with libvirt
   libvirtHosts = [
-    "xsvr1.lan"
-    "xsvr2.lan"
-    "xsvr3.lan"
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
+    "172.20.1.30" # xsvr3
   ];
 
   # Hosts with BIND DNS
