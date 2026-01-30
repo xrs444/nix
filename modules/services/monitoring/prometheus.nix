@@ -609,7 +609,7 @@ in
               rules = [
                 {
                   alert = "BackupJobFailed";
-                  expr = "node_systemd_unit_state{name=~\"borgbackup.*\\.service\",state=\"failed\"} == 1";
+                  expr = "node_systemd_unit_state{name=~\"borgbackup.*\\\\.service\",state=\"failed\"} == 1";
                   for = "5m";
                   labels = {
                     severity = "critical";
@@ -621,7 +621,7 @@ in
                 }
                 {
                   alert = "BackupJobNotRunRecently";
-                  expr = "(time() - node_systemd_unit_state_change_timestamp_seconds{name=~\"borgbackup.*\\.service\"}) > 172800";
+                  expr = "(time() - node_systemd_unit_state_change_timestamp_seconds{name=~\"borgbackup.*\\\\.service\"}) > 172800";
                   for = "1h";
                   labels = {
                     severity = "warning";
