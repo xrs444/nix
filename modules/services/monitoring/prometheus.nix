@@ -93,6 +93,9 @@ in
       port = 9090;
       listenAddress = "0.0.0.0";
 
+      # Disable config validation during build (token file not available in sandbox)
+      checkConfig = false;
+
       # Enable reload on config change instead of restart
       enableReload = true;
 
