@@ -4,8 +4,8 @@ let
   vmSpecs = [
     {
       name = "v-k8s-xsvr3";
-      vcpu = "4";
-      memory = "16";
+      vcpu = "5";  # Increased from 4 - was CPU starved at 220%, leave 1 core for host
+      memory = "24";  # Increased from 16 GiB - node can use more RAM
       nicType = "bridge";
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ff";
