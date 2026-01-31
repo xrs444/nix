@@ -23827,11 +23827,11 @@
         "name": "node",
         "options": [],
         "query": {
-          "query": "label_values(node_uname_info{job=\"$job\"}, instance)",
+          "query": "label_values(node_uname_info{job=\"$job\",instance=~\"172\\..*\"}, instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
-        "regex": "/([^:]+):.*/",
+        "regex": "/([0-9.]+):.*/",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
