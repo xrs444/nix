@@ -4,8 +4,8 @@ let
   vmSpecs = [
     {
       name = "v-k8s-xsvr2";
-      vcpu = "4";
-      memory = "16";
+      vcpu = "6";  # Increased from 4 - was CPU starved at 288%, max out Atom cores (leave 2 for host)
+      memory = "80";  # MASSIVELY increased from 16 GiB - xsvr2 has 128GB and only uses 21GB total!
       nicType = "bridge";
       hostNic = "bridge22"; # Use the VLAN interface for direct mode
       mac = "52:54:00:8d:2e:fe";

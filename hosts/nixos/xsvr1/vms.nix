@@ -5,7 +5,7 @@ let
     {
       name = "v-xhac1";
       vcpu = "4";
-      memory = "8";
+      memory = "6";  # Reduced from 8 GiB - Home Assistant doesn't need that much
       nicType = "bridge"; # or "macvtap"
       hostNic = "bridge17";
       mac = "52:54:00:00:00:10";
@@ -19,7 +19,7 @@ let
     {
       name = "v-xpbx1";
       vcpu = "2";
-      memory = "6";
+      memory = "4";  # Reduced from 6 GiB - FreePBX with 2 vCPUs doesn't need 6GB
       nicType = "bridge";
       hostNic = "bridge16";
       mac = "52:54:00:c7:8c:80";
@@ -32,8 +32,8 @@ let
     }
     {
       name = "v-k8s-xsvr1";
-      vcpu = "4";
-      memory = "16";
+      vcpu = "8";  # Increased from 4 - was CPU starved at 120% on single core
+      memory = "24";  # Increased from 16 GiB - node is at 62% mem usage
       nicType = "bridge"; # or "bridge"
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";

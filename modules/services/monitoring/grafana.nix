@@ -35,7 +35,7 @@ in
         };
       };
 
-      # Provision Prometheus datasource
+      # Provision Prometheus and Loki datasources
       provision = {
         enable = true;
 
@@ -49,6 +49,18 @@ in
             uid = "000000001";
             jsonData = {
               timeInterval = "15s";
+            };
+          }
+          {
+            name = "Loki";
+            type = "loki";
+            access = "proxy";
+            url = "https://loki.xrs444.net";
+            uid = "000000002";
+            jsonData = {
+              # Loki-specific settings
+              maxLines = 1000;
+              timeout = 60;
             };
           }
         ];

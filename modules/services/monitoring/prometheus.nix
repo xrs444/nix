@@ -9,10 +9,11 @@ let
   isMonitoringServer = lib.elem "monitoring-server" hostRoles;
 
   # Define all monitored hosts
+  # Use static IPs instead of .lan hostnames to avoid VIP/keepalived routing issues
   allHosts = [
-    "xsvr1.lan"
-    "xsvr2.lan"
-    "xsvr3.lan"
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
+    "172.20.1.30" # xsvr3
     "xlabmgmt.lan"
     "xts1.lan"
     "xts2.lan"
@@ -23,14 +24,26 @@ let
 
   # Hosts with ZFS
   zfsHosts = [
-    "xsvr1.lan"
-    "xsvr2.lan"
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
   ];
 
   # Hosts with bird BGP
   birdHosts = [
     "xts1.lan"
     "xts2.lan"
+  ];
+
+  # Hosts with libvirt
+  libvirtHosts = [
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
+    "172.20.1.30" # xsvr3
+  ];
+
+  # Hosts with BIND DNS
+  bindHosts = [
+    "xlabmgmt.lan"
   ];
 
   # Talos VMs (Kubernetes nodes)
@@ -48,6 +61,15 @@ let
 
   # Generate scrape targets for bird_exporter
   birdTargets = map (host: "${host}:9324") birdHosts;
+
+  # Generate scrape targets for libvirt_exporter
+  libvirtTargets = map (host: "${host}:9177") libvirtHosts;
+
+  # Generate scrape targets for smartctl_exporter (all hosts)
+  smartctlTargets = map (host: "${host}:9633") allHosts;
+
+  # Generate scrape targets for bind_exporter
+  bindTargets = map (host: "${host}:9119") bindHosts;
 
   # Generate scrape targets for Talos node_exporter (port 9100)
   talosNodeTargets = map (ip: "${ip}:9100") talosVMs;
@@ -71,6 +93,9 @@ in
       enable = true;
       port = 9090;
       listenAddress = "0.0.0.0";
+
+      # Disable config validation during build (token file not available in sandbox)
+      checkConfig = false;
 
       # Enable reload on config change instead of restart
       enableReload = true;
@@ -107,6 +132,7 @@ in
         # Node exporter - all hosts
         {
           job_name = "node";
+          honor_labels = true;
           static_configs = [
             {
               targets = nodeTargets;
@@ -227,6 +253,10 @@ in
           tls_config = {
             insecure_skip_verify = true;
           };
+          authorization = {
+            type = "Bearer";
+            credentials_file = "/var/lib/prometheus/k8s-token";
+          };
           static_configs = [
             {
               targets = talosKubeletTargets;
@@ -244,6 +274,10 @@ in
           scheme = "https";
           tls_config = {
             insecure_skip_verify = true;
+          };
+          authorization = {
+            type = "Bearer";
+            credentials_file = "/var/lib/prometheus/k8s-token";
           };
           static_configs = [
             {
@@ -285,11 +319,122 @@ in
           ];
         }
 
-        # TODO: Add more Kubernetes monitoring:
-        # - kubelet metrics (node-level container metrics)
-        # - cAdvisor metrics (container resource usage)
-        # - API server metrics
-        # - etcd metrics (if running separate from API server)
+        # Libvirt exporter - VM monitoring
+        # DISABLED: Exporter package has issues, needs investigation
+        # {
+        #   job_name = "libvirt";
+        #   static_configs = [
+        #     {
+        #       targets = libvirtTargets;
+        #     }
+        #   ];
+        # }
+
+        # SMART disk health monitoring
+        {
+          job_name = "smartctl";
+          scrape_interval = "60s";
+          scrape_timeout = "30s";
+          static_configs = [
+            {
+              targets = smartctlTargets;
+            }
+          ];
+        }
+
+        # BIND DNS exporter
+        {
+          job_name = "bind";
+          static_configs = [
+            {
+              targets = bindTargets;
+            }
+          ];
+        }
+
+        # Blackbox exporter - SSL certificate and endpoint monitoring
+        {
+          job_name = "blackbox-ssl";
+          metrics_path = "/probe";
+          params = {
+            module = [ "http_2xx_tls" ];
+          };
+          static_configs = [
+            {
+              targets = [
+                "https://loki.xrs444.net"
+                "https://kanidm.xrs444.net"
+                "https://grafana.xrs444.net"
+              ];
+            }
+          ];
+          relabel_configs = [
+            {
+              source_labels = [ "__address__" ];
+              target_label = "__param_target";
+            }
+            {
+              source_labels = [ "__param_target" ];
+              target_label = "instance";
+            }
+            {
+              target_label = "__address__";
+              replacement = "localhost:9115";
+            }
+          ];
+        }
+
+        # Promtail metrics - log shipper health monitoring
+        {
+          job_name = "promtail";
+          static_configs = [
+            {
+              targets = map (host: "${host}:9080") allHosts;
+            }
+          ];
+        }
+
+        # Kubernetes - Traefik ingress controller metrics (via NodePort)
+        {
+          job_name = "traefik";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30090" ]; # NodePort to be created
+              labels = {
+                cluster = "home-k8s";
+                component = "traefik";
+              };
+            }
+          ];
+        }
+
+        # Kubernetes - Cilium CNI metrics (via NodePort)
+        {
+          job_name = "cilium";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30091" ]; # NodePort to be created
+              labels = {
+                cluster = "home-k8s";
+                component = "cilium";
+              };
+            }
+          ];
+        }
+
+        # Kubernetes - Cert-Manager metrics (via NodePort)
+        {
+          job_name = "cert-manager";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30092" ]; # NodePort to be created
+              labels = {
+                cluster = "home-k8s";
+                component = "cert-manager";
+              };
+            }
+          ];
+        }
       ];
 
       # Alert rules
@@ -388,6 +533,156 @@ in
                   annotations = {
                     summary = "Kubernetes node {{ $labels.node }} not ready";
                     description = "Node has been in a not-ready state for more than 5 minutes.";
+                  };
+                }
+              ];
+            }
+            {
+              name = "zfs_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "ZFSPoolDegraded";
+                  expr = "zfs_pool_health != 0";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "ZFS pool degraded on {{ $labels.instance }}";
+                    description = "ZFS pool {{ $labels.pool }} on {{ $labels.instance }} is not in ONLINE state.";
+                  };
+                }
+                {
+                  alert = "ZFSPoolLowSpace";
+                  expr = "(zfs_pool_free_bytes / zfs_pool_size_bytes) * 100 < 10";
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "ZFS pool low on space on {{ $labels.instance }}";
+                    description = "ZFS pool {{ $labels.pool }} on {{ $labels.instance }} has less than 10% free space (current: {{ $value }}%)";
+                  };
+                }
+                {
+                  alert = "ZFSScrubErrors";
+                  expr = "zfs_pool_scrub_errors > 0";
+                  for = "1m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "ZFS scrub found errors on {{ $labels.instance }}";
+                    description = "ZFS pool {{ $labels.pool }} on {{ $labels.instance }} has {{ $value }} scrub errors.";
+                  };
+                }
+              ];
+            }
+            {
+              name = "smartctl_alerts";
+              interval = "60s";
+              rules = [
+                {
+                  alert = "SMARTDeviceFailing";
+                  expr = "smartctl_device_smart_healthy == 0";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "SMART indicates device failure on {{ $labels.instance }}";
+                    description = "Device {{ $labels.device }} on {{ $labels.instance }} is reporting SMART health failure.";
+                  };
+                }
+                {
+                  alert = "SMARTHighTemperature";
+                  expr = "smartctl_device_temperature > 60";
+                  for = "10m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "High disk temperature on {{ $labels.instance }}";
+                    description = "Device {{ $labels.device }} temperature is {{ $value }}°C (threshold: 60°C)";
+                  };
+                }
+              ];
+            }
+            {
+              name = "backup_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "BackupJobFailed";
+                  expr = "node_systemd_unit_state{name=~\"borgbackup.*\\\\.service\",state=\"failed\"} == 1";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "Backup job failed on {{ $labels.instance }}";
+                    description = "Systemd unit {{ $labels.name }} on {{ $labels.instance }} is in failed state.";
+                  };
+                }
+                {
+                  alert = "BackupJobNotRunRecently";
+                  expr = "(time() - node_systemd_unit_state_change_timestamp_seconds{name=~\"borgbackup.*\\\\.service\"}) > 172800";
+                  for = "1h";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Backup job has not run recently on {{ $labels.instance }}";
+                    description = "Backup unit {{ $labels.name }} has not changed state in over 48 hours.";
+                  };
+                }
+              ];
+            }
+            {
+              name = "ssl_certificate_alerts";
+              interval = "60s";
+              rules = [
+                {
+                  alert = "SSLCertificateExpiringSoon";
+                  expr = "(probe_ssl_earliest_cert_expiry - time()) / 86400 < 14";
+                  for = "1h";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "SSL certificate expiring soon for {{ $labels.instance }}";
+                    description = "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days.";
+                  };
+                }
+                {
+                  alert = "SSLCertificateExpired";
+                  expr = "(probe_ssl_earliest_cert_expiry - time()) < 0";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "SSL certificate expired for {{ $labels.instance }}";
+                    description = "SSL certificate for {{ $labels.instance }} has expired!";
+                  };
+                }
+              ];
+            }
+            {
+              name = "libvirt_alerts";
+              interval = "30s";
+              rules = [
+                {
+                  alert = "LibvirtDomainDown";
+                  expr = "libvirt_domain_info_state != 1";
+                  for = "5m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Libvirt domain {{ $labels.domain }} is not running on {{ $labels.instance }}";
+                    description = "VM {{ $labels.domain }} on {{ $labels.instance }} is in state {{ $value }} (1=running).";
                   };
                 }
               ];
