@@ -97,6 +97,20 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_immich_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_immich_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_romm_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_romm_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
       services.kanidm = {
