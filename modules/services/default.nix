@@ -5,6 +5,7 @@
     ./Samba
     ./bind
     ./borgbackup
+    ./determinate-nix
     ./ffr
     ./homeassistant
     ./iprouting

@@ -1,19 +1,19 @@
-# Summary: NixOS module to enable Determinate Nix on hosts
-{ config, lib, inputs, ... }:
-
+# Summary: Determinate Nix integration with NixOS 25.11 compatibility
+{ config, lib, pkgs, inputs, ... }:
 let
-  cfg = config.services.determinate-nix;
+  # Get the Determinate Nix package
+  determinateNixPkg = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.system}.default;
+
+  # Ensure it has the pname attribute for NixOS 25.11+ compatibility
+  nixPackageWithPname = determinateNixPkg.overrideAttrs (oldAttrs: {
+    pname = oldAttrs.pname or "nix";
+  });
 in
 {
-  options.services.determinate-nix = {
-    enable = lib.mkEnableOption "Determinate Nix - enterprise-grade Nix distribution";
-  };
+  imports = [ inputs.determinate.nixosModules.default ];
 
-  config = lib.mkIf cfg.enable {
-    # Import Determinate Nix module
-    imports = [ inputs.determinate.nixosModules.default ];
-
-    # Enable Determinate Nix
-    services.determinate-nix.enable = true;
+  # Override nix.package to ensure pname attribute exists
+  config = {
+    nix.package = lib.mkForce nixPackageWithPname;
   };
 }

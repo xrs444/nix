@@ -12,6 +12,30 @@ Your setup now includes:
 - ✅ Basic alert rules for nodes and Kubernetes
 - ✅ Alertmanager service enabled
 - ✅ Firewall configured for Alertmanager (:9093)
+- ✅ **Centralized notifications via Apprise** - All alerts route through Apprise to ntfy/email/Slack/etc.
+
+## Current Configuration (Apprise Integration)
+
+**⚠️ IMPORTANT**: This setup now uses **Apprise** as a centralized notification hub.
+
+All Prometheus alerts are sent to Alertmanager, which forwards them to Apprise in Kubernetes. Apprise then routes notifications to ntfy, email, Slack, Discord, PagerDuty, and 80+ other platforms.
+
+**Alert Flow:**
+
+```text
+Prometheus → Alertmanager → Apprise (Kubernetes) → ntfy / Email / Slack / etc.
+```
+
+**Configuration Location:**
+
+- Alertmanager receivers: `nix/modules/services/monitoring/prometheus.nix` (lines 778-796)
+- Apprise setup: See `flux` repository [docs/APPRISE_SETUP.md](https://github.com/xrs444/flux/blob/main/docs/APPRISE_SETUP.md)
+
+**Current Receivers:**
+- `default` - Sends all non-critical alerts to `http://apprise.apprise.svc.cluster.local:8000/notify`
+- `critical` - Sends critical alerts to the same Apprise endpoint (can be customized)
+
+To add more notification platforms (email, Slack, Discord, etc.), update the Apprise configuration in the flux repository. See the Apprise documentation for details.
 
 ## Current Alert Rules
 
@@ -30,9 +54,27 @@ Your setup now includes:
 
 ## Configuring Notifications
 
-You need to configure receivers in Alertmanager to actually send notifications.
+### Current Setup: Apprise (Recommended)
 
-### Option 1: Email Notifications
+The system is currently configured to use **Apprise** for all notifications. This provides:
+
+- ✅ Single configuration point for all notification platforms
+- ✅ Support for 80+ notification services
+- ✅ Easy to add/remove platforms without changing Prometheus config
+- ✅ Centralized logging and monitoring of all alerts
+
+**To add more notification platforms**, see the Apprise documentation in the flux repository:
+
+- [APPRISE_SETUP.md](https://github.com/xrs444/flux/blob/main/docs/APPRISE_SETUP.md) - Architecture overview
+- [APPRISE_MIGRATION_GUIDE.md](https://github.com/xrs444/flux/blob/main/docs/APPRISE_MIGRATION_GUIDE.md) - How to add email, Slack, Discord, etc.
+
+### Alternative: Direct Alertmanager Receivers
+
+If you prefer to configure notifications directly in Alertmanager instead of using Apprise, you can replace the webhook receivers with any of the following options.
+
+**Note:** Using Apprise is recommended as it provides more flexibility and easier management.
+
+#### Option 1: Email Notifications
 
 Edit `nix/modules/services/monitoring/prometheus.nix`, find the `receivers` section:
 
