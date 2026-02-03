@@ -45,6 +45,13 @@
       wantedBy = [ "multi-user.target" ];
     }
     {
+      what = "/zfs/documents/photos";
+      where = "/export/zfs/documents/photos";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
       what = "/zfs/media/ingest";
       where = "/export/zfs/media/ingest";
       type = "none";
@@ -65,6 +72,13 @@
       options = "bind";
       wantedBy = [ "multi-user.target" ];
     }
+    {
+      what = "/zfs/media/games";
+      where = "/export/zfs/media/games";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
   ];
 
   # Ensure export directory structure exists
@@ -72,9 +86,11 @@
     mkdir -p /export/zfs/systembackups/longhorn
     mkdir -p /export/zfs/devicebackups
     mkdir -p /export/zfs/documents/manyfold
+    mkdir -p /export/zfs/documents/photos
     mkdir -p /export/zfs/media/ingest
     mkdir -p /export/zfs/media/movies
     mkdir -p /export/zfs/media/tvshows
+    mkdir -p /export/zfs/media/games
 
     # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
     chown -R 1001:1001 /zfs/devicebackups
