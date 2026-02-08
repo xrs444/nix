@@ -206,25 +206,60 @@ let
           Type = "oneshot";
           ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
             set -eu
+
             autostart="disable"  # Initialize with default value
-            # Check if VM exists and get autostart status
+            was_running=false
+
+            # Check if VM exists and get current state
             if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
-              # Try to undefine if not running
-              if ! virsh domstate "${vm.name}" | grep -q "running"; then
-                ${
-                  if vm.firmware == "efi" then
-                    "virsh undefine \"${vm.name}\" --nvram || true"
-                  else
-                    "virsh undefine \"${vm.name}\" || true"
-                }
+
+              # Check if VM is currently running
+              if virsh domstate "${vm.name}" | grep -q "running"; then
+                was_running=true
+                echo "VM ${vm.name} is running, shutting down gracefully..."
+                virsh shutdown "${vm.name}" || true
+
+                # Wait up to 60 seconds for graceful shutdown
+                for i in {1..60}; do
+                  if ! virsh domstate "${vm.name}" | grep -q "running"; then
+                    echo "VM ${vm.name} shut down gracefully"
+                    break
+                  fi
+                  sleep 1
+                done
+
+                # Force destroy if still running
+                if virsh domstate "${vm.name}" | grep -q "running"; then
+                  echo "VM ${vm.name} did not shut down gracefully, forcing destruction..."
+                  virsh destroy "${vm.name}" || true
+                  sleep 2
+                fi
               fi
+
+              # Undefine the VM
+              echo "Undefining VM ${vm.name}..."
+              ${
+                if vm.firmware == "efi" then
+                  "virsh undefine \"${vm.name}\" --nvram || true"
+                else
+                  "virsh undefine \"${vm.name}\" || true"
+              }
             fi
-            # Define the VM
+
+            # Define the VM with new configuration
+            echo "Defining VM ${vm.name} with updated configuration..."
             virsh define "/etc/libvirt/qemu/${vm.name}.xml" || true
+
             # Restore autostart if it was enabled
             if [ "$autostart" = "yes" ]; then
               virsh autostart "${vm.name}" || true
+            fi
+
+            # Restart the VM if it was running before
+            if [ "$was_running" = true ]; then
+              echo "Restarting VM ${vm.name}..."
+              virsh start "${vm.name}" || true
             fi
           '';
         };

@@ -37,6 +37,18 @@
   nixpkgs = {
     hostPlatform = lib.mkDefault "${platform}";
 
+    # Package overrides
+    config.packageOverrides = pkgs: {
+      pythonPackagesExtensions = pkgs.pythonPackagesExtensions ++ [
+        (python-final: python-prev: {
+          setproctitle = python-prev.setproctitle.overridePythonAttrs (old: {
+            # Skip tests on macOS due to fork-related segfaults in test suite
+            # See: https://github.com/dvarrazzo/py-setproctitle/issues/113
+            doCheck = false;
+          });
+        })
+      ];
+    };
   };
 
   # Garbage collection via LaunchDaemon (since nix.enable = false)
