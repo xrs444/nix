@@ -4,8 +4,8 @@ let
   vmSpecs = [
     {
       name = "v-xhac1";
-      vcpu = "4";
-      memory = "6";  # Reduced from 8 GiB - Home Assistant doesn't need that much
+      vcpu = "2";
+      memory = "6";  # Right-sized based on actual usage (~1.5 cores, 8 GiB actual)
       nicType = "bridge"; # or "macvtap"
       hostNic = "bridge17";
       mac = "52:54:00:00:00:10";
@@ -32,8 +32,8 @@ let
     }
     {
       name = "v-k8s-xsvr1";
-      vcpu = "8";  # Increased from 4 - was CPU starved at 120% on single core
-      memory = "24";  # Increased from 16 GiB - node is at 62% mem usage
+      vcpu = "10";  # Increased from 8 - running at 140% CPU, heavily utilized
+      memory = "24";  # Increased from 16 GiB - node needs full allocation
       nicType = "bridge"; # or "bridge"
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
