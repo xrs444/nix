@@ -48,6 +48,18 @@
       "netbox-admin" = {
         members = [ "admins" ];
       };
+      "immich" = {
+        members = [ "users" ];
+      };
+      "immich-admin" = {
+        members = [ "admins" ];
+      };
+      "romm" = {
+        members = [ "users" ];
+      };
+      "romm-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -189,6 +201,46 @@
               "email"
             ];
             "netbox-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_immich" = {
+          displayName = "Immich Photo Management";
+          originUrl = "https://immich.xrs444.net";
+          originLanding = "https://immich.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_immich_secret";
+          scopeMaps = {
+            "immich" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "immich-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_romm" = {
+          displayName = "ROMM ROM Manager";
+          originUrl = "https://romm.xrs444.net";
+          originLanding = "https://romm.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_romm_secret";
+          scopeMaps = {
+            "romm" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "romm-admin" = [
               "openid"
               "profile"
               "email"

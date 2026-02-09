@@ -114,10 +114,10 @@
   fonts.fontconfig.enable = true;
 
   # Deploy nix-sh.fish selector script to ~/.local/bin
-  home.file.".local/bin/nix-sh.fish" = {
-    source = builtins.path { path = ./../../../scripts/nix-sh.fish; };
-    executable = true;
-  };
+  # home.file.".local/bin/nix-sh.fish" = {
+  #  source = builtins.path { path = ./../../../scripts/nix-sh.fish; };
+  #  executable = true;
+  # };
 
   # Prevent Home Manager from overriding PATH
   home.sessionPath = [ ];
