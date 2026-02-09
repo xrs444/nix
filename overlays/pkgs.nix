@@ -12,6 +12,7 @@
     packageOverrides = pfinal: pprev: {
       distutils = pprev.distutils.overrideAttrs {
         doCheck = false;
+        doInstallCheck = false;
       };
     };
   };
