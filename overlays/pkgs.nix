@@ -10,10 +10,10 @@
   # test_msvccompiler::TestSpawn::test_concurrent_safe fails with "can't start new thread"
   python3 = prev.python3.override {
     packageOverrides = pfinal: pprev: {
-      distutils = pprev.distutils.overrideAttrs {
+      distutils = pprev.distutils.overrideAttrs (oldAttrs: {
         doCheck = false;
         doInstallCheck = false;
-      };
+      });
     };
   };
   python3Packages = final.python3.pkgs;
