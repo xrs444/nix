@@ -8,11 +8,13 @@
 
   # Fix python3.13-distutils test_concurrent_safe failure in sandboxed builds
   # test_msvccompiler::TestSpawn::test_concurrent_safe fails with "can't start new thread"
-  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-    (pfinal: pprev: {
-      distutils = pprev.distutils.overrideAttrs (oldAttrs: {
+  python3 = prev.python3.override {
+    packageOverrides = pfinal: pprev: {
+      distutils = pprev.distutils.overrideAttrs {
         doCheck = false;
-      });
-    })
-  ];
+        doInstallCheck = false;
+      };
+    };
+  };
+  python3Packages = final.python3.pkgs;
 })
