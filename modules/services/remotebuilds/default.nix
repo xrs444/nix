@@ -47,6 +47,42 @@ in
       };
     })
 
-    # No client-specific settings needed; xsvr1 is the only build server
+    # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
+    (lib.mkIf (!lib.elem config.networking.hostName builder) {
+      distributedBuilds = true;
+      buildMachines = [
+        {
+          hostName = "xsvr1.lan";
+          sshUser = "builder";
+          sshKey = "/root/.ssh/id_builder";
+          systems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+          maxJobs = 8;
+          speedFactor = 2;
+          supportedFeatures = [
+            "nixos-test"
+            "benchmark"
+            "big-parallel"
+            "kvm"
+          ];
+        }
+      ];
+    })
   ];
+
+  # Deploy builder SSH key on all non-builder hosts
+  sops.secrets.builder_private_key = lib.mkIf (!lib.elem config.networking.hostName builder) {
+    sopsFile = ../../../secrets/builder-ssh-key.yaml;
+    path = "/root/.ssh/id_builder";
+    mode = "0600";
+  };
+
+  # SSH config so nixos-rebuild --build-host finds the right key
+  programs.ssh.extraConfig = lib.mkIf (!lib.elem config.networking.hostName builder) ''
+    Host xsvr1.lan
+      User builder
+      IdentityFile /root/.ssh/id_builder
+  '';
 }

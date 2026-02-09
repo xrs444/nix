@@ -60,7 +60,7 @@
     wireshark
     openscad
     powershell
-    vscode
+    # vscode is managed by home-manager with pkgs.unstable (see homemanager/common/apps/vscode)
 
     # Other utilities
     pipx

@@ -184,6 +184,7 @@ let
           RemainAfterExit = true;
           ExecStart = pkgs.writeShellScript "create-vm-${vm.name}" ''
             set -eu
+            export LIBVIRT_DEFAULT_URI="qemu:///system"
             mkdir -p /etc/libvirt/qemu
             cp -f ${xmlFile} /etc/libvirt/qemu/${vm.name}.xml
             virsh define /etc/libvirt/qemu/${vm.name}.xml || true
@@ -206,6 +207,9 @@ let
           Type = "oneshot";
           ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
             set -eu
+
+            # Always use system libvirt instance
+            export LIBVIRT_DEFAULT_URI="qemu:///system"
 
             autostart="disable"  # Initialize with default value
             was_running=false

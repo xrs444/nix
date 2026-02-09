@@ -8,8 +8,7 @@
 {
   imports = [
     ../../base-nixos.nix
-    ../common/boot.nix
-    ../common/performance.nix
+    ../common/default.nix
     ../common/hardware-rpi.nix
     ../../../modules/hardware/RaspberryPi4
     #    ./network.nix
