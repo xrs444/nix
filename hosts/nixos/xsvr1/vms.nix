@@ -245,11 +245,19 @@ let
                 else
                   "virsh undefine \"${vm.name}\" || true"
               }
+
+              # Give libvirt a moment to fully clear internal state
+              sleep 2
             fi
 
             # Define the VM with new configuration
             echo "Defining VM ${vm.name} with updated configuration..."
-            virsh define "/etc/libvirt/qemu/${vm.name}.xml" || true
+            if ! virsh define "/etc/libvirt/qemu/${vm.name}.xml"; then
+              echo "Failed to define VM, retrying after libvirtd reload..."
+              systemctl reload libvirtd.service || true
+              sleep 2
+              virsh define "/etc/libvirt/qemu/${vm.name}.xml" || echo "Warning: Failed to define VM ${vm.name}"
+            fi
 
             # Restore autostart if it was enabled
             if [ "$autostart" = "yes" ]; then
