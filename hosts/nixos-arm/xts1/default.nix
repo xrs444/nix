@@ -20,6 +20,22 @@
   # Bootloader configuration for Raspberry Pi
   boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;
 
+  # Disable generic initrd modules not available in RPi4 kernel
+  boot.initrd.includeDefaultModules = false;
+
+  # Filter out modules that don't exist in the RPi4 kernel (renamed/removed in 6.12)
+  boot.initrd.availableKernelModules = lib.mkForce [
+    "usbhid"
+    "usb-storage"
+    "vc4"
+    "pcie-brcmstb"
+    "reset-raspberrypi"
+    "sdhci_pci"
+    "mmc_block"
+    "ext4"
+    "nvme"
+  ];
+
   # Ensure boot partition is writable during rebuild
   boot.loader.generic-extlinux-compatible.configurationLimit = 10;
 

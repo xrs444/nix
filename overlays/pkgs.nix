@@ -23,4 +23,12 @@
   pipewire = prev.pipewire.overrideAttrs (oldAttrs: {
     doCheck = false;
   });
+
+  # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
+  # Tests run via CMake build target, not checkPhase, so doCheck doesn't help
+  sdl3 = prev.sdl3.overrideAttrs (oldAttrs: {
+    cmakeFlags = (oldAttrs.cmakeFlags or [ ]) ++ [
+      "-DSDL_TESTS=OFF"
+    ];
+  });
 })
