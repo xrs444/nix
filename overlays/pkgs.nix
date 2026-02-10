@@ -26,9 +26,13 @@
 
   # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
   # Tests run via CMake build target, not checkPhase, so doCheck doesn't help
+  # Keep tests off but create empty installedTests output to satisfy the derivation
   sdl3 = prev.sdl3.overrideAttrs (oldAttrs: {
     cmakeFlags = (oldAttrs.cmakeFlags or [ ]) ++ [
       "-DSDL_TESTS=OFF"
     ];
+    postInstall = (oldAttrs.postInstall or "") + ''
+      mkdir -p $installedTests
+    '';
   });
 })
