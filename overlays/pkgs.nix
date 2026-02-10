@@ -35,4 +35,19 @@
       mkdir -p $installedTests
     '';
   });
+
+  # Use unstable version of claude-code to avoid npm lock file issues
+  # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
+  claude-code = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    }
+  ).claude-code;
+
+  # Fix inetutils format-security compilation errors on macOS
+  # https://github.com/NixOS/nixpkgs/issues/XXXXX
+  inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
+    hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
+  });
 })
