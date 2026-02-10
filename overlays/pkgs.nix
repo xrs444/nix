@@ -23,4 +23,9 @@
   pipewire = prev.pipewire.overrideAttrs (oldAttrs: {
     doCheck = false;
   });
+
+  # Fix sdl3 testprocess timeout in sandboxed builds
+  sdl3 = prev.sdl3.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
 })
