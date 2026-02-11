@@ -30,7 +30,7 @@
       "ghostty"
       "google-drive"
       "handbrake-app"
-      "headlamp"
+      { name = "headlamp"; args = { no_quarantine = true; }; }
       "jabra-direct"
       "jettison"
       "lulu"

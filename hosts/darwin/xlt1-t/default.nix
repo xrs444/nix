@@ -23,7 +23,7 @@
       largesize = 48;
       scroll-to-open = true;
       persistent-apps = [
-        "/Applications/Nix Apps/Visual Studio Code.app"
+        "/Users/xrs444/Applications/Home Manager Apps/Visual Studio Code.app"
         "/Applications/Firefox.app"
         "/Applications/Ghostty.app"
       ];
