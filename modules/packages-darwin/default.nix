@@ -5,6 +5,7 @@
     ../packages-common/kanidm
     ./apple-container/default.nix
     ./brew-packages.nix
+    ./netbox-devicetype-import/default.nix
     ./qmk/default.nix
   ];
 
