@@ -3,6 +3,7 @@
 {
   imports = [
     ../packages-common/kanidm
+    ./apple-container/default.nix
     ./brew-packages.nix
     ./qmk/default.nix
   ];

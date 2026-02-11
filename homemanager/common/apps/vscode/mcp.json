@@ -24,17 +24,17 @@
     //    "FIRECRAWL_API_KEY": "${input:firecrawlApiKey}"
     //  }
     //},
-    "git": {
-      "command": "uvx",
-      "args": ["mcp-server-git"]
-    },
-    "github": {
-      "command": "github-mcp-server",
-      "args": ["stdio"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubToken}"
-      }
-    },
+    //"git": {
+    //  "command": "uvx",
+    //  "args": ["mcp-server-git"]
+    //},
+    //"github": {
+    //  "command": "github-mcp-server",
+    //  "args": ["stdio"],
+    //  "env": {
+    //    "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:githubToken}"
+    //  }
+    //},
     // "mcp-google-cse": {
     //  "command": "uvx",
     //  "args": ["mcp-google-cse"],
@@ -43,13 +43,13 @@
     //    "ENGINE_ID": "${input:googleSearchEngineID}"
     //  }
     //},
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"],
-      "env": {
-        "MEMORY_FILE_PATH": "${input:memoryFilePath}"
-      }
-    },
+    //"memory": {
+    //  "command": "npx",
+    //  "args": ["-y", "@modelcontextprotocol/server-memory"],
+    //  "env": {
+    //    "MEMORY_FILE_PATH": "${input:memoryFilePath}"
+    //  }
+    //},
     "nixos": {
       "command": "mcp-nixos"
     },
@@ -57,10 +57,10 @@
     //  "type": "http",
     //  "url": "https://api.ref.tools/mcp?apiKey=${input:refApiKey}"
     //},
-    "sequentialthinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-    },
+    //"sequentialthinking": {
+    //  "command": "npx",
+    //  "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    //},
     //"tavily": {
     //  "command": "npx",
     //  "args": ["-y", "tavily-mcp@latest"],
@@ -73,14 +73,14 @@
     //  "command": "tessl",
     //  "args": ["mcp"]
     //},
-    "time": {
-      "command": "uvx",
-      "args": ["mcp-server-time"]
-    },
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/xrs444/Repositories/HomeProd"]
-    }
+    //"time": {
+    //  "command": "uvx",
+    //  "args": ["mcp-server-time"]
+    //},
+    //"filesystem": {
+    //  "command": "npx",
+    //  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/xrs444/Repositories/HomeProd"]
+    //}
   },
   "inputs": [
     //{
@@ -94,37 +94,37 @@
       "id": "context7ApiKey",
       "description": "Context7 API Key",
       "password": true
-    },
+    }
     //{
     //  "type": "promptString",
     //  "id": "firecrawlApiKey",
     //  "description": "Firecrawl API Key",
     //  "password": true
     //},
-    {
-      "type": "promptString",
-      "id": "githubToken",
-      "description": "GitHub Personal Access Token",
-      "password": true
-    },
-    {
-      "type": "promptString",
-      "id": "googleSearchApiKey",
-      "description": "Google Search API Key",
-      "password": true
-    },
-    {
-      "type": "promptString",
-      "id": "googleSearchEngineID",
-      "description": "Google Search Engine ID",
-      "password": true
-    },
-    {
-      "type": "promptString",
-      "id": "memoryFilePath",
-      "description": "Memory File Path",
-      "password": false
-    }
+    //{
+    //  "type": "promptString",
+    //  "id": "githubToken",
+    //  "description": "GitHub Personal Access Token",
+    //  "password": true
+    //},
+    //{
+    //  "type": "promptString",
+    //  "id": "googleSearchApiKey",
+    //  "description": "Google Search API Key",
+    //  "password": true
+    //},
+    //{
+    //  "type": "promptString",
+    //  "id": "googleSearchEngineID",
+    //  "description": "Google Search Engine ID",
+    //  "password": true
+    //},
+    //{
+    //  "type": "promptString",
+    //  "id": "memoryFilePath",
+    //  "description": "Memory File Path",
+    //  "password": false
+    //}
     //{
     //  "type": "promptString",
     //  "id": "refApiKey",
