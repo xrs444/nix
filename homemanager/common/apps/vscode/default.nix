@@ -176,6 +176,7 @@ in
         "claude.defaultModel" = "claude-sonnet-4-5-20250929";
         "claude.maxTokens" = 200000;
         "claude.autoStartChat" = false;
+        "claudeCode.selectedModel" = "sonnet";
         "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
           You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
 
