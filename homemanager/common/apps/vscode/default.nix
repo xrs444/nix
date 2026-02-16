@@ -173,9 +173,6 @@ in
         # Kubernetes settings
         "vs-kubernetes.crd-code-completion" = "enabled";
         # Claude Code specific settings
-        "claude.defaultModel" = "sonnet";
-        "claude.maxTokens" = 200000;
-        "claude.autoStartChat" = false;
         "claudeCode.selectedModel" = "sonnet";
         "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
           You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
@@ -239,13 +236,13 @@ in
                     - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
         '';
       }
-      // lib.mkIf isDarwin {
+      // lib.optionalAttrs isDarwin {
         "terminal.integrated.defaultProfile.osx" = "fish";
         "terminal.integrated.env.osx" = { };
         "cline.chromeExecutablePath" = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
         "window.controlsStyle" = "native";
       }
-      // lib.mkIf isLinux {
+      // lib.optionalAttrs isLinux {
         "terminal.integrated.env.linux" = { };
         "cline.chromeExecutablePath" = "/usr/bin/google-chrome-stable";
         "window.controlsStyle" =

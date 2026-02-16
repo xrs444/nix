@@ -110,6 +110,11 @@
     claude-code
   ];
 
+  # Claude Code CLI settings
+  home.file.".claude/settings.json".text = builtins.toJSON {
+    model = "sonnet";
+  };
+
   # Enable font configuration
   fonts.fontconfig.enable = true;
 
