@@ -173,7 +173,7 @@ in
         # Kubernetes settings
         "vs-kubernetes.crd-code-completion" = "enabled";
         # Claude Code specific settings
-        "claude.defaultModel" = "claude-sonnet-4-5-20250929";
+        "claude.defaultModel" = "sonnet";
         "claude.maxTokens" = 200000;
         "claude.autoStartChat" = false;
         "claudeCode.selectedModel" = "sonnet";
