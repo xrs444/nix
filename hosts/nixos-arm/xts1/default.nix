@@ -51,6 +51,7 @@
   ];
 
   hardware.i2c.enable = true;
+  hardware.raspberry-pi."4".poe-plus-hat.enable = true;
   nixpkgs.config.allowUnfree = true;
 
   # RPi4 SD image firmware configuration
