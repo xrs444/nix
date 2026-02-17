@@ -12,9 +12,6 @@ let
   isMonitoringClient = lib.elem "monitoring-client" hostRoles;
   enablePromtail = isMonitoringServer || isMonitoringClient;
 
-  # Loki endpoint (in Kubernetes cluster)
-  lokiUrl = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push";
-  # Fallback to external ingress if cluster DNS not accessible
   lokiFallbackUrl = "https://loki.xrs444.net/loki/api/v1/push";
 in
 {
@@ -33,8 +30,7 @@ in
 
         clients = [
           {
-            # Try cluster-internal endpoint first
-            url = lokiUrl;
+            url = lokiFallbackUrl;
           }
         ];
 
