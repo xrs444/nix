@@ -96,9 +96,10 @@ in
       };
     };
 
-    # Ensure promtail has permissions to read journal
+    # Ensure promtail has permissions to read journal and state dir exists
     systemd.services.promtail.serviceConfig = {
       SupplementaryGroups = [ "systemd-journal" ];
+      StateDirectory = "promtail";
     };
 
     # Open firewall for promtail metrics endpoint on Tailscale
