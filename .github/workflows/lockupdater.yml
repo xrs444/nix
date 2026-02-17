@@ -66,18 +66,25 @@ jobs:
       - name: Check if heavy packages need source compilation
         id: check
         run: |
-          # xcomm1 has the heaviest build: firefox-esr, webkitgtk (x2), gst-plugins-rs
+          # xcomm1: firefox-esr, webkitgtk (x2), gst-plugins-rs
+          # xsvr1: qemu/libvirt for virtualisation
           # A dry-run lists .drv files for anything that must be compiled from source
-          echo "Running dry-run evaluation for xcomm1..."
-          DRY=$(nix build ".#nixosConfigurations.xcomm1.config.system.build.toplevel" \
-            --no-link --dry-run 2>&1 || true)
+          HEAVY_PATTERN="firefox|webkitgtk|gst-plugins-rs|qemu"
+          UNCACHED=""
 
-          HEAVY_PATTERN="firefox|webkitgtk|gst-plugins-rs"
-          UNCACHED=$(echo "$DRY" | grep -E "\.drv$" | grep -iE "$HEAVY_PATTERN" || true)
+          for host in xcomm1 xsvr1; do
+            echo "Running dry-run evaluation for $host..."
+            DRY=$(nix build ".#nixosConfigurations.$host.config.system.build.toplevel" \
+              --no-link --dry-run 2>&1 || true)
+            HOST_UNCACHED=$(echo "$DRY" | grep -E "\.drv$" | grep -iE "$HEAVY_PATTERN" || true)
+            if [ -n "$HOST_UNCACHED" ]; then
+              echo "Heavy packages not yet cached for $host:"
+              echo "$HOST_UNCACHED"
+              UNCACHED="${UNCACHED}${HOST_UNCACHED}"$'\n'
+            fi
+          done
 
           if [ -n "$UNCACHED" ]; then
-            echo "Heavy packages not yet available on cache.nixos.org:"
-            echo "$UNCACHED"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "All heavy packages available in binary cache."
@@ -89,7 +96,7 @@ jobs:
         run: |
           curl -sf -X POST https://apprise.xrs444.net/notify \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (firefox-esr, webkitgtk, gst-plugins-rs) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (firefox-esr, webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
 
   build-and-cache:
     name: Build & Cache All Hosts
