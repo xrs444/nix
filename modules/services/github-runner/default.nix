@@ -40,6 +40,9 @@ lib.mkIf hasRole {
       SupplementaryGroups = [ "nixbld" ];
       # Allow writing to the nix binary cache directory
       ReadWritePaths = [ "/zfs/nixcache/cache" ];
+      # Auto-restart on failure (default is Restart=no which requires manual intervention)
+      Restart = lib.mkForce "on-failure";
+      RestartSec = "30s";
     };
   };
 
