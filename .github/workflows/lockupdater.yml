@@ -6,24 +6,120 @@ on:
   workflow_dispatch:
 
 jobs:
-  lock-updater:
-    name: Flake Lock Updater
+  update-lock:
+    name: Update Flake Lock
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
-      pull-requests: write
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
       - uses: wimpysworld/nothing-but-nix@main
         with:
           hatchet-protocol: 'holster'
       - uses: DeterminateSystems/determinate-nix-action@v3
-#      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/update-flake-lock@v27
+
+      - name: Update flake.lock
+        run: nix flake update
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push to branch
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B flake-lock-update
+          git add flake.lock
+          git commit -m "chore: update flake.lock"
+          git push --force origin flake-lock-update
+
+      - name: Notify no changes
+        if: steps.changes.outputs.changed == 'false'
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info"}' || true
+
+  build-and-cache:
+    name: Build & Cache All Hosts
+    needs: update-lock
+    if: needs.update-lock.outputs.changed == 'true'
+    runs-on: [self-hosted, nixos, builder]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
         with:
-          pr-title: "chore: update flake.lock"
-          # Labels to be set on the PR
-          pr-labels: |
+          ref: flake-lock-update
+
+      - name: Build and cache all hosts
+        id: build
+        run: |
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
+          CACHE_URL="http://nixcache.xrs444.net"
+          FAILED=()
+          SUCCEEDED=()
+
+          for host in "${HOSTS[@]}"; do
+            echo "::group::Building $host"
+            if nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link 2>&1; then
+              echo "Copying $host to cache..."
+              nix copy --to "$CACHE_URL" ".#nixosConfigurations.$host.config.system.build.toplevel" || true
+              SUCCEEDED+=("$host")
+              echo "$host: SUCCESS"
+            else
+              FAILED+=("$host")
+              echo "$host: FAILED"
+            fi
+            echo "::endgroup::"
+          done
+
+          echo "succeeded=${SUCCEEDED[*]}" >> "$GITHUB_OUTPUT"
+          echo "succeeded_count=${#SUCCEEDED[@]}" >> "$GITHUB_OUTPUT"
+          echo "failed=${FAILED[*]}" >> "$GITHUB_OUTPUT"
+          echo "failed_count=${#FAILED[@]}" >> "$GITHUB_OUTPUT"
+
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            echo "::error::Failed hosts: ${FAILED[*]}"
+            exit 1
+          fi
+
+      - name: Create Pull Request
+        if: success()
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: flake-lock-update
+          title: "chore: update flake.lock"
+          body: |
+            Automated flake.lock update.
+
+            All ${{ steps.build.outputs.succeeded_count }} hosts built and cached successfully on xsvr1:
+            `${{ steps.build.outputs.succeeded }}`
+          labels: |
             dependencies
             automated
+
+      - name: Notify build success
+        if: success()
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"Flake Update: Build Complete\",\"body\":\"All ${{ steps.build.outputs.succeeded_count }} hosts built and cached. PR created.\",\"type\":\"success\"}" || true
+
+      - name: Notify build failure
+        if: failure()
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"Flake Update: Build Failed\",\"body\":\"Failed hosts: ${{ steps.build.outputs.failed }}. Check GitHub Actions logs.\",\"type\":\"failure\"}" || true

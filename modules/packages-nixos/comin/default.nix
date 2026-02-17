@@ -8,7 +8,7 @@
   config =
     let
       hostName = config.networking.hostName or null;
-      isXsvr3 = hostName == "xsvr3";
+      isXsvr1 = hostName == "xsvr1";
 
       # Script to send success notification
       notifySuccess = pkgs.writeShellScript "comin-notify-success" ''
@@ -59,7 +59,7 @@
             branches.main.name = "main";
           }
         ];
-        postDeploymentCommand = lib.mkIf isXsvr3 "/var/lib/comin/repository/scripts/build-and-cache-xsvr1-hosts.sh";
+        postDeploymentCommand = lib.mkIf isXsvr1 "/var/lib/comin/repository/scripts/build-and-cache-xsvr1-hosts.sh";
       };
 
       systemd.services.comin.serviceConfig = {
