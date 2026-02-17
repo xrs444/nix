@@ -2,7 +2,7 @@ name: Flake Lock Updater
 
 on:
   schedule:
-    - cron: '3 14 * * 1,5'
+    - cron: '3 14 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -50,10 +50,51 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info"}' || true
 
-  build-and-cache:
-    name: Build & Cache All Hosts
+  check-cache:
+    name: Check Heavy Package Cache
     needs: update-lock
     if: needs.update-lock.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flake-lock-update
+      - uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Check if heavy packages need source compilation
+        id: check
+        run: |
+          # xcomm1 has the heaviest build: firefox-esr, webkitgtk (x2), gst-plugins-rs
+          # A dry-run lists .drv files for anything that must be compiled from source
+          echo "Running dry-run evaluation for xcomm1..."
+          DRY=$(nix build ".#nixosConfigurations.xcomm1.config.system.build.toplevel" \
+            --no-link --dry-run 2>&1 || true)
+
+          HEAVY_PATTERN="firefox|webkitgtk|gst-plugins-rs"
+          UNCACHED=$(echo "$DRY" | grep -E "\.drv$" | grep -iE "$HEAVY_PATTERN" || true)
+
+          if [ -n "$UNCACHED" ]; then
+            echo "Heavy packages not yet available on cache.nixos.org:"
+            echo "$UNCACHED"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "All heavy packages available in binary cache."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify cache not ready
+        if: steps.check.outputs.ready == 'false'
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (firefox-esr, webkitgtk, gst-plugins-rs) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
+
+  build-and-cache:
+    name: Build & Cache All Hosts
+    needs: [update-lock, check-cache]
+    if: needs.update-lock.outputs.changed == 'true' && needs.check-cache.outputs.ready == 'true'
     runs-on: [self-hosted, nixos, builder]
     permissions:
       contents: write
