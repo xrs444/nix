@@ -16,7 +16,7 @@
     ./desktop.nix
     #    ./network.nix
     ./disks.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
   # Add other heavy modules here as needed
 

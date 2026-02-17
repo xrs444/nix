@@ -22,6 +22,8 @@ in
       sops
       git
       just # Command runner for project-specific commands
+      gh # GitHub CLI
+      jq # JSON processor
     ];
   };
 }

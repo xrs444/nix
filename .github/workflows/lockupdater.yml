@@ -67,7 +67,7 @@ jobs:
         id: build
         run: |
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
-          CACHE_URL="http://nixcache.xrs444.net"
+          CACHE_URL="file:///zfs/nixcache/cache"
           FAILED=()
           SUCCEEDED=()
 

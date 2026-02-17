@@ -16,7 +16,7 @@
     ./disks.nix
     ./desktop.nix
     #    ./network.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   nixpkgs.hostPlatform = platform;

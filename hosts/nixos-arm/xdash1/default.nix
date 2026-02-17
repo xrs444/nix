@@ -15,7 +15,7 @@
     ./network.nix
     ../../../modules/sdImage/custom.nix
     inputs.sops-nix.nixosModules.sops
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
   networking.hostName = hostname;
 

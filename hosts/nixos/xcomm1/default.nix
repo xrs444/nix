@@ -15,7 +15,7 @@
     ./network.nix
     ./desktop.nix
     ./disks.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
   nixpkgs.config.allowUnfree = true;
 }

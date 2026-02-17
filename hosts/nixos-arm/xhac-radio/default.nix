@@ -13,7 +13,7 @@
     ./network.nix
     ./ser2net.nix
     "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   networking.hostName = hostname;
