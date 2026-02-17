@@ -38,6 +38,8 @@ lib.mkIf hasRole {
     serviceOverrides = {
       # Ensure the runner has access to nix daemon
       SupplementaryGroups = [ "nixbld" ];
+      # Allow writing to the nix binary cache directory
+      ReadWritePaths = [ "/zfs/nixcache/cache" ];
     };
   };
 
