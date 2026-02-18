@@ -16,6 +16,15 @@ in
     "aarch64-linux"
   ];
 
+  # Use fixBinary (F flag) so binfmt works inside Nix's sandboxed build environments.
+  # The default P flag loses interpreter visibility when the sandbox creates a new mount
+  # namespace; F pre-opens the interpreter fd at registration time, surviving namespace changes.
+  # Wrap the whole attrset in mkIf so the submodule is not instantiated on non-builder hosts
+  # (instantiating it without magicOrExtension causes a flake check evaluation error).
+  boot.binfmt.registrations = lib.mkIf (lib.elem config.networking.hostName builder) {
+    "aarch64-linux".fixBinary = lib.mkForce true;
+  };
+
   # Create builders group for local organization
   users.groups.builders = lib.mkIf (lib.elem config.networking.hostName builder) { };
 

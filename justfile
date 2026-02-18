@@ -373,3 +373,54 @@ run-nixable host:
     @echo "Running nixible playbook for {{host}}..."
     @echo "This will be available after nixible is added to flake inputs"
     @echo "For now, use: nix run .#{{host}}"
+
+# Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
+# Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
+# Create secrets first: sops {{flake_dir}}/secrets/xswcore.yaml
+#   Required keys (all ansible_* vars also used as vault_* aliases in the playbook):
+#     ansible_password, ansible_become_password, vault_snmp_community,
+#     vault_user_super_password, vault_user_thomas_password, vault_user_dog_password
+#   Alias keys (set to same value as above for playbook task use):
+#     vault_ansible_password (= ansible_password)
+#     vault_enable_password  (= ansible_become_password)
+configure-xswcore:
+    #!/usr/bin/env fish
+    set -l flake "{{flake_dir}}"
+    set -l secrets "$flake/secrets/xswcore.yaml"
+    set -l inventory "$flake/nix/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/xswcore-vars-XXXXXX.yml)
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        echo ""
+        echo "Create it with sops (uses age keys from .sops.yaml):"
+        echo "  sops $secrets"
+        echo ""
+        echo "Required keys:"
+        echo "  ansible_password: <ansible-local user password>"
+        echo "  ansible_become_password: <enable/super-user password>"
+        echo "  vault_ansible_password: <same as ansible_password>"
+        echo "  vault_enable_password: <same as ansible_become_password>"
+        echo "  vault_snmp_community: <SNMP RO community string>"
+        echo "  vault_user_super_password: <super user password>"
+        echo "  vault_user_thomas_password: <thomas-local password>"
+        echo "  vault_user_dog_password: <dog user password>"
+        exit 1
+    end
+
+    echo "Decrypting xswcore secrets..."
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    echo "Running xswcore switch configuration..."
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        $argv \
+        "$flake/nix/hosts/nixable/xswcore/playbook.yml"
+
+    rm -f $tmp_vars
+    echo "xswcore configuration complete"
