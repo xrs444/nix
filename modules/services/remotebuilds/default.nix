@@ -53,6 +53,10 @@ in
           "kvm"
         ];
         trusted-users = [ "builder" ];
+        # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
+        # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
+        # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
+        filter-syscalls = false;
       };
     })
 
