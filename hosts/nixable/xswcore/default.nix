@@ -1,7 +1,8 @@
 # Nixible configuration for xswcore (Brocade ICX-7250 2-unit stack)
 # Manages core switching: LAGs, VLANs, interfaces, routing, and services
 # Requires: community.network collection (icx_* modules)
-# Auth: password-based (key-auth disabled on switch); secrets via ansible-vault
+# Auth: SSH key-based for ansible-local; enable password for privilege escalation
+# Secrets: nix/secrets/ansible-network.yaml (sops/age encrypted)
 {pkgs, ...}: let
   common = import ../common/default.nix {inherit pkgs;};
 in {

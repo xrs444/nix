@@ -21,6 +21,8 @@
       /export/zfs/media/audiobooks/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/audiobooks/non-fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/system/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/systembackups/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -103,6 +105,20 @@
       options = "bind";
       wantedBy = [ "multi-user.target" ];
     }
+    {
+      what = "/zfs/system/crafty";
+      where = "/export/zfs/system/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/systembackups/crafty";
+      where = "/export/zfs/systembackups/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
   ];
 
   # Ensure export directory structure exists
@@ -118,6 +134,12 @@
     mkdir -p /export/zfs/media/audiobooks/non-fiction
     mkdir -p /export/zfs/media/audiobooks/adult
     mkdir -p /export/zfs/media/games
+    mkdir -p /export/zfs/system/crafty
+    mkdir -p /export/zfs/systembackups/crafty
+
+    # Ensure crafty directories have correct ownership (UID/GID 1000)
+    chown -R 1000:1000 /zfs/system/crafty
+    chown -R 1000:1000 /zfs/systembackups/crafty
 
     # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
     chown -R 1001:1001 /zfs/devicebackups
