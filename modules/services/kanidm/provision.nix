@@ -229,7 +229,7 @@
         };
         "oauth2_romm" = {
           displayName = "ROMM ROM Manager";
-          originUrl = "https://romm.xrs444.net";
+          originUrl = "https://romm.xrs444.net/api/oauth/openid";
           originLanding = "https://romm.xrs444.net";
           allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
