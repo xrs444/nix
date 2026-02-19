@@ -18,6 +18,9 @@
       /export/zfs/media/ingest 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/movies 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/non-fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -73,6 +76,27 @@
       wantedBy = [ "multi-user.target" ];
     }
     {
+      what = "/zfs/media/audiobooks/fiction";
+      where = "/export/zfs/media/audiobooks/fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/audiobooks/non-fiction";
+      where = "/export/zfs/media/audiobooks/non-fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/audiobooks/adult";
+      where = "/export/zfs/media/audiobooks/adult";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
       what = "/zfs/media/games";
       where = "/export/zfs/media/games";
       type = "none";
@@ -90,6 +114,9 @@
     mkdir -p /export/zfs/media/ingest
     mkdir -p /export/zfs/media/movies
     mkdir -p /export/zfs/media/tvshows
+    mkdir -p /export/zfs/media/audiobooks/fiction
+    mkdir -p /export/zfs/media/audiobooks/non-fiction
+    mkdir -p /export/zfs/media/audiobooks/adult
     mkdir -p /export/zfs/media/games
 
     # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
