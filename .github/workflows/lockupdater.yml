@@ -6,8 +6,48 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-pending:
+    name: Check for Pending Update
+    runs-on: ubuntu-latest
+    outputs:
+      has_pending: ${{ steps.check.outputs.has_pending }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if flake-lock-update branch has unmerged content
+        id: check
+        run: |
+          if git ls-remote --exit-code origin refs/heads/flake-lock-update 2>/dev/null; then
+            git fetch origin flake-lock-update
+            if git merge-base --is-ancestor FETCH_HEAD origin/main 2>/dev/null; then
+              echo "Branch exists but is already merged — safe to update."
+              echo "has_pending=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Pending flake-lock-update branch found with unmerged content."
+              echo "has_pending=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "No pending flake-lock-update branch."
+            echo "has_pending=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  notify-pending:
+    name: Notify Pending Update Blocking
+    needs: check-pending
+    if: needs.check-pending.outputs.has_pending == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify pending update is blocking new update
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Blocked","body":"A pending flake-lock-update branch exists with unmerged content. Skipping new flake update — rechecking cache for existing update.","type":"warning"}' || true
+
   update-lock:
     name: Update Flake Lock
+    needs: check-pending
+    if: needs.check-pending.outputs.has_pending == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,8 +92,12 @@ jobs:
 
   check-cache:
     name: Check Heavy Package Cache
-    needs: update-lock
-    if: needs.update-lock.outputs.changed == 'true'
+    needs: [check-pending, update-lock]
+    if: >-
+      always() &&
+      needs.check-pending.result == 'success' &&
+      (needs.check-pending.outputs.has_pending == 'true' ||
+      (needs.update-lock.result == 'success' && needs.update-lock.outputs.changed == 'true'))
     runs-on: ubuntu-latest
     outputs:
       ready: ${{ steps.check.outputs.ready }}
@@ -100,8 +144,11 @@ jobs:
 
   build-and-cache:
     name: Build & Cache All Hosts
-    needs: [update-lock, check-cache]
-    if: needs.update-lock.outputs.changed == 'true' && needs.check-cache.outputs.ready == 'true'
+    needs: [check-pending, update-lock, check-cache]
+    if: >-
+      always() &&
+      needs.check-cache.result == 'success' &&
+      needs.check-cache.outputs.ready == 'true'
     runs-on: [self-hosted, nixos, builder]
     permissions:
       contents: write
