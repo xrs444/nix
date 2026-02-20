@@ -60,6 +60,12 @@
       "romm-admin" = {
         members = [ "admins" ];
       };
+      "audiobookshelf" = {
+        members = [ "users" ];
+      };
+      "audiobookshelf-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -241,6 +247,26 @@
               "email"
             ];
             "romm-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_audiobookshelf" = {
+          displayName = "Audiobookshelf";
+          originUrl = "https://audiobookshelf.xrs444.net";
+          originLanding = "https://audiobookshelf.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_audiobookshelf_secret";
+          scopeMaps = {
+            "audiobookshelf" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "audiobookshelf-admin" = [
               "openid"
               "profile"
               "email"
