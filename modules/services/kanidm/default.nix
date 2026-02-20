@@ -227,7 +227,7 @@ in
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
           add_redirect oauth2_romm      "https://romm.xrs444.net/oauth/callback"
           add_redirect oauth2_immich    "https://immich.xrs444.net/auth/login"
-          add_redirect oauth2_immich    "app.immich:/"
+          add_redirect oauth2_immich    "app.immich:///oauth-callback"
           add_redirect oauth2_netbox    "https://netbox.xrs444.net/oauth/complete/oidc/"
           add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/callback"
