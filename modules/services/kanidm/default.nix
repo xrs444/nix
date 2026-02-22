@@ -230,7 +230,7 @@ in
           add_redirect oauth2_immich    "app.immich:///oauth-callback"
           add_redirect oauth2_netbox    "https://netbox.xrs444.net/oauth/complete/oidc/"
           add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
-          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/callback"
+          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
         '';
       };

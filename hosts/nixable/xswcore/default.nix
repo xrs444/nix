@@ -16,6 +16,7 @@ in {
   };
 
   # Inventory: ICX switch uses network_cli, not SSH like Bazzite hosts
+  # ansible_private_key_file path injected at runtime by the justfile recipe
   inventory = {
     all = {
       hosts = {
@@ -24,10 +25,10 @@ in {
           ansible_connection = "network_cli";
           ansible_network_os = "community.network.icx";
           ansible_user = "ansible-local";
-          ansible_password = "{{ vault_ansible_password }}";
+          ansible_private_key_file = "{{ ansible_private_key_file }}";
           ansible_become = true;
           ansible_become_method = "enable";
-          ansible_become_password = "{{ vault_enable_password }}";
+          ansible_become_password = "{{ ansible_become_password }}";
         };
       };
     };
@@ -38,7 +39,7 @@ in {
       name = "Configure xswcore ICX-7250 Stack";
       hosts = "xswcore";
       gather_facts = false;
-      # Secrets injected at runtime via sops: nix/secrets/xswcore.yaml
+      # Secrets injected at runtime via sops: nix/secrets/ansible-network.yaml
       # See justfile configure-xswcore recipe for decryption flow
 
       tasks = [
@@ -70,11 +71,21 @@ in {
               "enable aaa console"
               "clock timezone us Arizona"
               "lldp tagged-packets process"
-              "ip ssh key-authentication no"
+              "ip ssh key-authentication"
               "ip ssh encryption disable-aes-cbc"
               "manager disable"
               "manager port-list 987"
             ];
+          };
+        }
+
+        {
+          name = "Configure ansible-local SSH authorized key";
+          # FastIron 08.0.x pub-key-chain; ansible_public_key = full key string
+          # e.g. "ssh-ed25519 AAAA... ansible@xrs444.net"
+          "community.network.icx_config" = {
+            lines = [ "key-string {{ ansible_public_key }}" ];
+            parents = [ "ip ssh pub-key-chain" "user-key ansible-local" ];
           };
         }
 
@@ -109,14 +120,6 @@ in {
           };
         }
 
-        {
-          name = "Set enable password";
-          "community.network.icx_config" = {
-            lines = [ "enable super-user-password {{ vault_enable_password }}" ];
-          };
-          no_log = true;
-        }
-
         # =========================================================
         # USER MANAGEMENT
         # =========================================================
@@ -131,7 +134,7 @@ in {
           no_log = true;
           loop = [
             { name = "super";         password = "{{ vault_user_super_password }}"; }
-            { name = "ansible-local"; password = "{{ vault_ansible_password }}"; }
+            { name = "ansible-local"; password = "{{ vault_user_ansible_password }}"; }
             { name = "thomas-local";  password = "{{ vault_user_thomas_password }}"; }
             { name = "dog";           password = "{{ vault_user_dog_password }}"; }
           ];

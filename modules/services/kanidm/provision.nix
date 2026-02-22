@@ -66,6 +66,18 @@
       "audiobookshelf-admin" = {
         members = [ "admins" ];
       };
+      "booklore" = {
+        members = [ "users" ];
+      };
+      "booklore-admin" = {
+        members = [ "admins" ];
+      };
+      "matrix" = {
+        members = [ "users" ];
+      };
+      "matrix-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -267,6 +279,46 @@
               "email"
             ];
             "audiobookshelf-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_booklore" = {
+          displayName = "Booklore";
+          originUrl = "https://booklore.xrs444.net";
+          originLanding = "https://booklore.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_booklore_secret";
+          scopeMaps = {
+            "booklore" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "booklore-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_matrix" = {
+          displayName = "Matrix (Synapse)";
+          originUrl = "https://matrix.xrs444.net";
+          originLanding = "https://element.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_matrix_secret";
+          scopeMaps = {
+            "matrix" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "matrix-admin" = [
               "openid"
               "profile"
               "email"

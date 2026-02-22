@@ -23,6 +23,10 @@
       /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/system/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/systembackups/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/nonfiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -119,6 +123,34 @@
       options = "bind";
       wantedBy = [ "multi-user.target" ];
     }
+    {
+      what = "/zfs/media/books/fiction";
+      where = "/export/zfs/media/books/fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/books/nonfiction";
+      where = "/export/zfs/media/books/nonfiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/books/adult";
+      where = "/export/zfs/media/books/adult";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/system/matrix";
+      where = "/export/zfs/system/matrix";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
   ];
 
   # Ensure export directory structure exists
@@ -136,6 +168,16 @@
     mkdir -p /export/zfs/media/games
     mkdir -p /export/zfs/system/crafty
     mkdir -p /export/zfs/systembackups/crafty
+    mkdir -p /export/zfs/media/books/fiction
+    mkdir -p /export/zfs/media/books/nonfiction
+    mkdir -p /export/zfs/media/books/adult
+    mkdir -p /export/zfs/system/matrix
+
+    # Ensure books directories exist on ZFS
+    mkdir -p /zfs/media/books/fiction
+    mkdir -p /zfs/media/books/nonfiction
+    mkdir -p /zfs/media/books/adult
+    mkdir -p /zfs/system/matrix
 
     # Ensure crafty directories have correct ownership (UID/GID 1000)
     chown -R 1000:1000 /zfs/system/crafty
