@@ -376,51 +376,56 @@ run-nixable host:
 
 # Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
 # Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
-# Create secrets first: sops {{flake_dir}}/secrets/xswcore.yaml
-#   Required keys (all ansible_* vars also used as vault_* aliases in the playbook):
-#     ansible_password, ansible_become_password, vault_snmp_community,
-#     vault_user_super_password, vault_user_thomas_password, vault_user_dog_password
-#   Alias keys (set to same value as above for playbook task use):
-#     vault_ansible_password (= ansible_password)
-#     vault_enable_password  (= ansible_become_password)
+# Secrets file: nix/secrets/ansible-network.yaml (shared with other network gear)
+#
+# Create secrets first: sops {{flake_dir}}/secrets/ansible-network.yaml
+#   Required keys:
+#     ansible_private_key: |          # SSH private key for ansible-local user
+#       -----BEGIN OPENSSH PRIVATE KEY-----
+#       ...
+#     ansible_public_key: "ssh-ed25519 AAAA..."  # uploaded to switch
+#     ansible_become_password: "<enable/super-user password>"
+#     vault_snmp_community: "<SNMP RO community string>"
+#     vault_user_super_password: "<super user password>"
+#     vault_user_ansible_password: "<ansible-local switch account password>"
+#     vault_user_thomas_password: "<thomas-local password>"
+#     vault_user_dog_password: "<dog user password>"
 configure-xswcore:
     #!/usr/bin/env fish
     set -l flake "{{flake_dir}}"
-    set -l secrets "$flake/secrets/xswcore.yaml"
+    set -l secrets "$flake/secrets/ansible-network.yaml"
     set -l inventory "$flake/nix/hosts/nixable/xswcore/inventory.yml"
-    set -l tmp_vars (mktemp /tmp/xswcore-vars-XXXXXX.yml)
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
+    chmod 600 $tmp_key
 
     if not test -f $secrets
         echo "ERROR: Secrets file not found: $secrets"
-        echo ""
-        echo "Create it with sops (uses age keys from .sops.yaml):"
-        echo "  sops $secrets"
-        echo ""
-        echo "Required keys:"
-        echo "  ansible_password: <ansible-local user password>"
-        echo "  ansible_become_password: <enable/super-user password>"
-        echo "  vault_ansible_password: <same as ansible_password>"
-        echo "  vault_enable_password: <same as ansible_become_password>"
-        echo "  vault_snmp_community: <SNMP RO community string>"
-        echo "  vault_user_super_password: <super user password>"
-        echo "  vault_user_thomas_password: <thomas-local password>"
-        echo "  vault_user_dog_password: <dog user password>"
+        echo "Create it with: sops $secrets"
         exit 1
     end
 
-    echo "Decrypting xswcore secrets..."
+    echo "Decrypting ansible-network secrets..."
     if not sops -d $secrets > $tmp_vars
-        rm -f $tmp_vars
+        rm -f $tmp_vars $tmp_key
         echo "ERROR: Failed to decrypt $secrets"
         exit 1
     end
 
-    echo "Running xswcore switch configuration..."
+    # Extract private key to its own chmod-600 temp file
+    if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
+        rm -f $tmp_vars $tmp_key
+        echo "ERROR: Failed to extract ansible_private_key from $secrets"
+        exit 1
+    end
+
+    echo "Configuring xswcore..."
     ansible-playbook \
         -i $inventory \
         --extra-vars "@$tmp_vars" \
+        --extra-vars "ansible_private_key_file=$tmp_key" \
         $argv \
         "$flake/nix/hosts/nixable/xswcore/playbook.yml"
 
-    rm -f $tmp_vars
+    rm -f $tmp_vars $tmp_key
     echo "xswcore configuration complete"

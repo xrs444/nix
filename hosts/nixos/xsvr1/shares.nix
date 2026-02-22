@@ -18,6 +18,15 @@
       /export/zfs/media/ingest 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/movies 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/non-fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/system/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/systembackups/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/nonfiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -73,8 +82,71 @@
       wantedBy = [ "multi-user.target" ];
     }
     {
+      what = "/zfs/media/audiobooks/fiction";
+      where = "/export/zfs/media/audiobooks/fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/audiobooks/non-fiction";
+      where = "/export/zfs/media/audiobooks/non-fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/audiobooks/adult";
+      where = "/export/zfs/media/audiobooks/adult";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
       what = "/zfs/media/games";
       where = "/export/zfs/media/games";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/system/crafty";
+      where = "/export/zfs/system/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/systembackups/crafty";
+      where = "/export/zfs/systembackups/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/books/fiction";
+      where = "/export/zfs/media/books/fiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/books/nonfiction";
+      where = "/export/zfs/media/books/nonfiction";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/media/books/adult";
+      where = "/export/zfs/media/books/adult";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
+      what = "/zfs/system/matrix";
+      where = "/export/zfs/system/matrix";
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
@@ -90,7 +162,26 @@
     mkdir -p /export/zfs/media/ingest
     mkdir -p /export/zfs/media/movies
     mkdir -p /export/zfs/media/tvshows
+    mkdir -p /export/zfs/media/audiobooks/fiction
+    mkdir -p /export/zfs/media/audiobooks/non-fiction
+    mkdir -p /export/zfs/media/audiobooks/adult
     mkdir -p /export/zfs/media/games
+    mkdir -p /export/zfs/system/crafty
+    mkdir -p /export/zfs/systembackups/crafty
+    mkdir -p /export/zfs/media/books/fiction
+    mkdir -p /export/zfs/media/books/nonfiction
+    mkdir -p /export/zfs/media/books/adult
+    mkdir -p /export/zfs/system/matrix
+
+    # Ensure books directories exist on ZFS
+    mkdir -p /zfs/media/books/fiction
+    mkdir -p /zfs/media/books/nonfiction
+    mkdir -p /zfs/media/books/adult
+    mkdir -p /zfs/system/matrix
+
+    # Ensure crafty directories have correct ownership (UID/GID 1000)
+    chown -R 1000:1000 /zfs/system/crafty
+    chown -R 1000:1000 /zfs/systembackups/crafty
 
     # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
     chown -R 1001:1001 /zfs/devicebackups
