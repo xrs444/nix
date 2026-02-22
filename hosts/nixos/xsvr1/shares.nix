@@ -145,6 +145,13 @@
       wantedBy = [ "multi-user.target" ];
     }
     {
+      what = "/zfs/media/books/ingest";
+      where = "/export/zfs/media/books/ingest";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+    }
+    {
       what = "/zfs/system/matrix";
       where = "/export/zfs/system/matrix";
       type = "none";
@@ -177,6 +184,7 @@
     mkdir -p /zfs/media/books/fiction
     mkdir -p /zfs/media/books/nonfiction
     mkdir -p /zfs/media/books/adult
+    mkdir -p /zfs/media/books/ingest
     mkdir -p /zfs/system/matrix
 
     # Ensure crafty directories have correct ownership (UID/GID 1000)
