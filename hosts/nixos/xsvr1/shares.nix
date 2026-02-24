@@ -26,6 +26,7 @@
       /export/zfs/media/books/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/books/nonfiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/books/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/media/books/ingest 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
@@ -178,6 +179,7 @@
     mkdir -p /export/zfs/media/books/fiction
     mkdir -p /export/zfs/media/books/nonfiction
     mkdir -p /export/zfs/media/books/adult
+    mkdir -p /export/zfs/media/books/ingest
     mkdir -p /export/zfs/system/matrix
 
     # Ensure books directories exist on ZFS
