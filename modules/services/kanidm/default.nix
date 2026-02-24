@@ -133,7 +133,7 @@ in
         mode = "0400";
       };
 
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
         enableServer = true;
         enablePam = lib.mkForce true;
