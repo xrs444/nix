@@ -200,7 +200,7 @@ jobs:
 
           for host in "${HOSTS[@]}"; do
             echo "::group::Building $host"
-            if nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link --max-jobs 4 --cores 4 2>&1; then
+            if nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4 2>&1; then
               echo "Copying $host to cache..."
               nix copy --to "$CACHE_URL" ".#nixosConfigurations.$host.config.system.build.toplevel" || true
               SUCCEEDED+=("$host")
