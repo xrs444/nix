@@ -110,25 +110,57 @@ jobs:
       - name: Check if heavy packages need source compilation
         id: check
         run: |
-          # xcomm1: firefox-esr, webkitgtk (x2), gst-plugins-rs
-          # xsvr1: qemu/libvirt for virtualisation
-          # A dry-run lists .drv files for anything that must be compiled from source
-          HEAVY_PATTERN="firefox|webkitgtk|gst-plugins-rs|qemu"
+          # Check if the actual heavy packages (not wrappers/completions) are in cache
+          # xcomm1: firefox-esr-unwrapped, webkitgtk_6_0, webkitgtk_4_1, gst-plugins-rs
+          # xsvr1: qemu
+
+          echo "Checking cache availability for heavy packages..."
           UNCACHED=""
 
-          for host in xcomm1 xsvr1; do
-            echo "Running dry-run evaluation for $host..."
-            DRY=$(nix build ".#nixosConfigurations.$host.config.system.build.toplevel" \
-              --no-link --dry-run 2>&1 || true)
-            HOST_UNCACHED=$(echo "$DRY" | grep -E "\.drv$" | grep -iE "$HEAVY_PATTERN" || true)
-            if [ -n "$HOST_UNCACHED" ]; then
-              echo "Heavy packages not yet cached for $host:"
-              echo "$HOST_UNCACHED"
-              UNCACHED="${UNCACHED}${HOST_UNCACHED}"$'\n'
+          # Get nixpkgs revision from flake.lock
+          NIXPKGS_REV=$(nix eval --raw .#nixpkgs.rev 2>/dev/null || echo "")
+          if [ -z "$NIXPKGS_REV" ]; then
+            echo "Warning: Could not determine nixpkgs revision, using flake input"
+            NIXPKGS_REF=".#nixpkgs"
+          else
+            NIXPKGS_REF="github:nixos/nixpkgs/$NIXPKGS_REV"
+            echo "Using nixpkgs: $NIXPKGS_REF"
+          fi
+
+          # Package list (pkg_attr|description)
+          PACKAGES=(
+            "firefox-esr-140-unwrapped|Firefox ESR (unwrapped)"
+            "webkitgtk_6_0|WebKitGTK 6.0"
+            "webkitgtk_4_1|WebKitGTK 4.1"
+            "gst_all_1.gst-plugins-rs|GStreamer Rust plugins"
+            "qemu|QEMU"
+          )
+
+          for entry in "${PACKAGES[@]}"; do
+            pkg="${entry%%|*}"
+            desc="${entry##*|}"
+            echo "Checking $pkg ($desc)..."
+
+            # Get the store path for this package from nixpkgs
+            STORE_PATH=$(nix eval --raw --system x86_64-linux "${NIXPKGS_REF}#${pkg}.outPath" 2>&1 || echo "EVAL_FAILED")
+
+            if [[ "$STORE_PATH" == "EVAL_FAILED" ]] || [[ "$STORE_PATH" == *"error:"* ]]; then
+              echo "  ⚠ Could not evaluate $pkg, skipping cache check"
+              continue
+            fi
+
+            # Check if it's available in cache.nixos.org
+            if nix path-info --store https://cache.nixos.org "$STORE_PATH" >/dev/null 2>&1; then
+              echo "  ✓ Cached: $STORE_PATH"
+            else
+              echo "  ✗ NOT cached: $STORE_PATH"
+              UNCACHED="${UNCACHED}  - ${desc} (${pkg})\n"
             fi
           done
 
           if [ -n "$UNCACHED" ]; then
+            echo "Heavy packages not yet cached:"
+            echo -e "$UNCACHED"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "All heavy packages available in binary cache."
