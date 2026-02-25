@@ -236,6 +236,7 @@ in
           }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
+          add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
           add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
           add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
