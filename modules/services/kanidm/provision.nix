@@ -296,11 +296,13 @@
               "openid"
               "profile"
               "email"
+              "offline_access"
             ];
             "booklore-admin" = [
               "openid"
               "profile"
               "email"
+              "offline_access"
             ];
           };
         };
