@@ -57,6 +57,7 @@
       "zpool-xsvr1/systembackups" # Longhorn and system backups
       "zpool-xsvr1/devicebackups" # Device backups
       "zpool-xsvr1/googlebackups" # Google backups
+      "zpool-xsvr1/media/books" # Booklore book libraries (fiction, nonfiction, adult)
     ];
 
     # Target host for replication
@@ -85,6 +86,12 @@
 
       # Google backups - daily snapshots, longer retention
       "zpool-xsvr1/googlebackups" = {
+        useTemplate = [ "backup" ];
+        recursive = true;
+      };
+
+      # Booklore book libraries - replicated to xsvr2
+      "zpool-xsvr1/media/books" = {
         useTemplate = [ "backup" ];
         recursive = true;
       };

@@ -12,7 +12,7 @@
     ../common/hardware-rpi.nix
     ../../../modules/hardware/RaspberryPi4
     #    ./network.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   networking.hostName = hostname;

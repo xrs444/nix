@@ -97,7 +97,12 @@ in
         "files.autoSave" = "afterDelay";
         "files.autoSaveDelay" = 60000;
         "chat.mcp.autostart" = "newAndOutdated";
-        "chat.mcp.discovery.enabled" = true;
+        "chat.mcp.discovery.enabled" = {
+          "claude-desktop" = true;
+          "windsurf" = true;
+          "cursor-global" = true;
+          "cursor-workspace" = true;
+        };
         "chat.mcp.enabled" = true;
         "cSpell.diagnosticLevel" = "Hint";
         "dart.updateDevTools" = false;

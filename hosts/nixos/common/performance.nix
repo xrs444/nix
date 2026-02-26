@@ -6,6 +6,13 @@
   ...
 }:
 {
+  # Compressed RAM-based swap to prevent OOM kills under memory pressure
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 25;
+  };
+
   # CPU frequency governor for performance
   powerManagement.cpuFreqGovernor = lib.mkDefault "performance";
 

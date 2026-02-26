@@ -15,7 +15,7 @@
     ../common/performance.nix
     ./disks.nix
     #    ./network.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   networking.hostName = hostname;
