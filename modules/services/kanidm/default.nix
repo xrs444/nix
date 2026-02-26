@@ -222,18 +222,22 @@ in
             exit 1
           fi
 
-          # Add redirect URL to a client (merges with existing origins)
-          add_redirect() {
+          # Add base origin for OAuth2 client (extract base URL from redirect URL)
+          add_origin() {
             local client="$1"
             local redirect_url="$2"
-            echo "Adding $redirect_url to $client"
+            # Extract base origin (protocol://domain:port/)
+            local base_origin=$(echo "$redirect_url" | sed -E 's|(https?://[^/]+).*|\1/|')
+            echo "Adding origin $base_origin for $client (from redirect $redirect_url)"
             CURRENT=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
               | jq -r '.attrs.oauth2_rs_origin[]' 2>/dev/null)
-            ALL=$(printf '%s\n' $CURRENT "$redirect_url" | sort -u | jq -R . | jq -s .)
+            ALL=$(printf '%s\n' $CURRENT "$base_origin" | sort -u | jq -R . | jq -s .)
             curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$IDM_URL/v1/oauth2/$client" \
               -d "{\"attrs\":{\"oauth2_rs_origin\": $ALL}}"
           }
+          # Backwards compatibility alias
+          add_redirect() { add_origin "$@"; }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
           add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
