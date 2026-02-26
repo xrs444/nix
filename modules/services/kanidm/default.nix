@@ -251,7 +251,7 @@ in
           add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
-          add_redirect oauth2_booklore "https://booklore.xrs444.net/api/oidc"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/oauth2-callback"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
         '';
       };
