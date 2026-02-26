@@ -111,8 +111,29 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_audiobookshelf_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_audiobookshelf_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_booklore_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_booklore_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_matrix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_matrix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
         enableServer = true;
         enablePam = lib.mkForce true;
@@ -164,7 +185,8 @@ in
       users.users.kanidm.extraGroups = [ "acme" ];
 
       # Add OAuth2 redirect URLs after provisioning
-      # kanidm-provision doesn't support redirect URLs, so we add them manually
+      # kanidm-provision doesn't support redirect URLs, so we add them via the REST API.
+      # The kanidm CLI requires an interactive TTY for login and cannot be used in systemd.
       systemd.services.kanidm-oauth2-redirect-urls = {
         description = "Add OAuth2 redirect URLs to Kanidm clients";
         after = [ "kanidm.service" ];
@@ -173,21 +195,60 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
         };
+        path = [ pkgs.curl pkgs.jq ];
         script = ''
+          IDM_URL="https://idm.xrs444.net"
+          COOKIES=$(mktemp)
+          trap "rm -f $COOKIES" EXIT
+
           # Wait for kanidm to be fully up
           sleep 5
 
-          # Login as idm_admin
-          export KANIDM_PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
-          echo "$KANIDM_PASSWORD" | ${pkgs.kanidm}/bin/kanidm login -D idm_admin || true
+          # Authenticate via REST API (kanidm CLI requires interactive TTY)
+          PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
+          curl -s -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"step":{"init":"idm_admin"}}' > /dev/null
+          curl -s -b "$COOKIES" -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"step":{"begin":"password"}}' > /dev/null
+          TOKEN=$(curl -s -b "$COOKIES" -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d "{\"step\":{\"cred\":{\"password\":\"$PASSWORD\"}}}" \
+            | jq -r '.state.success')
 
-          # Add redirect URLs for oauth2 clients (using --name to avoid interactive token selection)
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_linkwarden https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_paperless https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/ || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_mealie https://mealie.xrs444.net/login || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_netbox https://netbox.xrs444.net/oauth/complete/oidc/ || true
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "ERROR: Failed to authenticate to Kanidm" >&2
+            exit 1
+          fi
+
+          # Add redirect URL to a client (merges with existing origins)
+          add_redirect() {
+            local client="$1"
+            local redirect_url="$2"
+            echo "Adding $redirect_url to $client"
+            CURRENT=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
+              | jq -r '.attrs.oauth2_rs_origin[]' 2>/dev/null)
+            ALL=$(printf '%s\n' $CURRENT "$redirect_url" | sort -u | jq -R . | jq -s .)
+            curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$IDM_URL/v1/oauth2/$client" \
+              -d "{\"attrs\":{\"oauth2_rs_origin\": $ALL}}"
+          }
+
+          add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
+          add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
+          add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
+          add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
+          add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
+          add_redirect oauth2_romm      "https://romm.xrs444.net/oauth/callback"
+          add_redirect oauth2_immich    "https://immich.xrs444.net/auth/login"
+          add_redirect oauth2_immich    "app.immich:///oauth-callback"
+          add_redirect oauth2_netbox    "https://netbox.xrs444.net/oauth/complete/oidc/"
+          add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
+          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
+          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/api/oidc"
+          add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
         '';
       };
 
