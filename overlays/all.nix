@@ -10,4 +10,5 @@
   (import ./nodejs.nix { inherit inputs; })
   (import ./unstable.nix { inherit inputs; })
   (import ./unfree.nix { inherit inputs; })
+  (import ./gjs-fix.nix { inherit inputs; })
 ]

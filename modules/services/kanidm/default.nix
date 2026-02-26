@@ -118,8 +118,22 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_booklore_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_booklore_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_matrix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_matrix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
         enableServer = true;
         enablePam = lib.mkForce true;
@@ -222,6 +236,7 @@ in
           }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
+          add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
           add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
           add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
@@ -232,6 +247,8 @@ in
           add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/login"
+          add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
         '';
       };
 
