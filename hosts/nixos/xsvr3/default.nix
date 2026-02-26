@@ -15,7 +15,7 @@
     ./serial.nix
     ./vms.nix
     ./disks.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   # Remote builder configuration commented out - SSH key needs manual setup

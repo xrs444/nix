@@ -34,6 +34,10 @@ in
       "http://xsvr1.lan?priority=10"
       "https://cache.nixos.org?priority=20"
     ];
+    nix.settings.trusted-public-keys = [
+      "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    ];
     # Use proper flake registry without builtins.toFile warnings
     nix.registry = lib.mapAttrs (_: flake: {
       flake = flake;

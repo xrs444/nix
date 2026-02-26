@@ -60,6 +60,24 @@
       "romm-admin" = {
         members = [ "admins" ];
       };
+      "audiobookshelf" = {
+        members = [ "users" ];
+      };
+      "audiobookshelf-admin" = {
+        members = [ "admins" ];
+      };
+      "booklore" = {
+        members = [ "users" ];
+      };
+      "booklore-admin" = {
+        members = [ "admins" ];
+      };
+      "matrix" = {
+        members = [ "users" ];
+      };
+      "matrix-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -229,7 +247,7 @@
         };
         "oauth2_romm" = {
           displayName = "ROMM ROM Manager";
-          originUrl = "https://romm.xrs444.net";
+          originUrl = "https://romm.xrs444.net/api/oauth/openid";
           originLanding = "https://romm.xrs444.net";
           allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
@@ -241,6 +259,66 @@
               "email"
             ];
             "romm-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_audiobookshelf" = {
+          displayName = "Audiobookshelf";
+          originUrl = "https://audiobookshelf.xrs444.net";
+          originLanding = "https://audiobookshelf.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_audiobookshelf_secret";
+          scopeMaps = {
+            "audiobookshelf" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "audiobookshelf-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_booklore" = {
+          displayName = "Booklore";
+          originUrl = "https://booklore.xrs444.net";
+          originLanding = "https://booklore.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_booklore_secret";
+          scopeMaps = {
+            "booklore" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "booklore-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_matrix" = {
+          displayName = "Matrix (Synapse)";
+          originUrl = "https://matrix.xrs444.net";
+          originLanding = "https://element.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_matrix_secret";
+          scopeMaps = {
+            "matrix" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "matrix-admin" = [
               "openid"
               "profile"
               "email"

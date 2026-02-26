@@ -7,6 +7,7 @@
     ./borgbackup
     ./determinate-nix
     ./ffr
+    ./github-runner
     ./homeassistant
     ./iprouting
     ./kanidm

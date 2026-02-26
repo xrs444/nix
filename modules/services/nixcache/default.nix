@@ -3,6 +3,7 @@
   hostname,
   lib,
   pkgs,
+  config,
   ...
 }:
 let
@@ -14,6 +15,15 @@ let
 in
 {
   config = lib.mkIf isServer {
+    sops.secrets.nixcache_signing_key = {
+      sopsFile = ../../../secrets/nixcache-signing-key.yaml;
+      key = "nixcache_signing_key";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+
+    nix.settings.secret-key-files = [ config.sops.secrets.nixcache_signing_key.path ];
     # Create the cache directories on ZFS with builder ownership, nginx in builder group for read access
     systemd.tmpfiles.rules = [
       "d /zfs/nixcache 0755 root root -"

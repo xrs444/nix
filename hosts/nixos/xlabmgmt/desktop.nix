@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   services = {
@@ -16,6 +16,10 @@
       wayland = true;
     };
     desktopManager.gnome.enable = true;
+
+    # Disable audio - xlabmgmt has no audio hardware
+    pipewire.enable = lib.mkForce false;
+    pulseaudio.enable = false;
   };
 
   programs = {

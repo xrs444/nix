@@ -72,6 +72,7 @@
             "homeassistant"
             "tailscale-package"
             "monitoring-server"
+            "github-runner"
           ];
         };
         xsvr2 = {
@@ -242,6 +243,7 @@
         remotebuilds = import ./modules/services/remotebuilds;
         talos = import ./modules/services/talos;
         tailscale = import ./modules/services/tailscale;
+        github-runner = import ./modules/services/github-runner;
       };
       formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
       overlays = {

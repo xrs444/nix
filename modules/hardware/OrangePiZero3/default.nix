@@ -74,6 +74,13 @@
     deviceTree.enable = lib.mkDefault true;
   };
 
+  # Write U-Boot to SD image at the Allwinner-required 8KiB offset (sector 16).
+  # Without this the board falls back to factory SPI NOR flash bootloader,
+  # which prints "fail to mount /dev/mtdblock4" trying to access its env partition.
+  sdImage.postBuildCommands = ''
+    dd if=${pkgs.ubootOrangePiZero3}/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
+  '';
+
   # Network interface for Orange Pi Zero 3
   networking.interfaces.end0.useDHCP = lib.mkDefault true;
 }
