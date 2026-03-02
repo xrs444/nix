@@ -14,7 +14,10 @@
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    alsa.support32Bit = true;
+    alsa.support32Bit = false;  # Disabled: requires i686-linux pipewire
     pulse.enable = true;
+    # Use our patched pipewire from overlays (with rocSupport and ffadoSupport disabled)
+    package = pkgs.pipewire;
+    wireplumber.package = pkgs.wireplumber;
   };
 }

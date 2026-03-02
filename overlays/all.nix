@@ -11,5 +11,4 @@
   (import ./unstable.nix { inherit inputs; })
   (import ./unfree.nix { inherit inputs; })
   (import ./gjs-fix.nix { inherit inputs; })
-  (import ./pipewire-fix.nix { inherit inputs; })
 ]

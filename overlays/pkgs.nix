@@ -20,9 +20,18 @@
 
   # Fix pipewire test-support timeout in sandboxed builds
   # logger_debug_env_invalid test hangs in sandbox environment
-  pipewire = prev.pipewire.overrideAttrs (oldAttrs: {
+  # Also disable roc-toolkit and ffado support which require i686-linux
+  pipewire = (prev.pipewire.override {
+    rocSupport = false;   # Disable roc-toolkit (requires i686-linux via scons)
+    ffadoSupport = false; # Disable ffado (requires i686-linux via scons)
+  }).overrideAttrs (oldAttrs: {
     doCheck = false;
   });
+
+  # Override wireplumber to use our patched pipewire
+  wireplumber = prev.wireplumber.override {
+    pipewire = final.pipewire;
+  };
 
   # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
   # Tests run via CMake build target, not checkPhase, so doCheck doesn't help

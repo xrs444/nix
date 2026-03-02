@@ -252,6 +252,7 @@ in
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
           add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
           add_redirect oauth2_booklore "https://booklore.xrs444.net/oauth2-callback"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
         '';
       };
