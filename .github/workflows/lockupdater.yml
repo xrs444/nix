@@ -170,7 +170,17 @@ jobs:
           elif [ -n "$UNCACHED" ]; then
             echo "Heavy packages not yet cached:"
             echo -e "$UNCACHED"
-            echo "ready=false" >> "$GITHUB_OUTPUT"
+
+            # Check if flake.lock has been waiting for more than 48 hours
+            LOCK_AGE_HOURS=$(( ($(date +%s) - $(git log -1 --format=%ct flake.lock)) / 3600 ))
+            echo "flake.lock age: $LOCK_AGE_HOURS hours"
+
+            if [ $LOCK_AGE_HOURS -gt 48 ]; then
+              echo "⚠️  flake.lock is $LOCK_AGE_HOURS hours old (>48h), proceeding with build despite uncached packages"
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "All heavy packages available in binary cache."
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -181,14 +191,15 @@ jobs:
         run: |
           curl -sf -X POST https://apprise.xrs444.net/notify \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning"}' || true
 
   build-and-cache:
     name: Build & Cache All Hosts
     needs: [check-pending, update-lock, check-cache]
     if: >-
       always() &&
-      needs.check-cache.result == 'success'
+      needs.check-cache.result == 'success' &&
+      needs.check-cache.outputs.ready == 'true'
     runs-on: [self-hosted, nixos, builder]
     permissions:
       contents: write
