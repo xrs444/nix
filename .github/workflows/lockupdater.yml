@@ -115,7 +115,7 @@ jobs:
         id: check
         run: |
           # Check if the actual heavy packages (not wrappers/completions) are in cache
-          # xlabmgmt: firefox-unwrapped, webkitgtk_6_0, webkitgtk_4_1, gst-plugins-rs
+          # xlabmgmt: webkitgtk_6_0, webkitgtk_4_1, gst-plugins-rs
           # xsvr1: qemu
 
           echo "Checking cache availability for heavy packages..."
@@ -134,7 +134,6 @@ jobs:
 
           # Package list (pkg_attr|description)
           PACKAGES=(
-            "firefox-unwrapped|Firefox (unwrapped)"
             "webkitgtk_6_0|WebKitGTK 6.0"
             "webkitgtk_4_1|WebKitGTK 4.1"
             "gst_all_1.gst-plugins-rs|GStreamer Rust plugins"
@@ -182,7 +181,7 @@ jobs:
         run: |
           curl -sf -X POST https://apprise.xrs444.net/notify \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (firefox, webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow.","type":"warning"}' || true
 
   build-and-cache:
     name: Build & Cache All Hosts

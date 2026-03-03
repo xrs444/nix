@@ -23,10 +23,6 @@
   };
 
   programs = {
-    firefox = {
-      enable = true;
-      package = pkgs.firefox;
-    };
     gnome-disks.enable = true;
   };
 
@@ -34,6 +30,7 @@
     systemPackages = with pkgs; [
       gnome-tweaks
       dconf-editor
+      google-chrome
     ];
 
     gnome.excludePackages = (
