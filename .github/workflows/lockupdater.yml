@@ -188,8 +188,7 @@ jobs:
     needs: [check-pending, update-lock, check-cache]
     if: >-
       always() &&
-      needs.check-cache.result == 'success' &&
-      needs.check-cache.outputs.ready == 'true'
+      needs.check-cache.result == 'success'
     runs-on: [self-hosted, nixos, builder]
     permissions:
       contents: write
