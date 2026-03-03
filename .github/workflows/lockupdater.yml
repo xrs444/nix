@@ -116,16 +116,17 @@ jobs:
 
           echo "Checking cache availability for heavy packages..."
           UNCACHED=""
+          EVAL_FAILED_COUNT=0
 
           # Get nixpkgs revision from flake.lock
-          NIXPKGS_REV=$(nix eval --raw .#nixpkgs.rev 2>/dev/null || echo "")
-          if [ -z "$NIXPKGS_REV" ]; then
-            echo "Warning: Could not determine nixpkgs revision, using flake input"
-            NIXPKGS_REF=".#nixpkgs"
-          else
-            NIXPKGS_REF="github:nixos/nixpkgs/$NIXPKGS_REV"
-            echo "Using nixpkgs: $NIXPKGS_REF"
+          NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
+          if [ -z "$NIXPKGS_REV" ] || [ "$NIXPKGS_REV" = "null" ]; then
+            echo "Error: Could not determine nixpkgs revision from flake.lock"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
+          NIXPKGS_REF="github:nixos/nixpkgs/$NIXPKGS_REV"
+          echo "Using nixpkgs: $NIXPKGS_REF"
 
           # Package list (pkg_attr|description)
           PACKAGES=(
@@ -145,7 +146,8 @@ jobs:
             STORE_PATH=$(nix eval --raw --system x86_64-linux "${NIXPKGS_REF}#${pkg}.outPath" 2>&1 || echo "EVAL_FAILED")
 
             if [[ "$STORE_PATH" == "EVAL_FAILED" ]] || [[ "$STORE_PATH" == *"error:"* ]]; then
-              echo "  ⚠ Could not evaluate $pkg, skipping cache check"
+              echo "  ⚠ Could not evaluate $pkg"
+              EVAL_FAILED_COUNT=$((EVAL_FAILED_COUNT + 1))
               continue
             fi
 
@@ -158,7 +160,11 @@ jobs:
             fi
           done
 
-          if [ -n "$UNCACHED" ]; then
+          if [ $EVAL_FAILED_COUNT -gt 0 ]; then
+            echo "Error: Failed to evaluate $EVAL_FAILED_COUNT package(s)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          elif [ -n "$UNCACHED" ]; then
             echo "Heavy packages not yet cached:"
             echo -e "$UNCACHED"
             echo "ready=false" >> "$GITHUB_OUTPUT"
