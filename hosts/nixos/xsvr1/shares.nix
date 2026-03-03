@@ -189,6 +189,12 @@
     mkdir -p /zfs/media/books/ingest
     mkdir -p /zfs/system/matrix
 
+    # Ensure books directories have correct permissions (writable for booklore)
+    chmod 755 /zfs/media/books/fiction
+    chmod 755 /zfs/media/books/nonfiction
+    chmod 755 /zfs/media/books/adult
+    chmod 755 /zfs/media/books/ingest
+
     # Ensure crafty directories have correct ownership (UID/GID 1000)
     chown -R 1000:1000 /zfs/system/crafty
     chown -R 1000:1000 /zfs/systembackups/crafty
