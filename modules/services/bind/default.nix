@@ -23,7 +23,7 @@ in
         "lab.xrs444.net" = {
           master = true;
           file = pkgs.writeText "lab_xrs444_net" ''
-            $ORIGIN example.com.
+            $ORIGIN lab.xrs444.net.
             $TTL    1h
             @            IN      SOA     ns1 hostmaster (
                                              1    ; Serial
@@ -55,6 +55,74 @@ in
           '';
         };
       };
+      extraConfig = ''
+        # Zone-specific forwarding for xrs444.net
+        zone "xrs444.net" {
+          type master;
+          file "${pkgs.writeText "xrs444_net" ''
+            $ORIGIN xrs444.net.
+            $TTL    1h
+            @            IN      SOA     ns1 hostmaster (
+                                             1    ; Serial
+                                             3h   ; Refresh
+                                             1h   ; Retry
+                                             1w   ; Expire
+                                             1h)  ; Negative Cache TTL
+                         IN      NS      ns1
+
+            ns1                IN      A       127.0.0.1
+
+            ; Kubernetes applications via Traefik (172.21.0.2)
+            apprise            IN      A       172.21.0.2
+            atuin              IN      A       172.21.0.2
+            audiobookshelf     IN      A       172.21.0.2
+            booklore           IN      A       172.21.0.2
+            borgwarehouse      IN      A       172.21.0.2
+            cups               IN      A       172.21.0.2
+            crafty             IN      A       172.21.0.2
+            loki               IN      A       172.21.0.2
+            element            IN      A       172.21.0.2
+            garage             IN      A       172.21.0.2
+            home               IN      A       172.21.0.2
+            immich             IN      A       172.21.0.2
+            jellyfin           IN      A       172.21.0.2
+            jitsi              IN      A       172.21.0.2
+            linkwarden         IN      A       172.21.0.2
+            loki               IN      A       172.21.0.2
+            longhorn           IN      A       172.21.0.2
+            lubelogger         IN      A       172.21.0.2
+            manyfold           IN      A       172.21.0.2
+            matrix             IN      A       172.21.0.2
+            mealie             IN      A       172.21.0.2
+            netbox             IN      A       172.21.0.2
+            nocodb             IN      A       172.21.0.2
+            ntfy               IN      A       172.21.0.2
+            paperless          IN      A       172.21.0.2
+            romm               IN      A       172.21.0.2
+            rustdesk           IN      A       172.21.0.2
+            s3                 IN      A       172.21.0.2
+            tdarr              IN      A       172.21.0.2
+            traefik            IN      A       172.21.0.2
+            synapse            IN      A       172.21.0.2
+             ; Other services
+            omada              IN      A       172.21.0.7
+            nixcache           IN      A       172.20.1.10
+            idm                IN      A       172.20.1.110
+            xrs444-k8s.x       IN      A       172.20.3.100
+            time               IN      A       172.18.10.250
+             ; VMs and devices
+            hass               IN      A       172.18.7.1
+            pbx                IN      A       172.18.6.1
+            cmrpi1             IN      A       192.168.0.10
+            cmrnas             IN      A       192.168.0.11
+            xsvr1              IN      A       172.21.0.2
+            xsvr2              IN      A       172.21.0.2
+            xsvr3              IN      A       172.21.0.2
+          ''}";
+          forward first;
+          forwarders { 9.9.9.9; 1.1.1.1; };
+        };
+      '';
     };
   };
 }
