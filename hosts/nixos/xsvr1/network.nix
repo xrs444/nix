@@ -104,7 +104,10 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
-        address = [ "172.20.1.10/24" ];
+        address = [
+          "172.20.1.10/24"
+          "172.20.1.11/24" # Dedicated DNS IP
+        ];
         gateway = [ "172.20.1.250" ];
         dns = [ "172.20.1.250" ];
         networkConfig = {

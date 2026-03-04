@@ -104,8 +104,14 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
+        address = [
+          "172.20.1.20/24" # Primary IP (previously DHCP)
+          "172.20.1.21/24" # Dedicated DNS IP
+        ];
+        gateway = [ "172.20.1.250" ];
+        dns = [ "172.20.1.250" ];
         networkConfig = {
-          DHCP = "yes";
+          DHCP = "no";
           IPv6AcceptRA = true;
         };
         vlan = [

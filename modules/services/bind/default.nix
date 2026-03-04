@@ -1,5 +1,6 @@
 # Summary: NixOS module for Bind DNS service, enables and configures DNS forwarding for specified hosts.
 {
+  hostname,
   hostRoles ? [ ],
   lib,
   pkgs,
@@ -8,12 +9,20 @@
 
 let
   hasRole = lib.elem "bind" hostRoles;
+
+  # Host-specific DNS IP configuration (only for xsvr1 and xsvr2)
+  hasDedicatedDnsIP = hostname == "xsvr1" || hostname == "xsvr2";
+  dnsIP = if hostname == "xsvr1" then "172.20.1.11"
+          else if hostname == "xsvr2" then "172.20.1.21"
+          else null;
 in
 {
   config = lib.mkIf hasRole {
 
     services.bind = {
       enable = true;
+      listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
+      listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
       forwarders = [ "172.18.11.250" ];
       cacheNetworks = [
         "172.16.0.0/12"
@@ -124,5 +133,34 @@ in
         };
       '';
     };
+
+    # Firewall rules to restrict DNS IP to only DNS traffic (only for dedicated DNS IPs)
+    networking.firewall.extraCommands = lib.mkIf hasDedicatedDnsIP ''
+      # Allow incoming DNS queries on dedicated DNS IP
+      iptables -A nixos-fw -d ${dnsIP} -p udp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -d ${dnsIP} -p tcp --dport 53 -j ACCEPT
+
+      # Allow outgoing DNS queries to forwarders (1.1.1.1 and 9.9.9.9)
+      iptables -A nixos-fw -s ${dnsIP} -d 1.1.1.1 -p udp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -s ${dnsIP} -d 1.1.1.1 -p tcp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -s ${dnsIP} -d 9.9.9.9 -p udp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -s ${dnsIP} -d 9.9.9.9 -p tcp --dport 53 -j ACCEPT
+
+      # Block all other traffic to/from DNS IP
+      iptables -A nixos-fw -d ${dnsIP} -j DROP
+      iptables -A nixos-fw -s ${dnsIP} -j DROP
+    '';
+
+    networking.firewall.extraStopCommands = lib.mkIf hasDedicatedDnsIP ''
+      # Cleanup rules when firewall is stopped
+      iptables -D nixos-fw -d ${dnsIP} -p udp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -d ${dnsIP} -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 1.1.1.1 -p udp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 1.1.1.1 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 9.9.9.9 -p udp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 9.9.9.9 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -d ${dnsIP} -j DROP 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -j DROP 2>/dev/null || true
+    '';
   };
 }
