@@ -180,7 +180,6 @@
         matchConfig.Name = "bond0.10";
         networkConfig = {
           LinkLocalAddressing = "no";
-          DHCP = "yes";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
