@@ -11,9 +11,10 @@ let
   hasRole = lib.elem "bind" hostRoles;
 
   # Host-specific DNS IP configuration (only for xsvr1 and xsvr2)
+  # Using macvlan interfaces with unique MAC addresses for Firewalla registration
   hasDedicatedDnsIP = hostname == "xsvr1" || hostname == "xsvr2";
-  dnsIP = if hostname == "xsvr1" then "172.20.1.11"
-          else if hostname == "xsvr2" then "172.20.1.21"
+  dnsIP = if hostname == "xsvr1" then "172.18.10.10"
+          else if hostname == "xsvr2" then "172.19.10.20"
           else null;
 in
 {
