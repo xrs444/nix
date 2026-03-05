@@ -201,10 +201,19 @@ in
           COOKIES=$(mktemp)
           trap "rm -f $COOKIES" EXIT
 
-          # Wait for kanidm to be fully up
-          sleep 5
+          # Wait for Kanidm to be fully ready (with retries)
+          echo "Waiting for Kanidm to be ready..."
+          for i in {1..30}; do
+            if curl -sf "$IDM_URL/v1/auth" >/dev/null 2>&1; then
+              echo "Kanidm is ready!"
+              break
+            fi
+            echo "Attempt $i/30: Kanidm not ready yet, waiting..."
+            sleep 2
+          done
 
           # Authenticate via REST API (kanidm CLI requires interactive TTY)
+          echo "Authenticating to Kanidm..."
           PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
           curl -s -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
             -H "Content-Type: application/json" \

@@ -44,6 +44,13 @@
         };
         vlanConfig.Id = 22;
       };
+      "23-bond0.10" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.10";
+        };
+        vlanConfig.Id = 10;
+      };
       "25-bridge21" = {
         netdevConfig = {
           Kind = "bridge";
@@ -116,6 +123,7 @@
           "bond0.16"
           "bond0.17"
           "bond0.22"
+          "bond0.10"
         ];
       };
       "55-bond0.21" = {
@@ -202,6 +210,15 @@
         };
         linkConfig = {
           RequiredForOnline = "carrier";
+        };
+      };
+      "95-bond0.10" = {
+        matchConfig.Name = "bond0.10";
+        networkConfig = {
+          DHCP = "yes";
+        };
+        linkConfig = {
+          RequiredForOnline = "no";
         };
       };
     };

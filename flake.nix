@@ -73,6 +73,7 @@
             "tailscale-package"
             "monitoring-server"
             "github-runner"
+            "bind"
           ];
         };
         xsvr2 = {
@@ -90,6 +91,7 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
+            "bind"
           ];
         };
         xsvr3 = {
