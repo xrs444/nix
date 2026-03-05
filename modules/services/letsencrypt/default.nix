@@ -94,10 +94,10 @@ lib.mkIf (!minimalImage) {
     );
   };
 
-  # Ensure acme user/group exists only on relevant hosts
+  # Ensure acme user/group exists only on letsencrypt hosts
   users.users = lib.mkMerge [
     (lib.mkIf
-      (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
+      (!isSdImageBuild && isLetsencryptHost)
       {
         acme = {
           isSystemUser = true;
@@ -110,7 +110,7 @@ lib.mkIf (!minimalImage) {
   ];
   users.groups = lib.mkMerge [
     (lib.mkIf
-      (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
+      (!isSdImageBuild && isLetsencryptHost)
       {
         acme = { };
       }
@@ -119,7 +119,7 @@ lib.mkIf (!minimalImage) {
 
   # Set up SSH authorized keys at activation time when secrets are available
   system.activationScripts.acme-ssh-keys = lib.mkIf
-    (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
+    (!isSdImageBuild && isLetsencryptHost)
     (lib.stringAfter [ "users" ] ''
       mkdir -p /var/lib/acme/.ssh
       cat ${config.sops.secrets.acme_ssh_key.path} > /var/lib/acme/.ssh/authorized_keys
