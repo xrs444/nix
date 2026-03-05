@@ -12,6 +12,7 @@ let
 
   # Role-based configuration from flake.nix host definitions
   isPrimaryServer = lib.elem "letsencrypt-primary" hostRoles;
+  isLetsencryptHost = lib.elem "letsencrypt-host" hostRoles || isPrimaryServer;
   isKanidmServer =
     lib.elem "kanidm-server" hostRoles
     || lib.elem "kanidm-primary" hostRoles
@@ -26,8 +27,6 @@ let
     "xts1"
     "xts2"
   ];
-  isSdImageBuild =
-    pkgs.stdenv.hostPlatform.system ? build && pkgs.stdenv.hostPlatform.system.build ? sdImage;
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;
 in
@@ -44,7 +43,7 @@ lib.mkIf (!minimalImage) {
         mode = "0400";
       };
     })
-    {
+    (lib.mkIf isLetsencryptHost {
       acme_ssh_key = {
         sopsFile = ../../../secrets/acme.yaml;
         key = "ssh-key";
@@ -52,7 +51,7 @@ lib.mkIf (!minimalImage) {
         group = "root";
         mode = "0400";
       };
-    }
+    })
   ];
 
   # ACME config: xsvr1 generates all host certs + idm.xrs444.net
@@ -93,30 +92,34 @@ lib.mkIf (!minimalImage) {
     );
   };
 
-  # Ensure acme user/group exists only on relevant hosts
-  users.users = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
-      {
-        acme = {
-          isSystemUser = true;
-          group = "acme";
-          home = "/var/lib/acme";
-          createHome = true;
-          openssh.authorizedKeys.keyFiles = [
-            (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-          ];
-        };
-      }
-    )
-  ];
-  users.groups = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
-      {
-        acme = { };
-      }
-    )
-  ];
+  # Ensure acme user/group exists only on letsencrypt hosts
+  users.users.acme = lib.mkIf isLetsencryptHost {
+    isSystemUser = true;
+    group = "acme";
+    home = "/var/lib/acme";
+    createHome = true;
+    # Explicitly set empty authorized keys to prevent NixOS from building them at build time
+    openssh.authorizedKeys.keys = [ ];
+  };
+
+  users.groups.acme = lib.mkIf isLetsencryptHost { };
+
+  # Set up SSH authorized keys at boot time when secrets are available
+  systemd.services.acme-ssh-setup = lib.mkIf isLetsencryptHost {
+    description = "Set up ACME user SSH authorized keys";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /var/lib/acme/.ssh
+      cat ${config.sops.secrets.acme_ssh_key.path} > /var/lib/acme/.ssh/authorized_keys
+      chown -R acme:acme /var/lib/acme/.ssh
+      chmod 700 /var/lib/acme/.ssh
+      chmod 600 /var/lib/acme/.ssh/authorized_keys
+    '';
+  };
 
 }
