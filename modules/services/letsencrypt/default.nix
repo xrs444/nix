@@ -12,6 +12,7 @@ let
 
   # Role-based configuration from flake.nix host definitions
   isPrimaryServer = lib.elem "letsencrypt-primary" hostRoles;
+  isLetsencryptHost = lib.elem "letsencrypt-host" hostRoles || isPrimaryServer;
   isKanidmServer =
     lib.elem "kanidm-server" hostRoles
     || lib.elem "kanidm-primary" hostRoles
@@ -44,7 +45,7 @@ lib.mkIf (!minimalImage) {
         mode = "0400";
       };
     })
-    {
+    (lib.mkIf isLetsencryptHost {
       acme_ssh_key = {
         sopsFile = ../../../secrets/acme.yaml;
         key = "ssh-key";
@@ -52,7 +53,7 @@ lib.mkIf (!minimalImage) {
         group = "root";
         mode = "0400";
       };
-    }
+    })
   ];
 
   # ACME config: xsvr1 generates all host certs + idm.xrs444.net

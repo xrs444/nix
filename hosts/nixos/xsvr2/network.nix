@@ -44,6 +44,13 @@
         };
         vlanConfig.Id = 22;
       };
+      "22-bond0.10" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.10";
+        };
+        vlanConfig.Id = 10;
+      };
       "23-macvlan-dns" = {
         netdevConfig = {
           Kind = "macvlan";
@@ -125,8 +132,8 @@
           "bond0.16"
           "bond0.17"
           "bond0.22"
+          "bond0.10"
         ];
-        macvlan = [ "dns0" ];
       };
       "55-bond0.21" = {
         matchConfig.Name = "bond0.21";
@@ -168,6 +175,16 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
+      };
+      "68-bond0.10" = {
+        matchConfig.Name = "bond0.10";
+        networkConfig = {
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+        macvlan = [ "dns0" ];
       };
       "70-bridge21" = {
         matchConfig.Name = "bridge21";
