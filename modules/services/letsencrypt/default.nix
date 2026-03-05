@@ -27,8 +27,6 @@ let
     "xts1"
     "xts2"
   ];
-  isSdImageBuild =
-    pkgs.stdenv.hostPlatform.system ? build && pkgs.stdenv.hostPlatform.system.build ? sdImage;
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;
 in
@@ -95,37 +93,31 @@ lib.mkIf (!minimalImage) {
   };
 
   # Ensure acme user/group exists only on letsencrypt hosts
-  users.users = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && isLetsencryptHost)
-      {
-        acme = {
-          isSystemUser = true;
-          group = "acme";
-          home = "/var/lib/acme";
-          createHome = true;
-        };
-      }
-    )
-  ];
-  users.groups = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && isLetsencryptHost)
-      {
-        acme = { };
-      }
-    )
-  ];
+  users.users.acme = lib.mkIf isLetsencryptHost {
+    isSystemUser = true;
+    group = "acme";
+    home = "/var/lib/acme";
+    createHome = true;
+  };
 
-  # Set up SSH authorized keys at activation time when secrets are available
-  system.activationScripts.acme-ssh-keys = lib.mkIf
-    (!isSdImageBuild && isLetsencryptHost)
-    (lib.stringAfter [ "users" ] ''
+  users.groups.acme = lib.mkIf isLetsencryptHost { };
+
+  # Set up SSH authorized keys at boot time when secrets are available
+  systemd.services.acme-ssh-setup = lib.mkIf isLetsencryptHost {
+    description = "Set up ACME user SSH authorized keys";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
       mkdir -p /var/lib/acme/.ssh
       cat ${config.sops.secrets.acme_ssh_key.path} > /var/lib/acme/.ssh/authorized_keys
       chown -R acme:acme /var/lib/acme/.ssh
       chmod 700 /var/lib/acme/.ssh
       chmod 600 /var/lib/acme/.ssh/authorized_keys
-    '');
+    '';
+  };
 
 }
