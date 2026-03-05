@@ -234,7 +234,6 @@
       "95-dns0" = {
         matchConfig.Name = "dns0";
         address = [ "172.18.10.10/24" ];
-        gateway = [ "172.18.10.1" ];
         networkConfig = {
           ConfigureWithoutCarrier = true;
           DHCP = "yes";
