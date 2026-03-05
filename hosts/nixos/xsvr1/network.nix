@@ -220,6 +220,7 @@
         gateway = [ "172.18.10.1" ];
         networkConfig = {
           ConfigureWithoutCarrier = true;
+          DHCP = "yes";
         };
         linkConfig = {
           RequiredForOnline = "no";
