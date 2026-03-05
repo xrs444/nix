@@ -96,27 +96,35 @@ lib.mkIf (!minimalImage) {
   # Ensure acme user/group exists only on relevant hosts
   users.users = lib.mkMerge [
     (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
+      (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
       {
         acme = {
           isSystemUser = true;
           group = "acme";
           home = "/var/lib/acme";
           createHome = true;
-          openssh.authorizedKeys.keyFiles = [
-            (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-          ];
         };
       }
     )
   ];
   users.groups = lib.mkMerge [
     (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
+      (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
       {
         acme = { };
       }
     )
   ];
+
+  # Set up SSH authorized keys at activation time when secrets are available
+  system.activationScripts.acme-ssh-keys = lib.mkIf
+    (!isSdImageBuild && config.sops.secrets ? acme_ssh_key)
+    (lib.stringAfter [ "users" ] ''
+      mkdir -p /var/lib/acme/.ssh
+      cat ${config.sops.secrets.acme_ssh_key.path} > /var/lib/acme/.ssh/authorized_keys
+      chown -R acme:acme /var/lib/acme/.ssh
+      chmod 700 /var/lib/acme/.ssh
+      chmod 600 /var/lib/acme/.ssh/authorized_keys
+    '');
 
 }
