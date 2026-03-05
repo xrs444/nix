@@ -98,6 +98,8 @@ lib.mkIf (!minimalImage) {
     group = "acme";
     home = "/var/lib/acme";
     createHome = true;
+    # Explicitly set empty authorized keys to prevent NixOS from building them at build time
+    openssh.authorizedKeys.keys = [ ];
   };
 
   users.groups.acme = lib.mkIf isLetsencryptHost { };
