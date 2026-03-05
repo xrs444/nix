@@ -22,6 +22,7 @@
     "nix-command"
     "flakes"
   ];
+  nix.settings.download-buffer-size = 134217728; # 128 MiB
 
   # Automated garbage collection (NixOS only)
   nix.gc = {
