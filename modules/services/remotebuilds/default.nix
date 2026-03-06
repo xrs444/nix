@@ -20,12 +20,14 @@ in
   # The default P flag loses interpreter visibility when the sandbox creates a new mount
   # namespace; F pre-opens the interpreter fd at registration time, surviving namespace changes.
   # We must disable preserveArgvZero (P flag) because it conflicts with F - only F should be used.
+  # Explicitly set the interpreter to the unwrapped QEMU binary to avoid the binfmt-P wrapper.
   # Wrap the whole attrset in mkIf so the submodule is not instantiated on non-builder hosts
   # (instantiating it without magicOrExtension causes a flake check evaluation error).
   boot.binfmt.registrations = lib.mkIf (lib.elem config.networking.hostName builder) {
     "aarch64-linux" = {
       fixBinary = lib.mkForce true;
       preserveArgvZero = lib.mkForce false;
+      interpreter = lib.mkForce "${pkgs.qemu}/bin/qemu-aarch64";
     };
   };
 
