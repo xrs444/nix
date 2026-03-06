@@ -12,6 +12,8 @@ in
   # Import SOPS secrets (not needed for clients, only for builder)
 
   ## Server configuration
+  # Use emulatedSystems to get the base binfmt registration (magic bytes, etc),
+  # then override specific settings below for sandbox compatibility.
   boot.binfmt.emulatedSystems = lib.mkIf (lib.elem config.networking.hostName builder) [
     "aarch64-linux"
   ];
@@ -27,6 +29,7 @@ in
     "aarch64-linux" = {
       fixBinary = lib.mkForce true;
       preserveArgvZero = lib.mkForce false;
+      wrapInterpreterInShell = lib.mkForce false;
       interpreter = lib.mkForce "${pkgs.qemu}/bin/qemu-aarch64";
     };
   };
