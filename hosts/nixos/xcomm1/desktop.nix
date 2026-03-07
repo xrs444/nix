@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   # Niri - Scrollable-tiling Wayland compositor
@@ -9,14 +9,36 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd niri-session";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd niri-session-fixed";
         user = "greeter";
       };
     };
   };
 
-  # Wayland-native utilities
+  # Wayland-native utilities and custom niri session wrapper
   environment.systemPackages = with pkgs; [
+    # Custom niri session wrapper to fix the import-environment deprecation warning
+    (writeShellScriptBin "niri-session-fixed" ''
+      # Import only the necessary environment variables instead of all
+      systemctl --user import-environment \
+        DISPLAY \
+        WAYLAND_DISPLAY \
+        XDG_CURRENT_DESKTOP \
+        XDG_SESSION_TYPE \
+        NIXOS_OZONE_WL
+
+      # Update dbus activation environment
+      ${dbus}/bin/dbus-update-activation-environment --systemd \
+        DISPLAY \
+        WAYLAND_DISPLAY \
+        XDG_CURRENT_DESKTOP \
+        XDG_SESSION_TYPE \
+        NIXOS_OZONE_WL
+
+      # Start niri
+      exec ${niri}/bin/niri-session
+    '')
+
     # Essential Wayland desktop components
     fuzzel            # App launcher (Super+D or configure in Niri)
     waybar            # Status bar
