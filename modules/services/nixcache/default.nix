@@ -108,6 +108,7 @@ in
       '';
 
       virtualHosts."xsvr1.lan" = {
+        serverAliases = [ "nixcache.xrs444.net" ];
         locations."/" = {
           root = "/zfs/nixcache/cache";
           extraConfig = ''
