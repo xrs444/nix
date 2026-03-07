@@ -22,7 +22,6 @@
     waybar            # Status bar
     # Browsers
     google-chrome
-    firefox
 
     # Wayland desktop essentials
     mako              # Notification daemon
