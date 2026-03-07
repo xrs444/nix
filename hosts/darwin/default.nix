@@ -31,6 +31,14 @@
         "@admin"
         username
       ];
+      substituters = [
+        "http://nixcache.xrs444.net?priority=10"
+        "https://cache.nixos.org?priority=20"
+      ];
+      trusted-public-keys = [
+        "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      ];
     };
   };
 
