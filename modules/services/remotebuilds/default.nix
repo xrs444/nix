@@ -63,7 +63,7 @@ in
         ];
         trusted-users = [ "builder" ];
         # Explicitly enable aarch64-linux builds via QEMU emulation
-        extra-platforms = [ "aarch64-linux" ];
+        extra-platforms = [ "aarch64-linux" "i686-linux" ];
         # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
         # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
         # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
