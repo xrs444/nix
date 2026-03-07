@@ -12,6 +12,8 @@ in
   # Import SOPS secrets (not needed for clients, only for builder)
 
   ## Server configuration
+  # Use emulatedSystems to get the base binfmt registration (magic bytes, etc),
+  # then override specific settings below for sandbox compatibility.
   boot.binfmt.emulatedSystems = lib.mkIf (lib.elem config.networking.hostName builder) [
     "aarch64-linux"
   ];
@@ -19,10 +21,17 @@ in
   # Use fixBinary (F flag) so binfmt works inside Nix's sandboxed build environments.
   # The default P flag loses interpreter visibility when the sandbox creates a new mount
   # namespace; F pre-opens the interpreter fd at registration time, surviving namespace changes.
+  # We must disable preserveArgvZero (P flag) because it conflicts with F - only F should be used.
+  # Explicitly set the interpreter to the unwrapped QEMU binary to avoid the binfmt-P wrapper.
   # Wrap the whole attrset in mkIf so the submodule is not instantiated on non-builder hosts
   # (instantiating it without magicOrExtension causes a flake check evaluation error).
   boot.binfmt.registrations = lib.mkIf (lib.elem config.networking.hostName builder) {
-    "aarch64-linux".fixBinary = lib.mkForce true;
+    "aarch64-linux" = {
+      fixBinary = lib.mkForce true;
+      preserveArgvZero = lib.mkForce false;
+      wrapInterpreterInShell = lib.mkForce false;
+      interpreter = lib.mkForce "${pkgs.qemu}/bin/qemu-aarch64";
+    };
   };
 
   # Create builders group for local organization

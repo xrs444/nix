@@ -194,12 +194,40 @@ jobs:
             -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning"}' || true
 
   build-and-cache:
-    name: Build & Cache All Hosts
+    name: Build ${{ matrix.host }}
     needs: [check-pending, update-lock, check-cache]
     if: >-
       always() &&
       needs.check-cache.result == 'success'
     runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 360
+    strategy:
+      matrix:
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xdash1, xhac-radio, xlt1-t-vnixos, xts1, xts2]
+      fail-fast: false
+      max-parallel: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flake-lock-update
+
+      - name: Build and cache ${{ matrix.host }}
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+
+          echo "Building ${{ matrix.host }}..."
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4
+
+          echo "Copying ${{ matrix.host }} to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"
+
+          echo "${{ matrix.host }}: SUCCESS"
+
+  create-pr:
+    name: Create Pull Request
+    needs: build-and-cache
+    if: always()
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
@@ -208,40 +236,25 @@ jobs:
         with:
           ref: flake-lock-update
 
-      - name: Build and cache all hosts
-        id: build
+      - name: Check build results
+        id: results
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
-          CACHE_URL="file:///zfs/nixcache/cache"
-          FAILED=()
-          SUCCEEDED=()
+          # Get results from all matrix jobs
+          JOBS='${{ toJSON(needs.build-and-cache.result) }}'
 
-          for host in "${HOSTS[@]}"; do
-            echo "::group::Building $host"
-            if nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4 2>&1; then
-              echo "Copying $host to cache..."
-              nix copy --to "$CACHE_URL" ".#nixosConfigurations.$host.config.system.build.toplevel" || true
-              SUCCEEDED+=("$host")
-              echo "$host: SUCCESS"
-            else
-              FAILED+=("$host")
-              echo "$host: FAILED"
-            fi
-            echo "::endgroup::"
-          done
-
-          echo "succeeded=${SUCCEEDED[*]}" >> "$GITHUB_OUTPUT"
-          echo "succeeded_count=${#SUCCEEDED[@]}" >> "$GITHUB_OUTPUT"
-          echo "failed=${FAILED[*]}" >> "$GITHUB_OUTPUT"
-          echo "failed_count=${#FAILED[@]}" >> "$GITHUB_OUTPUT"
-
-          if [ ${#FAILED[@]} -gt 0 ]; then
-            echo "::error::Failed hosts: ${FAILED[*]}"
-            exit 1
+          if [ "$JOBS" = "success" ]; then
+            echo "all_succeeded=true" >> "$GITHUB_OUTPUT"
+            echo "succeeded_count=10" >> "$GITHUB_OUTPUT"
+            echo "failed_count=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "all_succeeded=false" >> "$GITHUB_OUTPUT"
+            # Note: With matrix jobs, we can't easily get individual success/failure counts
+            # unless we use job outputs or artifacts
+            echo "Check individual job results in the Actions UI"
           fi
 
       - name: Create Pull Request
-        if: success()
+        if: steps.results.outputs.all_succeeded == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: flake-lock-update
@@ -249,22 +262,22 @@ jobs:
           body: |
             Automated flake.lock update.
 
-            All ${{ steps.build.outputs.succeeded_count }} hosts built and cached successfully on xsvr1:
-            `${{ steps.build.outputs.succeeded }}`
+            All 10 hosts built and cached successfully on xsvr1:
+            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2`
           labels: |
             dependencies
             automated
 
       - name: Notify build success
-        if: success()
+        if: steps.results.outputs.all_succeeded == 'true'
         run: |
           curl -sf -X POST https://apprise.xrs444.net/notify \
             -H "Content-Type: application/json" \
-            -d "{\"title\":\"Flake Update: Build Complete\",\"body\":\"All ${{ steps.build.outputs.succeeded_count }} hosts built and cached. PR created.\",\"type\":\"success\"}" || true
+            -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success"}' || true
 
       - name: Notify build failure
-        if: failure()
+        if: steps.results.outputs.all_succeeded == 'false'
         run: |
           curl -sf -X POST https://apprise.xrs444.net/notify \
             -H "Content-Type: application/json" \
-            -d "{\"title\":\"Flake Update: Build Failed\",\"body\":\"Failed hosts: ${{ steps.build.outputs.failed }}. Check GitHub Actions logs.\",\"type\":\"failure\"}" || true
+            -d '{"title":"Flake Update: Build Failed","body":"Some hosts failed to build. Check GitHub Actions logs for details.","type":"failure"}' || true
