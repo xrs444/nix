@@ -17,5 +17,7 @@
     ./disks.nix
     ../../common
   ];
+
+  networking.hostName = "xcomm1";
   nixpkgs.config.allowUnfree = true;
 }
