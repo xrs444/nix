@@ -42,9 +42,6 @@
     # Polkit agent (for authentication prompts)
     polkit_gnome
 
-    # Media playback
-    mpv               # Video player
-
     # Image viewer
     imv               # Wayland image viewer
   ];
