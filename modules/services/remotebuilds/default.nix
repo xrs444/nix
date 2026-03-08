@@ -67,10 +67,6 @@ in
         # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
         filter-syscalls = false;
       };
-      # Use extraOptions to ensure it writes to Determinate Nix's nix.custom.conf
-      extraOptions = ''
-        extra-platforms = aarch64-linux i686-linux
-      '';
     })
 
     # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
@@ -97,6 +93,16 @@ in
       ];
     })
   ];
+
+  # Determinate Nix uses /etc/nix/nix.custom.conf for user settings
+  # Write extra-platforms directly to nix.custom.conf so Determinate Nix picks it up
+  environment.etc."nix/nix.custom.conf" = lib.mkIf (lib.elem config.networking.hostName builder) {
+    text = ''
+      # Custom Nix configuration for builder
+      extra-platforms = aarch64-linux i686-linux
+      extra-sandbox-paths = /run/binfmt
+    '';
+  };
 
   # Deploy builder SSH key on all non-builder hosts
   sops.secrets.builder_private_key = lib.mkIf (!lib.elem config.networking.hostName builder) {
