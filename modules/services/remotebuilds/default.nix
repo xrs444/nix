@@ -100,7 +100,7 @@ in
     text = ''
       # Custom Nix configuration for builder
       extra-platforms = aarch64-linux i686-linux
-      extra-sandbox-paths = /run/binfmt
+      extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
     '';
   };
 
