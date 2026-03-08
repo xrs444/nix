@@ -18,6 +18,9 @@
     ./disks.nix
     ../../common
   ];
+
+  networking.hostName = hostname;
+
   # Add other heavy modules here as needed
 
   boot = {
