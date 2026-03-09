@@ -2,14 +2,13 @@
 (final: prev: {
   # Fix gobject-introspection distutils import error with Python 3.12+
   # Python 3.12+ removed distutils from stdlib, needs setuptools for compatibility
+  # g-ir-scanner is a Python script that imports distutils at runtime
   # https://bugs.gentoo.org/865183
   # https://trac.macports.org/ticket/69105
-  gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
-    # Add setuptools to propagatedBuildInputs so it's available in the Python environment
-    propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or []) ++ [
-      final.python3.pkgs.setuptools
-    ];
-  });
+  gobject-introspection = prev.gobject-introspection.override {
+    # Override the Python environment to include setuptools
+    python3 = final.python3.withPackages (ps: [ ps.setuptools ]);
+  };
 
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
