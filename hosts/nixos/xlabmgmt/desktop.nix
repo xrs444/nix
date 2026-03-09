@@ -52,6 +52,9 @@
 
     # Image viewer
     imv               # Wayland image viewer
+
+    # Remote desktop
+    rustdesk-flutter  # Cross-platform remote desktop client
   ];
 
   # Enable polkit for authentication
