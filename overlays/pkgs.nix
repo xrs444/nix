@@ -6,6 +6,9 @@
   # https://bugs.gentoo.org/865183
   # https://trac.macports.org/ticket/69105
   gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [
+      final.makeWrapper
+    ];
     buildInputs = (oldAttrs.buildInputs or [ ]) ++ [
       final.python3.pkgs.setuptools
     ];
