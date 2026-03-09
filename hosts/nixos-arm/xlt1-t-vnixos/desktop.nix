@@ -52,15 +52,16 @@
     # Terminal (Wayland-native)
     foot # Lightweight Wayland terminal
 
-    # File manager
-    xfce.thunar # Simple GUI file manager
+    # File manager (terminal-based, very lightweight)
+    nnn # Lightweight file manager
+    # Alternative: lxqt.pcmanfm-qt for GUI
 
     # System utilities
-    pavucontrol # Audio control
-    networkmanagerapplet # Network manager GUI
+    lxqt.pavucontrol-qt # Qt-based audio control (lighter than GTK pavucontrol)
+    # Network manager - use nmtui/nmcli (already included with networkmanager)
 
-    # Polkit agent (for authentication prompts)
-    polkit_gnome
+    # Polkit agent (KDE/Qt-based - recommended by niri wiki)
+    kdePackages.polkit-kde-agent-1
 
     # Image viewer
     imv # Wayland image viewer
@@ -72,15 +73,15 @@
   # Enable polkit for authentication
   security.polkit.enable = true;
 
-  # Auto-start polkit agent
-  systemd.user.services.polkit-gnome-authentication-agent-1 = {
-    description = "polkit-gnome-authentication-agent-1";
+  # Auto-start polkit agent (KDE polkit-kde-agent recommended by niri wiki)
+  systemd.user.services.polkit-kde-agent = {
+    description = "KDE Polkit Authentication Agent";
     wantedBy = [ "graphical-session.target" ];
     wants = [ "graphical-session.target" ];
     after = [ "graphical-session.target" ];
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      ExecStart = "${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1";
       Restart = "on-failure";
       RestartSec = 1;
       TimeoutStopSec = 10;

@@ -25,11 +25,8 @@
   ];
 
   environment.systemPackages = with pkgs; [
-    labwc
-    firefox
+    chromium
   ];
-
-  programs.labwc.enable = true;
 
   users.users.xdash1 = {
     isNormalUser = true;
@@ -40,14 +37,10 @@
 
   hardware.graphics.enable = true;
 
-  services.xserver.enable = false;
-  services.displayManager.defaultSession = "labwc";
-  services.displayManager.sddm.enable = false;
-
   services.cage = {
     enable = true;
     user = "xdash1";
-    program = "${pkgs.firefox}/bin/firefox -kiosk -private-window https://hass.xrs444.net";
+    program = "${pkgs.chromium}/bin/chromium --kiosk --no-first-run --disable-features=TranslateUI --disable-infobars --noerrdialogs --disable-session-crashed-bubble https://hass.xrs444.net";
   };
 
   services.getty.autologinUser = "xdash1";

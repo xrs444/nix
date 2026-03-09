@@ -1,5 +1,15 @@
 { inputs, ... }:
 (final: prev: {
+  # Fix gobject-introspection distutils import error with Python 3.12+
+  # Python 3.12+ removed distutils from stdlib, needs setuptools for compatibility
+  # https://bugs.gentoo.org/865183
+  # https://trac.macports.org/ticket/69105
+  gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
+    buildInputs = (oldAttrs.buildInputs or []) ++ [
+      final.python3.pkgs.setuptools
+    ];
+  });
+
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
   libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
