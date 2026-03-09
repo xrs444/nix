@@ -39,6 +39,8 @@
   hardware.graphics.enable = true;
   hardware.pulseaudio.enable = false;
   services.pipewire.enable = false;
+  # Explicitly disable wireplumber (should be disabled with pipewire but isn't)
+  services.pipewire.wireplumber.enable = false;
 
   # Disable desktop services that aren't needed for kiosk
   services.udisks2.enable = false;
