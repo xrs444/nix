@@ -5,7 +5,8 @@
   # https://bugs.gentoo.org/865183
   # https://trac.macports.org/ticket/69105
   gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
-    buildInputs = (oldAttrs.buildInputs or []) ++ [
+    # Add setuptools to propagatedBuildInputs so it's available in the Python environment
+    propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or []) ++ [
       final.python3.pkgs.setuptools
     ];
   });
