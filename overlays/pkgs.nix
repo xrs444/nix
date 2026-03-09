@@ -44,10 +44,15 @@
     doCheck = false;
   });
 
-  # Override wireplumber to use our patched pipewire
-  wireplumber = prev.wireplumber.override {
+  # Override wireplumber to use our patched pipewire and disable docs
+  # Docs require Python sphinx modules which aren't available in build environment
+  wireplumber = (prev.wireplumber.override {
     pipewire = final.pipewire;
-  };
+  }).overrideAttrs (oldAttrs: {
+    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+      "-Ddoc=disabled"
+    ];
+  });
 
   # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
   # Tests run via CMake build target, not checkPhase, so doCheck doesn't help
