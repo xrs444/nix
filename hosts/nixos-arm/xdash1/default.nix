@@ -35,8 +35,10 @@
     chromium
   ];
 
-  # Enable minimal graphics
+  # Enable minimal graphics, disable audio (not needed for kiosk)
   hardware.graphics.enable = true;
+  hardware.pulseaudio.enable = false;
+  services.pipewire.enable = false;
 
   # Minimal X11 server without desktop environment
   services.xserver = {
