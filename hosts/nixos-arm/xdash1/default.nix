@@ -40,6 +40,13 @@
   hardware.pulseaudio.enable = false;
   services.pipewire.enable = false;
 
+  # Disable desktop services that aren't needed for kiosk
+  services.udisks2.enable = false;
+  services.accounts-daemon.enable = false;
+  services.geoclue2.enable = false;
+  services.gnome.at-spi2-core.enable = false;
+  xdg.portal.enable = false;
+
   # Minimal X11 server without desktop environment
   services.xserver = {
     enable = true;
