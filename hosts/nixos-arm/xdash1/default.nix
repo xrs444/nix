@@ -1,4 +1,4 @@
-# Summary: NixOS ARM host configuration for xdash1, imports Orange Pi hardware, boot, network, and SD image modules.
+# Summary: Minimal NixOS kiosk for xdash1 - WiFi + web display only
 {
   pkgs,
   hostname,
@@ -17,34 +17,62 @@
     inputs.sops-nix.nixosModules.sops
     ../../common
   ];
+
   networking.hostName = hostname;
 
-  boot.supportedFilesystems = [
-    "vfat"
-    "ext4"
-  ];
+  boot.supportedFilesystems = [ "vfat" "ext4" ];
 
+  # Minimal kiosk user
+  users.users.kiosk = {
+    isNormalUser = true;
+    description = "Kiosk Display User";
+    extraGroups = [ "video" "networkmanager" ];
+  };
+
+  # Minimal packages - only what's needed for WiFi + web display
   environment.systemPackages = with pkgs; [
+    # Lightweight browser for kiosk (chromium with minimal X11 - no Wayland overhead)
     chromium
   ];
 
-  users.users.xdash1 = {
-    isNormalUser = true;
-    description = "Dashboard Kiosk User";
-    extraGroups = [ "video" ];
-    home = "/home/xdash1";
-  };
-
+  # Enable minimal graphics
   hardware.graphics.enable = true;
 
-  services.cage = {
+  # Minimal X11 server without desktop environment
+  services.xserver = {
     enable = true;
-    user = "xdash1";
-    program = "${pkgs.chromium}/bin/chromium --kiosk --no-first-run --disable-features=TranslateUI --disable-infobars --noerrdialogs --disable-session-crashed-bubble https://hass.xrs444.net";
+    # No display manager - auto-login to X
+    displayManager.startx.enable = true;
+    # Minimal window manager just to run fullscreen browser
+    windowManager.dwm.enable = true;
   };
 
-  services.getty.autologinUser = "xdash1";
+  # Auto-login and start kiosk
+  services.getty.autologinUser = "kiosk";
+
+  # Auto-start X and browser on login
+  environment.loginShellInit = ''
+    if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+      exec startx
+    fi
+  '';
+
+  # Minimal .xinitrc for kiosk user
+  environment.etc."X11/xinit/xinitrc".text = ''
+    #!/bin/sh
+    # Start chromium in kiosk mode (no Wayland, just X11)
+    while true; do
+      ${pkgs.chromium}/bin/chromium \
+        --kiosk \
+        --no-first-run \
+        --disable-features=TranslateUI \
+        --disable-infobars \
+        --noerrdialogs \
+        --disable-session-crashed-bubble \
+        https://hass.xrs444.net
+      sleep 5
+    done
+  '';
 
   nixpkgs.config.allowUnfree = true;
-
 }
