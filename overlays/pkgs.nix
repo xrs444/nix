@@ -5,10 +5,16 @@
   # g-ir-scanner is a Python script that imports distutils at runtime
   # https://bugs.gentoo.org/865183
   # https://trac.macports.org/ticket/69105
-  gobject-introspection = prev.gobject-introspection.override {
-    # Override the Python environment to include setuptools
-    python3 = final.python3.withPackages (ps: [ ps.setuptools ]);
-  };
+  gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
+    buildInputs = (oldAttrs.buildInputs or [ ]) ++ [
+      final.python3.pkgs.setuptools
+    ];
+    postFixup = (oldAttrs.postFixup or "") + ''
+      # Wrap g-ir-scanner to include setuptools in PYTHONPATH
+      wrapProgram $dev/bin/g-ir-scanner \
+        --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
+    '';
+  });
 
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
