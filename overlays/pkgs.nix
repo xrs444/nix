@@ -12,8 +12,9 @@
     buildInputs = (oldAttrs.buildInputs or [ ]) ++ [
       final.python3.pkgs.setuptools
     ];
-    postFixup = (oldAttrs.postFixup or "") + ''
+    postInstall = (oldAttrs.postInstall or "") + ''
       # Wrap g-ir-scanner to include setuptools in PYTHONPATH
+      # g-ir-scanner is installed to $dev output
       wrapProgram $dev/bin/g-ir-scanner \
         --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
     '';
