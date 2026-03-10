@@ -21,11 +21,13 @@
     });
   });
 
-  # Fix gtk4 distutils error by disabling introspection
+  # Fix gtk4 distutils error by disabling introspection and docs
   # GTK4 also uses g-ir-scanner which hits the same Python 3.13 distutils issue
+  # Documentation also requires introspection, so disable both
   gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
     mesonFlags = (oldAttrs.mesonFlags or []) ++ [
       "-Dintrospection=disabled"
+      "-Dbuild-documentation=false"
     ];
   });
 
