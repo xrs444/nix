@@ -8,14 +8,15 @@
     python3 = final.python3;
   };
 
-  # Fix gst-plugins-bad distutils error by disabling introspection
+  # Fix gst-plugins-bad distutils error by disabling introspection and docs
   # GStreamer packages try to generate GIR files using g-ir-scanner
   # which fails with Python 3.13 distutils issues
-  # For minimal builds, we don't need GIR files
+  # For minimal builds, we don't need GIR files or documentation
   gst_all_1 = prev.gst_all_1.overrideScope (gself: gsuper: {
     gst-plugins-bad = gsuper.gst-plugins-bad.overrideAttrs (oldAttrs: {
       mesonFlags = (oldAttrs.mesonFlags or []) ++ [
         "-Dintrospection=disabled"
+        "-Ddoc=disabled"
       ];
     });
   });
