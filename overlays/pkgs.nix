@@ -21,6 +21,14 @@
     });
   });
 
+  # Fix gtk4 distutils error by disabling introspection
+  # GTK4 also uses g-ir-scanner which hits the same Python 3.13 distutils issue
+  gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
+    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+      "-Dintrospection=disabled"
+    ];
+  });
+
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
   libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
