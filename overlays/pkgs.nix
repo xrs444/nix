@@ -8,13 +8,16 @@
     python3 = final.python3;
   };
 
-  # Fix gst-plugins-bad to use our fixed gobject-introspection
-  # GStreamer packages need g-ir-scanner which requires working distutils
+  # Fix gst-plugins-bad distutils error by disabling introspection
+  # GStreamer packages try to generate GIR files using g-ir-scanner
+  # which fails with Python 3.13 distutils issues
+  # For minimal builds, we don't need GIR files
   gst_all_1 = prev.gst_all_1.overrideScope (gself: gsuper: {
-    gst-plugins-bad = gsuper.gst-plugins-bad.override {
-      python3 = final.python3;
-      gobject-introspection = final.gobject-introspection;
-    };
+    gst-plugins-bad = gsuper.gst-plugins-bad.overrideAttrs (oldAttrs: {
+      mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+        "-Dintrospection=disabled"
+      ];
+    });
   });
 
   # Fix libsecret test failures in sandboxed builds
