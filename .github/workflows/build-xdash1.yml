@@ -1,0 +1,26 @@
+name: Build xdash1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hosts/nixos-arm/xdash1/**'
+      - 'overlays/**'
+      - 'flake.nix'
+      - 'flake.lock'
+
+jobs:
+  build:
+    name: Build xdash1
+    runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build xdash1
+        run: |
+          echo "Building xdash1..."
+          nix build ".#nixosConfigurations.xdash1.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4
+          echo "xdash1: BUILD SUCCESS"
