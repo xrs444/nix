@@ -10,12 +10,12 @@
 
   # Fix gst-plugins-bad to use our fixed gobject-introspection
   # GStreamer packages need g-ir-scanner which requires working distutils
-  gst_all_1 = prev.gst_all_1 // {
-    gst-plugins-bad = prev.gst_all_1.gst-plugins-bad.override {
+  gst_all_1 = prev.gst_all_1.overrideScope (gself: gsuper: {
+    gst-plugins-bad = gsuper.gst-plugins-bad.override {
       python3 = final.python3;
       gobject-introspection = final.gobject-introspection;
     };
-  };
+  });
 
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
