@@ -2,15 +2,11 @@
 (final: prev: {
   # Fix gobject-introspection distutils import error with Python 3.13+
   # Python 3.12+ removed distutils from stdlib, g-ir-scanner needs setuptools
+  # Override to use our fixed python3 (with distutils tests disabled)
   # https://bugs.gentoo.org/865183
-  gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
-    buildInputs = (oldAttrs.buildInputs or []) ++ [
-      final.python3.pkgs.setuptools
-    ];
-    propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or []) ++ [
-      final.python3.pkgs.setuptools
-    ];
-  });
+  gobject-introspection = prev.gobject-introspection.override {
+    python3 = final.python3;
+  };
 
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
