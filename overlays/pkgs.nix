@@ -27,7 +27,7 @@
   gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
     mesonFlags = (oldAttrs.mesonFlags or []) ++ [
       "-Dintrospection=disabled"
-      "-Dbuild-documentation=false"
+      "-Ddocumentation=false"
     ];
   });
 
