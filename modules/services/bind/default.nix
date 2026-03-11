@@ -13,9 +13,13 @@ let
   # Host-specific DNS IP configuration (only for xsvr1 and xsvr2)
   # Using macvlan interfaces with unique MAC addresses for Firewalla registration
   hasDedicatedDnsIP = hostname == "xsvr1" || hostname == "xsvr2";
-  dnsIP = if hostname == "xsvr1" then "172.18.10.10"
-          else if hostname == "xsvr2" then "172.19.10.20"
-          else null;
+  dnsIP =
+    if hostname == "xsvr1" then
+      "172.18.10.10"
+    else if hostname == "xsvr2" then
+      "172.19.10.20"
+    else
+      null;
 in
 {
   config = lib.mkIf hasRole {
@@ -125,9 +129,9 @@ in
             pbx                IN      A       172.18.6.1
             cmrpi1             IN      A       192.168.0.10
             cmrnas             IN      A       192.168.0.11
-            xsvr1              IN      A       172.21.0.2
-            xsvr2              IN      A       172.21.0.2
-            xsvr3              IN      A       172.21.0.2
+            xsvr1              IN      A       172.20.1.10
+            xsvr2              IN      A       172.20.1.20
+            xsvr3              IN      A       172.20.1.30
           ''}";
           forward first;
           forwarders { 9.9.9.9; 1.1.1.1; };
