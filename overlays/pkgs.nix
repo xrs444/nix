@@ -1,17 +1,20 @@
 { inputs, ... }:
 (final: prev: {
   # Fix gobject-introspection distutils import error with Python 3.13+
-  # Python 3.12+ removed distutils from stdlib, g-ir-scanner needs setuptools
-  # Override to use our fixed python3 (with distutils tests disabled)
+  # Python 3.12+ removed distutils from stdlib, g-ir-scanner needs setuptools at runtime
+  # Add setuptools to propagatedBuildInputs so it's available when g-ir-scanner runs
   # https://bugs.gentoo.org/865183
-  gobject-introspection = prev.gobject-introspection.override {
-    python3 = final.python3;
-  };
+  # https://github.com/pypa/setuptools/issues/4871
+  # https://gitlab.archlinux.org/archlinux/packaging/packages/gobject-introspection/-/issues/1
+  gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
+    propagatedBuildInputs = (oldAttrs.propagatedBuildInputs or []) ++ [
+      final.python3Packages.setuptools
+    ];
+  });
 
   # Fix gst-plugins-bad distutils error by disabling introspection and docs
   # GStreamer packages try to generate GIR files using g-ir-scanner
-  # which fails with Python 3.13 distutils issues
-  # For minimal builds, we don't need GIR files or documentation
+  # For minimal kiosk builds, we don't need GIR files or documentation
   gst_all_1 = prev.gst_all_1.overrideScope (gself: gsuper: {
     gst-plugins-bad = gsuper.gst-plugins-bad.overrideAttrs (oldAttrs: {
       mesonFlags = (oldAttrs.mesonFlags or []) ++ [
@@ -19,27 +22,6 @@
         "-Ddoc=disabled"
       ];
     });
-  });
-
-  # Fix gtk4 distutils error by disabling introspection and docs
-  # GTK4 also uses g-ir-scanner which hits the same Python 3.13 distutils issue
-  # Documentation also requires introspection, so disable both
-  # Remove devdoc output since documentation is disabled
-  gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
-    outputs = builtins.filter (x: x != "devdoc") oldAttrs.outputs;
-    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-      "-Dintrospection=disabled"
-      "-Ddocumentation=false"
-    ];
-  });
-
-  # Fix libadwaita distutils error by disabling introspection and docs
-  # libadwaita depends on gtk4 and also uses g-ir-scanner
-  libadwaita = prev.libadwaita.overrideAttrs (oldAttrs: {
-    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-      "-Dintrospection=disabled"
-      "-Ddoc=disabled"
-    ];
   });
 
   # Fix libsecret test failures in sandboxed builds
