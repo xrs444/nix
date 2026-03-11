@@ -37,7 +37,7 @@
 
   # Enable minimal graphics, disable audio (not needed for kiosk)
   hardware.graphics.enable = true;
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   services.pipewire.enable = false;
   # Explicitly disable wireplumber (should be disabled with pipewire but isn't)
   services.pipewire.wireplumber.enable = false;
