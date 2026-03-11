@@ -28,7 +28,7 @@ in
       enable = true;
       listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
       listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
-      forwarders = [ "172.18.11.250" ];
+      forwarders = [ "1.1.1.1" "9.9.9.9" ];
       cacheNetworks = [
         "172.16.0.0/12"
         "100.64.0.0/10"
