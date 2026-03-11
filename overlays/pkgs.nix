@@ -33,6 +33,15 @@
     ];
   });
 
+  # Fix libadwaita distutils error by disabling introspection and docs
+  # libadwaita depends on gtk4 and also uses g-ir-scanner
+  libadwaita = prev.libadwaita.overrideAttrs (oldAttrs: {
+    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+      "-Dintrospection=disabled"
+      "-Ddoc=disabled"
+    ];
+  });
+
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
   libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
