@@ -216,7 +216,12 @@ jobs:
           CACHE_URL="file:///zfs/nixcache/cache"
 
           echo "Building ${{ matrix.host }}..."
-          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4 \
+            --option extra-substituters "$CACHE_URL" \
+            --option trusted-public-keys ""
 
           echo "Copying ${{ matrix.host }} to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"

@@ -21,6 +21,12 @@ jobs:
 
       - name: Build xdash1
         run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
           echo "Building xdash1..."
-          nix build ".#nixosConfigurations.xdash1.config.system.build.toplevel" --no-link --max-jobs 2 --cores 4
+          nix build ".#nixosConfigurations.xdash1.config.system.build.toplevel" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4 \
+            --option extra-substituters "$CACHE_URL" \
+            --option trusted-public-keys ""
           echo "xdash1: BUILD SUCCESS"
