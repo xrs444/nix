@@ -17,7 +17,7 @@ let
     if hostname == "xsvr1" then
       "172.18.10.10"
     else if hostname == "xsvr2" then
-      "172.19.10.20"
+      "172.18.10.20"
     else
       null;
 in
