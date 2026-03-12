@@ -50,6 +50,7 @@
   nix.settings.trusted-users = [
     "root"
     "builder"
+    "github-runner"  # GitHub Actions self-hosted runner
   ];
   nixpkgs.config.allowUnfree = true;
 }

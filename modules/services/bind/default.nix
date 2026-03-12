@@ -28,7 +28,7 @@ in
       enable = true;
       listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
       listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
-      forwarders = [ "172.18.11.250" ];
+      forwarders = [ "1.1.1.1" "9.9.9.9" ];
       cacheNetworks = [
         "172.16.0.0/12"
         "100.64.0.0/10"
@@ -70,6 +70,13 @@ in
         };
       };
       extraConfig = ''
+        # Conditional forwarder for Tailscale domain
+        zone "corgi-squeaker.ts.net" {
+          type forward;
+          forward only;
+          forwarders { 100.100.100.100; };
+        };
+
         # Zone-specific forwarding for xrs444.net
         zone "xrs444.net" {
           type master;
@@ -145,11 +152,13 @@ in
       iptables -A nixos-fw -d ${dnsIP} -p udp --dport 53 -j ACCEPT
       iptables -A nixos-fw -d ${dnsIP} -p tcp --dport 53 -j ACCEPT
 
-      # Allow outgoing DNS queries to forwarders (1.1.1.1 and 9.9.9.9)
+      # Allow outgoing DNS queries to forwarders (1.1.1.1, 9.9.9.9, and 100.100.100.100)
       iptables -A nixos-fw -s ${dnsIP} -d 1.1.1.1 -p udp --dport 53 -j ACCEPT
       iptables -A nixos-fw -s ${dnsIP} -d 1.1.1.1 -p tcp --dport 53 -j ACCEPT
       iptables -A nixos-fw -s ${dnsIP} -d 9.9.9.9 -p udp --dport 53 -j ACCEPT
       iptables -A nixos-fw -s ${dnsIP} -d 9.9.9.9 -p tcp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -s ${dnsIP} -d 100.100.100.100 -p udp --dport 53 -j ACCEPT
+      iptables -A nixos-fw -s ${dnsIP} -d 100.100.100.100 -p tcp --dport 53 -j ACCEPT
 
       # Block all other traffic to/from DNS IP
       iptables -A nixos-fw -d ${dnsIP} -j DROP
@@ -164,6 +173,8 @@ in
       iptables -D nixos-fw -s ${dnsIP} -d 1.1.1.1 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
       iptables -D nixos-fw -s ${dnsIP} -d 9.9.9.9 -p udp --dport 53 -j ACCEPT 2>/dev/null || true
       iptables -D nixos-fw -s ${dnsIP} -d 9.9.9.9 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 100.100.100.100 -p udp --dport 53 -j ACCEPT 2>/dev/null || true
+      iptables -D nixos-fw -s ${dnsIP} -d 100.100.100.100 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
       iptables -D nixos-fw -d ${dnsIP} -j DROP 2>/dev/null || true
       iptables -D nixos-fw -s ${dnsIP} -j DROP 2>/dev/null || true
     '';
