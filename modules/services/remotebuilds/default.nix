@@ -97,13 +97,15 @@ in
   ];
 
   # Determinate Nix uses /etc/nix/nix.custom.conf for user settings
-  # Write extra-platforms directly to nix.custom.conf so Determinate Nix picks it up
-  # Note: trusted-substituters is set in nix.settings above instead of trusted-users for security
+  # Write extra-platforms and trusted-substituters directly to nix.custom.conf so Determinate Nix picks it up
+  # Note: Using extra-trusted-substituters instead of trusted-users for better security
   environment.etc."nix/nix.custom.conf" = lib.mkIf (lib.elem config.networking.hostName builder) {
     text = ''
       # Custom Nix configuration for builder
       extra-platforms = aarch64-linux i686-linux
       extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
+      extra-trusted-substituters = file:///zfs/nixcache/cache
+      extra-trusted-public-keys =
     '';
   };
 
