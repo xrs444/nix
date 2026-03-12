@@ -40,14 +40,6 @@
           ];
         });
       });
-
-      # Fix gjs distutils error by disabling introspection
-      gjs = prev.gjs.overrideAttrs (oldAttrs: {
-        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-          "-Dintrospection=disabled"
-          "-Ddoc=disabled"
-        ];
-      });
     })
   ];
 
