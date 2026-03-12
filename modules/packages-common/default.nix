@@ -25,6 +25,7 @@ in
       gh # GitHub CLI
       jq # JSON processor
       bind # DNS utilities (dig, host, nslookup)
+      traceroute # Network path tracing utility
     ];
   };
 }
