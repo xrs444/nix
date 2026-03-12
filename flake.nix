@@ -72,7 +72,6 @@
             "homeassistant"
             "tailscale-package"
             "monitoring-server"
-            "reverse-proxy"
             "github-runner"
             "bind"
           ];
