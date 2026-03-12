@@ -1,0 +1,32 @@
+name: Build xlt1-t-vnixos
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hosts/nixos-arm/xlt1-t-vnixos/**'
+      - 'overlays/**'
+      - 'flake.nix'
+      - 'flake.lock'
+
+jobs:
+  build:
+    name: Build xlt1-t-vnixos
+    runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build xlt1-t-vnixos
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+          echo "Building xlt1-t-vnixos..."
+          nix build ".#nixosConfigurations.xlt1-t-vnixos.config.system.build.toplevel" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4
+          echo "Copying to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.xlt1-t-vnixos.config.system.build.toplevel"
+          echo "xlt1-t-vnixos: BUILD SUCCESS"
