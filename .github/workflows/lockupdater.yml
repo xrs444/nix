@@ -138,6 +138,7 @@ jobs:
             "webkitgtk_4_1|WebKitGTK 4.1"
             "gst_all_1.gst-plugins-rs|GStreamer Rust plugins"
             "qemu|QEMU"
+            "ffmpeg|FFmpeg"
           )
 
           for entry in "${PACKAGES[@]}"; do
