@@ -95,12 +95,13 @@ in
   ];
 
   # Determinate Nix uses /etc/nix/nix.custom.conf for user settings
-  # Write extra-platforms directly to nix.custom.conf so Determinate Nix picks it up
+  # Write extra-platforms and trusted-users directly to nix.custom.conf so Determinate Nix picks it up
   environment.etc."nix/nix.custom.conf" = lib.mkIf (lib.elem config.networking.hostName builder) {
     text = ''
       # Custom Nix configuration for builder
       extra-platforms = aarch64-linux i686-linux
       extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
+      trusted-users = root builder
     '';
   };
 
