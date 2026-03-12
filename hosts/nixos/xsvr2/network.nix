@@ -233,15 +233,30 @@
       };
       "95-dns0" = {
         matchConfig.Name = "dns0";
-        address = [ "172.19.10.20/24" ];
+        address = [ "172.18.10.20/24" ];
+        gateway = [ "172.18.10.250" ];
         networkConfig = {
           ConfigureWithoutCarrier = true;
-          DHCP = "yes";
+          DHCP = "no";
         };
         linkConfig = {
           RequiredForOnline = "no";
           MACAddress = "02:00:00:02:10:20";
         };
+        # Ensure this gateway only applies to traffic from the DNS IP
+        routes = [
+          {
+            Gateway = "172.18.10.250";
+            GatewayOnLink = true;
+            Metric = 1024; # High metric so it's not preferred for general traffic
+          }
+        ];
+        routingPolicyRules = [
+          {
+            From = "172.18.10.20/32";
+            Priority = 100;
+          }
+        ];
       };
     };
   };
