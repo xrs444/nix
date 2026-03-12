@@ -26,7 +26,7 @@ jobs:
           nix build ".#nixosConfigurations.xdash1.config.system.build.toplevel" \
             --no-link \
             --max-jobs 2 \
-            --cores 4 \
-            --option extra-substituters "$CACHE_URL" \
-            --option trusted-public-keys ""
+            --cores 4
+          echo "Copying to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.xdash1.config.system.build.toplevel"
           echo "xdash1: BUILD SUCCESS"

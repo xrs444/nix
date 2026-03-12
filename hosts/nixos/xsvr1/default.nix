@@ -47,10 +47,7 @@
     };
   };
 
-  nix.settings.trusted-users = [
-    "root"
-    "builder"
-    "github-runner"  # GitHub Actions self-hosted runner
-  ];
+  # Note: Using trusted-substituters instead of trusted-users for better security
+  # See modules/services/remotebuilds/default.nix for trusted-substituters configuration
   nixpkgs.config.allowUnfree = true;
 }

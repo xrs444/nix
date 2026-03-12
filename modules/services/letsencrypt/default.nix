@@ -17,6 +17,7 @@ let
     lib.elem "kanidm-server" hostRoles
     || lib.elem "kanidm-primary" hostRoles
     || lib.elem "kanidm-replica" hostRoles;
+  hasReverseProxy = lib.elem "reverse-proxy" hostRoles;
 
   # Generate certificates for all letsencrypt hosts
   allHosts = [
@@ -86,6 +87,18 @@ lib.mkIf (!minimalImage) {
             extraDomainNames = [
               "xsvr1.${domain}"
               "xsvr2.${domain}"
+            ];
+          };
+        })
+      ++
+        # Reverse proxy service certificates
+        (lib.optional hasReverseProxy {
+          "prometheus.${domain}" = {
+            extraDomainNames = [
+              "alertmanager.${domain}"
+              "grafana.${domain}"
+              "cockpit.${domain}"
+              "auth.${domain}"
             ];
           };
         })

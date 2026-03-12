@@ -17,8 +17,10 @@
     ./monitoring
     ./nfs
     ./nixcache
+    ./oauth2-proxy
     ./openssh
     ./remotebuilds
+    ./reverse-proxy
     ./ser2net
     ./socat
     ./tailscale

@@ -189,7 +189,10 @@ in
       # The kanidm CLI requires an interactive TTY for login and cannot be used in systemd.
       systemd.services.kanidm-oauth2-redirect-urls = {
         description = "Add OAuth2 redirect URLs to Kanidm clients";
-        after = [ "kanidm.service" "network-online.target" ];
+        after = [
+          "kanidm.service"
+          "network-online.target"
+        ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
@@ -198,7 +201,10 @@ in
           # Don't fail activation if this service fails - it will retry on next boot
           SuccessExitStatus = "0 1 6";
         };
-        path = [ pkgs.curl pkgs.jq ];
+        path = [
+          pkgs.curl
+          pkgs.jq
+        ];
         script = ''
           IDM_URL="https://idm.xrs444.net"
           COOKIES=$(mktemp)

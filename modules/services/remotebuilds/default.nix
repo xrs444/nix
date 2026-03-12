@@ -61,7 +61,9 @@ in
           "big-parallel"
           "kvm"
         ];
-        trusted-users = [ "builder" ];
+        # Use trusted-substituters instead of trusted-users for better security
+        # This allows the cache to be used without granting full trusted-user privileges
+        trusted-substituters = [ "file:///zfs/nixcache/cache" ];
         # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
         # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
         # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
@@ -95,13 +97,13 @@ in
   ];
 
   # Determinate Nix uses /etc/nix/nix.custom.conf for user settings
-  # Write extra-platforms and trusted-users directly to nix.custom.conf so Determinate Nix picks it up
+  # Write extra-platforms directly to nix.custom.conf so Determinate Nix picks it up
+  # Note: trusted-substituters is set in nix.settings above instead of trusted-users for security
   environment.etc."nix/nix.custom.conf" = lib.mkIf (lib.elem config.networking.hostName builder) {
     text = ''
       # Custom Nix configuration for builder
       extra-platforms = aarch64-linux i686-linux
       extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
-      trusted-users = root builder
     '';
   };
 
