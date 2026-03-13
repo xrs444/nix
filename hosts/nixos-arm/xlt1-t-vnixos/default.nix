@@ -40,6 +40,29 @@
           ];
         });
       });
+
+      # Fix gnome-desktop distutils error by disabling introspection
+      gnome-desktop = prev.gnome-desktop.overrideAttrs (oldAttrs: {
+        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+          "-Dintrospection=disabled"
+        ];
+      });
+
+      # Fix libsecret distutils error by disabling introspection
+      libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
+        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+          "-Dintrospection=disabled"
+          "-Dgtk_doc=false"
+        ];
+      });
+
+      # Fix gcr distutils error by disabling introspection
+      gcr = prev.gcr.overrideAttrs (oldAttrs: {
+        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+          "-Dintrospection=disabled"
+          "-Dgtk_doc=false"
+        ];
+      });
     })
   ];
 
