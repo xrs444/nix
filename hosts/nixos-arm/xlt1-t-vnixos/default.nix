@@ -66,9 +66,9 @@
 
       # Fix wireplumber missing lxml module by disabling documentation
       wireplumber = prev.wireplumber.overrideAttrs (oldAttrs: {
-        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-          "-Ddoc=disabled"
-        ];
+        mesonFlags = builtins.map
+          (flag: if flag == "-Ddoc=enabled" then "-Ddoc=disabled" else flag)
+          (oldAttrs.mesonFlags or []);
       });
     })
   ];
