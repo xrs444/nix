@@ -30,8 +30,11 @@ in
       listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
       forward = "only"; # Force forwarding, don't contact root hints
       forwarders = [ "1.1.1.1" "9.9.9.9" ];
+      # Temporarily allow all RFC1918 networks for DNS troubleshooting
       cacheNetworks = [
+        "10.0.0.0/8"
         "172.16.0.0/12"
+        "192.168.0.0/16"
         "100.64.0.0/10"
       ];
       zones = {
