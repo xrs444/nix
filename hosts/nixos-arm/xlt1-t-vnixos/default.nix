@@ -14,6 +14,24 @@
   # Disable introspection for packages that fail with Python 3.13 distutils
   nixpkgs.overlays = [
     (final: prev: {
+      # Fix gobject-introspection to work with Python 3.13 (no distutils)
+      # This is the root cause - patch g-ir-scanner to not import distutils
+      gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
+        patches = (oldAttrs.patches or []) ++ [
+          (prev.writeText "remove-distutils.patch" ''
+            --- a/giscanner/utils.py
+            +++ b/giscanner/utils.py
+            @@ -377,7 +377,6 @@ def get_resource_path(name, fallback=None):
+                 # Running uninstalled?
+                 return os.path.join(datadir, name)
+
+            -import distutils.cygwinccompiler
+
+             if os.name == 'nt':
+                 _all_shlibsuffix = {'.dll', '.pyd'}
+          '')
+        ];
+      });
       # Fix gtk4 distutils error by disabling introspection
       gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
         outputs = builtins.filter (x: x != "devdoc") oldAttrs.outputs;
