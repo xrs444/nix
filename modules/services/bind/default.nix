@@ -24,6 +24,10 @@ in
 {
   config = lib.mkIf hasRole {
 
+    # Open DNS port in firewall
+    networking.firewall.allowedTCPPorts = [ 53 ];
+    networking.firewall.allowedUDPPorts = [ 53 ];
+
     services.bind = {
       enable = true;
       # Temporarily listen on all IPs for troubleshooting
