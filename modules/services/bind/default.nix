@@ -26,8 +26,9 @@ in
 
     services.bind = {
       enable = true;
-      listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
-      listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
+      # Temporarily listen on all IPs for troubleshooting
+      # listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
+      # listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
       forward = "only"; # Force forwarding, don't contact root hints
       forwarders = [ "1.1.1.1" "9.9.9.9" ];
       # Temporarily allow all RFC1918 networks for DNS troubleshooting
