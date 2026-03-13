@@ -76,7 +76,7 @@ in
       };
       extraOptions = ''
         # Response Policy Zone for local DNS overrides
-        response-policy { zone "local.rpz"; };
+        response-policy { zone "local.rpz" policy given; };
       '';
 
       extraConfig = ''
