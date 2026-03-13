@@ -7,6 +7,7 @@
     ./borgbackup
     ./determinate-nix
     ./ffr
+    ./flakehub-auth
     ./github-runner
     ./homeassistant
     ./iprouting

@@ -23,6 +23,9 @@ in
   };
 
   config = {
+    # Enable FlakeHub authentication
+    services.flakehub-auth.enable = true;
+
     # Common Nix configuration (experimental-features already set in base-nixos.nix)
     nix.settings.flake-registry = "";
     nix.settings.trusted-users = [
