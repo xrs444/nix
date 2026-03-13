@@ -63,6 +63,13 @@
           "-Dgtk_doc=false"
         ];
       });
+
+      # Fix wireplumber missing lxml module by disabling documentation
+      wireplumber = prev.wireplumber.overrideAttrs (oldAttrs: {
+        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
+          "-Ddoc=disabled"
+        ];
+      });
     })
   ];
 
