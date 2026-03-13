@@ -29,7 +29,7 @@ in
       # Temporarily listen on all IPs for troubleshooting
       # listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
       # listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
-      forward = "only"; # Force forwarding, don't contact root hints
+      forward = "first"; # Forward to these servers first, use root hints as fallback
       forwarders = [ "1.1.1.1" "9.9.9.9" ];
       # Temporarily allow all RFC1918 networks for DNS troubleshooting
       cacheNetworks = [
@@ -145,8 +145,6 @@ in
             xsvr2              IN      A       172.20.1.20
             xsvr3              IN      A       172.20.1.30
           ''}";
-          forward first;
-          forwarders { 9.9.9.9; 1.1.1.1; };
         };
       '';
     };
