@@ -4,6 +4,17 @@
   # Niri - Scrollable-tiling Wayland compositor
   programs.niri.enable = true;
 
+  # Override XDG portal to avoid GNOME dependencies
+  # Use wlr portal for Wayland compositors instead of GTK/GNOME portals
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-wlr ];
+    config.common.default = "wlr";
+  };
+
+  # Disable GNOME keyring (use pinentry-qt for GPG instead)
+  services.gnome.gnome-keyring.enable = false;
+
   # Display manager for login
   services.greetd = {
     enable = true;
