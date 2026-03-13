@@ -77,19 +77,9 @@ in
             xntnx-pc          IN      A       172.25.2.100
           '';
         };
-      };
-      extraConfig = ''
-        # Conditional forwarder for Tailscale domain
-        zone "corgi-squeaker.ts.net" {
-          type forward;
-          forward only;
-          forwarders { 100.100.100.100; };
-        };
-
-        # Authoritative zone for xrs444.net
-        zone "xrs444.net" {
-          type master;
-          file "${pkgs.writeText "xrs444_net" ''
+        "xrs444.net" = {
+          master = true;
+          file = pkgs.writeText "xrs444_net" ''
             $ORIGIN xrs444.net.
             $TTL    1h
             @            IN      SOA     ns1 hostmaster (
@@ -148,7 +138,15 @@ in
             xsvr1              IN      A       172.20.1.10
             xsvr2              IN      A       172.20.1.20
             xsvr3              IN      A       172.20.1.30
-          ''}";
+          '';
+        };
+      };
+      extraConfig = ''
+        # Conditional forwarder for Tailscale domain
+        zone "corgi-squeaker.ts.net" {
+          type forward;
+          forward only;
+          forwarders { 100.100.100.100; };
         };
       '';
     };
