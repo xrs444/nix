@@ -161,8 +161,9 @@ in
       iptables -A nixos-fw -s ${dnsIP} -d 100.100.100.100 -p tcp --dport 53 -j ACCEPT
 
       # Block all other traffic to/from DNS IP
-      iptables -A nixos-fw -d ${dnsIP} -j DROP
-      iptables -A nixos-fw -s ${dnsIP} -j DROP
+      # TEMPORARILY DISABLED FOR DNS TROUBLESHOOTING
+      # iptables -A nixos-fw -d ${dnsIP} -j DROP
+      # iptables -A nixos-fw -s ${dnsIP} -j DROP
     '';
 
     networking.firewall.extraStopCommands = lib.mkIf hasDedicatedDnsIP ''
@@ -175,8 +176,9 @@ in
       iptables -D nixos-fw -s ${dnsIP} -d 9.9.9.9 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
       iptables -D nixos-fw -s ${dnsIP} -d 100.100.100.100 -p udp --dport 53 -j ACCEPT 2>/dev/null || true
       iptables -D nixos-fw -s ${dnsIP} -d 100.100.100.100 -p tcp --dport 53 -j ACCEPT 2>/dev/null || true
-      iptables -D nixos-fw -d ${dnsIP} -j DROP 2>/dev/null || true
-      iptables -D nixos-fw -s ${dnsIP} -j DROP 2>/dev/null || true
+      # TEMPORARILY DISABLED FOR DNS TROUBLESHOOTING
+      # iptables -D nixos-fw -d ${dnsIP} -j DROP 2>/dev/null || true
+      # iptables -D nixos-fw -s ${dnsIP} -j DROP 2>/dev/null || true
     '';
   };
 }
