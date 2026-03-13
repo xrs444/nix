@@ -75,6 +75,70 @@ in
         };
       };
       extraConfig = ''
+        # Response Policy Zone for local DNS overrides
+        response-policy { zone "local.rpz"; };
+
+        zone "local.rpz" {
+          type master;
+          file "${pkgs.writeText "local_rpz" ''
+            $TTL 60
+            @   IN  SOA  localhost. root.localhost. (
+                            1    ; Serial
+                            3h   ; Refresh
+                            1h   ; Retry
+                            1w   ; Expire
+                            1h)  ; Negative Cache TTL
+                IN  NS   localhost.
+
+            ; Local infrastructure records
+            xsvr1.xrs444.net       IN  A  172.20.1.10
+            xsvr2.xrs444.net       IN  A  172.20.1.20
+            xsvr3.xrs444.net       IN  A  172.20.1.30
+            nixcache.xrs444.net    IN  A  172.20.1.10
+            idm.xrs444.net         IN  A  172.20.1.110
+            time.xrs444.net        IN  A  172.18.10.250
+
+            ; VMs and devices
+            hass.xrs444.net        IN  A  172.18.7.1
+            pbx.xrs444.net         IN  A  172.18.6.1
+
+            ; Kubernetes services (via Traefik at 172.21.0.2)
+            apprise.xrs444.net         IN  A  172.21.0.2
+            atuin.xrs444.net           IN  A  172.21.0.2
+            audiobookshelf.xrs444.net  IN  A  172.21.0.2
+            booklore.xrs444.net        IN  A  172.21.0.2
+            borgwarehouse.xrs444.net   IN  A  172.21.0.2
+            cups.xrs444.net            IN  A  172.21.0.2
+            crafty.xrs444.net          IN  A  172.21.0.2
+            element.xrs444.net         IN  A  172.21.0.2
+            garage.xrs444.net          IN  A  172.21.0.2
+            home.xrs444.net            IN  A  172.21.0.2
+            immich.xrs444.net          IN  A  172.21.0.2
+            jellyfin.xrs444.net        IN  A  172.21.0.2
+            jitsi.xrs444.net           IN  A  172.21.0.2
+            linkwarden.xrs444.net      IN  A  172.21.0.2
+            loki.xrs444.net            IN  A  172.21.0.2
+            longhorn.xrs444.net        IN  A  172.21.0.2
+            lubelogger.xrs444.net      IN  A  172.21.0.2
+            manyfold.xrs444.net        IN  A  172.21.0.2
+            matrix.xrs444.net          IN  A  172.21.0.2
+            mealie.xrs444.net          IN  A  172.21.0.2
+            netbox.xrs444.net          IN  A  172.21.0.2
+            nocodb.xrs444.net          IN  A  172.21.0.2
+            ntfy.xrs444.net            IN  A  172.21.0.2
+            paperless.xrs444.net       IN  A  172.21.0.2
+            romm.xrs444.net            IN  A  172.21.0.2
+            rustdesk.xrs444.net        IN  A  172.21.0.2
+            s3.xrs444.net              IN  A  172.21.0.2
+            synapse.xrs444.net         IN  A  172.21.0.2
+            tdarr.xrs444.net           IN  A  172.21.0.2
+            traefik.xrs444.net         IN  A  172.21.0.2
+
+            ; Other services
+            omada.xrs444.net           IN  A  172.21.0.7
+          ''}";
+        };
+
         # Conditional forwarder for Tailscale domain
         zone "corgi-squeaker.ts.net" {
           type forward;
@@ -82,10 +146,10 @@ in
           forwarders { 100.100.100.100; };
         };
 
-        # Zone-specific forwarding for xrs444.net
-        zone "xrs444.net" {
-          type master;
-          file "${pkgs.writeText "xrs444_net" ''
+        # Old authoritative zone - keeping for reference but unused with RPZ
+        # zone "xrs444.net" {
+        #   type master;
+        #   file "${pkgs.writeText "xrs444_net" ''
             $ORIGIN xrs444.net.
             $TTL    1h
             @            IN      SOA     ns1 hostmaster (
@@ -145,7 +209,7 @@ in
             xsvr2              IN      A       172.20.1.20
             xsvr3              IN      A       172.20.1.30
           ''}";
-        };
+        # };
       '';
     };
 
