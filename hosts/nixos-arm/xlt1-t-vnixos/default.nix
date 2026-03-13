@@ -70,14 +70,6 @@
           (flag: if flag == "-Ddoc=enabled" then "-Ddoc=disabled" else flag)
           (oldAttrs.mesonFlags or []);
       });
-
-      # Fix gjs distutils error by disabling introspection
-      gjs = prev.gjs.overrideAttrs (oldAttrs: {
-        mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-          "-Dintrospection=disabled"
-          "-Dinstalled_tests=false"
-        ];
-      });
     })
   ];
 
