@@ -45,6 +45,7 @@ in
       zones = {
         "lab.xrs444.net" = {
           master = true;
+          allowQuery = [ "any" ]; # Allow queries from any network
           file = pkgs.writeText "lab_xrs444_net" ''
             $ORIGIN lab.xrs444.net.
             $TTL    1h
@@ -79,6 +80,7 @@ in
         };
         "xrs444.net" = {
           master = true;
+          allowQuery = [ "any" ]; # Allow queries from any network
           file = pkgs.writeText "xrs444_net" ''
             $ORIGIN xrs444.net.
             $TTL    1h
