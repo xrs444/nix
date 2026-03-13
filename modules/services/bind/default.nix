@@ -74,10 +74,12 @@ in
           '';
         };
       };
-      extraConfig = ''
+      extraOptions = ''
         # Response Policy Zone for local DNS overrides
         response-policy { zone "local.rpz"; };
+      '';
 
+      extraConfig = ''
         zone "local.rpz" {
           type master;
           file "${pkgs.writeText "local_rpz" ''
