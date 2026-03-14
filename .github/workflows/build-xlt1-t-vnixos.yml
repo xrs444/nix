@@ -1,15 +1,9 @@
-name: Build xlt1-t-vnixos
+name: Build xlt1-t-vnixos (DISABLED - Python 3.13 distutils issue)
 
+# Auto-build disabled until Python 3.13 distutils issue is resolved
+# Only manual workflow_dispatch is enabled
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'hosts/nixos-arm/xlt1-t-vnixos/**'
-      - 'overlays/**'
-      - 'flake.nix'
-      - 'flake.lock'
 
 jobs:
   build:
