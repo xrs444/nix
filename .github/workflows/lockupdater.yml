@@ -199,7 +199,8 @@ jobs:
     needs: [check-pending, update-lock, check-cache]
     if: >-
       always() &&
-      needs.check-cache.result == 'success'
+      needs.check-cache.result == 'success' &&
+      needs.check-cache.outputs.ready == 'true'
     runs-on: [self-hosted, nixos, builder]
     timeout-minutes: 360
     strategy:
