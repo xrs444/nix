@@ -240,7 +240,8 @@ in
             exit 1
           fi
 
-          # Add OAuth2 redirect URL and base origin
+          # Add OAuth2 redirect URL to oauth2_rs_origin
+          # Kanidm stores both base origins and supplemental redirect URLs in oauth2_rs_origin
           add_redirect() {
             local client="$1"
             local redirect_url="$2"
@@ -248,23 +249,20 @@ in
             # Extract base origin (protocol://domain:port/)
             local base_origin=$(echo "$redirect_url" | sed -E 's|(https?://[^/]+).*|\1/|')
 
-            echo "Adding redirect URL $redirect_url and origin $base_origin for $client"
+            echo "Adding redirect URL $redirect_url and origin $base_origin to $client"
 
-            # Get current config
-            local current_response=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client")
+            # Get current oauth2_rs_origin values
+            local current_origins=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
+              | jq -r '.attrs.oauth2_rs_origin[]?' 2>/dev/null)
 
-            # Update oauth2_rs_origin (base origins)
-            local current_origins=$(echo "$current_response" | jq -r '.attrs.oauth2_rs_origin[]?' 2>/dev/null)
-            local all_origins=$(printf '%s\n' $current_origins "$base_origin" | sort -u | jq -R . | jq -s .)
+            # Add both the base origin and full redirect URL to oauth2_rs_origin
+            # This ensures both the domain root and the callback path are allowed
+            local all_origins=$(printf '%s\n' $current_origins "$base_origin" "$redirect_url" | sort -u | jq -R . | jq -s .)
 
-            # Update oauth2_rs_redirect_url (full redirect URLs)
-            local current_redirects=$(echo "$current_response" | jq -r '.attrs.oauth2_rs_redirect_url[]?' 2>/dev/null)
-            local all_redirects=$(printf '%s\n' $current_redirects "$redirect_url" | sort -u | jq -R . | jq -s .)
-
-            # Apply both attributes
+            # Apply to oauth2_rs_origin
             curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$IDM_URL/v1/oauth2/$client" \
-              -d "{\"attrs\":{\"oauth2_rs_origin\": $all_origins, \"oauth2_rs_redirect_url\": $all_redirects}}"
+              -d "{\"attrs\":{\"oauth2_rs_origin\": $all_origins}}"
           }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
