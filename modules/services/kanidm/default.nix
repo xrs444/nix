@@ -275,6 +275,18 @@ in
         '';
       };
 
+      # Restart the OAuth2 redirect URLs service on every activation
+      # This ensures redirect URLs are re-applied after nixos-rebuild switch
+      system.activationScripts.kanidm-oauth2-redirect-urls = {
+        text = ''
+          if systemctl is-active kanidm.service >/dev/null 2>&1; then
+            echo "Restarting kanidm-oauth2-redirect-urls service to re-apply OAuth2 redirect URLs..."
+            systemctl restart kanidm-oauth2-redirect-urls.service || true
+          fi
+        '';
+        deps = [ ];
+      };
+
       # Open firewall ports
       networking.firewall = {
         allowedTCPPorts = [
