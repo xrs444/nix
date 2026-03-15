@@ -240,22 +240,32 @@ in
             exit 1
           fi
 
-          # Add base origin for OAuth2 client (extract base URL from redirect URL)
-          add_origin() {
+          # Add OAuth2 redirect URL and base origin
+          add_redirect() {
             local client="$1"
             local redirect_url="$2"
+
             # Extract base origin (protocol://domain:port/)
             local base_origin=$(echo "$redirect_url" | sed -E 's|(https?://[^/]+).*|\1/|')
-            echo "Adding origin $base_origin for $client (from redirect $redirect_url)"
-            CURRENT=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
-              | jq -r '.attrs.oauth2_rs_origin[]' 2>/dev/null)
-            ALL=$(printf '%s\n' $CURRENT "$base_origin" | sort -u | jq -R . | jq -s .)
+
+            echo "Adding redirect URL $redirect_url and origin $base_origin for $client"
+
+            # Get current config
+            local current_response=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client")
+
+            # Update oauth2_rs_origin (base origins)
+            local current_origins=$(echo "$current_response" | jq -r '.attrs.oauth2_rs_origin[]?' 2>/dev/null)
+            local all_origins=$(printf '%s\n' $current_origins "$base_origin" | sort -u | jq -R . | jq -s .)
+
+            # Update oauth2_rs_redirect_url (full redirect URLs)
+            local current_redirects=$(echo "$current_response" | jq -r '.attrs.oauth2_rs_redirect_url[]?' 2>/dev/null)
+            local all_redirects=$(printf '%s\n' $current_redirects "$redirect_url" | sort -u | jq -R . | jq -s .)
+
+            # Apply both attributes
             curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$IDM_URL/v1/oauth2/$client" \
-              -d "{\"attrs\":{\"oauth2_rs_origin\": $ALL}}"
+              -d "{\"attrs\":{\"oauth2_rs_origin\": $all_origins, \"oauth2_rs_redirect_url\": $all_redirects}}"
           }
-          # Backwards compatibility alias
-          add_redirect() { add_origin "$@"; }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
           add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
