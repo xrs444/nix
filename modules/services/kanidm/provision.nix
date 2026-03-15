@@ -289,6 +289,7 @@
           displayName = "Booklore";
           originUrl = "https://booklore.xrs444.net";
           originLanding = "https://booklore.xrs444.net";
+          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_booklore_secret";
           scopeMaps = {
