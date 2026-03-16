@@ -42,3 +42,15 @@ jobs:
           echo "Copying to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.xdash1.config.system.build.toplevel"
           echo "xdash1: BUILD SUCCESS"
+
+      - name: Build xdash1-minimal SD image
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+          echo "Building xdash1-minimal SD image..."
+          nix build ".#nixosConfigurations.xdash1-minimal.config.system.build.sdImage" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4
+          echo "Copying SD image to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.xdash1-minimal.config.system.build.sdImage"
+          echo "xdash1-minimal SD image: BUILD SUCCESS"
