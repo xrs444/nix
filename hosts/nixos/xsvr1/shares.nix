@@ -67,6 +67,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/movies";
@@ -74,6 +76,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/tvshows";
@@ -81,6 +85,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/audiobooks/fiction";
@@ -88,6 +94,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/audiobooks/non-fiction";
@@ -95,6 +103,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/audiobooks/adult";
@@ -102,6 +112,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/games";
@@ -109,6 +121,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/system/crafty";
@@ -130,6 +144,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/books/nonfiction";
@@ -137,6 +153,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/books/adult";
@@ -144,6 +162,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/books/ingest";
@@ -151,6 +171,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/system/matrix";
