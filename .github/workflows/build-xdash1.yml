@@ -19,6 +19,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build xdash1 large dependencies
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+          echo "Building large packages for xdash1..."
+          # Build and cache large packages that take a long time to build
+          for pkg in chromium gtk4 libadwaita gst_all_1.gst-plugins-bad pipewire openal-soft qt3d cairo zenity; do
+            echo "Building $pkg..."
+            nix build "nixpkgs#$pkg" --no-link --max-jobs 2 --cores 4 || echo "Warning: $pkg build failed, continuing..."
+            nix copy --to "$CACHE_URL" "nixpkgs#$pkg" 2>/dev/null || echo "Warning: failed to cache $pkg, continuing..."
+          done
+          echo "Large packages cached"
+
       - name: Build xdash1
         run: |
           CACHE_URL="file:///zfs/nixcache/cache"
