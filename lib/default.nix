@@ -236,6 +236,7 @@ rec {
           [
             inputs.disko.nixosModules.disko
             (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix"))
+            ../modules/sdImage/base.nix
           ]
         else
           [ ]
