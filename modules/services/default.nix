@@ -3,6 +3,7 @@
 {
   imports = [
     ./Samba
+    ./adguard
     ./bind
     ./borgbackup
     ./determinate-nix

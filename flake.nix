@@ -168,6 +168,18 @@
           enableWifi = true;
           roles = [ "monitoring-client" ];
         };
+        cmrpi1 = {
+          user = "thomas-local";
+          platform = "aarch64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          roles = [
+            "adguard"
+            "tailscale-package"
+            "monitoring-client"
+            "letsencrypt-host"
+          ];
+        };
         xlt1-t-vnixos = {
           user = "thomas-local";
           platform = "aarch64-linux";
