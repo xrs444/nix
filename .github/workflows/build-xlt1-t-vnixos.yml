@@ -24,3 +24,15 @@ jobs:
           echo "Copying to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.xlt1-t-vnixos.config.system.build.toplevel"
           echo "xlt1-t-vnixos: BUILD SUCCESS"
+
+      - name: Build xlt1-t-vnixos-minimal SD image
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+          echo "Building xlt1-t-vnixos-minimal SD image..."
+          nix build ".#nixosConfigurations.xlt1-t-vnixos-minimal.config.system.build.sdImage" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4
+          echo "Copying SD image to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.xlt1-t-vnixos-minimal.config.system.build.sdImage"
+          echo "xlt1-t-vnixos-minimal SD image: BUILD SUCCESS"
