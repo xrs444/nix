@@ -80,6 +80,8 @@
     enableRedistributableFirmware = true;
     # Enable device tree overlays
     deviceTree.enable = lib.mkDefault true;
+    # Explicitly specify device tree to avoid double allwinner/allwinner/ path bug
+    deviceTree.name = lib.mkDefault "allwinner/sun50i-h618-orangepi-zero3.dtb";
   };
 
   # Write U-Boot to SD image at the Allwinner-required 8KiB offset (sector 16).
