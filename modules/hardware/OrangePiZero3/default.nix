@@ -49,8 +49,8 @@
       "root=/dev/disk/by-label/NIXOS_SD"
       "rootfstype=ext4"
       "rootwait"
-      # Enable framebuffer console with proper video mode
-      "video=HDMI-A-1:1920x1080@60"
+      # Enable framebuffer console with 4K video mode
+      "video=HDMI-A-1:3840x2160@60"
       "drm.debug=0x00"
     ];
   };
