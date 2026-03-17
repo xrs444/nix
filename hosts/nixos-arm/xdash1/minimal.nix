@@ -25,6 +25,9 @@ in
   system.stateVersion = stateVersion;
   networking.hostName = hostname;
 
+  # Enable WiFi for xdash1 kiosk (no Ethernet cable)
+  networking.wireless.enable = true;
+
   # Basic user configuration
   users.users.${username} = {
     isNormalUser = true;
