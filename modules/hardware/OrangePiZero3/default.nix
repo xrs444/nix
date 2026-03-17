@@ -32,6 +32,11 @@
       "sun50i_codec_analog"
       "sun8i_codec"
       "sun4i_i2s"
+      # Display/framebuffer support for HDMI output
+      "sun4i_drm"
+      "sun8i_drm_hdmi"
+      "sun8i_mixer"
+      "sun4i_tcon"
       # Note: sun8i_emac may not be available in mainline kernel 6.18
       # Network should work with dwmac-sun8i instead
     ];
@@ -44,6 +49,9 @@
       "root=/dev/disk/by-label/NIXOS_SD"
       "rootfstype=ext4"
       "rootwait"
+      # Enable framebuffer console with proper video mode
+      "video=HDMI-A-1:1920x1080@60"
+      "drm.debug=0x00"
     ];
   };
 
