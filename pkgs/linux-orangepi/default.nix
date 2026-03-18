@@ -25,12 +25,17 @@ buildLinux (
 
     # Patch Makefile to skip dtbs target entirely
     postPatch = ''
-      # Remove dtbs from default targets to avoid Altera DT compilation errors
-      substituteInPlace Makefile --replace-fail \
-        'all: vmlinux modules dtbs' \
-        'all: vmlinux modules'
-      # Make dtbs target a no-op
-      echo -e '\n.PHONY: dtbs\ndtbs:\n\t@echo "Skipping dtbs build"' >> Makefile
+      echo "=== BEFORE PATCH ==="
+      grep "^all:" Makefile || echo "No all: target found"
+
+      # Remove dtbs from all makefile targets
+      sed -i 's/dtbs//g' Makefile
+
+      echo "=== AFTER PATCH ==="
+      grep "^all:" Makefile || echo "No all: target found"
+
+      # Override dtbs target to be a no-op
+      echo -e '\n# NixOS: dtbs target disabled\n.PHONY: dtbs\ndtbs:\n\t@echo "NixOS: Skipping dtbs build (handled separately)"' >> Makefile
     '';
 
     # Additional kernel configuration overrides
