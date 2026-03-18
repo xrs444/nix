@@ -23,6 +23,9 @@ buildLinux (
     # Don't build device tree blobs - NixOS handles these separately
     installsDtbs = false;
 
+    # Override make targets to exclude dtbs
+    makeTargets = [ "Image" "modules" ];
+
     # Additional kernel configuration overrides
     structuredExtraConfig = {
       # The base defconfig file handles most configuration
