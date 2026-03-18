@@ -50,4 +50,8 @@
   # Note: Using trusted-substituters instead of trusted-users for better security
   # See modules/services/remotebuilds/default.nix for trusted-substituters configuration
   nixpkgs.config.allowUnfree = true;
+
+  # Allow unsigned paths for remote builds
+  # This is needed when building packages that don't have signatures from trusted cache servers
+  nix.settings.require-sigs = false;
 }
