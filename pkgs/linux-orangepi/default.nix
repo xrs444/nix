@@ -3,13 +3,14 @@
   lib,
   buildLinux,
   fetchgit,
+  ubootTools,
   ...
 }@args:
 
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-noalt";  # -noalt: Altera platform disabled
+    version = "6.1.31-sun50iw9";  # Final version with all fixes
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -26,6 +27,9 @@ buildLinux (
 
     # Make DTB warnings non-fatal
     makeFlags = [ "DTC_FLAGS=-Wno-error" ];
+
+    # Add u-boot-tools for mkimage command needed by DT overlays
+    nativeBuildInputs = [ ubootTools ];
 
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
