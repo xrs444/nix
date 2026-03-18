@@ -18,13 +18,13 @@ buildLinux (
       hash = "sha256-kVQOoBSaa3EPtFH/83Q8SavLzT8p+6vPSf2vfOpH3Uk=";
     };
 
-    # Custom defconfig for sun50iw9 (H616/H618) with WiFi drivers enabled
-    defconfig = "sun50iw9_defconfig";
+    # Point directly to our custom defconfig file
+    kernelBaseConfig = ./sun50iw9_defconfig;
 
-    # Point to the defconfig in this directory
+    # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
-      # The defconfig file handles most configuration
-      # These patches will fix deterministic build issues
+      # The base defconfig file handles most configuration
+      # Add any runtime overrides here if needed
     };
 
     # Patches to make uwe5622 WiFi driver build deterministically
@@ -42,11 +42,6 @@ buildLinux (
         patch = ./uwe5622-unisocwcn-wcn_boot.c-remove-monkeying.patch;
       }
     ];
-
-    # Copy our custom defconfig to the kernel source
-    preConfigure = ''
-      cp ${./sun50iw9_defconfig} arch/arm64/configs/sun50iw9_defconfig
-    '';
 
     extraMeta.branch = "6.1";
   }
