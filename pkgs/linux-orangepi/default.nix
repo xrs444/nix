@@ -1,5 +1,6 @@
 # Summary: Orange Pi vendor Linux kernel 6.1.31 with uwe5622 WiFi driver support
 {
+  lib,
   buildLinux,
   fetchgit,
   ...
@@ -8,7 +9,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-dtok";  # -dtok: DTB warnings allowed
+    version = "6.1.31-sun50iw9-noalt";  # -noalt: Altera platform disabled
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -27,9 +28,10 @@ buildLinux (
     makeFlags = [ "DTC_FLAGS=-Wno-error" ];
 
     # Additional kernel configuration overrides
-    structuredExtraConfig = {
+    structuredExtraConfig = with lib.kernel; {
       # The base defconfig file handles most configuration
-      # Add any runtime overrides here if needed
+      # Disable Altera/Intel SoCFPGA platform to skip problematic Altera DTBs
+      ARCH_INTEL_SOCFPGA = lib.mkForce no;
     };
 
     # Patches to make uwe5622 WiFi driver build deterministically
