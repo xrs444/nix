@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-nodtbs";  # Skip dtbs build entirely via Makefile patch
+    version = "6.1.31-sun50iw9-sedfix";  # Skip dtbs build using postPatch sed
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -30,6 +30,12 @@ buildLinux (
 
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
+
+    # Skip building dtbs entirely - sed the Makefile to make dtbs target a no-op
+    postPatch = ''
+      sed -i 's|^\(dtbs: scripts\)$|\1\n\t@echo "Skipping dtbs build - NixOS handles device trees separately"|' Makefile
+      sed -i '/^\tdtbs/d' Makefile
+    '';
 
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
@@ -51,10 +57,6 @@ buildLinux (
       {
         name = "uwe5622-unisocwcn-wcn_boot.c-remove-monkeying";
         patch = ./uwe5622-unisocwcn-wcn_boot.c-remove-monkeying.patch;
-      }
-      {
-        name = "skip-dtbs-build";
-        patch = ./skip-dtbs.patch;
       }
     ];
 
