@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-sedfix";  # Skip dtbs build using postPatch sed
+    version = "6.1.31-sun50iw9-notargets";  # Skip dtbs via makeTargets override
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -25,17 +25,14 @@ buildLinux (
     # Don't build device tree blobs - NixOS handles these separately
     installsDtbs = false;
 
-    # Make DTB warnings non-fatal
+    # Override build targets to exclude dtbs
+    makeTargets = [ "Image" "vmlinux" "modules" ];
+
+    # Make DTB warnings non-fatal (though we're not building dtbs anyway)
     makeFlags = [ "DTC_FLAGS=-Wno-error" ];
 
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
-
-    # Skip building dtbs entirely - sed the Makefile to make dtbs target a no-op
-    postPatch = ''
-      sed -i 's|^\(dtbs: scripts\)$|\1\n\t@echo "Skipping dtbs build - NixOS handles device trees separately"|' Makefile
-      sed -i '/^\tdtbs/d' Makefile
-    '';
 
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
