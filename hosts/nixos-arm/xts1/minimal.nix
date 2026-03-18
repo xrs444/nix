@@ -16,7 +16,6 @@ in
     ../../base-nixos.nix
     ../common/default.nix
     ../common/hardware-rpi.nix
-    ../../../modules/hardware/RaspberryPi4
     ../common/boot.nix
     ../../../modules/sdImage/custom.nix
   ]
