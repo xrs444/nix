@@ -20,6 +20,9 @@ buildLinux (
     # Point directly to our custom defconfig file
     kernelBaseConfig = ./sun50iw9_defconfig;
 
+    # Don't build device tree blobs - NixOS handles these separately
+    installsDtbs = false;
+
     # Additional kernel configuration overrides
     structuredExtraConfig = {
       # The base defconfig file handles most configuration
