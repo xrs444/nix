@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-notargets";  # Skip dtbs via makeTargets override
+    version = "6.1.31-sun50iw9-onlyaw";  # Keep only Allwinner dtbs
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -25,14 +25,19 @@ buildLinux (
     # Don't build device tree blobs - NixOS handles these separately
     installsDtbs = false;
 
-    # Override build targets to exclude dtbs
-    makeTargets = [ "Image" "vmlinux" "modules" ];
-
-    # Make DTB warnings non-fatal (though we're not building dtbs anyway)
+    # Make DTB warnings non-fatal
     makeFlags = [ "DTC_FLAGS=-Wno-error" ];
 
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
+
+    # Remove problematic device tree directories before build
+    preBuild = ''
+      cd build
+      # Keep only Allwinner dtbs which compile cleanly
+      find arch/arm64/boot/dts -mindepth 1 -maxdepth 1 -type d ! -name allwinner -exec rm -rf {} +
+      cd ..
+    '';
 
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
