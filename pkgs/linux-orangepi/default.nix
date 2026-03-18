@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9";  # Final version with all fixes
+    version = "6.1.31-sun50iw9-uboot";  # Fixed ubootTools to extend not replace nativeBuildInputs
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -29,7 +29,7 @@ buildLinux (
     makeFlags = [ "DTC_FLAGS=-Wno-error" ];
 
     # Add u-boot-tools for mkimage command needed by DT overlays
-    nativeBuildInputs = [ ubootTools ];
+    nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
 
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
