@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-noscr";  # Skip overlay .scr files that need mkimage
+    version = "6.1.31-sun50iw9-dtbpatch";  # Use patch file to skip problematic DTBs
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -31,17 +31,6 @@ buildLinux (
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
 
-    # Modify DTS Makefile to only build Allwinner dtbs, skip overlay scripts
-    postPatch = ''
-      # Replace the subdir-y list to only include allwinner
-      sed -i 's/^subdir-y.*/subdir-y := allwinner/' arch/arm64/boot/dts/Makefile
-      # Remove overlay subdirectory from Allwinner Makefile (needs mkimage)
-      sed -i '/^subdir-.*overlay/d' arch/arm64/boot/dts/allwinner/Makefile
-      echo "Modified DTS Makefiles:"
-      grep "^subdir-y" arch/arm64/boot/dts/Makefile
-      grep "^subdir-" arch/arm64/boot/dts/allwinner/Makefile || echo "No overlay in allwinner Makefile"
-    '';
-
     # Additional kernel configuration overrides
     structuredExtraConfig = with lib.kernel; {
       # The base defconfig file handles most configuration
@@ -49,7 +38,7 @@ buildLinux (
       ARCH_INTEL_SOCFPGA = lib.mkForce no;
     };
 
-    # Patches to make uwe5622 WiFi driver build deterministically
+    # Patches to make uwe5622 WiFi driver build deterministically and skip problematic DTBs
     kernelPatches = [
       {
         name = "uwe5622-Makefile-remove-monkeying";
@@ -62,6 +51,10 @@ buildLinux (
       {
         name = "uwe5622-unisocwcn-wcn_boot.c-remove-monkeying";
         patch = ./uwe5622-unisocwcn-wcn_boot.c-remove-monkeying.patch;
+      }
+      {
+        name = "skip-problematic-dtbs";
+        patch = ./skip-problematic-dtbs.patch;
       }
     ];
 
