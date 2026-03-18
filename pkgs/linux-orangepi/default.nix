@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-onlyaw";  # Keep only Allwinner dtbs
+    version = "6.1.31-sun50iw9-postpatch";  # postPatch to keep only Allwinner dtbs
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -31,12 +31,12 @@ buildLinux (
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
 
-    # Remove problematic device tree directories before build
-    preBuild = ''
-      cd build
+    # Remove problematic device tree directories after patching, before build
+    postPatch = ''
       # Keep only Allwinner dtbs which compile cleanly
-      find arch/arm64/boot/dts -mindepth 1 -maxdepth 1 -type d ! -name allwinner -exec rm -rf {} +
-      cd ..
+      ls -la arch/arm64/boot/dts/
+      find arch/arm64/boot/dts -mindepth 1 -maxdepth 1 -type d ! -name allwinner ! -name overlay -exec rm -rfv {} +
+      ls -la arch/arm64/boot/dts/
     '';
 
     # Additional kernel configuration overrides
