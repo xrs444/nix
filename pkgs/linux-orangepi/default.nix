@@ -8,7 +8,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-nodt";  # -nodt suffix forces rebuild with DTB patches
+    version = "6.1.31-sun50iw9-dtok";  # -dtok: DTB warnings allowed
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -23,20 +23,8 @@ buildLinux (
     # Don't build device tree blobs - NixOS handles these separately
     installsDtbs = false;
 
-    # Patch Makefile to skip dtbs target entirely
-    postPatch = ''
-      echo "=== BEFORE PATCH ==="
-      grep "^all:" Makefile || echo "No all: target found"
-
-      # Remove dtbs from all makefile targets
-      sed -i 's/dtbs//g' Makefile
-
-      echo "=== AFTER PATCH ==="
-      grep "^all:" Makefile || echo "No all: target found"
-
-      # Override dtbs target to be a no-op
-      echo -e '\n# NixOS: dtbs target disabled\n.PHONY: dtbs\ndtbs:\n\t@echo "NixOS: Skipping dtbs build (handled separately)"' >> Makefile
-    '';
+    # Make DTB warnings non-fatal
+    makeFlags = [ "DTC_FLAGS=-Wno-error" ];
 
     # Additional kernel configuration overrides
     structuredExtraConfig = {
