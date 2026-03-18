@@ -8,7 +8,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9";
+    version = "6.1.31-sun50iw9-nodt";  # -nodt suffix forces rebuild with DTB patches
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
