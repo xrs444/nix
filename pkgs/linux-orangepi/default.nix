@@ -23,8 +23,15 @@ buildLinux (
     # Don't build device tree blobs - NixOS handles these separately
     installsDtbs = false;
 
-    # Override make targets to exclude dtbs
-    makeTargets = [ "Image" "modules" ];
+    # Patch Makefile to skip dtbs target entirely
+    postPatch = ''
+      # Remove dtbs from default targets to avoid Altera DT compilation errors
+      substituteInPlace Makefile --replace-fail \
+        'all: vmlinux modules dtbs' \
+        'all: vmlinux modules'
+      # Make dtbs target a no-op
+      echo -e '\n.PHONY: dtbs\ndtbs:\n\t@echo "Skipping dtbs build"' >> Makefile
+    '';
 
     # Additional kernel configuration overrides
     structuredExtraConfig = {
