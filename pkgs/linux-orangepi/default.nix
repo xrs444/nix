@@ -1,6 +1,5 @@
 # Summary: Orange Pi vendor Linux kernel 6.1.31 with uwe5622 WiFi driver support
 {
-  lib,
   buildLinux,
   fetchgit,
   ...
@@ -8,9 +7,9 @@
 
 buildLinux (
   args
-  // rec {
+  // {
     version = "6.1.31-sun50iw9";
-    modDirVersion = version;
+    modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
       url = "https://github.com/orangepi-xunlong/linux-orangepi.git";
@@ -22,7 +21,7 @@ buildLinux (
     kernelBaseConfig = ./sun50iw9_defconfig;
 
     # Additional kernel configuration overrides
-    structuredExtraConfig = with lib.kernel; {
+    structuredExtraConfig = {
       # The base defconfig file handles most configuration
       # Add any runtime overrides here if needed
     };
