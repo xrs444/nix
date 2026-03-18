@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-makefile";  # Modify DTS Makefile to only build Allwinner
+    version = "6.1.31-sun50iw9-noscr";  # Skip overlay .scr files that need mkimage
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -31,12 +31,15 @@ buildLinux (
     # Add u-boot-tools for mkimage command needed by DT overlays
     nativeBuildInputs = (args.nativeBuildInputs or []) ++ [ ubootTools ];
 
-    # Modify DTS Makefile to only build Allwinner dtbs
+    # Modify DTS Makefile to only build Allwinner dtbs, skip overlay scripts
     postPatch = ''
       # Replace the subdir-y list to only include allwinner
       sed -i 's/^subdir-y.*/subdir-y := allwinner/' arch/arm64/boot/dts/Makefile
-      echo "Modified DTS Makefile to only build Allwinner:"
+      # Remove overlay subdirectory from Allwinner Makefile (needs mkimage)
+      sed -i '/^subdir-.*overlay/d' arch/arm64/boot/dts/allwinner/Makefile
+      echo "Modified DTS Makefiles:"
       grep "^subdir-y" arch/arm64/boot/dts/Makefile
+      grep "^subdir-" arch/arm64/boot/dts/allwinner/Makefile || echo "No overlay in allwinner Makefile"
     '';
 
     # Additional kernel configuration overrides
