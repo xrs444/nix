@@ -21,8 +21,10 @@
       generic-extlinux-compatible.enable = lib.mkDefault true;
     };
 
-    # Use mainline kernel for Orange Pi Zero 3 (Allwinner H618)
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    # Use vendor kernel for Orange Pi Zero 3 (Allwinner H618) with WiFi support
+    kernelPackages = lib.mkDefault (
+      pkgs.linuxPackagesFor (pkgs.callPackage ../../../pkgs/linux-orangepi { })
+    );
 
     # Orange Pi Zero 3 specific kernel modules
     initrd.availableKernelModules = [
@@ -82,6 +84,8 @@
     deviceTree.enable = lib.mkDefault true;
     # Explicitly specify device tree to avoid double allwinner/allwinner/ path bug
     deviceTree.name = lib.mkDefault "allwinner/sun50i-h618-orangepi-zero3.dtb";
+    # Add WiFi firmware for uwe5622 chip
+    firmware = [ (pkgs.callPackage ../../../pkgs/orangepi-firmware { }) ];
   };
 
   # Write U-Boot to SD image at the Allwinner-required 8KiB offset (sector 16).
