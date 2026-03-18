@@ -10,7 +10,7 @@
 buildLinux (
   args
   // {
-    version = "6.1.31-sun50iw9-uboot";  # Fixed ubootTools to extend not replace nativeBuildInputs
+    version = "6.1.31-sun50iw9-nodtbs";  # Skip dtbs build entirely via Makefile patch
     modDirVersion = "6.1.31";  # Must match actual kernel version
 
     src = fetchgit {
@@ -51,6 +51,10 @@ buildLinux (
       {
         name = "uwe5622-unisocwcn-wcn_boot.c-remove-monkeying";
         patch = ./uwe5622-unisocwcn-wcn_boot.c-remove-monkeying.patch;
+      }
+      {
+        name = "skip-dtbs-build";
+        patch = ./skip-dtbs.patch;
       }
     ];
 
