@@ -36,6 +36,16 @@ in
   # Enable sudo for wheel group
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
+  # Disable verbose console output for headless operation
+  boot.kernelParams = [
+    "quiet"
+    "loglevel=3"
+    "systemd.show_status=auto"
+  ];
+
+  # Disable console on tty1 to prevent log spam
+  console.enable = lib.mkDefault false;
+
   # Boot configuration handled by sd-image.nix and hardware modules
 
   # RPi4 SD image firmware configuration
