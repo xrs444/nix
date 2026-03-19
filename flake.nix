@@ -153,13 +153,6 @@
             "monitoring-client"
           ];
         };
-        xdash1 = {
-          user = "thomas-local";
-          platform = "aarch64-linux";
-          type = "nixos";
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
-        };
         xhac-radio = {
           user = "thomas-local";
           platform = "aarch64-linux";
