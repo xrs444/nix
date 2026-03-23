@@ -14,13 +14,15 @@
     ../common/hardware-intel.nix
     inputs.nixos-hardware.nixosModules.microsoft-surface-pro-3
     ../common/boot.nix
+    "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
     ../../../modules/sdImage/custom.nix
   ];
 
   system.stateVersion = stateVersion;
   networking.hostName = hostname;
 
-  # Enable WiFi for Surface Pro 3 kiosk
+  # Enable WiFi for Surface Pro 3 kiosk via NetworkManager
+  networking.wireless.enable = lib.mkForce false;  # Disable wpa_supplicant
   networking.networkmanager.enable = true;
 
   # Basic user configuration
