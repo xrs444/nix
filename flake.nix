@@ -161,6 +161,22 @@
           enableWifi = true;
           roles = [ "monitoring-client" ];
         };
+        xdash-k = {
+          user = "thomas-local";
+          platform = "x86_64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          enableWifi = true;
+          roles = [ "monitoring-client" ];
+        };
+        xdash-l = {
+          user = "thomas-local";
+          platform = "x86_64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          enableWifi = true;
+          roles = [ "monitoring-client" ];
+        };
         cmrpi1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
