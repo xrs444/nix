@@ -225,12 +225,6 @@
       nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
 
-      # Expose ISO images as packages for x86_64-linux only
-      packages.x86_64-linux = {
-        xdash-k-iso = (lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig).xdash-k-minimal.config.system.build.isoImage;
-        xdash-l-iso = (lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig).xdash-l-minimal.config.system.build.isoImage;
-      };
-
       devShells = lib.forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = with inputs.nixpkgs.legacyPackages.${system}; [
