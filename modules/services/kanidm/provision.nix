@@ -15,6 +15,12 @@
       "nocodb-admin" = {
         members = [ "admins" ];
       };
+      "seatable" = {
+        members = [ "users" ];
+      };
+      "seatable-admin" = {
+        members = [ "admins" ];
+      };
       "paperless" = {
         members = [ "users" ];
       };
@@ -107,6 +113,26 @@
               "email"
             ];
             "nocodb-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_seatable" = {
+          displayName = "Seatable";
+          originUrl = "https://seatable.xrs444.net";
+          originLanding = "https://seatable.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_seatable_secret";
+          scopeMaps = {
+            "seatable" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "seatable-admin" = [
               "openid"
               "profile"
               "email"
