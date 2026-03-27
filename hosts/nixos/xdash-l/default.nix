@@ -53,7 +53,7 @@
     ../../base-nixos.nix
     ../common/default.nix
     ../common/hardware-intel.nix
-    inputs.nixos-hardware.nixosModules.microsoft-surface-pro-3
+    inputs.nixos-hardware.nixosModules.microsoft-surface-pro-intel
     ../common/boot.nix
     ./hardware-configuration.nix
     ./network.nix

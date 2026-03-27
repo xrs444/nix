@@ -12,7 +12,7 @@
   imports = [
     ../../base-nixos.nix
     ../common/hardware-intel.nix
-    inputs.nixos-hardware.nixosModules.microsoft-surface-pro-3
+    inputs.nixos-hardware.nixosModules.microsoft-surface-pro-intel
     ../common/boot.nix
     "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
     ../../../modules/sdImage/custom.nix
@@ -21,7 +21,7 @@
   system.stateVersion = stateVersion;
   networking.hostName = hostname;
 
-  # Enable WiFi for Surface Pro 3 kiosk via NetworkManager
+  # Enable WiFi for Surface Pro 4 kiosk via NetworkManager
   networking.wireless.enable = lib.mkForce false;  # Disable wpa_supplicant
   networking.networkmanager.enable = true;
 
