@@ -25,7 +25,7 @@
       persistent-apps = [
         "/Users/xrs444/Applications/Home Manager Apps/Visual Studio Code.app"
         "/Applications/Firefox.app"
-        "/Applications/Ghostty.app"
+        "/Applications/WezTerm.app"
       ];
     };
     controlcenter = {
