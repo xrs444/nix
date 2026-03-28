@@ -35,6 +35,7 @@ keys:
   - &host-xdt3-r age1c284tt2erjny8g8s3u4gp8h9f2x3rhzf7j6fuwlz4704uwdnhv5s3zl9zq
   - &host_xdt1-t age1d37vp633y9s820ew4e3az46yacwnuued0v8mt2xm54ym283fas2qdye8fh
   - &host_xcomm1 age1m8kfc70kkj24r95vvj3k0u58gur3jhtm0tu3t9a4t4fvqch3zd5splmnrg
+  - &host_xdash-k age1kajxp6uqauxpx75xcvx6q7p692vvd9le463tslkpwv69emcwsa7qx45ffs
 
 creation_rules:
   - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
@@ -57,5 +58,5 @@ creation_rules:
       - *host-xdt3-r
       - *host_xdt1-t
       - *host_xcomm1
-
+      - &host_xdash-k
 
