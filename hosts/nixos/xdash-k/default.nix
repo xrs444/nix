@@ -1,6 +1,7 @@
 # Summary: Minimal NixOS kiosk for xdash-k - WiFi + web display only
 {
   pkgs,
+  lib,
   hostname,
   inputs,
   ...
@@ -64,6 +65,10 @@
   networking.hostName = hostname;
 
   boot.supportedFilesystems = [ "vfat" "ext4" ];
+
+  # Use LTS kernel to avoid Rust build issues with 6.12.x
+  # Override the Surface kernel from nixos-hardware module
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_6;
 
   # Minimal kiosk user
   users.users.kiosk = {
