@@ -1,19 +1,14 @@
 # Summary: Minimal SD card image configuration for xpbx1 initial deployment
 {
-  config,
-  lib,
   pkgs,
-  modulesPath,
   hostname,
   ...
 }:
 {
   imports = [
-    "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
     ../../../modules/hardware/RaspberryPi4 # Pi3B is similar to Pi4
     ./disks.nix
     ./network.nix
-    ../../common
   ];
 
   networking.hostName = hostname;
