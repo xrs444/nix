@@ -355,4 +355,18 @@ in
     mutableExtensionsDir = true;
     package = pkgs.unstable.vscode;
   };
+
+  # Make settings.json writable by replacing symlink with a copy
+  home.activation.makeVSCodeSettingsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    SETTINGS_FILE="${vscodeUserDir}/settings.json"
+
+    # If it's a symlink, replace it with a writable copy
+    if [ -L "$SETTINGS_FILE" ]; then
+      echo "Making VSCode settings.json writable..."
+      SETTINGS_TARGET=$(readlink "$SETTINGS_FILE")
+      $DRY_RUN_CMD rm -f "$SETTINGS_FILE"
+      $DRY_RUN_CMD cp "$SETTINGS_TARGET" "$SETTINGS_FILE"
+      $DRY_RUN_CMD chmod u+w "$SETTINGS_FILE"
+    fi
+  '';
 }
