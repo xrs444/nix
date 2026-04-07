@@ -18,8 +18,7 @@ let
     "xts1.lan"
     "xts2.lan"
     "xcomm1.lan"
-    "xdash1.lan"
-    "xhac-radio.lan"
+    "xpbx1.lan"
   ];
 
   # Hosts with ZFS
@@ -375,6 +374,43 @@ in
               targets = map (host: "${host}:9080") allHosts;
             }
           ];
+        }
+
+        # Home Assistant metrics
+        {
+          job_name = "homeassistant";
+          scrape_interval = "60s";
+          scrape_timeout = "10s";
+          metrics_path = "/api/prometheus";
+
+          # Bearer token authentication
+          authorization = {
+            type = "Bearer";
+            credentials_file = "/var/lib/prometheus/homeassistant-token";
+          };
+
+          static_configs = [
+            {
+              # Replace with your Home Assistant hostname/IP
+              targets = [ "hass.xrs444.net:8123" ];
+              labels = {
+                instance = "home";
+                environment = "production";
+                service = "homeassistant";
+              };
+            }
+          ];
+
+          # Optional: Filter metrics to reduce cardinality
+          # Uncomment and adjust as needed
+          # metric_relabel_configs = [
+          #   # Keep only specific metric types
+          #   {
+          #     source_labels = [ "__name__" ];
+          #     regex = "homeassistant_(sensor|binary_sensor|light|switch|climate|cover)_.*";
+          #     action = "keep";
+          #   }
+          # ];
         }
 
         # Kubernetes - Traefik ingress controller metrics (via NodePort)
@@ -780,7 +816,7 @@ in
             name = "default";
             webhook_configs = [
               {
-                url = "http://apprise.apprise.svc.cluster.local:8000/notify";
+                url = "http://apprise.apprise.svc.cluster.local:8000/notify?tag=critical-infra";
                 send_resolved = true;
               }
             ];
@@ -789,7 +825,7 @@ in
             name = "critical";
             webhook_configs = [
               {
-                url = "http://apprise.apprise.svc.cluster.local:8000/notify";
+                url = "http://apprise.apprise.svc.cluster.local:8000/notify?tag=critical-infra";
                 send_resolved = true;
               }
             ];

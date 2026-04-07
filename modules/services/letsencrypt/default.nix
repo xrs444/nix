@@ -27,6 +27,7 @@ let
     "xcomm1"
     "xts1"
     "xts2"
+    "xpbx1"
   ];
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;

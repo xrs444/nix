@@ -48,13 +48,6 @@ in
     # Primary server configuration (xsvr1)
     (lib.mkIf isPrimaryServer {
       # OAuth2 client secrets for provisioning
-      sops.secrets.kanidm_oauth2_nocodb_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_nocodb_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
       sops.secrets.kanidm_oauth2_paperless_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_paperless_secret";
@@ -273,7 +266,6 @@ in
           }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
-          add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
           add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
           add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
@@ -287,6 +279,7 @@ in
           add_redirect oauth2_booklore "https://booklore.xrs444.net/oauth2-callback"
           add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
+          add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
         '';
       };
 

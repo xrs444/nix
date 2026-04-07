@@ -166,7 +166,6 @@ rec {
       armHostsWithDisko = [
         "xts1"
         "xts2"
-        "xdash1"
         "xlt1-t-vnixos"
       ];
       modulesList = [

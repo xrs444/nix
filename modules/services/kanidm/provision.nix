@@ -9,12 +9,6 @@
       "admins" = { };
       "users" = { };
       # Application access groups
-      "nocodb" = {
-        members = [ "users" ];
-      };
-      "nocodb-admin" = {
-        members = [ "admins" ];
-      };
       "seatable-admin" = {
         members = [ "admins" ];
       };
@@ -97,25 +91,6 @@
     };
     systems = {
       oauth2 = {
-        "oauth2_nocodb" = {
-          displayName = "NocoDB";
-          originUrl = "https://nocodb.xrs444.net";
-          originLanding = "https://nocodb.xrs444.net";
-          allowInsecureClientDisablePkce = true;
-          basicSecretFile = "/run/secrets/kanidm_oauth2_nocodb_secret";
-          scopeMaps = {
-            "nocodb" = [
-              "openid"
-              "profile"
-              "email"
-            ];
-            "nocodb-admin" = [
-              "openid"
-              "profile"
-              "email"
-            ];
-          };
-        };
         "oauth2_seatable" = {
           displayName = "Seatable";
           originUrl = "https://seatable.xrs444.net";

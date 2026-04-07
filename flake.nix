@@ -153,30 +153,6 @@
             "monitoring-client"
           ];
         };
-        xhac-radio = {
-          user = "thomas-local";
-          platform = "aarch64-linux";
-          type = "nixos";
-          enableHomeManager = false;
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
-        };
-        xdash-k = {
-          user = "thomas-local";
-          platform = "x86_64-linux";
-          type = "nixos";
-          enableHomeManager = false;
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
-        };
-        xdash-l = {
-          user = "thomas-local";
-          platform = "x86_64-linux";
-          type = "nixos";
-          enableHomeManager = false;
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
-        };
         cmrpi1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
@@ -185,6 +161,17 @@
           roles = [
             "adguard"
             "tailscale-package"
+            "monitoring-client"
+            "letsencrypt-host"
+          ];
+        };
+        xpbx1 = {
+          user = "thomas-local";
+          platform = "aarch64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          roles = [
+            "asterisk"
             "monitoring-client"
             "letsencrypt-host"
           ];
@@ -249,6 +236,7 @@
         }) validHomes
       );
       nixosModules = {
+        asterisk = import ./modules/services/asterisk;
         cockpit = import ./modules/packages-nixos/cockpit;
         comin = import ./modules/packages-nixos/comin;
         zfs = import ./modules/services/zfs;
