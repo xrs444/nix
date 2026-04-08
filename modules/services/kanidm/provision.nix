@@ -75,6 +75,18 @@
       "matrix-admin" = {
         members = [ "admins" ];
       };
+      "termix" = {
+        members = [ "users" ];
+      };
+      "termix-admin" = {
+        members = [ "admins" ];
+      };
+      "warpgate" = {
+        members = [ "users" ];
+      };
+      "warpgate-admin" = {
+        members = [ "admins" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -317,6 +329,44 @@
             "matrix-admin" = [
               "openid"
               "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_termix" = {
+          displayName = "Termix Server Management";
+          originUrl = "https://termix.xrs444.net";
+          originLanding = "https://termix.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_termix_secret";
+          scopeMaps = {
+            "termix" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "termix-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_warpgate" = {
+          displayName = "Warpgate Bastion";
+          originUrl = "https://warpgate.xrs444.net";
+          originLanding = "https://warpgate.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_warpgate_secret";
+          scopeMaps = {
+            "warpgate" = [
+              "openid"
+              "email"
+            ];
+            "warpgate-admin" = [
+              "openid"
               "email"
             ];
           };

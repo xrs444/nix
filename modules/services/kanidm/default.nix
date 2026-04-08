@@ -132,6 +132,20 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_termix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_termix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_warpgate_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_warpgate_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -280,6 +294,8 @@ in
           add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
           add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
+          add_redirect oauth2_termix    "https://termix.xrs444.net/api/auth/callback/oidc"
+          add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
         '';
       };
 
