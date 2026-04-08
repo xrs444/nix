@@ -294,7 +294,7 @@ in
           add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
           add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
-          add_redirect oauth2_termix    "https://termix.xrs444.net/api/auth/callback/oidc"
+          add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
           add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
         '';
       };
