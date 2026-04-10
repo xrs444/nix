@@ -1,36 +1,20 @@
-# Summary: Network configuration for xpbx1
+# Summary: Network configuration for xpbx1 - Uses DHCP for initial boot
+# The full static IP configuration will be deployed by comin
 { ... }:
 {
   networking = {
-    # Use systemd-networkd for network configuration
+    # Use DHCP for initial network setup
+    useDHCP = true;
     useNetworkd = true;
-    useDHCP = false;
-
-    # Default gateway for VoIP network
-    defaultGateway = {
-      address = "172.18.6.1";
-      interface = "eth0";
-    };
-
-    # DNS servers
-    nameservers = [
-      "172.18.6.1"
-      "1.1.1.1"
-      "8.8.8.8"
-    ];
   };
 
-  # Enable systemd-networkd with static IP
+  # Simple DHCP configuration for initial boot
   systemd.network = {
     enable = true;
     networks = {
-      "10-lan" = {
-        matchConfig.Name = "eth0 en*";
-        networkConfig = {
-          Address = "172.18.6.1/24";
-          Gateway = "172.18.6.1";
-          DNS = [ "172.18.6.1" "1.1.1.1" "8.8.8.8" ];
-        };
+      "40-enu1u1u1" = {
+        matchConfig.Name = "enu1u1u1";
+        networkConfig.DHCP = "yes";
       };
     };
   };

@@ -1,25 +1,24 @@
 # Summary: Minimal SD card image configuration for xpbx1 initial deployment
+# Bootstraps with comin for full config deployment
 {
   pkgs,
+  lib,
+  stateVersion,
   hostname,
-  inputs,
   ...
 }:
 {
   imports = [
-    inputs.comin.nixosModules.comin
+    ../../base-nixos.nix
+    ../common/default.nix
     ../../../modules/hardware/RaspberryPi4 # Pi3B is similar to Pi4
+    ../common/boot.nix
     ./disks.nix
     ./network.nix
   ];
 
+  system.stateVersion = stateVersion;
   networking.hostName = hostname;
-
-  # Enable nix flakes and commands for comin
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
 
   # Disable only device tree overlays to avoid Python libfdt issue
   # Keep deviceTree enabled but clear overlays to bypass the broken builder
@@ -29,13 +28,10 @@
   # The default SD image config includes modules not in the RPi kernel
   boot.initrd.allowMissingModules = true;
 
-  # Enable SSH for initial setup
-  services.openssh = {
-    enable = true;
-    settings = {
-      PermitRootLogin = "yes";
-      PasswordAuthentication = true;
-    };
+  # Enable SSH for initial setup - override base config for root access
+  services.openssh.settings = {
+    PermitRootLogin = lib.mkForce "yes";
+    PasswordAuthentication = lib.mkForce true;
   };
 
   # Set a default root password for initial setup
@@ -58,7 +54,7 @@
   # Ensure comin restarts on failure
   systemd.services.comin.serviceConfig = {
     Restart = "always";
-    RestartSec = 30;
+    RestartSec = lib.mkDefault 30;
   };
 
   # Minimal system packages for initial setup
