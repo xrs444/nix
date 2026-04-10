@@ -17,10 +17,9 @@
   # Keep deviceTree enabled but clear overlays to bypass the broken builder
   hardware.deviceTree.overlays = pkgs.lib.mkForce [];
 
-  # xpbx1 is a headless PBX - exclude graphics/display modules
-  boot.initrd.includeDefaultModules = pkgs.lib.mkForce false;
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ ];
+  # Allow missing kernel modules during SD image build
+  # The default SD image config includes modules not in the RPi kernel
+  boot.initrd.allowMissingModules = true;
 
   # Enable SSH for initial setup
   services.openssh = {
