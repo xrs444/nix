@@ -43,6 +43,31 @@
 
     # Firmware configuration for Raspberry Pi 3B
     firmwareSize = 128; # MB
+
+    # Manually populate firmware to avoid device-tree-overlays Python libfdt issue
+    populateFirmwareCommands =
+      let
+        configTxt = pkgs.writeText "config.txt" ''
+          [pi3]
+          kernel=u-boot-rpi3.bin
+
+          [all]
+          arm_64bit=1
+          enable_uart=1
+          avoid_warnings=1
+        '';
+      in
+      ''
+        (cd ${pkgs.raspberrypifw}/share/raspberrypi/boot && cp bootcode.bin fixup*.dat start*.elf $NIX_BUILD_TOP/firmware/)
+
+        # Device tree files for Raspberry Pi 3B
+        cp ${pkgs.raspberrypifw}/share/raspberrypi/boot/bcm2710-rpi-3-b.dtb firmware/
+        cp ${pkgs.raspberrypifw}/share/raspberrypi/boot/bcm2710-rpi-3-b-plus.dtb firmware/
+        cp -r ${pkgs.raspberrypifw}/share/raspberrypi/boot/overlays firmware/
+
+        cp ${pkgs.ubootRaspberryPi3_64bit}/u-boot.bin firmware/u-boot-rpi3.bin
+        cp ${configTxt} firmware/config.txt
+      '';
   };
 
   # Bootloader configuration
