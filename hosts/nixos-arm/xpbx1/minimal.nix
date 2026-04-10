@@ -2,16 +2,24 @@
 {
   pkgs,
   hostname,
+  inputs,
   ...
 }:
 {
   imports = [
+    inputs.comin.nixosModules.comin
     ../../../modules/hardware/RaspberryPi4 # Pi3B is similar to Pi4
     ./disks.nix
     ./network.nix
   ];
 
   networking.hostName = hostname;
+
+  # Enable nix flakes and commands for comin
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Disable only device tree overlays to avoid Python libfdt issue
   # Keep deviceTree enabled but clear overlays to bypass the broken builder
@@ -34,11 +42,33 @@
   # CHANGE THIS AFTER FIRST BOOT
   users.users.root.initialPassword = "nixos";
 
+  # Enable comin for automatic configuration deployment
+  services.comin = {
+    enable = true;
+    hostname = hostname;
+    remotes = [
+      {
+        name = "origin";
+        url = "https://github.com/xrs444/nix.git";
+        branches.main.name = "main";
+      }
+    ];
+  };
+
+  # Ensure comin restarts on failure
+  systemd.services.comin.serviceConfig = {
+    Restart = "always";
+    RestartSec = 30;
+  };
+
   # Minimal system packages for initial setup
   environment.systemPackages = with pkgs; [
+    git
     vim
     wget
     tmux
+    curl
+    htop
   ];
 
   # SD image configuration
