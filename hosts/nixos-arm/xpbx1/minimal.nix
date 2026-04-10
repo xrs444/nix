@@ -13,8 +13,9 @@
 
   networking.hostName = hostname;
 
-  # Disable device tree overlays to avoid Python libfdt issue
-  hardware.deviceTree.enable = pkgs.lib.mkForce false;
+  # Disable only device tree overlays to avoid Python libfdt issue
+  # Keep deviceTree enabled but clear overlays to bypass the broken builder
+  hardware.deviceTree.overlays = pkgs.lib.mkForce [];
 
   # Enable SSH for initial setup
   services.openssh = {
