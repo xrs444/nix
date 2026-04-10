@@ -17,6 +17,11 @@
   # Keep deviceTree enabled but clear overlays to bypass the broken builder
   hardware.deviceTree.overlays = pkgs.lib.mkForce [];
 
+  # xpbx1 is a headless PBX - exclude graphics/display modules
+  boot.initrd.includeDefaultModules = pkgs.lib.mkForce false;
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ ];
+
   # Enable SSH for initial setup
   services.openssh = {
     enable = true;
