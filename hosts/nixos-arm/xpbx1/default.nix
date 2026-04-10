@@ -18,6 +18,10 @@
 
   networking.hostName = hostname;
 
+  # Disable device tree overlays to avoid Python libfdt issue
+  # Raspberry Pi 3B works fine with the default device tree
+  hardware.deviceTree.enable = lib.mkForce false;
+
   # Bootloader configuration for Raspberry Pi 3B
   boot.loader.generic-extlinux-compatible.enable = lib.mkForce true;
 
