@@ -3,9 +3,15 @@
 {
   inputs,
   stateVersion ? "25.05",
+  hostRoles ? [ ],
   ...
 }:
 {
+  # Make hostRoles available to all imported modules
+  _module.args = {
+    inherit hostRoles;
+  };
+
   imports = [
     inputs.home-manager.nixosModules.home-manager
     inputs.agenix.nixosModules.default
