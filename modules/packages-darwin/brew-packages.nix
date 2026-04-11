@@ -38,6 +38,7 @@
       "microsoft-teams"
       "minecraft"
       "naps2"
+      "orbstack"
       "postman"
       "qmk-toolbox"
       "raspberry-pi-imager"
