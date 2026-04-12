@@ -43,7 +43,7 @@ in
         "asterisk.conf" = ''
           [directories]
           astetcdir => /etc/asterisk
-          astmoddir => /var/lib/asterisk/modules
+          astmoddir => ${pkgs.asterisk}/lib/asterisk/modules
           astvarlibdir => /var/lib/asterisk
           astdatadir => /var/lib/asterisk
           astagidir => /var/lib/asterisk/agi-bin
