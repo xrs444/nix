@@ -191,6 +191,7 @@ rec {
             username = hostConfig.user;
             platform = hostConfig.platform;
             desktop = hostConfig.desktop or null;
+            hostRoles = hostConfig.roles or [ ];
             lib = inputs.nixpkgs.lib;
             config = { };
             pkgs = import inputs.nixpkgs { system = hostConfig.platform; };
