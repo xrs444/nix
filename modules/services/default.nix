@@ -4,6 +4,7 @@
   imports = [
     ./Samba
     ./adguard
+    ./asterisk
     ./bind
     ./borgbackup
     ./determinate-nix
