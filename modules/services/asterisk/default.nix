@@ -56,37 +56,10 @@ in
           debug = 3
         '';
 
-        # Basic modules.conf - enable only necessary modules
+        # Basic modules.conf - autoload all modules
         "modules.conf" = ''
           [modules]
-          autoload = no
-
-          ; Core modules
-          load => res_musiconhold.so
-          load => res_rtp_asterisk.so
-          load => res_pjsip.so
-          load => res_pjsip_session.so
-          load => chan_pjsip.so
-
-          ; Applications
-          load => app_dial.so
-          load => app_echo.so
-          load => app_playback.so
-          load => app_voicemail.so
-
-          ; Codecs
-          load => codec_ulaw.so
-          load => codec_alaw.so
-          load => codec_gsm.so
-
-          ; Formats
-          load => format_gsm.so
-          load => format_pcm.so
-          load => format_wav.so
-          load => format_wav_gsm.so
-
-          ; PBX
-          load => pbx_config.so
+          autoload = yes
         '';
 
         # Basic pjsip.conf for SIP configuration
