@@ -5,6 +5,7 @@
     ./Samba
     ./adguard
     ./asterisk
+    ./atftpd
     ./bind
     ./borgbackup
     ./determinate-nix

@@ -10,6 +10,8 @@ let
   isAsteriskHost = lib.elem "asterisk" hostRoles;
 in
 {
+  imports = [ ./extensions.nix ];
+
   config = lib.mkIf isAsteriskHost {
     # Ensure Asterisk logs are captured by Promtail
     # Asterisk logs to /var/log/asterisk/ by default
@@ -71,19 +73,6 @@ in
           type = transport
           protocol = udp
           bind = 0.0.0.0:5060
-        '';
-
-        # Basic extensions.conf for dialplan
-        "extensions.conf" = ''
-          ; Dialplan configuration
-          ; Host-specific extensions should be added via host config
-
-          [general]
-          static = yes
-          writeprotect = no
-
-          [default]
-          ; Extensions will be configured in host-specific configs
         '';
 
         # RTP configuration
