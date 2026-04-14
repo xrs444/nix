@@ -115,6 +115,43 @@
     model = "sonnet";
   };
 
+  # SOPS config for ~/.claude secrets (kept separate from project secrets)
+  home.file.".claude/.sops.yaml".text = ''
+    creation_rules:
+      - path_regex: secrets/.*\.yaml$
+        age: age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
+  '';
+
+  # MCP server wrapper scripts — decrypt SOPS credentials and launch containers
+  home.file.".claude/scripts/run-ha-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      HA_URL=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /url:/{print $2; exit}' | tr -d '"')
+      HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      exec docker run --rm -i --name "mcp-homeassistant-$$" \
+        -e HOMEASSISTANT_URL="$HA_URL" \
+        -e HOMEASSISTANT_TOKEN="$HA_TOKEN" \
+        ghcr.io/homeassistant-ai/ha-mcp:stable
+    '';
+  };
+
+  home.file.".claude/scripts/run-firewalla-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      exec docker run --rm -i --name "mcp-firewalla-$$" \
+        -e FIREWALLA_MSP_ID=dn-j3almw \
+        -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
+        amittell/firewalla-mcp-server:latest
+    '';
+  };
+
   # Enable font configuration
   fonts.fontconfig.enable = true;
 
