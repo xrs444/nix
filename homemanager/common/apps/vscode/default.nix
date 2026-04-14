@@ -356,6 +356,12 @@ in
     package = pkgs.unstable.vscode;
   };
 
+  # Remove stale settings.json.backup before home-manager tries to create it,
+  # since makeVSCodeSettingsWritable leaves a real file that triggers a backup each run.
+  home.activation.cleanVSCodeBackup = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+    rm -f "${vscodeUserDir}/settings.json.backup"
+  '';
+
   # Make settings.json writable by replacing symlink with a copy
   home.activation.makeVSCodeSettingsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     SETTINGS_FILE="${vscodeUserDir}/settings.json"
