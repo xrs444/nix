@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CACHE_URL="http://nixcache.xrs444.net"
-HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2 xpbx1)
+HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2)
 FLAKE_DIR="/var/lib/comin/repository"
 APPRISE_URL="https://apprise.xrs444.net/notify"
 
