@@ -42,3 +42,10 @@ jobs:
           echo "Copying SD image to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.xts2-minimal.config.system.build.sdImage"
           echo "xts2-minimal SD image: BUILD SUCCESS"
+
+      - name: Notify build failure
+        if: failure()
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"Build Failed: xts2\",\"body\":\"GitHub Actions build failed for xts2. $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
