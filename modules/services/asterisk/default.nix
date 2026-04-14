@@ -71,9 +71,23 @@ in
           noload => app_festival
           noload => pbx_ael
           noload => pbx_lua
-          noload => res_prometheus
           noload => res_hep_rtcp
           noload => res_hep_pjsip
+        '';
+
+        # Enable the built-in HTTP server (required by res_prometheus)
+        "http.conf" = ''
+          [general]
+          enabled = yes
+          bindaddr = 0.0.0.0
+          bindport = 8088
+        '';
+
+        # Prometheus metrics endpoint — scraped by Prometheus on port 8088
+        "prometheus.conf" = ''
+          [general]
+          enabled = yes
+          uri = metrics
         '';
 
         # Basic pjsip.conf for SIP configuration

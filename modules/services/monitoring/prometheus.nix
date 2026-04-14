@@ -413,6 +413,20 @@ in
           # ];
         }
 
+        # Asterisk PBX metrics via res_prometheus (HTTP on port 8088)
+        {
+          job_name = "asterisk";
+          metrics_path = "/metrics";
+          static_configs = [
+            {
+              targets = [ "xpbx1.lan:8088" ];
+              labels = {
+                instance = "xpbx1";
+              };
+            }
+          ];
+        }
+
         # Kubernetes - Traefik ingress controller metrics (via NodePort)
         {
           job_name = "traefik";
