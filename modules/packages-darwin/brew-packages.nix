@@ -22,7 +22,7 @@
 
     # GUI applications installed via `brew install --cask`
     casks = [
-      { name = "nikitabobko/tap/aerospace"; args = { no_quarantine = true; }; }
+      "nikitabobko/tap/aerospace"
       "balenaetcher"
       "bambu-studio"
       "batteryboi"
