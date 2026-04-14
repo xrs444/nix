@@ -74,6 +74,9 @@ in
     # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
     (lib.mkIf (!lib.elem config.networking.hostName builder) {
       distributedBuilds = true;
+      # Don't build locally — delegate everything to xsvr1.
+      # Without this, Nix uses local jobs first and never touches the remote builder.
+      settings.maxJobs = 0;
       buildMachines = [
         {
           hostName = "xsvr1.lan";
