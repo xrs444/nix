@@ -7,6 +7,7 @@
     # Homebrew taps required for some packages
     taps = [
       "qmk/qmk"
+      "nikitabobko/tap"
     ];
 
     # Packages installed via `brew install`
@@ -19,7 +20,7 @@
 
     # GUI applications installed via `brew install --cask`
     casks = [
-      "amethyst"
+      { name = "nikitabobko/tap/aerospace"; args = { no_quarantine = true; }; }
       "balenaetcher"
       "bambu-studio"
       "batteryboi"
