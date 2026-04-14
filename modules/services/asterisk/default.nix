@@ -58,10 +58,22 @@ in
           debug = 3
         '';
 
-        # Basic modules.conf - autoload all modules
+        # Basic modules.conf - autoload all modules, suppressing those not built/available
         "modules.conf" = ''
           [modules]
           autoload = yes
+
+          ; Modules not built or missing dependencies in this Nix Asterisk package
+          noload => cdr_sqlite3_custom
+          noload => cdr_manager
+          noload => app_alarmreceiver
+          noload => app_followme
+          noload => app_festival
+          noload => pbx_ael
+          noload => pbx_lua
+          noload => res_prometheus
+          noload => res_hep_rtcp
+          noload => res_hep_pjsip
         '';
 
         # Basic pjsip.conf for SIP configuration
