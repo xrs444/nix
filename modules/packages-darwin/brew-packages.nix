@@ -8,6 +8,7 @@
     taps = [
       "qmk/qmk"
       "nikitabobko/tap"
+      "FelixKratz/formulae"
     ];
 
     # Packages installed via `brew install`
@@ -16,6 +17,7 @@
       "lazyssh"
       "ice"
       "mas"
+      "FelixKratz/formulae/borders"
     ];
 
     # GUI applications installed via `brew install --cask`
