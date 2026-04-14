@@ -10,6 +10,8 @@
     # AeroSpace default configuration
     # https://nikitabobko.github.io/AeroSpace/guide
 
+    after-startup-command = ['exec-and-forget borders']
+
     [mode.main.binding]
     # Layout toggles
     alt-slash = 'layout tiles horizontal vertical'
