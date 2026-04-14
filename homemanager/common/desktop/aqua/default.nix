@@ -1,7 +1,7 @@
-{ pkgs, ... }:
+{ ... }:
 {
   # macOS Aqua-specific home-manager configuration
-  home.packages = with pkgs; [
+  home.packages = [
     # Add macOS-specific packages here
   ];
 
@@ -57,7 +57,6 @@
 
     # Workspace back-and-forth
     alt-tab = 'workspace-back-and-forth'
-    alt-shift-tab = 'move-node-to-workspace-back-and-forth'
 
     # Enter service mode
     alt-shift-semicolon = 'mode service'
