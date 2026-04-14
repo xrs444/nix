@@ -73,6 +73,25 @@ in
           noload => pbx_lua
           noload => res_hep_rtcp
           noload => res_hep_pjsip
+
+          ; Modules requiring missing config files (xmpp.conf, pjsip_notify.conf, etc.)
+          noload => res_xmpp
+          noload => chan_motif
+          noload => res_pjsip_notify
+          noload => res_stun_monitor
+          noload => res_phoneprov
+
+          ; CEL/CDR modules not in use
+          noload => cel_sqlite3_custom
+          noload => cel_custom
+
+          ; Deprecated modules scheduled for removal
+          noload => res_adsi
+          noload => app_adsiprog
+          noload => app_getcpeid
+
+          ; Fax not in use
+          noload => res_fax
         '';
 
         # Enable the built-in HTTP server (required by res_prometheus)
@@ -99,6 +118,21 @@ in
           type = transport
           protocol = udp
           bind = 0.0.0.0:5060
+        '';
+
+        # Stub configs to suppress missing-file warnings
+        "res_http_media_cache.conf" = ''
+          [general]
+        '';
+
+        "voicemail.conf" = ''
+          [general]
+
+          [zonemessages]
+        '';
+
+        "queuerules.conf" = ''
+          ; No penalty rules defined
         '';
 
         # RTP configuration
