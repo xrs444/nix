@@ -10,7 +10,7 @@ let
   isAsteriskHost = lib.elem "asterisk" hostRoles;
 in
 {
-  imports = [ ./extensions.nix ];
+  imports = [ ./extensions.nix ./pjsip.nix ];
 
   config = lib.mkIf isAsteriskHost {
     # Ensure Asterisk logs are captured by Promtail
