@@ -11,6 +11,18 @@
   home.username = username;
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
   programs = {
+    wezterm = {
+      enable = true;
+      extraConfig = ''
+        local config = wezterm.config_builder()
+        config.initial_cols = 120
+        config.initial_rows = 28
+        config.font_size = 12
+        config.color_scheme = 'Catppuccin Mocha'
+        config.font = wezterm.font 'SpaceMono Nerd Font'
+        return config
+      '';
+    };
     home-manager.enable = true;
     git = {
       enable = true;
