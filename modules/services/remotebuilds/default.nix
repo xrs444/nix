@@ -134,6 +134,12 @@ in
       extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
       extra-trusted-substituters = file:///zfs/nixcache/cache
       extra-trusted-public-keys =
+      # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
+      # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
+      # can succeed. Duplicated from nix.settings because Determinate Nix reads
+      # nix.custom.conf instead of nix.conf for runtime settings.
+      filter-syscalls = false
+      system-features = nixos-test benchmark big-parallel kvm
     '';
   };
 
