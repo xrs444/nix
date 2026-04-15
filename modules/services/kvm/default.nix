@@ -1,6 +1,7 @@
 # Summary: NixOS module for KVM virtualization, installs QEMU and virt-manager for selected hosts.
 {
   hostRoles ? [ ],
+  isWorkstation ? false,
   lib,
   pkgs,
   ...
@@ -10,14 +11,18 @@ let
 in
 lib.mkIf hasRole {
 
-  environment.systemPackages = with pkgs; [
-    qemu
-    virt-manager
-    quickemu
-    OVMF
-  ];
+  environment.systemPackages =
+    with pkgs;
+    [
+      qemu
+      OVMF
+    ]
+    ++ lib.optionals isWorkstation [
+      virt-manager
+      quickemu
+    ];
 
-  programs.virt-manager.enable = true;
+  programs.virt-manager.enable = isWorkstation;
   users.groups.libvirtd.members = [ "thomas-local" ];
 
   virtualisation = {
