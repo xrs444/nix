@@ -1,0 +1,104 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PUSHGATEWAY: http://localhost:9091
+  APPRISE_URL: https://apprise.xrs444.net/notify
+
+jobs:
+  deploy:
+    name: Build, Cache, and Deploy All Hosts
+    runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all hosts
+        run: |
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          FAILED=()
+          for host in "${HOSTS[@]}"; do
+            echo "Building $host..."
+            if ! nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link; then
+              FAILED+=("$host")
+              echo "$host: BUILD FAILED"
+            fi
+          done
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            echo "Build failures: ${FAILED[*]}"
+            exit 1
+          fi
+
+      - name: Push to binary cache
+        run: |
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          for host in "${HOSTS[@]}"; do
+            echo "Caching $host..."
+            nix copy --to "file:///zfs/nixcache/cache" \
+              ".#nixosConfigurations.$host.config.system.build.toplevel" || true
+          done
+
+      - name: Deploy remote hosts
+        run: |
+          REVISION=$(git rev-parse HEAD)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          FAILED=()
+
+          for host in "${REMOTE_HOSTS[@]}"; do
+            echo "Deploying $host..."
+            START=$(date +%s)
+            if deploy ".#$host" 2>&1; then
+              DURATION=$(( $(date +%s) - START ))
+              printf 'deploy_last_success_timestamp_seconds{host="%s"} %s\ndeploy_duration_seconds{host="%s"} %s\ndeploy_git_revision_info{host="%s",revision="%s"} 1\ndeploy_total{host="%s",result="success"} 1\n' \
+                "$host" "$(date +%s)" \
+                "$host" "$DURATION" \
+                "$host" "$REVISION" \
+                "$host" \
+                | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
+              echo "$host: DEPLOY OK (${DURATION}s)"
+            else
+              FAILED+=("$host")
+              printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
+                | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
+              echo "$host: DEPLOY FAILED"
+            fi
+          done
+
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            curl -sf -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Failed hosts: ${FAILED[*]}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
+            exit 1
+          fi
+
+      - name: Deploy xsvr1 (self)
+        run: |
+          echo "Deploying xsvr1 (self)..."
+          START=$(date +%s)
+          sudo nixos-rebuild switch --flake ".#xsvr1"
+          DURATION=$(( $(date +%s) - START ))
+          REVISION=$(git rev-parse HEAD)
+          printf 'deploy_last_success_timestamp_seconds{host="xsvr1"} %s\ndeploy_duration_seconds{host="xsvr1"} %s\ndeploy_git_revision_info{host="xsvr1",revision="%s"} 1\ndeploy_total{host="xsvr1",result="success"} 1\n' \
+            "$(date +%s)" "$DURATION" "$REVISION" \
+            | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/xsvr1" || true
+          echo "xsvr1: DEPLOY OK (${DURATION}s)"
+
+      - name: Notify success
+        if: success()
+        run: |
+          REVISION=$(git rev-parse --short HEAD)
+          curl -sf -X POST "$APPRISE_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)\",\"type\":\"success\"}" || true
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          curl -sf -X POST "$APPRISE_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"Deploy Failed\",\"body\":\"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true

@@ -25,21 +25,29 @@ build host:
     nix build .#nixosConfigurations.{{host}}.config.system.build.toplevel
     @echo "Build complete for {{host}}"
 
-# Build and cache all xsvr hosts using xsvr1 as remote builder
+# Build and cache all hosts (run on xsvr1 where the nix store is local)
 build-and-cache-all:
     #!/usr/bin/env fish
-    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xlt1-t-vnixos xts1 xts2
-    set -l cache_url "http://nixcache.xrs444.net"
-    set -l remote_builder "ssh-ng://xsvr1"
-    
+    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
+    set -l cache_url "file:///zfs/nixcache/cache"
+
     for host in $hosts
-        echo "Building $host on xsvr1..."
-        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --builders $remote_builder
-        echo "Copying $host to cache..."
-        nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel"
+        echo "Building $host..."
+        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link
+        echo "Caching $host..."
+        nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel" || true
     end
-    
+
     echo "All hosts built and cached"
+
+# Deploy a single remote host via deploy-rs (not xsvr1)
+deploy host:
+    deploy ".#{{host}}"
+
+# Deploy all remote hosts via deploy-rs, then self-deploy xsvr1
+deploy-all:
+    deploy .
+    sudo nixos-rebuild switch --flake ".#xsvr1"
 
 # SD Card Operations
 # ==================

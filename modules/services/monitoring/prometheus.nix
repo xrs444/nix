@@ -468,6 +468,18 @@ in
             }
           ];
         }
+
+        # Pushgateway — receives deployment metrics pushed from CI (deploy.yml).
+        # honor_labels preserves the instance/job labels set by the pushing client.
+        {
+          job_name = "pushgateway";
+          honor_labels = true;
+          static_configs = [
+            {
+              targets = [ "localhost:9091" ];
+            }
+          ];
+        }
       ];
 
       # Alert rules

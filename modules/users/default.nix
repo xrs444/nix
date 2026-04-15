@@ -9,6 +9,7 @@
   imports = [
     ./thomas-local.nix
     ./xrs444.nix
+    ./deploy.nix
   ]
   ++ lib.optional (!minimalImage) ./builder.nix;
 

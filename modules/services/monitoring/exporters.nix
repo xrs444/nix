@@ -145,6 +145,13 @@ in
     ++ lib.optionals isMonitoringServer [
       9116 # snmp_exporter
       9115 # blackbox_exporter
+      9091 # pushgateway
     ];
+
+    # Pushgateway — receives deployment metrics pushed from CI (deploy.yml).
+    # Only needed on the monitoring server (xsvr1).
+    services.prometheus.pushgateway = lib.mkIf isMonitoringServer {
+      enable = true;
+    };
   };
 }

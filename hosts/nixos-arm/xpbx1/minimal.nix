@@ -1,5 +1,5 @@
-# Summary: Minimal SD card image configuration for xpbx1 initial deployment
-# Bootstraps with comin for full config deployment
+# Summary: Minimal SD card image configuration for xpbx1 initial deployment.
+# Boots with root SSH access; bootstrap with: deploy .#xpbx1 from xsvr1.
 {
   pkgs,
   lib,
@@ -37,25 +37,6 @@
   # Set a default root password for initial setup
   # CHANGE THIS AFTER FIRST BOOT
   users.users.root.initialPassword = "nixos";
-
-  # Enable comin for automatic configuration deployment
-  services.comin = {
-    enable = true;
-    hostname = hostname;
-    remotes = [
-      {
-        name = "origin";
-        url = "https://github.com/xrs444/nix.git";
-        branches.main.name = "main";
-      }
-    ];
-  };
-
-  # Ensure comin restarts on failure
-  systemd.services.comin.serviceConfig = {
-    Restart = "always";
-    RestartSec = lib.mkDefault 30;
-  };
 
   # Minimal system packages for initial setup
   environment.systemPackages = with pkgs; [

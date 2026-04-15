@@ -17,7 +17,6 @@
     inputs.agenix.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     inputs.disko.nixosModules.disko
-    inputs.comin.nixosModules.comin
     ../modules/users/default.nix
     ../modules/packages-nixos/default.nix
     ../modules/services/default.nix

@@ -13,8 +13,7 @@
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     catppuccin.url = "github:catppuccin/nix";
-    comin.url = "github:nlewo/comin";
-    comin.inputs.nixpkgs.follows = "nixpkgs";
+    deploy-rs.url = "github:serokell/deploy-rs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
@@ -206,11 +205,35 @@
     in
     let
       allHomes = lib.mkAllHomes;
+      # All NixOS configs except xsvr1, which self-deploys via nixos-rebuild in CI.
+      remoteNixosConfigs = builtins.removeAttrs lib.mkAllNixosConfigs [ "xsvr1" ];
     in
     {
       homeConfigurations = allHomes;
       nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
+
+      # deploy-rs deployment configuration.
+      # xsvr1 is excluded — it runs nixos-rebuild switch locally in CI as the final step.
+      deploy = {
+        sshUser = "deploy";
+        sshOpts = [
+          "-i"
+          "/home/builder/.ssh/id_deploy"
+          "-o"
+          "StrictHostKeyChecking=accept-new"
+        ];
+        nodes = builtins.mapAttrs (hostname: cfg: {
+          hostname = "${hostname}.lan";
+          fastConnection = true;
+          profiles.system = {
+            user = "root";
+            path = inputs.deploy-rs.lib.${cfg.pkgs.system}.activate.nixos cfg;
+            magicRollback = true;
+            confirmTimeout = 60;
+          };
+        }) remoteNixosConfigs;
+      };
 
       devShells = lib.forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
@@ -223,22 +246,30 @@
         };
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };
       });
+
       checks = lib.forAllSystems (
         system:
         let
           validHomes = inputs.nixpkgs.lib.filterAttrs (
             _: cfg: cfg ? config && cfg.config ? activationPackage
           ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) allHomes);
+          homeChecks = inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
+            name = name;
+            value = cfg.config.activationPackage;
+          }) validHomes;
+          # Validate deploy-rs node configuration for the current system.
+          deployChecks =
+            if inputs.deploy-rs.lib ? ${system} then
+              inputs.deploy-rs.lib.${system}.deployChecks self.deploy
+            else
+              { };
         in
-        inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
-          name = name;
-          value = cfg.config.activationPackage;
-        }) validHomes
+        homeChecks // deployChecks
       );
+
       nixosModules = {
         asterisk = import ./modules/services/asterisk;
         cockpit = import ./modules/packages-nixos/cockpit;
-        comin = import ./modules/packages-nixos/comin;
         zfs = import ./modules/services/zfs;
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;
