@@ -96,6 +96,10 @@
     };
   };
 
+  # Override the GNOME portal that programs.niri.enable adds automatically.
+  # xdg-desktop-portal-gnome pulls in gjs -> ostree -> flatpak; unnecessary on a non-GNOME host.
+  xdg.portal.extraPortals = lib.mkForce [ pkgs.xdg-desktop-portal-gtk ];
+
   # Note: Removed gnome-remote-desktop (GNOME-specific)
   # For Wayland remote desktop, consider:
   # - wayvnc (VNC server for wlroots-based compositors)
