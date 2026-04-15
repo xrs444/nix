@@ -4,6 +4,7 @@
   imports = [
     ./Samba
     ./adguard
+    ./auto-upgrade
     ./asterisk
     ./atftpd
     ./bind

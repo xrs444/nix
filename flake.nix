@@ -74,6 +74,7 @@
             "monitoring-server"
             "github-runner"
             "bind"
+            "auto-upgrade"
           ];
         };
         xsvr2 = {
@@ -93,6 +94,7 @@
             "tailscale-package"
             "monitoring-client"
             "bind"
+            "auto-upgrade"
           ];
         };
         xsvr3 = {
@@ -109,6 +111,7 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xlabmgmt = {
@@ -120,6 +123,7 @@
           roles = [
             "bind"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xts1 = {
@@ -132,6 +136,7 @@
             "letsencrypt-host"
             "tailscale-exit-node"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xts2 = {
@@ -143,6 +148,7 @@
             "letsencrypt-host"
             "tailscale-exit-node"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xcomm1 = {
@@ -153,6 +159,7 @@
           roles = [
             "letsencrypt-host"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         cmrpi1 = {
@@ -165,6 +172,7 @@
             "tailscale-package"
             "monitoring-client"
             "letsencrypt-host"
+            "auto-upgrade"
           ];
         };
         xpbx1 = {
@@ -176,6 +184,7 @@
             "asterisk"
             "monitoring-client"
             "letsencrypt-host"
+            "auto-upgrade"
           ];
         };
         xlt1-t-vnixos = {
@@ -183,7 +192,7 @@
           platform = "aarch64-linux";
           type = "nixos";
           desktop = "gnome";
-          roles = [ ];
+          roles = [ "auto-upgrade" ];
         };
         xlt1-t = {
           user = "xrs444";

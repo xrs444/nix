@@ -15,6 +15,7 @@
     ./network.nix
     ./desktop.nix
     ./disks.nix
+    ./wake.nix
     ../../common
   ];
 
