@@ -20,7 +20,7 @@ jobs:
 
       - name: Build all hosts
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           FAILED=()
           for host in "${HOSTS[@]}"; do
             echo "Building $host..."
@@ -36,7 +36,7 @@ jobs:
 
       - name: Push to binary cache
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           for host in "${HOSTS[@]}"; do
             echo "Caching $host..."
             nix copy --to "file:///zfs/nixcache/cache" \
@@ -46,7 +46,7 @@ jobs:
       - name: Deploy remote hosts
         run: |
           REVISION=$(git rev-parse HEAD)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 cmrpi1 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           FAILED=()
 
           for host in "${REMOTE_HOSTS[@]}"; do
