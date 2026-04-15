@@ -58,6 +58,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           roles = [
             "kvm"
             "samba"
@@ -79,6 +80,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           roles = [
             "kvm"
             "samba"
@@ -97,6 +99,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           desktop = "xfce";
           roles = [
             "kvm"

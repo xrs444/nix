@@ -4,6 +4,7 @@
   inputs,
   stateVersion ? "25.05",
   hostRoles ? [ ],
+  generateManCache ? false,
   ...
 }:
 {
@@ -41,4 +42,6 @@
 
   system.stateVersion = stateVersion;
   nixpkgs.config.allowUnfree = true;
+
+  documentation.man.generateCaches = generateManCache;
 }

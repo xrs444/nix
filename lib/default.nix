@@ -211,6 +211,7 @@ rec {
         isWorkstation = (hostConfig.desktop or null) != null;
         minimalImage = false;
         hostRoles = hostConfig.roles or [ ];
+        generateManCache = hostConfig.generateManCache or false;
         lib = inputs.nixpkgs.lib;
       };
       modules = modulesList;
@@ -258,6 +259,7 @@ rec {
         isWorkstation = (hostConfig.desktop or null) != null;
         minimalImage = true;
         hostRoles = hostConfig.roles or [ ];
+        generateManCache = hostConfig.generateManCache or false;
       };
       modules = modulesList;
     };

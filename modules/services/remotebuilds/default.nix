@@ -87,7 +87,7 @@ in
       # Don't build locally — delegate everything to xsvr1.
       # Without this, Nix uses local jobs first and never touches the remote builder.
       settings = {
-        maxJobs = 0;
+        max-jobs = 0;
         # Use xsvr1's binary cache as primary substituter before falling back to cache.nixos.org.
         # Paths built by CI on xsvr1 (including ARM cross-compiled configs) are pre-populated
         # here, so deploy-rs activations require no local building at all.
