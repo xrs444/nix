@@ -23,5 +23,12 @@ final: prev: {
         mv "$installedTests/share/glib-2.0" "$installedTestsSchemaDatadir"
       fi
     '';
+    # Even with installed_tests=false, nix still runs strip over the
+    # installedTests output. Any files left in installedTests/libexec cause
+    # strip to fail. Clear the output before fixup so there is nothing to strip.
+    preFixup = (oldAttrs.preFixup or "") + ''
+      rm -rf "$installedTests"
+      mkdir -p "$installedTests"
+    '';
   });
 }

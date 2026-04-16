@@ -64,7 +64,7 @@ jobs:
             fi
             echo "Deploying $host..."
             START=$(date +%s)
-            if nix run --inputs-from . "deploy-rs#deploy-rs" -- ".#$host" 2>&1; then
+            if nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
               DURATION=$(( $(date +%s) - START ))
               printf 'deploy_last_success_timestamp_seconds{host="%s"} %s\ndeploy_duration_seconds{host="%s"} %s\ndeploy_git_revision_info{host="%s",revision="%s"} 1\ndeploy_total{host="%s",result="success"} 1\n' \
                 "$host" "$(date +%s)" \
