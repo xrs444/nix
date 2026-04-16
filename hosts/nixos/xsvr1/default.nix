@@ -54,4 +54,8 @@
   # Allow unsigned paths for remote builds
   # This is needed when building packages that don't have signatures from trusted cache servers
   nix.settings.require-sigs = false;
+
+  environment.systemPackages = [
+    inputs.deploy-rs.packages.x86_64-linux.deploy-rs
+  ];
 }
