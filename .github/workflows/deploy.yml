@@ -98,7 +98,7 @@ jobs:
           fi
           echo "Deploying xsvr1 (self)..."
           START=$(date +%s)
-          sudo nixos-rebuild switch --flake ".#xsvr1"
+          /run/wrappers/bin/sudo /run/current-system/sw/bin/nixos-rebuild switch --flake ".#xsvr1"
           DURATION=$(( $(date +%s) - START ))
           REVISION=$(git rev-parse HEAD)
           printf 'deploy_last_success_timestamp_seconds{host="xsvr1"} %s\ndeploy_duration_seconds{host="xsvr1"} %s\ndeploy_git_revision_info{host="xsvr1",revision="%s"} 1\ndeploy_total{host="xsvr1",result="success"} 1\n' \

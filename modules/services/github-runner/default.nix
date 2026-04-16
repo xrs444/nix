@@ -15,6 +15,20 @@ lib.mkIf hasRole {
     key = "github_runner_token";
   };
 
+  # Allow builder to run nixos-rebuild switch as root without a password.
+  # Required for the CI self-deploy step on xsvr1.
+  security.sudo.extraRules = [
+    {
+      users = [ "builder" ];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/nixos-rebuild";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
   services.github-runners.xsvr1-builder = {
     enable = true;
     url = "https://github.com/xrs444/nix";
