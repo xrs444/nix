@@ -22,7 +22,7 @@ lib.mkIf hasRole {
     after = [ "network.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake /zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
+      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake path:/zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
       # Run as root so nixos-rebuild can activate the new system
       User = "root";
     };
