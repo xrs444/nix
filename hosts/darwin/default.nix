@@ -25,6 +25,7 @@
     extraOptions = ''
       experimental-features = nix-command flakes
       download-buffer-size = 134217728
+      auto-optimise-store = true
     '';
     settings = {
       trusted-users = [

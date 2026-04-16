@@ -37,6 +37,9 @@
     options = "--delete-older-than 30d";
   };
 
+  # Automatically hard-link identical files in the store after each build
+  nix.settings.auto-optimise-store = true;
+
   # Configure sops-nix to use the age key file
   sops.age.keyFile = "/etc/ssh/sops-age-key.txt";
 
