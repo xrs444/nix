@@ -13,9 +13,15 @@ final: prev: {
       "-Dskip_gtk_tests=true"      # Skip GTK tests when GTK is not available
       "-Dinstalled_tests=false"    # Disable installed tests (avoid introspection build)
     ];
-    # Keep the meta to explain why tests are disabled
-    meta = oldAttrs.meta // {
-      description = oldAttrs.meta.description or "" + " (tests disabled, GTK tests skipped, installed tests disabled)";
-    };
+    # With installed_tests=false, $installedTests/share/glib-2.0 is never created.
+    # The upstream postInstall unconditionally tries to mv it, which fails.
+    # Make the mv conditional so the build succeeds without installed tests.
+    postInstall = ''
+      installedTestsSchemaDatadir="$installedTests/share/gsettings-schemas/gjs-${oldAttrs.version}"
+      mkdir -p "$installedTestsSchemaDatadir"
+      if [ -d "$installedTests/share/glib-2.0" ]; then
+        mv "$installedTests/share/glib-2.0" "$installedTestsSchemaDatadir"
+      fi
+    '';
   });
 }

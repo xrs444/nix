@@ -205,8 +205,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        # xlt1-t-vnixos removed due to Python 3.13 distutils issue
-        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xdash1, xhac-radio, xts1, xts2]
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos]
       fail-fast: false
       max-parallel: 1
     steps:
@@ -268,8 +267,8 @@ jobs:
           body: |
             Automated flake.lock update.
 
-            All 10 hosts built and cached successfully on xsvr1:
-            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2`
+            All 9 hosts built and cached successfully on xsvr1:
+            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos`
           labels: |
             dependencies
             automated
