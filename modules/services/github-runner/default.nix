@@ -57,6 +57,9 @@ lib.mkIf hasRole {
       # Auto-restart on failure (default is Restart=no which requires manual intervention)
       Restart = lib.mkForce "on-failure";
       RestartSec = "30s";
+      # Required for the xsvr1 self-deploy step: sudo needs to be able to
+      # gain root, which NoNewPrivileges (set by the upstream module) blocks.
+      NoNewPrivileges = lib.mkForce false;
     };
   };
 
