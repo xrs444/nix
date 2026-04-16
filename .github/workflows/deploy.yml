@@ -27,17 +27,24 @@ jobs:
             if ! nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link; then
               FAILED+=("$host")
               echo "$host: BUILD FAILED"
+            else
+              echo "$host: BUILD OK"
             fi
           done
           if [ ${#FAILED[@]} -gt 0 ]; then
-            echo "Build failures: ${FAILED[*]}"
-            exit 1
+            echo "BUILD_FAILED_HOSTS=${FAILED[*]}" >> "$GITHUB_ENV"
+            echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
           fi
 
       - name: Push to binary cache
         run: |
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           for host in "${HOSTS[@]}"; do
+            if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
+              echo "$host: skipping cache (build failed)"
+              continue
+            fi
             echo "Caching $host..."
             nix copy --to "file:///zfs/nixcache/cache" \
               ".#nixosConfigurations.$host.config.system.build.toplevel" || true
@@ -47,9 +54,14 @@ jobs:
         run: |
           REVISION=$(git rev-parse HEAD)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
-          FAILED=()
+          read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
+          DEPLOY_FAILED=()
 
           for host in "${REMOTE_HOSTS[@]}"; do
+            if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
+              echo "$host: skipping deploy (build failed)"
+              continue
+            fi
             echo "Deploying $host..."
             START=$(date +%s)
             if deploy ".#$host" 2>&1; then
@@ -62,22 +74,28 @@ jobs:
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
               echo "$host: DEPLOY OK (${DURATION}s)"
             else
-              FAILED+=("$host")
+              DEPLOY_FAILED+=("$host")
               printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
               echo "$host: DEPLOY FAILED"
             fi
           done
 
-          if [ ${#FAILED[@]} -gt 0 ]; then
+          ALL_FAILED=("${FAILED_HOSTS[@]}" "${DEPLOY_FAILED[@]}")
+          if [ ${#ALL_FAILED[@]} -gt 0 ]; then
+            echo "DEPLOY_FAILED_HOSTS=${DEPLOY_FAILED[*]}" >> "$GITHUB_ENV"
             curl -sf -X POST "$APPRISE_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Failed hosts: ${FAILED[*]}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
-            exit 1
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${FAILED_HOSTS[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
           fi
 
       - name: Deploy xsvr1 (self)
         run: |
+          read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
+          if [[ " ${FAILED_HOSTS[*]} " == *" xsvr1 "* ]]; then
+            echo "xsvr1: skipping deploy (build failed)"
+            exit 0
+          fi
           echo "Deploying xsvr1 (self)..."
           START=$(date +%s)
           sudo nixos-rebuild switch --flake ".#xsvr1"
@@ -88,17 +106,21 @@ jobs:
             | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/xsvr1" || true
           echo "xsvr1: DEPLOY OK (${DURATION}s)"
 
-      - name: Notify success
-        if: success()
+      - name: Report final status
+        if: always()
         run: |
           REVISION=$(git rev-parse --short HEAD)
-          curl -sf -X POST "$APPRISE_URL" \
-            -H "Content-Type: application/json" \
-            -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)\",\"type\":\"success\"}" || true
+          read -ra BUILD_FAILED <<< "${BUILD_FAILED_HOSTS:-}"
+          read -ra DEPLOY_FAILED <<< "${DEPLOY_FAILED_HOSTS:-}"
+          ALL_FAILED=("${BUILD_FAILED[@]}" "${DEPLOY_FAILED[@]}")
 
-      - name: Notify failure
-        if: failure()
-        run: |
-          curl -sf -X POST "$APPRISE_URL" \
-            -H "Content-Type: application/json" \
-            -d "{\"title\":\"Deploy Failed\",\"body\":\"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
+          if [ ${#ALL_FAILED[@]} -eq 0 ]; then
+            curl -sf -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)\",\"type\":\"success\"}" || true
+          else
+            curl -sf -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${BUILD_FAILED[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none} ($REVISION) — $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
+            exit 1
+          fi
