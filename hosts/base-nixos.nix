@@ -27,7 +27,6 @@
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
-    "lazy-trees"
   ];
   nix.settings.download-buffer-size = 134217728; # 128 MiB
 
