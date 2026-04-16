@@ -144,7 +144,8 @@
       SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
       HA_URL=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /url:/{print $2; exit}' | tr -d '"')
       HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
-      exec docker run --rm -i --name "mcp-homeassistant-$$" \
+      docker rm -f mcp-homeassistant 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-homeassistant" \
         -e HOMEASSISTANT_URL="$HA_URL" \
         -e HOMEASSISTANT_TOKEN="$HA_TOKEN" \
         ghcr.io/homeassistant-ai/ha-mcp:stable
@@ -158,7 +159,8 @@
       set -euo pipefail
       SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
       FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
-      exec docker run --rm -i --name "mcp-firewalla-$$" \
+      docker rm -f mcp-firewalla 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-firewalla" \
         -e FIREWALLA_MSP_ID=dn-j3almw \
         -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
         amittell/firewalla-mcp-server:latest
