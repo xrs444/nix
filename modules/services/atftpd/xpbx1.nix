@@ -22,6 +22,7 @@
         <P36>${config.sops.placeholder.ext_815_password}</P36>
         <P3>Thomas Desk</P3>
         <P2342>0</P2342>
+        <P157>f1=440@-13,c=300/10000;</P157>
 
         <!-- FXS Port 2 — Extension 816 Samantha's Desk -->
         <P2047>0</P2047>
@@ -30,6 +31,7 @@
         <P2035>816</P2035>
         <P2036>${config.sops.placeholder.ext_816_password}</P2036>
         <P23>Samantha Desk</P23>
+        <P2157>f1=440@-13,c=300/10000;</P2157>
       </HT802>
     '';
   };
