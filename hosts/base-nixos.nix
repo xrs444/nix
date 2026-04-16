@@ -28,6 +28,7 @@
     "nix-command"
     "flakes"
   ];
+  nix.settings.lazy-trees = true;
   nix.settings.download-buffer-size = 134217728; # 128 MiB
 
   # Automated garbage collection (NixOS only)
