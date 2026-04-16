@@ -15,19 +15,30 @@ lib.mkIf hasRole {
     key = "github_runner_token";
   };
 
-  # Allow builder to run nixos-rebuild switch as root without a password.
-  # Required for the CI self-deploy step on xsvr1.
-  security.sudo.extraRules = [
-    {
-      users = [ "builder" ];
-      commands = [
-        {
-          command = "/run/current-system/sw/bin/nixos-rebuild";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
+  # Oneshot service that applies the xsvr1 NixOS config from the current checkout.
+  # The builder user is granted polkit permission to start it, avoiding sudo entirely.
+  systemd.services.nixos-rebuild-ci = {
+    description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
+    after = [ "network.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake /zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
+      # Run as root so nixos-rebuild can activate the new system
+      User = "root";
+    };
+  };
+
+  # Allow the builder user to start the CI rebuild service via systemctl.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id === "org.freedesktop.systemd1.manage-units" &&
+          action.lookup("unit") === "nixos-rebuild-ci.service" &&
+          action.lookup("verb") === "start" &&
+          subject.user === "builder") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
 
   services.github-runners.xsvr1-builder = {
     enable = true;
@@ -48,6 +59,7 @@ lib.mkIf hasRole {
       jq
       coreutils
       bash
+      openssh
     ];
     serviceOverrides = {
       # Ensure the runner has access to nix daemon
@@ -57,9 +69,6 @@ lib.mkIf hasRole {
       # Auto-restart on failure (default is Restart=no which requires manual intervention)
       Restart = lib.mkForce "on-failure";
       RestartSec = "30s";
-      # Required for the xsvr1 self-deploy step: sudo needs to be able to
-      # gain root, which NoNewPrivileges (set by the upstream module) blocks.
-      NoNewPrivileges = lib.mkForce false;
     };
   };
 
