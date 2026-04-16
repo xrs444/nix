@@ -125,6 +125,7 @@
   # Claude Code CLI settings
   home.file.".claude/settings.json".text = builtins.toJSON {
     model = "sonnet";
+    permissions.allow = [ "WebFetch" "WebSearch" ];
   };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
