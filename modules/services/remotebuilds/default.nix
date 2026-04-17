@@ -7,8 +7,30 @@
   ...
 }:
 let
-  builder = [ "xsvr1" ];
-  isBuilder = lib.elem config.networking.hostName builder;
+  buildHosts = [
+    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; } # Ryzen 7 7700 — primary builder
+    { name = "xsvr2"; maxJobs = 6; speedFactor = 1; } # Atom C3758 — leave 2 cores for ZFS/k8s
+    { name = "xsvr3"; maxJobs = 4; speedFactor = 2; } # i5-8500 — leave 2 cores for VMs/Samba
+  ];
+  isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
+
+  mkBuildMachine = b: {
+    hostName = "${b.name}.lan";
+    sshUser = "builder";
+    sshKey = "/root/.ssh/id_builder";
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+    ];
+    maxJobs = b.maxJobs;
+    speedFactor = b.speedFactor;
+    supportedFeatures = [
+      "nixos-test"
+      "benchmark"
+      "big-parallel"
+      "kvm"
+    ];
+  };
 in
 {
   # Import SOPS secrets (not needed for clients, only for builder)
@@ -84,10 +106,13 @@ in
     # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
     (lib.mkIf (!isBuilder) {
       distributedBuilds = true;
-      # Don't build locally — delegate everything to xsvr1.
-      # Without this, Nix uses local jobs first and never touches the remote builder.
+      # Don't build locally — delegate everything to the builder pool.
+      # Without this, Nix uses local jobs first and never touches remote builders.
       settings = {
         max-jobs = 0;
+        # Let builders fetch their own inputs from substituters directly, rather than
+        # requiring the client to copy every dependency across the wire first.
+        builders-use-substitutes = true;
         # Use xsvr1's binary cache as primary substituter before falling back to cache.nixos.org.
         # Paths built by CI on xsvr1 (including ARM cross-compiled configs) are pre-populated
         # here, so deploy-rs activations require no local building at all.
@@ -102,25 +127,7 @@ in
           "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
         ];
       };
-      buildMachines = [
-        {
-          hostName = "xsvr1.lan";
-          sshUser = "builder";
-          sshKey = "/root/.ssh/id_builder";
-          systems = [
-            "x86_64-linux"
-            "aarch64-linux"
-          ];
-          maxJobs = 8;
-          speedFactor = 2;
-          supportedFeatures = [
-            "nixos-test"
-            "benchmark"
-            "big-parallel"
-            "kvm"
-          ];
-        }
-      ];
+      buildMachines = map mkBuildMachine buildHosts;
     })
   ];
 
@@ -150,9 +157,9 @@ in
     mode = "0600";
   };
 
-  # SSH config so nixos-rebuild --build-host finds the right key
+  # SSH config so nixos-rebuild --build-host and nix distributed builds find the right key
   programs.ssh.extraConfig = lib.mkIf (!isBuilder) ''
-    Host xsvr1.lan
+    Host ${lib.concatStringsSep " " (map (b: "${b.name}.lan") buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
   '';

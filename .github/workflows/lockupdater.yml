@@ -207,7 +207,7 @@ jobs:
       matrix:
         host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos]
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 3
     steps:
       - uses: actions/checkout@v4
         with:

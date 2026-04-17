@@ -33,6 +33,7 @@ in
       "${username}"
     ];
     nix.settings.warn-dirty = false;
+    nix.settings.connect-timeout = 10; # fail fast if a builder is unreachable
     nix.settings.substituters = [
       "http://nixcache.xrs444.net?priority=10"
       "https://cache.nixos.org?priority=20"

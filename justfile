@@ -31,9 +31,14 @@ build-and-cache-all:
     set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
     set -l cache_url "file:///zfs/nixcache/cache"
 
+    echo "Building all hosts in parallel..."
     for host in $hosts
-        echo "Building $host..."
-        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link
+        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link &
+    end
+    wait
+
+    echo "Caching all hosts..."
+    for host in $hosts
         echo "Caching $host..."
         nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel" || true
     end
