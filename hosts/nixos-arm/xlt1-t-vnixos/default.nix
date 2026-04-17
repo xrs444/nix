@@ -1,37 +1,21 @@
 # Summary: NixOS ARM host configuration for xlt1-t-vnixos, imports hardware, disk, and desktop modules.
 {
   hostname,
-  inputs,
-  lib,
-  pkgs,
-  username,
   platform,
-  config,
   ...
 }:
 {
   # xlt1-t-vnixos-specific package overrides
-  # Disable introspection for packages that fail with Python 3.13 distutils
+  # Disable introspection for packages that fail under QEMU aarch64 emulation.
+  # The gobject-introspection / Python 3.13 distutils fix is handled globally
+  # in overlays/pkgs.nix (python3 override + distutils doCheck=false). We do
+  # NOT re-patch gobject-introspection here — doing so creates a host-unique
+  # derivation hash for glib that is not in any binary cache, forcing a rebuild
+  # under QEMU which then fails because g-ir-scanner exits 1 in that environment.
+  # Instead we rely on the global overlay's gobject-introspection (same hash as
+  # xts1/xts2/xpbx1) which is already in the local nixcache from prior CI runs.
   nixpkgs.overlays = [
     (final: prev: {
-      # Fix gobject-introspection to work with Python 3.13 (no distutils)
-      # This is the root cause - patch g-ir-scanner to not import distutils
-      gobject-introspection = prev.gobject-introspection.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or []) ++ [
-          (prev.writeText "remove-distutils.patch" ''
-            --- a/giscanner/utils.py
-            +++ b/giscanner/utils.py
-            @@ -377,7 +377,6 @@ def get_resource_path(name, fallback=None):
-                 # Running uninstalled?
-                 return os.path.join(datadir, name)
-
-            -import distutils.cygwinccompiler
-
-             if os.name == 'nt':
-                 _all_shlibsuffix = {'.dll', '.pyd'}
-          '')
-        ];
-      });
       # Fix gtk4 distutils error by disabling introspection
       gtk4 = prev.gtk4.overrideAttrs (oldAttrs: {
         outputs = builtins.filter (x: x != "devdoc") oldAttrs.outputs;
