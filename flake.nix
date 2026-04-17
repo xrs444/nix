@@ -233,7 +233,9 @@
           "-i"
           "/run/secrets/deploy_private_key"
           "-o"
-          "StrictHostKeyChecking=accept-new"
+          "StrictHostKeyChecking=no"
+          "-o"
+          "UserKnownHostsFile=/dev/null"
         ];
         nodes = builtins.mapAttrs (hostname: cfg: {
           hostname = "${hostname}.lan";
