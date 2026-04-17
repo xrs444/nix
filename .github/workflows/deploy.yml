@@ -58,9 +58,10 @@ jobs:
             # Building and signing here ensures all paths carry the xsvr1.lan-1 key.
             if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
               echo "Building and caching $host deploy activation path..."
+              # Use the same flake attribute path that deploy-rs evaluates at deploy time,
+              # so the signed path hash matches exactly what gets pushed to the remote.
               DEPLOY_PATH=$(nix build --no-link --print-out-paths \
-                --impure --expr \
-                "(builtins.getFlake \"path:$PWD\").deploy.nodes.\"$host\".profiles.system.path" \
+                ".#deploy.nodes.$host.profiles.system.path" \
                 2>/dev/null) || true
               if [[ -n "$DEPLOY_PATH" ]]; then
                 nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_PATH" || true
