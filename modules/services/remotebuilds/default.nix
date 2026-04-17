@@ -94,8 +94,9 @@ in
           "big-parallel"
           "kvm"
         ];
-        # Use trusted-substituters instead of trusted-users for better security
-        # This allows the cache to be used without granting full trusted-user privileges
+        # builder must be a trusted-user so it can build input-addressed derivations
+        # sent by remote clients (nix-store --serve --write requires this privilege).
+        trusted-users = [ "root" "builder" ];
         trusted-substituters = [ "file:///zfs/nixcache/cache" ];
         # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
         # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
