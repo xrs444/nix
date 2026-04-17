@@ -1,10 +1,10 @@
 # overlays/gjs-fix.nix
-# Workaround for gjs build issues in CI/remote builds
-# The gjs build requires GTK 3 or 4 for tests, which may not be available
-# in all build environments. This overlay disables GTK tests and the full
-# test suite since gjs is well-tested upstream.
-# Also disables installed tests which try to generate introspection files
-# that fail with Python 3.13+ distutils errors.
+# Workaround for gjs build issues in CI/remote builds.
+# The upstream gjs-1.86.0 postFixup calls wrapProgram on
+# $installedTests/libexec/installed-tests/gjs/minijasmine, but that file
+# is installed without the executable bit, causing the build to die with
+# "Cannot wrap ... because it is not an executable file."
+# Fix: chmod +x in postFixup before the upstream wrapProgram runs.
 { inputs }:
 final: prev: {
   gjs = prev.gjs.overrideAttrs (oldAttrs: {
@@ -23,12 +23,16 @@ final: prev: {
         mv "$installedTests/share/glib-2.0" "$installedTestsSchemaDatadir"
       fi
     '';
-    # Even with installed_tests=false, nix still runs strip over the
-    # installedTests output. Any files left in installedTests/libexec cause
-    # strip to fail. Clear the output before fixup so there is nothing to strip.
-    preFixup = (oldAttrs.preFixup or "") + ''
-      rm -rf "$installedTests"
-      mkdir -p "$installedTests"
+    # The upstream postFixup calls wrapProgram on minijasmine, but the file is
+    # installed without the executable bit. chmod +x it first so wrapProgram
+    # succeeds. Also clear installedTests/libexec afterward so strip doesn't
+    # choke on any non-ELF leftover files.
+    postFixup = ''
+      if [ -f "$installedTests/libexec/installed-tests/gjs/minijasmine" ]; then
+        chmod +x "$installedTests/libexec/installed-tests/gjs/minijasmine"
+      fi
+    '' + (oldAttrs.postFixup or "") + ''
+      rm -rf "$installedTests/libexec"
     '';
   });
 }
