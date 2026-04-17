@@ -14,7 +14,7 @@ jobs:
   deploy:
     name: Build, Cache, and Deploy All Hosts
     runs-on: [self-hosted, nixos, builder]
-    timeout-minutes: 180
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
