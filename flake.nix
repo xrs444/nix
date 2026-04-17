@@ -231,7 +231,7 @@
         sshUser = "deploy";
         sshOpts = [
           "-i"
-          "/home/builder/.ssh/id_deploy"
+          "/run/secrets/deploy_private_key"
           "-o"
           "StrictHostKeyChecking=accept-new"
         ];

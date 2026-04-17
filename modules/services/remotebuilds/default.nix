@@ -74,10 +74,11 @@ in
     ];
   };
 
-  # Deploy the deploy SSH private key on the builder so CI can push to target hosts
+  # Deploy the deploy SSH private key on the builder so CI can push to target hosts.
+  # Key lives at /run/secrets/deploy_private_key (default sops path) so the github
+  # runner service can access it — ProtectHome=true blocks /home/builder/.ssh/.
   sops.secrets.deploy_private_key = lib.mkIf (isBuilder && !minimalImage) {
     sopsFile = ../../../secrets/deploy-ssh-key.yaml;
-    path = "/home/builder/.ssh/id_deploy";
     owner = "builder";
     mode = "0600";
   };
