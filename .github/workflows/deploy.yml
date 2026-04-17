@@ -39,15 +39,33 @@ jobs:
       - name: Push to binary cache
         run: |
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           for host in "${HOSTS[@]}"; do
             if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
               echo "$host: skipping cache (build failed)"
               continue
             fi
-            echo "Caching $host..."
+            echo "Caching $host system toplevel..."
             nix copy --to "file:///zfs/nixcache/cache" \
               ".#nixosConfigurations.$host.config.system.build.toplevel" || true
+            # For remote hosts, also build and cache the deploy-rs activatable system closure.
+            # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, which wraps the
+            # NixOS system with deploy-rs activation scripts. That wrapper's closure includes
+            # deploy-rs-0.1.0, source, and nix.conf — paths not in the system toplevel and
+            # therefore unsigned. The remote nix-daemon rejects unsigned pushes with
+            # "cannot add path ... because it lacks a signature by a trusted key".
+            # Building and signing here ensures all paths carry the xsvr1.lan-1 key.
+            if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
+              echo "Building and caching $host deploy activation path..."
+              DEPLOY_PATH=$(nix build --no-link --print-out-paths \
+                --impure --expr \
+                "(builtins.getFlake \"path:$PWD\").deploy.nodes.\"$host\".profiles.system.path" \
+                2>/dev/null) || true
+              if [[ -n "$DEPLOY_PATH" ]]; then
+                nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_PATH" || true
+              fi
+            fi
           done
 
       - name: Deploy remote hosts
