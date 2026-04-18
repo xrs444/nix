@@ -241,7 +241,11 @@
         ];
         nodes = builtins.mapAttrs (hostname: cfg: {
           hostname = "${hostname}.lan";
-          fastConnection = true;
+          # fastConnection = false so deploy-rs passes --substitute-on-destination to nix copy.
+          # Remote hosts fetch paths from http://xsvr1.lan (nixcache) where paths are signed
+          # via nix.settings.secret-key-files, rather than receiving unsigned paths pushed
+          # directly from the local nix store on xsvr1.
+          fastConnection = false;
           profiles.system = {
             user = "root";
             path = inputs.deploy-rs.lib.${cfg.pkgs.system}.activate.nixos cfg;
