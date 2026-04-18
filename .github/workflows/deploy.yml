@@ -68,6 +68,11 @@ jobs:
 
             echo "Caching $host system toplevel..."
             nix copy --to "file:///zfs/nixcache/cache" "$TOPLEVEL" || true
+            # Sign the file cache directly so stale .narinfo entries (cached before
+            # this signing step existed) get their Sig: fields updated in-place.
+            # nix copy --to file:// skips already-present paths without updating narinfos.
+            nix store sign --key-file /run/secrets/nixcache_signing_key \
+              --store "file:///zfs/nixcache/cache" --recursive "$TOPLEVEL" 2>/dev/null || true
 
             # For remote hosts, also sign and cache the deploy-rs activatable system.
             # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
@@ -83,9 +88,32 @@ jobs:
                   echo "ERROR: signing failed for $host deploy path — key unreadable or sign error"
                 fi
                 nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_PATH" || true
+                nix store sign --key-file /run/secrets/nixcache_signing_key \
+                  --store "file:///zfs/nixcache/cache" --recursive "$DEPLOY_PATH" 2>/dev/null || true
               fi
             fi
           done
+
+      - name: Sign and cache deploy-rs binary
+        run: |
+          # deploy-rs pushes its own binary (deploy-rs-0.1.0) and activate-rs to each
+          # remote host so it can invoke activate-rs for the system switch. These paths
+          # are not part of any NixOS system closure, so the per-host signing loop above
+          # never covers them. Without a signed narinfo in the file cache, the remote
+          # daemon rejects them (require-sigs=true, no trusted-user bypass in modern Nix).
+          DEPLOY_RS_PATH=$(nix build --no-link --print-out-paths \
+            "deploy-rs#deploy-rs" 2>/dev/null) || true
+          if [[ -n "$DEPLOY_RS_PATH" ]]; then
+            nix store sign --key-file /run/secrets/nixcache_signing_key \
+              --recursive "$DEPLOY_RS_PATH"
+            nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_RS_PATH" || true
+            nix store sign --key-file /run/secrets/nixcache_signing_key \
+              --store "file:///zfs/nixcache/cache" \
+              --recursive "$DEPLOY_RS_PATH" 2>/dev/null || true
+            echo "deploy-rs binary signed and cached: $DEPLOY_RS_PATH"
+          else
+            echo "WARNING: could not resolve deploy-rs binary path — deploy may fail"
+          fi
 
       - name: Deploy remote hosts
         run: |
