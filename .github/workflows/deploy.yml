@@ -36,7 +36,7 @@ jobs:
             echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
           fi
 
-      - name: Push to binary cache
+      - name: Sign and push to binary cache
         run: |
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
@@ -46,24 +46,33 @@ jobs:
               echo "$host: skipping cache (build failed)"
               continue
             fi
+
+            TOPLEVEL=$(nix build --no-link --print-out-paths \
+              ".#nixosConfigurations.$host.config.system.build.toplevel" 2>/dev/null) || true
+            [[ -z "$TOPLEVEL" ]] && { echo "$host: could not resolve toplevel, skipping"; continue; }
+
+            # Sign every path in the closure with the nixcache key before pushing.
+            # nix copy --to file:// only signs paths it actually transfers; paths already
+            # present in the local store (built, not fetched) remain unsigned and are
+            # rejected by remote daemons with require-sigs=true.
+            echo "Signing $host closure..."
+            nix store sign --key-file /run/secrets/nixcache_signing_key \
+              --recursive "$TOPLEVEL" || true
+
             echo "Caching $host system toplevel..."
-            nix copy --to "file:///zfs/nixcache/cache" \
-              ".#nixosConfigurations.$host.config.system.build.toplevel" || true
-            # For remote hosts, also build and cache the deploy-rs activatable system closure.
-            # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, which wraps the
-            # NixOS system with deploy-rs activation scripts. That wrapper's closure includes
-            # deploy-rs-0.1.0, source, and nix.conf — paths not in the system toplevel and
-            # therefore unsigned. The remote nix-daemon rejects unsigned pushes with
-            # "cannot add path ... because it lacks a signature by a trusted key".
-            # Building and signing here ensures all paths carry the xsvr1.lan-1 key.
+            nix copy --to "file:///zfs/nixcache/cache" "$TOPLEVEL" || true
+
+            # For remote hosts, also sign and cache the deploy-rs activatable system.
+            # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
+            # toplevel. Evaluate via the same flake attribute deploy-rs uses so the
+            # signed hash matches exactly what gets pushed to the remote.
             if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
-              echo "Building and caching $host deploy activation path..."
-              # Use the same flake attribute path that deploy-rs evaluates at deploy time,
-              # so the signed path hash matches exactly what gets pushed to the remote.
+              echo "Signing and caching $host deploy activation path..."
               DEPLOY_PATH=$(nix build --no-link --print-out-paths \
-                ".#deploy.nodes.$host.profiles.system.path" \
-                2>/dev/null) || true
+                ".#deploy.nodes.$host.profiles.system.path" 2>/dev/null) || true
               if [[ -n "$DEPLOY_PATH" ]]; then
+                nix store sign --key-file /run/secrets/nixcache_signing_key \
+                  --recursive "$DEPLOY_PATH" || true
                 nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_PATH" || true
               fi
             fi
