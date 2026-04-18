@@ -38,6 +38,11 @@ jobs:
 
       - name: Sign and push to binary cache
         run: |
+          echo "=== Signing diagnostics ==="
+          echo "Running as: $(id)"
+          echo "Key permissions: $(ls -la /run/secrets/nixcache_signing_key 2>&1 || echo 'KEY NOT FOUND')"
+          echo "==========================="
+
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
@@ -56,8 +61,10 @@ jobs:
             # present in the local store (built, not fetched) remain unsigned and are
             # rejected by remote daemons with require-sigs=true.
             echo "Signing $host closure..."
-            nix store sign --key-file /run/secrets/nixcache_signing_key \
-              --recursive "$TOPLEVEL" || true
+            if ! nix store sign --key-file /run/secrets/nixcache_signing_key \
+              --recursive "$TOPLEVEL"; then
+              echo "ERROR: signing failed for $host toplevel — key unreadable or sign error"
+            fi
 
             echo "Caching $host system toplevel..."
             nix copy --to "file:///zfs/nixcache/cache" "$TOPLEVEL" || true
@@ -71,8 +78,10 @@ jobs:
               DEPLOY_PATH=$(nix build --no-link --print-out-paths \
                 ".#deploy.nodes.$host.profiles.system.path" 2>/dev/null) || true
               if [[ -n "$DEPLOY_PATH" ]]; then
-                nix store sign --key-file /run/secrets/nixcache_signing_key \
-                  --recursive "$DEPLOY_PATH" || true
+                if ! nix store sign --key-file /run/secrets/nixcache_signing_key \
+                  --recursive "$DEPLOY_PATH"; then
+                  echo "ERROR: signing failed for $host deploy path — key unreadable or sign error"
+                fi
                 nix copy --to "file:///zfs/nixcache/cache" "$DEPLOY_PATH" || true
               fi
             fi
