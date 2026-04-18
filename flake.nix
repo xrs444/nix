@@ -236,6 +236,8 @@
           "StrictHostKeyChecking=no"
           "-o"
           "UserKnownHostsFile=/dev/null"
+          "-o"
+          "ConnectTimeout=30"
         ];
         nodes = builtins.mapAttrs (hostname: cfg: {
           hostname = "${hostname}.lan";
