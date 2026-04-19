@@ -142,11 +142,17 @@ in
       extra-platforms = aarch64-linux i686-linux
       extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
       extra-trusted-substituters = file:///zfs/nixcache/cache
-      extra-trusted-public-keys =
+      # Duplicated from nix.settings because Determinate Nix reads nix.custom.conf
+      # instead of nix.conf for runtime settings (trusted-public-keys, require-sigs,
+      # filter-syscalls are all ignored from nix.conf under Determinate Nix).
+      extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+      # Accept paths signed by xsvr1.lan-1 (CI builds) without requiring they also
+      # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
+      # push-mode to work when nix.custom.conf is the only config Determinate reads.
+      require-sigs = false
       # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
       # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
-      # can succeed. Duplicated from nix.settings because Determinate Nix reads
-      # nix.custom.conf instead of nix.conf for runtime settings.
+      # can succeed.
       filter-syscalls = false
       system-features = nixos-test benchmark big-parallel kvm
     '';
