@@ -23,8 +23,15 @@
     # deploy-rs activates via /nix/store/*/activate-rs — path changes with each build.
     # Use extraConfig (raw sudoers) to allow a glob pattern, which security.sudo.extraRules
     # does not support natively.
+    #
+    # Two patterns are needed because sudo 1.9+ treats '*' as matching only within a single
+    # path component (i.e. '*' does not match '/'). deploy-rs uses two different layouts:
+    #   - Activation:    /nix/store/HASH-nixos-system-...-activate-rs   (binary = store path itself)
+    #   - Confirmation:  /nix/store/HASH-deploy-rs-0.1.0/bin/activate-rs (binary in bin/ subdir)
+    # The first rule covers the activation binary; the second covers the confirmation binary.
     security.sudo.extraConfig = ''
       deploy ALL=(root) NOPASSWD: /nix/store/*/activate-rs *
+      deploy ALL=(root) NOPASSWD: /nix/store/*/bin/activate-rs *
     '';
   };
 }
