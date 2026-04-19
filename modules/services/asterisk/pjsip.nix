@@ -30,6 +30,7 @@ in
         allow = g722
         direct_media = no
         ice_support = yes
+        identify_by = username,ip
 
         [auth-userpass](!)
         type = auth
@@ -52,6 +53,11 @@ in
         password = ${config.sops.placeholder.ext_801_password}
 
         [801](aor-single)
+
+        [identify-801]
+        type = identify
+        endpoint = 801
+        match = 172.18.6.49
 
         ; ===============================================
         ; Extensions 810-814 - Sangoma P315 Phones (SIP, provisioned via TFTP)
