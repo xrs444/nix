@@ -20,17 +20,19 @@
     # closes the connection, producing "Bad file descriptor" / "unexpected end-of-file".
     nix.settings.trusted-users = [ "deploy" ];
 
-    # deploy-rs activates via /nix/store/*/activate-rs — path changes with each build.
+    # deploy-rs activates via a store path ending in -activate-rs; path changes each build.
     # Use extraConfig (raw sudoers) to allow a glob pattern, which security.sudo.extraRules
     # does not support natively.
     #
-    # Two patterns are needed because sudo 1.9+ treats '*' as matching only within a single
-    # path component (i.e. '*' does not match '/'). deploy-rs uses two different layouts:
-    #   - Activation:    /nix/store/HASH-nixos-system-...-activate-rs   (binary = store path itself)
-    #   - Confirmation:  /nix/store/HASH-deploy-rs-0.1.0/bin/activate-rs (binary in bin/ subdir)
-    # The first rule covers the activation binary; the second covers the confirmation binary.
+    # sudo 1.9+ treats '*' as matching only within a single path component (no '/').
+    # deploy-rs activate.nixos creates a custom activate-rs script whose store path IS the
+    # binary: /nix/store/HASH-nixos-system-HOSTNAME-VERSION-activate-rs (no subdirectory).
+    # The pattern must end with *-activate-rs (hyphen, not slash), so '*' matches the hash
+    # and system name in one component. Two patterns cover all layouts:
+    #   - /nix/store/*-activate-rs *     — store path IS the binary (activate.nixos output)
+    #   - /nix/store/*/bin/activate-rs * — binary in bin/ subdir (deploy-rs-0.1.0 package)
     security.sudo.extraConfig = ''
-      deploy ALL=(root) NOPASSWD: /nix/store/*/activate-rs *
+      deploy ALL=(root) NOPASSWD: /nix/store/*-activate-rs *
       deploy ALL=(root) NOPASSWD: /nix/store/*/bin/activate-rs *
     '';
   };
