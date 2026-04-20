@@ -20,20 +20,25 @@
     # closes the connection, producing "Bad file descriptor" / "unexpected end-of-file".
     nix.settings.trusted-users = [ "deploy" ];
 
-    # deploy-rs activates via a store path ending in -activate-rs; path changes each build.
-    # Use extraConfig (raw sudoers) to allow a glob pattern, which security.sudo.extraRules
-    # does not support natively.
+    # deploy-rs needs two NOPASSWD rules. Use extraConfig (raw sudoers) to allow glob
+    # patterns, which security.sudo.extraRules does not support natively.
     #
-    # sudo 1.9+ treats '*' as matching only within a single path component (no '/').
-    # deploy-rs activate.nixos creates a custom activate-rs script whose store path IS the
-    # binary: /nix/store/HASH-nixos-system-HOSTNAME-VERSION-activate-rs (no subdirectory).
-    # The pattern must end with *-activate-rs (hyphen, not slash), so '*' matches the hash
-    # and system name in one component. Two patterns cover all layouts:
-    #   - /nix/store/*-activate-rs *     — store path IS the binary (activate.nixos output)
-    #   - /nix/store/*/bin/activate-rs * — binary in bin/ subdir (deploy-rs-0.1.0 package)
+    # In sudoers, '*' in a command PATH component matches any non-'/' string (one component).
+    # In argument positions, '*' matches any string including '/'.
+    #
+    # Rule 1 — Activation:
+    #   deploy-rs runs: sudo /nix/store/HASH-activatable-nixos-system-HOSTNAME-VERSION/activate-rs [args]
+    #   The activate-rs binary lives at the root of the activatable system store path.
+    #   '*' matches the full single-component store directory name (hash + system name).
+    #
+    # Rule 2 — Magic rollback confirmation:
+    #   deploy-rs confirms by running: sudo rm /tmp/deploy-rs-canary-HASH
+    #   where HASH is the nix store hash prefix of the activatable system.
+    #   sudo resolves 'rm' to its nix store path; '/nix/store/*/bin/rm' covers any version.
+    #   The argument '/tmp/deploy-rs-canary-*' matches the canary file (no '/' in hash suffix).
     security.sudo.extraConfig = ''
-      deploy ALL=(root) NOPASSWD: /nix/store/*-activate-rs *
-      deploy ALL=(root) NOPASSWD: /nix/store/*/bin/activate-rs *
+      deploy ALL=(root) NOPASSWD: /nix/store/*/activate-rs *
+      deploy ALL=(root) NOPASSWD: /nix/store/*/bin/rm /tmp/deploy-rs-canary-*
     '';
   };
 }
