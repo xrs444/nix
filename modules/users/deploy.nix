@@ -20,25 +20,21 @@
     # closes the connection, producing "Bad file descriptor" / "unexpected end-of-file".
     nix.settings.trusted-users = [ "deploy" ];
 
-    # deploy-rs needs two NOPASSWD rules. Use extraConfig (raw sudoers) to allow glob
-    # patterns, which security.sudo.extraRules does not support natively.
-    #
-    # In sudoers, '*' in a command PATH component matches any non-'/' string (one component).
-    # In argument positions, '*' matches any string including '/'.
-    #
-    # Rule 1 — Activation:
-    #   deploy-rs runs: sudo /nix/store/HASH-activatable-nixos-system-HOSTNAME-VERSION/activate-rs [args]
-    #   The activate-rs binary lives at the root of the activatable system store path.
-    #   '*' matches the full single-component store directory name (hash + system name).
-    #
-    # Rule 2 — Magic rollback confirmation:
-    #   deploy-rs confirms by running: sudo rm /tmp/deploy-rs-canary-HASH
-    #   where HASH is the nix store hash prefix of the activatable system.
-    #   sudo resolves 'rm' to its nix store path; '/nix/store/*/bin/rm' covers any version.
-    #   The argument '/tmp/deploy-rs-canary-*' matches the canary file (no '/' in hash suffix).
-    security.sudo.extraConfig = ''
-      deploy ALL=(root) NOPASSWD: /nix/store/*/activate-rs *
-      deploy ALL=(root) NOPASSWD: /nix/store/*/bin/rm /tmp/deploy-rs-canary-*
-    '';
+    # deploy-rs activates as root: it calls sudo for the activate-rs script and for the
+    # magic rollback canary (sudo rm /tmp/deploy-rs-canary-*). Rather than maintaining
+    # brittle glob patterns (paths change every build), grant NOPASSWD: ALL — the same
+    # policy the builder user uses. The deploy user has no interactive login and its
+    # SSH key is only held by xsvr1, so the blast radius is bounded.
+    security.sudo.extraRules = [
+      {
+        users = [ "deploy" ];
+        commands = [
+          {
+            command = "ALL";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
   };
 }
