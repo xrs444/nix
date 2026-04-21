@@ -16,6 +16,7 @@ in
         "bond0.21"
         "bond0.17"
         "bond0.16"
+        "bridge22" # Talos VM traffic — allows forwarded connections from cluster pods to LAN hosts
       ];
       allowedTCPPorts = [
         50000
