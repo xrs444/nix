@@ -16,8 +16,12 @@
 final: prev: {
   gjs = (prev.gjs.override { installTests = false; }).overrideAttrs (oldAttrs: {
     doCheck = false;
-    # Make the glib-2.0 mv conditional in case it is absent (e.g. when doCheck=false
-    # causes the test schemas not to be installed).
+    # The upstream mesonFlags uses `finalAttrs.finalPackage.doCheck` to set
+    # skip_gtk_tests, but that self-reference doesn't propagate through the
+    # override+overrideAttrs chain. Append explicitly so meson sees it last
+    # (meson uses the last occurrence of a duplicate -D flag).
+    mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [ "-Dskip_gtk_tests=true" ];
+    # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''
       installedTestsSchemaDatadir="$installedTests/share/gsettings-schemas/gjs-${oldAttrs.version}"
       mkdir -p "$installedTestsSchemaDatadir"
