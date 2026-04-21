@@ -1,10 +1,11 @@
 # overlays/gjs-fix.nix
 # Workaround for gjs build issues in CI/remote builds.
-# The upstream gjs-1.86.0 postFixup calls wrapProgram on
+# The upstream gjs-1.86.0 build calls wrapProgram on
 # $installedTests/libexec/installed-tests/gjs/minijasmine, but that file
 # is installed without the executable bit, causing the build to die with
 # "Cannot wrap ... because it is not an executable file."
-# Fix: chmod +x in postFixup before the upstream wrapProgram runs.
+# Fix: chmod +x in preFixup — wrapProgram runs via an implicit fixup hook
+# (make-shell-wrapper-hook) that fires before postFixup, so preFixup is needed.
 { inputs }:
 final: prev: {
   gjs = prev.gjs.overrideAttrs (oldAttrs: {
@@ -23,15 +24,14 @@ final: prev: {
         mv "$installedTests/share/glib-2.0" "$installedTestsSchemaDatadir"
       fi
     '';
-    # The upstream postFixup calls wrapProgram on minijasmine, but the file is
-    # installed without the executable bit. chmod +x it first so wrapProgram
-    # succeeds. Also clear installedTests/libexec afterward so strip doesn't
-    # choke on any non-ELF leftover files.
-    postFixup = ''
+    # wrapProgram on minijasmine is called by an implicit fixup hook (make-shell-wrapper-hook)
+    # which runs BEFORE postFixup. chmod +x must be in preFixup to run first.
+    preFixup = (oldAttrs.preFixup or "") + ''
       if [ -f "$installedTests/libexec/installed-tests/gjs/minijasmine" ]; then
         chmod +x "$installedTests/libexec/installed-tests/gjs/minijasmine"
       fi
-    '' + (oldAttrs.postFixup or "") + ''
+    '';
+    postFixup = (oldAttrs.postFixup or "") + ''
       rm -rf "$installedTests/libexec"
     '';
   });

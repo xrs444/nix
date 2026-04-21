@@ -177,7 +177,7 @@
   # };
 
   # Prevent Home Manager from overriding PATH
-  home.sessionPath = [ ];
+  home.sessionPath = [ "$HOME/.npm-global/bin" ];
 
   # Set default shell preferences
   home.sessionVariables = {
