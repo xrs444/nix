@@ -18,6 +18,10 @@ in
       same => n,Dial(PJSIP/801,30)
       same => n,Hangup()
 
+      exten => 802,1,NoOp(Ring Group - All Extensions)
+      same => n,Dial(PJSIP/801&PJSIP/810&PJSIP/811&PJSIP/812&PJSIP/813&PJSIP/814&PJSIP/815&PJSIP/816&PJSIP/817&PJSIP/818,30)
+      same => n,Hangup()
+
       exten => 810,1,NoOp(Calling RF Cabinet)
       same => n,GotoIfTime(07:00-18:59,*,*,*?allowed)
       same => n,Playback(closed)

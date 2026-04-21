@@ -21,4 +21,12 @@
 
   networking.hostName = "xcomm1";
   nixpkgs.config.allowUnfree = true;
+
+  boot = {
+    initrd = {
+      availableKernelModules = [
+        "nvme"
+      ];
+    };
+};
 }
