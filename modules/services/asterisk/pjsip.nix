@@ -93,6 +93,11 @@ in
 
         [810](aor-single)
 
+        [identify-810]
+        type = identify
+        endpoint = 810
+        match = 172.18.6.50
+
         [811](endpoint-internal)
         auth = 811
         aors = 811
@@ -119,6 +124,10 @@ in
         password = ${config.sops.placeholder.ext_812_password}
 
         [812](aor-single)
+        [identify-812]
+        type = identify
+        endpoint = 812
+        match = 172.18.6.51
 
         [813](endpoint-internal)
         auth = 813
@@ -131,6 +140,11 @@ in
 
         [813](aor-single)
 
+        [identify-813]
+        type = identify
+        endpoint = 813
+        match = 172.18.6.52
+
         [814](endpoint-internal)
         auth = 814
         aors = 814
@@ -141,6 +155,11 @@ in
         password = ${config.sops.placeholder.ext_814_password}
 
         [814](aor-single)
+
+        [identify-814]
+        type = identify
+        endpoint = 814
+        match = 172.18.6.53
 
         ; ===============================================
         ; Extensions 815-816 - Grandstream HT802 (2-port ATA)
@@ -181,6 +200,11 @@ in
 
         [817](aor-single)
 
+        [identify-817]
+        type = identify
+        endpoint = 817
+        match = 172.18.6.54
+
         ; ===============================================
         ; Extension 818 - Grandstream HT801 (1-port ATA)
         ; ===============================================
@@ -194,6 +218,11 @@ in
         password = ${config.sops.placeholder.ext_818_password}
 
         [818](aor-single)
+
+        [identify-818]
+        type = identify
+        endpoint = 818
+        match = 172.18.6.55
       '';
       owner = "asterisk";
       group = "asterisk";
