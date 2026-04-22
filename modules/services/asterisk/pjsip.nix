@@ -1,14 +1,34 @@
 # Summary: Asterisk PJSIP endpoint/auth/AOR config for xpbx1 extensions, secrets-managed via sops
-{ lib, hostname, hostRoles ? [ ], config, ... }:
+{
+  lib,
+  hostname,
+  hostRoles ? [ ],
+  config,
+  ...
+}:
 let
   isXpbx1 = lib.elem "asterisk" hostRoles && hostname == "xpbx1";
 in
 {
   config = lib.mkIf isXpbx1 {
     # Sops secrets for PBX extension passwords
-    sops.secrets = lib.genAttrs
-      (map (e: "ext_${toString e}_password") [ 801 810 811 812 813 814 815 816 817 818 ])
-      (_: { sopsFile = ../../../secrets/pbx-passwords.yaml; });
+    sops.secrets =
+      lib.genAttrs
+        (map (e: "ext_${toString e}_password") [
+          801
+          810
+          811
+          812
+          813
+          814
+          815
+          816
+          817
+          818
+        ])
+        (_: {
+          sopsFile = ../../../secrets/pbx-passwords.yaml;
+        });
 
     # Generate pjsip.conf with real passwords at activation time via sops template
     sops.templates."pjsip.conf" = {
@@ -57,7 +77,7 @@ in
         [identify-801]
         type = identify
         endpoint = 801
-        match = 172.18.6.49
+        match = 172.18.7.1
 
         ; ===============================================
         ; Extensions 810-814 - Sangoma P315 Phones (SIP, provisioned via TFTP)
@@ -83,6 +103,11 @@ in
         password = ${config.sops.placeholder.ext_811_password}
 
         [811](aor-single)
+
+        [identify-811]
+        type = identify
+        endpoint = 811
+        match = 172.18.6.49
 
         [812](endpoint-internal)
         auth = 812
