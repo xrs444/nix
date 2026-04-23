@@ -96,7 +96,7 @@ in
         [identify-810]
         type = identify
         endpoint = 810
-        match = 172.18.6.50
+        match = 172.18.6.52
 
         [811](endpoint-internal)
         auth = 811
@@ -127,7 +127,7 @@ in
         [identify-812]
         type = identify
         endpoint = 812
-        match = 172.18.6.51
+        match = 172.18.6.50
 
         [813](endpoint-internal)
         auth = 813
