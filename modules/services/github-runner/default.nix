@@ -17,11 +17,18 @@ lib.mkIf hasRole {
 
   # Oneshot service that applies the xsvr1 NixOS config from the current checkout.
   # The builder user is granted polkit permission to start it, avoiding sudo entirely.
+  #
+  # Guard: requires a permit token at /tmp/nixos-rebuild-ci-permitted before running.
+  # The "Deploy xsvr1 (self)" CI step creates this token immediately before calling
+  # systemctl start. Any stale or accidental invocation (e.g. leftover trigger from a
+  # previous run firing mid-job) will find no token and exit without touching the system,
+  # preventing nixos-rebuild from stopping the runner during an active CI job.
   systemd.services.nixos-rebuild-ci = {
     description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
     after = [ "network.target" ];
     serviceConfig = {
       Type = "oneshot";
+      ExecStartPre = "/bin/sh -c 'test -f /tmp/nixos-rebuild-ci-permitted && rm -f /tmp/nixos-rebuild-ci-permitted || { echo \"nixos-rebuild-ci: no permit token — refusing to run (protect active CI job)\"; exit 1; }'";
       ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake path:/zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
       # Run as root so nixos-rebuild can activate the new system
       User = "root";
