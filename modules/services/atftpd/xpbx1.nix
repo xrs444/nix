@@ -108,8 +108,8 @@
   };
   environment.etc."tftp/MAC_P315_810.cfg".source = config.sops.templates."MAC_P315_810.cfg".path;
 
-  # Sangoma P315 — ext 811 Greyson's Room — MAC: 00:0F:D3:CF:D8:A7
-  sops.templates."000fd3cfd8a7.cfg" = {
+  # Sangoma P315 — ext 811 Greyson's Room — MAC: 00:0F:D3:CF:D9:D3
+  sops.templates."000fd3cfd9d3.cfg" = {
     content = ''
       [settings]
       sip_server=${hostname}.lan
@@ -120,9 +120,10 @@
       codec_list=g722,ulaw,alaw
     '';
   };
-  environment.etc."tftp/000fd3cfd8a7.cfg".source = config.sops.templates."000fd3cfd8a7.cfg".path;
+  environment.etc."tftp/000fd3cfd9d3.cfg".source = config.sops.templates."000fd3cfd9d3.cfg".path;
 
-  sops.templates."MAC_P315_812.cfg" = {
+  # Sangoma P315 — ext 812 Rowan's Room — MAC: 00:0F:D3:CF:D8:A7
+  sops.templates."000fd3cfd8a7.cfg" = {
     content = ''
       [settings]
       sip_server=${hostname}.lan
@@ -133,7 +134,7 @@
       codec_list=g722,ulaw,alaw
     '';
   };
-  environment.etc."tftp/MAC_P315_812.cfg".source = config.sops.templates."MAC_P315_812.cfg".path;
+  environment.etc."tftp/000fd3cfd8a7.cfg".source = config.sops.templates."000fd3cfd8a7.cfg".path;
 
   sops.templates."MAC_P315_813.cfg" = {
     content = ''

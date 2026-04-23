@@ -59,6 +59,7 @@ in
         [aor-single](!)
         type = aor
         max_contacts = 1
+        remove_existing = yes
 
         ; ===============================================
         ; Extension 801 - Home Assistant
@@ -143,7 +144,7 @@ in
         [identify-813]
         type = identify
         endpoint = 813
-        match = 172.18.6.52
+        match = 172.18.6.51
 
         [814](endpoint-internal)
         auth = 814
@@ -185,6 +186,16 @@ in
         password = ${config.sops.placeholder.ext_816_password}
 
         [816](aor-single)
+
+        [identify-815]
+        type = identify
+        endpoint = 815
+        match = 172.18.6.56
+
+        [identify-816]
+        type = identify
+        endpoint = 816
+        match = 172.18.6.56
 
         ; ===============================================
         ; Extension 817 - xstarfish (Polycom SoundStation IP 7000)
