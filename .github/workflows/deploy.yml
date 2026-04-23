@@ -151,6 +151,28 @@ jobs:
               echo "$host: skipping deploy (build failed)"
               continue
             fi
+
+            # Hostname pre-flight: SSH to the target and verify it reports the expected
+            # hostname before deploying. Guards against two failure modes:
+            #   1. Host is offline (SSH times out → skip safely)
+            #   2. DNS resolves to the wrong machine (e.g. stale cache pointing xcomm1.lan
+            #      at xsvr1) — the wrong machine would return a different hostname, causing
+            #      deploy-rs to activate the wrong config on xsvr1 and kill the CI runner.
+            REMOTE_HOSTNAME=$(ssh \
+              -i /run/secrets/deploy_private_key \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=10 \
+              -o BatchMode=yes \
+              deploy@${host}.lan \
+              "hostname" 2>/dev/null || echo "UNREACHABLE")
+
+            if [[ "$REMOTE_HOSTNAME" != "$host" ]]; then
+              echo "$host: SKIPPED — hostname verification failed (got '${REMOTE_HOSTNAME}', expected '${host}')"
+              DEPLOY_FAILED+=("$host")
+              continue
+            fi
+
             echo "Deploying $host..."
             START=$(date +%s)
             if nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
