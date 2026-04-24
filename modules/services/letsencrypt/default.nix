@@ -102,6 +102,12 @@ lib.mkIf (!minimalImage) {
                   --perms --chmod=F640 \
                   /var/lib/acme/xpbx1.${domain}/ \
                   acme@xpbx1.lan:/var/lib/acme/xpbx1.${domain}/
+                # cert/chain/fullchain are public — world-readable so nginx can read them
+                # without requiring group membership. key.pem stays 640 (acme-only).
+                $SSH acme@xpbx1.lan \
+                  "chmod 644 /var/lib/acme/xpbx1.${domain}/cert.pem \
+                              /var/lib/acme/xpbx1.${domain}/chain.pem \
+                              /var/lib/acme/xpbx1.${domain}/fullchain.pem"
               '';
             };
           }
