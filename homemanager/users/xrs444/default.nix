@@ -193,9 +193,9 @@
     # PATH is managed by nix-darwin - don't override it
   };
 
-  #  catppuccin = {
-  #    enable = true;
-  #    flavor = "mocha";
-  #  };
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+  };
 
 }

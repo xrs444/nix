@@ -32,7 +32,7 @@ lib.mkIf hasRole {
     serviceConfig = {
       Type = "oneshot";
       ExecStartPre = "/bin/sh -c 'test -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted && rm -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted || { echo \"nixos-rebuild-ci: no permit token — refusing to run (protect active CI job)\"; exit 1; }'";
-      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake path:/zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
+      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake path:/zfs/nixcache/builds/github-runner/_work/nix/nix#xsvr1";
       # Run as root so nixos-rebuild can activate the new system
       User = "root";
     };

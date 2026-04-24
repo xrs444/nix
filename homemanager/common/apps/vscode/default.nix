@@ -91,6 +91,7 @@ in
         "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
         "git.enableSmartCommit" = true;
         "git.confirmSync" = false;
+        "workbench.colorTheme" = "Catppuccin Mocha";
         "catppuccin-icons.hidesExplorerArrows" = false;
         "catppuccin-icons.specificFolders" = true;
         "catppuccin-icons.monochrome" = false;

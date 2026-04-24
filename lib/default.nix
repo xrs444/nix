@@ -38,6 +38,7 @@ rec {
           platform = hostConfig.platform;
         };
         modules = [
+          inputs.catppuccin.homeModules.catppuccin
           (
             { config, specialArgs, ... }:
             {
@@ -132,6 +133,7 @@ rec {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "backup";
+                sharedModules = [ inputs.catppuccin.homeModules.catppuccin ];
                 extraSpecialArgs = {
                   inherit inputs outputs stateVersion;
                   username = hostConfig.user;

@@ -4,14 +4,12 @@
   pkgs ? null,
   stateVersion,
   username,
-  # catppuccin,
   ...
 }:
 {
   # Only import desktop configuration if the host is desktop enabled
   # Only import user specific configuration if they have bespoke settings
   imports = [
-    #   catppuccin.homeManagerModules.catppuccin
     ./common/shell
   ]
   ++ lib.optional (builtins.isString desktop) ./common/desktop
