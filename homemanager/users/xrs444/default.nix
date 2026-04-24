@@ -80,7 +80,9 @@
     nerd-fonts.iosevka
     nerd-fonts.space-mono
     nerd-fonts.symbols-only
-    direnv
+    (direnv.overrideAttrs (_: {
+      doCheck = false;
+    }))
     teams
     kustomize
     kubeconform
@@ -193,9 +195,12 @@
     # PATH is managed by nix-darwin - don't override it
   };
 
-  catppuccin = {
-    enable = true;
-    flavor = "mocha";
-  };
+  # catppuccin = {
+  #   enable = true;
+  #  flavor = "mocha";
+  #   # VSCode extensions and theme are managed manually in common/apps/vscode
+  #   # to use up-to-date marketplace versions; catppuccin module adds older pins
+  #   vscode.profiles.default.enable = false;
+  # };
 
 }
