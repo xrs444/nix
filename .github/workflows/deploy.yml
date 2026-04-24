@@ -212,7 +212,7 @@ jobs:
           # Create permit token — nixos-rebuild-ci.service requires this to run.
           # Without it, any stale/accidental invocation aborts instead of killing
           # the runner mid-job. The service consumes the token atomically.
-          touch /tmp/nixos-rebuild-ci-permitted
+          touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
           systemctl start nixos-rebuild-ci.service
           DURATION=$(( $(date +%s) - START ))
           REVISION=$(git rev-parse HEAD)
