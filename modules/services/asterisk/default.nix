@@ -140,6 +140,15 @@ in
           ; No penalty rules defined
         '';
 
+        "logger.conf" = ''
+          [general]
+          dateformat = %F %T
+
+          [logfiles]
+          /var/log/asterisk/full = notice,warning,error,debug,verbose,dtmf,fax
+          console = notice,warning,error
+        '';
+
         # RTP configuration
         "rtp.conf" = ''
           [general]
