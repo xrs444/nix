@@ -74,8 +74,10 @@ lib.mkIf hasRole {
     serviceOverrides = {
       # Ensure the runner has access to nix daemon
       SupplementaryGroups = [ "nixbld" ];
-      # Allow writing to the nix binary cache directory
-      ReadWritePaths = [ "/zfs/nixcache/cache" ];
+      # Allow writing to the nix binary cache and the runner workDir.
+      # NOTE: serviceOverrides.ReadWritePaths replaces the module default (which includes
+      # workDir), so both paths must be listed explicitly here.
+      ReadWritePaths = [ "/zfs/nixcache/cache" "/zfs/nixcache/builds/github-runner" ];
       # Grant read access to sops secrets (deploy key lives at /run/secrets/deploy_private_key;
       # ProtectHome=true blocks /home/builder/.ssh/ so the key must not live there)
       ReadOnlyPaths = [ "/run/secrets" ];

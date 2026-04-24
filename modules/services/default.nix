@@ -6,7 +6,7 @@
     ./adguard
     ./auto-upgrade
     ./asterisk
-    ./atftpd
+    ./phone-config-nginx
     ./bind
     ./borgbackup
     ./determinate-nix
