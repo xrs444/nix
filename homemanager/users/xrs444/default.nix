@@ -125,7 +125,10 @@
   # Claude Code CLI settings
   home.file.".claude/settings.json".text = builtins.toJSON {
     model = "sonnet";
-    permissions.allow = [ "WebFetch" "WebSearch" ];
+    permissions.allow = [
+      "WebFetch"
+      "WebSearch"
+    ];
   };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
@@ -182,7 +185,7 @@
   # Set default shell preferences
   home.sessionVariables = {
     EDITOR = "micro";
-    BROWSER = "firefox";
+    BROWSER = "chrome";
     SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
     KUBECONFIG = "/Users/xrs444/k8s/kubeconfig";
     TALOSCONFIG = "/Users/xrs444/k8s/talosconfig";
@@ -190,9 +193,9 @@
   };
 
   # Enable Catppuccin theme globally
-  # catppuccin = {
-  #   enable = true;
-  #   flavor = "mocha";
-  # };
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+  };
 
 }
