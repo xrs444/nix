@@ -54,6 +54,7 @@
       "calibre"
       "vlc"
       "google-chrome"
+      "gitkraken"
 
     ];
 

@@ -69,7 +69,6 @@
             "kanidm-primary"
             "letsencrypt-primary"
             "cockpit"
-            "homeassistant"
             "tailscale-package"
             "monitoring-server"
             "github-runner"
@@ -296,7 +295,6 @@
         Samba = import ./modules/services/Samba;
         bind = import ./modules/services/bind;
         ffr = import ./modules/services/ffr;
-        homeassistant = import ./modules/services/homeassistant;
         iprouting = import ./modules/services/iprouting;
         keepalived = import ./modules/services/keepalived;
         kvm = import ./modules/services/kvm;

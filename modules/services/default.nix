@@ -13,7 +13,6 @@
     ./ffr
     ./flakehub-auth
     ./github-runner
-    ./homeassistant
     ./iprouting
     ./kanidm
     ./keepalived
