@@ -15,6 +15,7 @@
   # Grandstream HT802 (2-port ATA): exts 815 (Thomas' Desk) + 816 (Samantha's Desk)
   # MAC: EC:74:D7:22:C9:11 → cfgEC74D722C911.xml
   sops.templates."cfgEC74D722C911.xml" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT802>
@@ -44,6 +45,7 @@
   # Grandstream HT801 (1-port ATA): ext 818 (Master Bedroom)
   # Filename: cfg<MAC-UPPERCASE-NO-COLONS>.xml — replace MAC_HT801 with actual MAC
   sops.templates."cfgMAC_HT801.xml" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT801>
@@ -77,6 +79,7 @@
 
   # Polycom SoundStation IP 7000 — ext 817 xstarfish — MAC: 00:04:F2:F9:E4:72
   sops.templates."0004f2f9e472.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish -->
@@ -102,6 +105,7 @@
 
   # Sangoma P315 — ext 810 RF Cabinet — MAC: pending
   sops.templates."MAC_P315_810.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" ?>
       <config>
@@ -121,6 +125,7 @@
 
   # Sangoma P315 — ext 811 Greyson's Room — MAC: 00:0F:D3:CF:D9:D3
   sops.templates."000fd3cfd9d3.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" ?>
       <config>
@@ -140,6 +145,7 @@
 
   # Sangoma P315 — ext 812 Rowan's Room — MAC: 00:0F:D3:CF:D8:A7
   sops.templates."000fd3cfd8a7.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" ?>
       <config>
@@ -159,6 +165,7 @@
 
   # Sangoma P315 — ext 813 Garage — MAC: pending
   sops.templates."MAC_P315_813.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" ?>
       <config>
@@ -178,6 +185,7 @@
 
   # Sangoma P315 — ext 814 Rack — MAC: pending
   sops.templates."MAC_P315_814.cfg" = {
+    mode = "0444";
     content = ''
       <?xml version="1.0" ?>
       <config>
