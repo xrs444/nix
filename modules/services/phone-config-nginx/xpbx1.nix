@@ -215,6 +215,12 @@
   # Set from the group side (members) rather than extraGroups to avoid merge ambiguity.
   users.groups.acme.members = [ "nginx" ];
 
+  # /var/lib/acme is the acme user's home dir, created 700 by NixOS.
+  # nginx (in the acme group) can't traverse it unless we widen the group bit.
+  systemd.tmpfiles.rules = [
+    "z /var/lib/acme 0750 acme acme -"
+  ];
+
   # Reload nginx automatically when xsvr1 rsyncs a renewed cert
   systemd.paths.nginx-cert-reload = {
     wantedBy = [ "multi-user.target" ];
