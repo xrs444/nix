@@ -3,7 +3,7 @@
 # Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
 # Grandstream configs use Grandstream P-value XML. Polycom uses PHONE_CONFIG XML.
 # All configs use the static IP 172.18.6.1 directly to avoid DNS resolution on the phone.
-{ hostname, config, pkgs, lib, ... }:
+{ config, pkgs, lib, ... }:
 {
   services.atftpd = {
     enable = true;
@@ -211,8 +211,9 @@
     };
   };
 
-  # Allow nginx to read the acme-managed cert files
-  users.users.nginx.extraGroups = [ "acme" ];
+  # Add nginx to the acme group so it can traverse the 750 cert directory.
+  # Set from the group side (members) rather than extraGroups to avoid merge ambiguity.
+  users.groups.acme.members = [ "nginx" ];
 
   # Reload nginx automatically when xsvr1 rsyncs a renewed cert
   systemd.paths.nginx-cert-reload = {
