@@ -74,6 +74,7 @@ in
         password = ${config.sops.placeholder.ext_801_password}
 
         [801](aor-single)
+        contact = sip:172.18.7.1:5060
 
         [identify-801]
         type = identify
