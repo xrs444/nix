@@ -67,6 +67,7 @@
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
+
   ];
 
   # Install non-standard fonts
@@ -192,10 +193,9 @@
     # PATH is managed by nix-darwin - don't override it
   };
 
-  # Enable Catppuccin theme globally
-  catppuccin = {
-    enable = true;
-    flavor = "mocha";
-  };
+  #  catppuccin = {
+  #    enable = true;
+  #    flavor = "mocha";
+  #  };
 
 }
