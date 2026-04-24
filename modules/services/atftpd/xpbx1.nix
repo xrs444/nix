@@ -1,5 +1,9 @@
-# Summary: TFTP provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
-{ hostname, config, ... }:
+# Summary: TFTP/HTTPS provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
+# DHCP option 66 points to https://xpbx1.xrs444.net — nginx serves configs over HTTPS (cert pushed from xsvr1).
+# Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
+# Grandstream configs use Grandstream P-value XML. Polycom uses PHONE_CONFIG XML.
+# All configs use the static IP 172.18.6.1 directly to avoid DNS resolution on the phone.
+{ hostname, config, pkgs, lib, ... }:
 {
   services.atftpd = {
     enable = true;
@@ -16,7 +20,7 @@
       <HT802>
         <!-- FXS Port 1 — Extension 815 Thomas' Desk -->
         <P47>0</P47>
-        <P270>${hostname}.lan</P270>
+        <P270>172.18.6.1</P270>
         <P271>5060</P271>
         <P35>815</P35>
         <P36>${config.sops.placeholder.ext_815_password}</P36>
@@ -26,7 +30,7 @@
 
         <!-- FXS Port 2 — Extension 816 Samantha's Desk -->
         <P2047>0</P2047>
-        <P2270>${hostname}.lan</P2270>
+        <P2270>172.18.6.1</P2270>
         <P2271>5060</P2271>
         <P2035>816</P2035>
         <P2036>${config.sops.placeholder.ext_816_password}</P2036>
@@ -45,7 +49,7 @@
       <HT801>
         <!-- FXS Port 1 — Extension 818 Master Bedroom -->
         <P47>0</P47>
-        <P270>${hostname}.lan</P270>
+        <P270>172.18.6.1</P270>
         <P271>5060</P271>
         <P35>818</P35>
         <P36>${config.sops.placeholder.ext_818_password}</P36>
@@ -62,10 +66,10 @@
     <!-- Polycom master config: loaded by all Polycom devices before per-device config -->
     <PHONE_CONFIG>
       <ALL
-        VOIP_PROT_SIP_OUTBOUND_PROXY="${hostname}.lan"
+        VOIP_PROT_SIP_OUTBOUND_PROXY="172.18.6.1"
         VOIP_PROT_SIP_OUTBOUND_PROXY_PORT="5060"
         VOICE_CODEC_PREFERENCE="G722,PCMU,PCMA"
-        PROV_SERVER_ADDR="${hostname}.lan"
+        PROV_SERVER_ADDR="172.18.6.1"
         PROV_SERVER_TRANS="TFTP"
       />
     </PHONE_CONFIG>
@@ -83,7 +87,7 @@
           AUTH_USER_ID="817"
           AUTH_PASSWORD="${config.sops.placeholder.ext_817_password}"
           LABEL="817"
-          VOIP_PROT_SIP_PROXY_ADDRESS="${hostname}.lan"
+          VOIP_PROT_SIP_PROXY_ADDRESS="172.18.6.1"
           VOIP_PROT_SIP_PROXY_PORT="5060"
         />
       </PHONE_CONFIG>
@@ -92,18 +96,25 @@
   environment.etc."tftp/0004f2f9e472.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
 
   # Sangoma P315 phones: exts 810-814
-  # Without DPMA (proprietary), P315s use standard SIP provisioning via TFTP.
-  # Filename: <mac-lowercase-with-colons>.cfg (e.g. 00:08:5d:aa:bb:cc.cfg)
-  # One file per phone — replace each MAC_P315_8xx placeholder with actual MAC.
+  # Config format: Sangoma XML (<config><accounts><account>))
+  # Filename: <mac-lowercase-no-colons>.cfg
+  # Placeholder filenames (MAC_P315_8xx) will be renamed once actual MACs are known.
+
+  # Sangoma P315 — ext 810 RF Cabinet — MAC: pending
   sops.templates."MAC_P315_810.cfg" = {
     content = ''
-      [settings]
-      sip_server=${hostname}.lan
-      sip_port=5060
-      username=810
-      password=${config.sops.placeholder.ext_810_password}
-      display_name=RF Cabinet
-      codec_list=g722,ulaw,alaw
+      <?xml version="1.0" ?>
+      <config>
+        <accounts>
+          <account index="0" status="1" register="1" account_id="810"
+                   username="810" authname="810"
+                   password="${config.sops.placeholder.ext_810_password}"
+                   line_label="RF Cabinet"
+                   caller_id="RF Cabinet &lt;810&gt;">
+            <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
+          </account>
+        </accounts>
+      </config>
     '';
   };
   environment.etc."tftp/MAC_P315_810.cfg".source = config.sops.templates."MAC_P315_810.cfg".path;
@@ -111,13 +122,18 @@
   # Sangoma P315 — ext 811 Greyson's Room — MAC: 00:0F:D3:CF:D9:D3
   sops.templates."000fd3cfd9d3.cfg" = {
     content = ''
-      [settings]
-      sip_server=${hostname}.lan
-      sip_port=5060
-      username=811
-      password=${config.sops.placeholder.ext_811_password}
-      display_name=Greyson Room
-      codec_list=g722,ulaw,alaw
+      <?xml version="1.0" ?>
+      <config>
+        <accounts>
+          <account index="0" status="1" register="1" account_id="811"
+                   username="811" authname="811"
+                   password="${config.sops.placeholder.ext_811_password}"
+                   line_label="Greyson Room"
+                   caller_id="Greyson Room &lt;811&gt;">
+            <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
+          </account>
+        </accounts>
+      </config>
     '';
   };
   environment.etc."tftp/000fd3cfd9d3.cfg".source = config.sops.templates."000fd3cfd9d3.cfg".path;
@@ -125,40 +141,95 @@
   # Sangoma P315 — ext 812 Rowan's Room — MAC: 00:0F:D3:CF:D8:A7
   sops.templates."000fd3cfd8a7.cfg" = {
     content = ''
-      [settings]
-      sip_server=${hostname}.lan
-      sip_port=5060
-      username=812
-      password=${config.sops.placeholder.ext_812_password}
-      display_name=Rowan Room
-      codec_list=g722,ulaw,alaw
+      <?xml version="1.0" ?>
+      <config>
+        <accounts>
+          <account index="0" status="1" register="1" account_id="812"
+                   username="812" authname="812"
+                   password="${config.sops.placeholder.ext_812_password}"
+                   line_label="Rowan Room"
+                   caller_id="Rowan Room &lt;812&gt;">
+            <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
+          </account>
+        </accounts>
+      </config>
     '';
   };
   environment.etc."tftp/000fd3cfd8a7.cfg".source = config.sops.templates."000fd3cfd8a7.cfg".path;
 
+  # Sangoma P315 — ext 813 Garage — MAC: pending
   sops.templates."MAC_P315_813.cfg" = {
     content = ''
-      [settings]
-      sip_server=${hostname}.lan
-      sip_port=5060
-      username=813
-      password=${config.sops.placeholder.ext_813_password}
-      display_name=Garage
-      codec_list=g722,ulaw,alaw
+      <?xml version="1.0" ?>
+      <config>
+        <accounts>
+          <account index="0" status="1" register="1" account_id="813"
+                   username="813" authname="813"
+                   password="${config.sops.placeholder.ext_813_password}"
+                   line_label="Garage"
+                   caller_id="Garage &lt;813&gt;">
+            <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
+          </account>
+        </accounts>
+      </config>
     '';
   };
   environment.etc."tftp/MAC_P315_813.cfg".source = config.sops.templates."MAC_P315_813.cfg".path;
 
+  # Sangoma P315 — ext 814 Rack — MAC: pending
   sops.templates."MAC_P315_814.cfg" = {
     content = ''
-      [settings]
-      sip_server=${hostname}.lan
-      sip_port=5060
-      username=814
-      password=${config.sops.placeholder.ext_814_password}
-      display_name=Rack
-      codec_list=g722,ulaw,alaw
+      <?xml version="1.0" ?>
+      <config>
+        <accounts>
+          <account index="0" status="1" register="1" account_id="814"
+                   username="814" authname="814"
+                   password="${config.sops.placeholder.ext_814_password}"
+                   line_label="Rack"
+                   caller_id="Rack &lt;814&gt;">
+            <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
+          </account>
+        </accounts>
+      </config>
     '';
   };
   environment.etc."tftp/MAC_P315_814.cfg".source = config.sops.templates."MAC_P315_814.cfg".path;
+
+  # HTTPS provisioning server — phones fetch configs from https://xpbx1.xrs444.net/<mac>.cfg
+  # Cert is generated on xsvr1 and rsynced here after each renewal via the acme postRun hook.
+  services.nginx = {
+    enable = true;
+    recommendedTlsSettings = true;
+    virtualHosts."xpbx1.xrs444.net" = {
+      forceSSL = true;
+      sslCertificate = "/var/lib/acme/xpbx1.xrs444.net/fullchain.pem";
+      sslCertificateKey = "/var/lib/acme/xpbx1.xrs444.net/key.pem";
+      root = "/etc/tftp";
+      extraConfig = ''
+        autoindex off;
+      '';
+    };
+  };
+
+  # Allow nginx to read the acme-managed cert files
+  users.users.nginx.extraGroups = [ "acme" ];
+
+  # Reload nginx automatically when xsvr1 rsyncs a renewed cert
+  systemd.paths.nginx-cert-reload = {
+    wantedBy = [ "multi-user.target" ];
+    pathConfig = {
+      PathChanged = "/var/lib/acme/xpbx1.xrs444.net/fullchain.pem";
+      Unit = "nginx-cert-reload.service";
+    };
+  };
+
+  systemd.services.nginx-cert-reload = {
+    description = "Reload nginx after certificate update";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${lib.getExe' pkgs.systemd "systemctl"} reload nginx.service";
+    };
+  };
+
+  networking.firewall.allowedTCPPorts = [ 443 ];
 }

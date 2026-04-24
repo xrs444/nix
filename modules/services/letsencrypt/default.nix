@@ -44,6 +44,14 @@ lib.mkIf (!minimalImage) {
         group = "acme";
         mode = "0400";
       };
+      # Private key used to rsync certs to remote letsencrypt-host nodes after renewal
+      acme_ssh_private_key = {
+        sopsFile = ../../../secrets/acme.yaml;
+        key = "ssh-private-key";
+        owner = "acme";
+        group = "acme";
+        mode = "0400";
+      };
     })
     (lib.mkIf isLetsencryptHost {
       acme_ssh_key = {
@@ -82,6 +90,23 @@ lib.mkIf (!minimalImage) {
         };
       }) allHosts)
       ++
+        # Push xpbx1 cert to xpbx1 after renewal so nginx can serve phone configs over HTTPS
+        [
+          {
+            "xpbx1.${domain}" = {
+              postRun = ''
+                SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+                $SSH acme@xpbx1.lan "mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
+                ${pkgs.rsync}/bin/rsync \
+                  -e "$SSH" \
+                  --perms --chmod=F640 \
+                  /var/lib/acme/xpbx1.${domain}/ \
+                  acme@xpbx1.lan:/var/lib/acme/xpbx1.${domain}/
+              '';
+            };
+          }
+        ]
+      ++
         # Kanidm shared certificate
         (lib.optional isKanidmServer {
           "idm.${domain}" = {
@@ -112,6 +137,8 @@ lib.mkIf (!minimalImage) {
     group = "acme";
     home = "/var/lib/acme";
     createHome = true;
+    # bash shell required for SSH-based cert delivery from xsvr1
+    shell = pkgs.bash;
     # Explicitly set empty authorized keys to prevent NixOS from building them at build time
     openssh.authorizedKeys.keys = [ ];
   };
