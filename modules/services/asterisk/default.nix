@@ -122,6 +122,10 @@ in
         '';
 
         # Stub configs to suppress missing-file warnings
+        "pjproject.conf" = ''
+          [startup]
+        '';
+
         "res_http_media_cache.conf" = ''
           [general]
         '';
