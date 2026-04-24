@@ -80,6 +80,7 @@ in
           noload => res_pjsip_notify
           noload => res_stun_monitor
           noload => res_phoneprov
+          noload => res_pjsip_phoneprov_provider
 
           ; CEL/CDR modules not in use
           noload => cel_sqlite3_custom
