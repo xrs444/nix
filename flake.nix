@@ -12,7 +12,7 @@
   inputs = {
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    catppuccin.url = "github:catppuccin/nix";
+    catppuccin.url = "github:catppuccin/nix/63c423c"; # pin: last commit before opencode support (incompatible with home-manager 25.11)
     deploy-rs.url = "github:serokell/deploy-rs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
