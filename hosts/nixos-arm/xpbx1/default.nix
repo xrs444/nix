@@ -46,12 +46,6 @@
   # CONFIG_ARCH_MMAP_RND_BITS_MAX is lower on Pi3 than Pi4 (48-bit VA). Use 18 (kernel default).
   boot.kernel.sysctl."vm.mmap_rnd_bits" = lib.mkForce 18;
 
-  # Force the system to use the correct profile path
-  system.activationScripts.fixProfile = lib.stringAfter [ "users" ] ''
-    rm -f /nix/var/nix/profiles/system
-    ln -sf /nix/var/nix/profiles/system-profiles/xpbx1 /nix/var/nix/profiles/system
-  '';
-
   environment.systemPackages = with pkgs; [
     libraspberrypi
     raspberrypi-eeprom
