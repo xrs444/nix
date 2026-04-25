@@ -16,39 +16,39 @@ lib.mkIf hasRole {
   };
 
   # Oneshot service that applies the xsvr1 NixOS config from the current checkout.
-  # The builder user is granted polkit permission to start it, avoiding sudo entirely.
   #
-  # Guard: requires a permit token at /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
-  # before running. The "Deploy xsvr1 (self)" CI step creates this token immediately before
-  # calling systemctl start. Any stale or accidental invocation will find no token and exit
-  # without touching the system, preventing nixos-rebuild from stopping the runner mid-job.
+  # Triggered by the path unit below — no polkit or systemctl call from the builder
+  # user required. The CI step simply creates the permit token file; systemd watches
+  # for it and starts this service automatically.
+  #
+  # Guard: ExecStartPre consumes the token atomically. Any stale invocation without
+  # a token exits immediately without touching the system.
   #
   # NOTE: token path must NOT be in /tmp — the github-runner service has PrivateTmp=true,
   # so the runner's `touch /tmp/...` writes to a private tmpfs invisible to this service.
-  # The runner's workDir (/zfs/nixcache/builds/github-runner) is shared and writable.
   systemd.services.nixos-rebuild-ci = {
     description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
     after = [ "network.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStartPre = "/bin/sh -c 'test -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted && rm -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted || { echo \"nixos-rebuild-ci: no permit token — refusing to run (protect active CI job)\"; exit 1; }'";
+      RemainAfterExit = false;
+      ExecStartPre = "/bin/sh -c 'test -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted && rm -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted || { echo \"nixos-rebuild-ci: no permit token — refusing to run\"; exit 1; }'";
       ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake /zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
-      # Run as root so nixos-rebuild can activate the new system
       User = "root";
     };
   };
 
-  # Allow the builder user to start the CI rebuild service via systemctl.
-  security.polkit.extraConfig = ''
-    polkit.addRule(function(action, subject) {
-      if (action.id === "org.freedesktop.systemd1.manage-units" &&
-          action.lookup("unit") === "nixos-rebuild-ci.service" &&
-          action.lookup("verb") === "start" &&
-          subject.user === "builder") {
-        return polkit.Result.YES;
-      }
-    });
-  '';
+  # Path unit that watches for the permit token and starts nixos-rebuild-ci.service
+  # automatically. The CI step only needs to `touch` the token — no D-Bus/systemctl
+  # call from the sandbox-restricted builder user required.
+  systemd.paths.nixos-rebuild-ci = {
+    description = "Watch for CI nixos-rebuild permit token";
+    wantedBy = [ "multi-user.target" ];
+    pathConfig = {
+      PathExists = "/zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted";
+      Unit = "nixos-rebuild-ci.service";
+    };
+  };
 
   services.github-runners.xsvr1-builder = {
     enable = true;

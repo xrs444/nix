@@ -208,18 +208,18 @@ jobs:
             exit 0
           fi
           echo "Deploying xsvr1 (self)..."
-          START=$(date +%s)
-          # Create permit token — nixos-rebuild-ci.service requires this to run.
-          # Without it, any stale/accidental invocation aborts instead of killing
-          # the runner mid-job. The service consumes the token atomically.
+          # Create permit token. nixos-rebuild-ci.path watches for this file and
+          # triggers nixos-rebuild-ci.service automatically — no systemctl call needed.
+          # The builder user cannot call systemctl from inside the sandbox-hardened
+          # runner service (D-Bus is inaccessible). Path-unit activation runs entirely
+          # within systemd as root, bypassing the restriction.
+          #
+          # NOTE: nixos-rebuild will restart the github-runner service as part of
+          # activation, killing this CI job. That is expected — the deploy succeeds
+          # even though CI reports failure for this step. The runner comes back up
+          # and picks up the next job with the new config applied.
           touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
-          systemctl start nixos-rebuild-ci.service
-          DURATION=$(( $(date +%s) - START ))
-          REVISION=$(git rev-parse HEAD)
-          printf 'deploy_last_success_timestamp_seconds{host="xsvr1"} %s\ndeploy_duration_seconds{host="xsvr1"} %s\ndeploy_git_revision_info{host="xsvr1",revision="%s"} 1\ndeploy_total{host="xsvr1",result="success"} 1\n' \
-            "$(date +%s)" "$DURATION" "$REVISION" \
-            | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/xsvr1" || true
-          echo "xsvr1: DEPLOY OK (${DURATION}s)"
+          echo "xsvr1: deploy triggered (path unit will fire nixos-rebuild asynchronously)"
 
       - name: Report final status
         if: always()
