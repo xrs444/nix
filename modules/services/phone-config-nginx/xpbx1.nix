@@ -54,9 +54,10 @@
         <P47>0</P47>
         <P270>172.18.6.1</P270>
         <P271>5060</P271>
-        <P35>818</P35>
-        <P36>${config.sops.placeholder.ext_818_password}</P36>
-        <P3>Master Bedroom</P3>
+        <P2>818</P2>
+        <P3>818</P3>
+        <P34>${config.sops.placeholder.ext_818_password}</P34>
+        <P35>Master Bedroom</P35>
       </HT801>
     '';
   };
