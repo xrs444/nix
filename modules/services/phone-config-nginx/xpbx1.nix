@@ -220,6 +220,11 @@
       root = "/etc/tftp";
       extraConfig = ''
         autoindex off;
+        # Polycom SoundStation IP 7000 (Mink 4.0) only supports TLS 1.0/1.1.
+        # This is internal-only (phones on 172.18.6.x) so legacy TLS is acceptable.
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_ciphers HIGH:!aNULL:!MD5:!RC4;
+        ssl_prefer_server_ciphers on;
       '';
     };
   };

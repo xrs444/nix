@@ -96,7 +96,8 @@ lib.mkIf (!minimalImage) {
             "xpbx1.${domain}" = {
               postRun = ''
                 SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-                $SSH acme@xpbx1.lan "mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
+                # chmod 750 on the home dir itself — createHome sets it 700 which blocks nginx
+                $SSH acme@xpbx1.lan "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
                 ${pkgs.rsync}/bin/rsync \
                   -e "$SSH" \
                   --perms --chmod=F640 \
@@ -166,6 +167,8 @@ lib.mkIf (!minimalImage) {
       chown -R acme:acme /var/lib/acme/.ssh
       chmod 700 /var/lib/acme/.ssh
       chmod 600 /var/lib/acme/.ssh/authorized_keys
+      # createHome sets /var/lib/acme to 700; widen to 750 so nginx (acme group) can traverse it
+      chmod 750 /var/lib/acme
     '';
   };
 
