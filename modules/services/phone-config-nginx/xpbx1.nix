@@ -1,4 +1,4 @@
-# Summary: TFTP/HTTPS provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
+# Summary: HTTPS provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
 # DHCP option 66 points to https://xpbx1.xrs444.net — nginx serves configs over HTTPS (cert pushed from xsvr1).
 # Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
 # Grandstream configs use Grandstream P-value XML: P2=SIP User ID, P3=Auth ID, P34=Auth Password, P35=Name (port 2 adds 2000). Polycom uses PHONE_CONFIG XML.
@@ -10,13 +10,6 @@
   ...
 }:
 {
-  services.atftpd = {
-    enable = true;
-    root = "/etc/tftp";
-  };
-
-  networking.firewall.allowedUDPPorts = [ 69 ]; # TFTP
-
   # Grandstream HT802 (2-port ATA): exts 815 (Thomas' Desk) + 816 (Samantha's Desk)
   # MAC: EC:74:D7:22:C9:11 → cfgEC74D722C911.xml
   sops.templates."cfgEC74D722C911.xml" = {
@@ -79,8 +72,9 @@
         VOIP_PROT_SIP_OUTBOUND_PROXY="172.18.6.1"
         VOIP_PROT_SIP_OUTBOUND_PROXY_PORT="5060"
         VOICE_CODEC_PREFERENCE="G722,PCMU,PCMA"
-        PROV_SERVER_ADDR="172.18.6.1"
-        PROV_SERVER_TRANS="TFTP"
+        PROV_SERVER_ADDR="xpbx1.xrs444.net"
+        PROV_SERVER_TRANS="HTTPS"
+        PROV_SERVER_PORT="443"
       />
     </PHONE_CONFIG>
   '';
