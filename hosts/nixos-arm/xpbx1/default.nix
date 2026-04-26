@@ -1,5 +1,5 @@
 # Summary: NixOS ARM host configuration for xpbx1 - Raspberry Pi 3B running Asterisk PBX
-# Provisioning: TFTP server serves device configs by MAC address (DHCP option 66 → xpbx1)
+# Provisioning: nginx serves device configs via HTTPS (xpbx1.xrs444.net); DHCP option 66 set on Firewalla → https://xpbx1.xrs444.net
 # Replace MAC_* placeholders below with actual device MAC addresses (uppercase, no separators for
 # Grandstream; lowercase no separators for Polycom; lowercase with colons for Sangoma).
 {
