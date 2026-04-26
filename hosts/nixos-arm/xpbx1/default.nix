@@ -46,6 +46,13 @@
   # CONFIG_ARCH_MMAP_RND_BITS_MAX is lower on Pi3 than Pi4 (48-bit VA). Use 18 (kernel default).
   boot.kernel.sysctl."vm.mmap_rnd_bits" = lib.mkForce 18;
 
+  # Allow thomas-local to run switch-to-configuration without a password so
+  # recovery (switch-to-configuration boot to fix the bootloader) can be done
+  # over SSH. Store paths change per build so match with a glob.
+  security.sudo.extraConfig = ''
+    thomas-local ALL=(root) NOPASSWD: /nix/store/*/bin/switch-to-configuration *
+  '';
+
   environment.systemPackages = with pkgs; [
     libraspberrypi
     raspberrypi-eeprom
