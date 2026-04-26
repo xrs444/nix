@@ -2,7 +2,6 @@
 # It is not intended to be used standalone; import it from your main config if needed.
 {
   config,
-  pkgs,
   ...
 }:
 {
@@ -10,8 +9,6 @@
     "${config.home.homeDirectory}/.gitkraken/themes/catppuccin_mocha.jsonc".text =
       builtins.readFile ./catppuccin-mocha-blue-upstream.json;
   };
-  home.packages = with pkgs; [
-    gitkraken
-    #    gk-cli
-  ];
+  # gitkraken installed via homebrew cask (nixpkgs 25.11 gitkraken has stale source hash)
+  # home.packages = with pkgs; [ gitkraken ];
 }

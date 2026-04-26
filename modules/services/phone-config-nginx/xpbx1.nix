@@ -3,7 +3,12 @@
 # Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
 # Grandstream configs use Grandstream P-value XML. Polycom uses PHONE_CONFIG XML.
 # All configs use the static IP 172.18.6.1 directly to avoid DNS resolution on the phone.
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   services.atftpd = {
     enable = true;
@@ -40,7 +45,8 @@
       </HT802>
     '';
   };
-  environment.etc."tftp/cfgEC74D722C911.xml".source = config.sops.templates."cfgEC74D722C911.xml".path;
+  environment.etc."tftp/cfgEC74D722C911.xml".source =
+    config.sops.templates."cfgEC74D722C911.xml".path;
 
   # Grandstream HT801 (1-port ATA): ext 818 (Master Bedroom)
   # Filename: cfg<MAC-UPPERCASE-NO-COLONS>.xml — replace MAC_HT801 with actual MAC
@@ -106,7 +112,7 @@
   # Placeholder filenames (MAC_P315_8xx) will be renamed once actual MACs are known.
 
   # Sangoma P315 — ext 810 RF Cabinet — MAC: pending
-  sops.templates."MAC_P315_810.cfg" = {
+  sops.templates."000fd3cfd9a3.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" ?>
@@ -123,7 +129,7 @@
       </config>
     '';
   };
-  environment.etc."tftp/MAC_P315_810.cfg".source = config.sops.templates."MAC_P315_810.cfg".path;
+  environment.etc."tftp/000fd3cfd9a3.cfg".source = config.sops.templates."000fd3cfd9a3.cfg".path;
 
   # Sangoma P315 — ext 811 Greyson's Room — MAC: 00:0F:D3:CF:D9:D3
   sops.templates."000fd3cfd9d3.cfg" = {
