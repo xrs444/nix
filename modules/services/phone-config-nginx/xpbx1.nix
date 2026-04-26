@@ -92,6 +92,8 @@
           LABEL="817"
           VOIP_PROT_SIP_PROXY_ADDRESS="172.18.6.1"
           VOIP_PROT_SIP_PROXY_PORT="5060"
+          VOIP_PROT_SIP_REGISTRAR_ADDRESS="172.18.6.1"
+          VOIP_PROT_SIP_REGISTRAR_PORT="5060"
         />
       </PHONE_CONFIG>
     '';
@@ -143,8 +145,8 @@
   };
   environment.etc."tftp/000fd3cfd9d3.cfg".source = config.sops.templates."000fd3cfd9d3.cfg".path;
 
-  # Sangoma P315 — ext 812 Rowan's Room — MAC: 00:0F:D3:CF:D8:A7
-  sops.templates."000fd3cfd8a7.cfg" = {
+  # Sangoma P315 — ext 812 Rowan's Room — MAC: 00:0F:D3:CF:DA:34
+  sops.templates."000fd3cfda34.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" ?>
@@ -161,7 +163,7 @@
       </config>
     '';
   };
-  environment.etc."tftp/000fd3cfd8a7.cfg".source = config.sops.templates."000fd3cfd8a7.cfg".path;
+  environment.etc."tftp/000fd3cfda34.cfg".source = config.sops.templates."000fd3cfda34.cfg".path;
 
   # Sangoma P315 — ext 813 Garage — MAC: pending
   sops.templates."MAC_P315_813.cfg" = {
@@ -183,8 +185,8 @@
   };
   environment.etc."tftp/MAC_P315_813.cfg".source = config.sops.templates."MAC_P315_813.cfg".path;
 
-  # Sangoma P315 — ext 814 Rack — MAC: pending
-  sops.templates."MAC_P315_814.cfg" = {
+  # Sangoma P315 — ext 814 Rack — MAC: 00:0F:D3:CF:D8:A7
+  sops.templates."000fd3cfd8a7.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" ?>
@@ -201,7 +203,7 @@
       </config>
     '';
   };
-  environment.etc."tftp/MAC_P315_814.cfg".source = config.sops.templates."MAC_P315_814.cfg".path;
+  environment.etc."tftp/000fd3cfd8a7.cfg".source = config.sops.templates."000fd3cfd8a7.cfg".path;
 
   # HTTPS provisioning server — phones fetch configs from https://xpbx1.xrs444.net/<mac>.cfg
   # Cert is generated on xsvr1 and rsynced here after each renewal via the acme postRun hook.

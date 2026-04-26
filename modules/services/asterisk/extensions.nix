@@ -13,6 +13,18 @@ in
       writeprotect = no
 
       [internal]
+      ; BLF/presence hints
+      exten => 801,hint,PJSIP/801
+      exten => 810,hint,PJSIP/810
+      exten => 811,hint,PJSIP/811
+      exten => 812,hint,PJSIP/812
+      exten => 813,hint,PJSIP/813
+      exten => 814,hint,PJSIP/814
+      exten => 815,hint,PJSIP/815
+      exten => 816,hint,PJSIP/816
+      exten => 817,hint,PJSIP/817
+      exten => 818,hint,PJSIP/818
+
       ; Direct extension dialing
       exten => 801,1,NoOp(Calling Home Assistant)
       same => n,Dial(PJSIP/801,30)
