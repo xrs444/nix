@@ -68,6 +68,7 @@ in
         type = endpoint
         context = internal
         disallow = all
+        allow = opus
         allow = ulaw
         allow = alaw
         allow = g722
