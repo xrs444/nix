@@ -68,14 +68,16 @@
   environment.etc."tftp/000000000000.cfg".text = ''
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <!-- Polycom master config: loaded by all Polycom devices before per-device config -->
+    <!-- SoundStation IP 7000 (Mink 4.0) only supports TLS 1.0 which OpenSSL 3.x rejects. -->
+    <!-- Use HTTP on port 80 — internal LAN only, no external exposure. -->
     <PHONE_CONFIG>
       <ALL
         VOIP_PROT_SIP_OUTBOUND_PROXY="172.18.6.1"
         VOIP_PROT_SIP_OUTBOUND_PROXY_PORT="5060"
         VOICE_CODEC_PREFERENCE="G722,PCMU,PCMA"
-        PROV_SERVER_ADDR="xpbx1.xrs444.net"
-        PROV_SERVER_TRANS="HTTPS"
-        PROV_SERVER_PORT="443"
+        PROV_SERVER_ADDR="172.18.6.1"
+        PROV_SERVER_TRANS="HTTP"
+        PROV_SERVER_PORT="80"
       />
     </PHONE_CONFIG>
   '';
@@ -220,11 +222,16 @@
       root = "/etc/tftp";
       extraConfig = ''
         autoindex off;
-        # Polycom SoundStation IP 7000 (Mink 4.0) only supports TLS 1.0/1.1.
-        # This is internal-only (phones on 172.18.6.x) so legacy TLS is acceptable.
-        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-        ssl_ciphers HIGH:!aNULL:!MD5:!RC4;
-        ssl_prefer_server_ciphers on;
+      '';
+    };
+    # HTTP vhost for Polycom SoundStation IP 7000 (Mink 4.0): only supports TLS 1.0
+    # which OpenSSL 3.x rejects. HTTP provisioning is acceptable — internal LAN only.
+    virtualHosts."xpbx1-http" = {
+      listen = [ { addr = "0.0.0.0"; port = 80; } ];
+      serverName = "_";
+      root = "/etc/tftp";
+      extraConfig = ''
+        autoindex off;
       '';
     };
   };
@@ -256,5 +263,5 @@
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ 443 ];
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
 }
