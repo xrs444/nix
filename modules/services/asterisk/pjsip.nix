@@ -15,7 +15,6 @@ in
     sops.secrets =
       lib.genAttrs
         (map (e: "ext_${toString e}_password") [
-          801
           810
           811
           812
@@ -62,16 +61,20 @@ in
         remove_existing = yes
 
         ; ===============================================
-        ; Extension 801 - Home Assistant
+        ; Extension 801 - Home Assistant (SIP trunk, IP-authenticated only)
+        ; HA listens on UDP 5060, does not register — no username auth needed.
         ; ===============================================
-        [801](endpoint-internal)
-        auth = 801
-        aors = 801
+        [801]
+        type = endpoint
+        context = internal
+        disallow = all
+        allow = ulaw
+        allow = alaw
+        allow = g722
+        direct_media = no
+        identify_by = ip
         callerid = "Home Assistant" <801>
-
-        [801](auth-userpass)
-        username = 801
-        password = ${config.sops.placeholder.ext_801_password}
+        aors = 801
 
         [801](aor-single)
         contact = sip:172.18.7.1:5060
