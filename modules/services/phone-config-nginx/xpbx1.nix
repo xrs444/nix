@@ -1,7 +1,7 @@
 # Summary: TFTP/HTTPS provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
 # DHCP option 66 points to https://xpbx1.xrs444.net — nginx serves configs over HTTPS (cert pushed from xsvr1).
 # Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
-# Grandstream configs use Grandstream P-value XML. Polycom uses PHONE_CONFIG XML.
+# Grandstream configs use Grandstream P-value XML: P2=SIP User ID, P3=Auth ID, P34=Auth Password, P35=Name (port 2 adds 2000). Polycom uses PHONE_CONFIG XML.
 # All configs use the static IP 172.18.6.1 directly to avoid DNS resolution on the phone.
 {
   config,
@@ -28,9 +28,10 @@
         <P47>0</P47>
         <P270>172.18.6.1</P270>
         <P271>5060</P271>
-        <P35>815</P35>
-        <P36>${config.sops.placeholder.ext_815_password}</P36>
-        <P3>Thomas Desk</P3>
+        <P2>815</P2>
+        <P3>815</P3>
+        <P34>${config.sops.placeholder.ext_815_password}</P34>
+        <P35>Thomas Desk</P35>
         <P2342>0</P2342>
         <P157>f1=440@-13,c=300/10000;</P157>
 
@@ -38,9 +39,10 @@
         <P2047>0</P2047>
         <P2270>172.18.6.1</P2270>
         <P2271>5060</P2271>
-        <P2035>816</P2035>
-        <P2036>${config.sops.placeholder.ext_816_password}</P2036>
-        <P23>Samantha Desk</P23>
+        <P2002>816</P2002>
+        <P2003>816</P2003>
+        <P2034>${config.sops.placeholder.ext_816_password}</P2034>
+        <P2035>Samantha Desk</P2035>
         <P2157>f1=440@-13,c=300/10000;</P2157>
       </HT802>
     '';
