@@ -45,7 +45,7 @@
 
   # Grandstream HT801 (1-port ATA): ext 818 (Master Bedroom)
   # Filename: cfg<MAC-UPPERCASE-NO-COLONS>.xml — replace MAC_HT801 with actual MAC
-  sops.templates."cfgMAC_HT801.xml" = {
+  sops.templates."ec74d75211cf.xml" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -61,7 +61,7 @@
       </HT801>
     '';
   };
-  environment.etc."tftp/cfgMAC_HT801.xml".source = config.sops.templates."cfgMAC_HT801.xml".path;
+  environment.etc."tftp/ec74d75211cf.xml".source = config.sops.templates."ec74d75211cf.xml".path;
 
   # Polycom SoundStation IP 7000: ext 817 (xstarfish Conference)
   # Phones fetch 000000000000.cfg first, then <mac-lowercase-no-colons>.cfg
@@ -171,7 +171,7 @@
   environment.etc."tftp/000fd3cfda34.cfg".source = config.sops.templates."000fd3cfda34.cfg".path;
 
   # Sangoma P315 — ext 813 Garage — MAC: pending
-  sops.templates."MAC_P315_813.cfg" = {
+  sops.templates."000fd3cfd9e7cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" ?>
@@ -188,7 +188,7 @@
       </config>
     '';
   };
-  environment.etc."tftp/MAC_P315_813.cfg".source = config.sops.templates."MAC_P315_813.cfg".path;
+  environment.etc."tftp/000fd3cfd9e7cfg".source = config.sops.templates."000fd3cfd9e7cfg".path;
 
   # Sangoma P315 — ext 814 Rack — MAC: 00:0F:D3:CF:D8:A7
   sops.templates."000fd3cfd8a7.cfg" = {
@@ -227,7 +227,12 @@
     # HTTP vhost for Polycom SoundStation IP 7000 (Mink 4.0): only supports TLS 1.0
     # which OpenSSL 3.x rejects. HTTP provisioning is acceptable — internal LAN only.
     virtualHosts."xpbx1-http" = {
-      listen = [ { addr = "0.0.0.0"; port = 80; } ];
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 80;
+        }
+      ];
       serverName = "_";
       root = "/etc/tftp";
       extraConfig = ''
@@ -263,5 +268,8 @@
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
 }
