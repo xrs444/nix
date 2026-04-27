@@ -11,8 +11,9 @@
 }:
 {
   # Grandstream HT802 (2-port ATA): exts 815 (Thomas' Desk) + 816 (Samantha's Desk)
-  # MAC: EC:74:D7:22:C9:11 → cfgEC74D722C911.xml
-  sops.templates."cfgEC74D722C911.xml" = {
+  # MAC: EC:74:D7:22:C9:11 → cfgec74d722c911.xml
+  # Grandstream firmware requests lowercase MAC: cfg<mac-lowercase-no-colons>.xml
+  sops.templates."cfgec74d722c911.xml" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -40,13 +41,13 @@
       </HT802>
     '';
   };
-  environment.etc."tftp/cfgEC74D722C911.xml".source =
-    config.sops.templates."cfgEC74D722C911.xml".path;
+  environment.etc."tftp/cfgec74d722c911.xml".source =
+    config.sops.templates."cfgec74d722c911.xml".path;
 
   # Grandstream HT801 (1-port ATA): ext 818 (Master Bedroom)
-  # Filename MUST be cfg<MAC-UPPERCASE-NO-COLONS>.xml — note the required 'cfg' prefix.
-  # MAC: EC:74:D7:52:11:CF → cfgEC74D75211CF.xml
-  sops.templates."cfgEC74D75211CF.xml" = {
+  # Grandstream firmware requests lowercase MAC: cfg<mac-lowercase-no-colons>.xml
+  # MAC: EC:74:D7:52:11:CF → cfgec74d75211cf.xml
+  sops.templates."cfgec74d75211cf.xml" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -62,7 +63,7 @@
       </HT801>
     '';
   };
-  environment.etc."tftp/cfgEC74D75211CF.xml".source = config.sops.templates."cfgEC74D75211CF.xml".path;
+  environment.etc."tftp/cfgec74d75211cf.xml".source = config.sops.templates."cfgec74d75211cf.xml".path;
 
   # Polycom SoundStation IP 7000: ext 817 (xstarfish Conference)
   # Phone runs UC Software 4.0.15 — uses dot-notation params, NOT old uppercase Mink params.
