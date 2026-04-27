@@ -71,7 +71,7 @@
   environment.etc."tftp/000000000000.cfg".text = ''
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <!-- Polycom master config: loaded by all Polycom devices before per-device config -->
-    <!-- SoundStation IP 7000 runs Mink 4.0.15 firmware — HTTP provisioning, internal LAN only. -->
+    <!-- SoundStation IP 7000 runs Mink 4.0.15 firmware -- HTTP provisioning, internal LAN only. -->
     <!-- Mink provisioning params: PROV_SERVER_ADDR/TRANS/PORT are the correct names. -->
     <PHONE_CONFIG>
       <ALL
@@ -86,25 +86,24 @@
   '';
 
   # Polycom SoundStation IP 7000 — ext 817 xstarfish — MAC: 00:04:F2:F9:E4:72
-  # Firmware: Mink 4.0.15 (NOT UC Software — different firmware family, different param names).
-  # Mink uses voIpProt.server.1.address for the global SIP registrar.
-  # reg.1.server.1.address is a UC Software 5.x+ feature and is silently ignored by Mink.
+  # Firmware: Mink 4.0.15. Uses uppercase param names in <PHONE_CONFIG><ALL>.
+  # dot-notation params (reg.1.*, voIpProt.server.1.*) are silently ignored by Mink.
   sops.templates."0004f2f9e472.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-      <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish (Mink 4.0.15) -->
+      <!-- Per-device config for SoundStation IP 7000 -- ext 817 xstarfish (Mink 4.0.15) -->
       <PHONE_CONFIG>
         <ALL
-          reg.1.address="817"
-          reg.1.auth.userId="817"
-          reg.1.auth.password="${config.sops.placeholder.ext_817_password}"
-          reg.1.displayName="xstarfish Conference"
-          reg.1.label="xstarfish Conference"
-          voIpProt.server.1.address="172.18.6.1"
-          voIpProt.server.1.port="5060"
-          voIpProt.server.1.transport="UDPOnly"
-          voIpProt.server.1.expires="3600"
+          DISPLAY_NAME="xstarfish Conference"
+          SIP_ADDRESS="817"
+          AUTH_USER_ID="817"
+          AUTH_PASSWORD="${config.sops.placeholder.ext_817_password}"
+          LABEL="817"
+          VOIP_PROT_SIP_PROXY_ADDRESS="172.18.6.1"
+          VOIP_PROT_SIP_PROXY_PORT="5060"
+          VOIP_PROT_SIP_REGISTRAR_ADDRESS="172.18.6.1"
+          VOIP_PROT_SIP_REGISTRAR_PORT="5060"
         />
       </PHONE_CONFIG>
     '';
