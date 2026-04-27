@@ -44,8 +44,9 @@
     config.sops.templates."cfgEC74D722C911.xml".path;
 
   # Grandstream HT801 (1-port ATA): ext 818 (Master Bedroom)
-  # Filename: cfg<MAC-UPPERCASE-NO-COLONS>.xml — replace MAC_HT801 with actual MAC
-  sops.templates."ec74d75211cf.xml" = {
+  # Filename MUST be cfg<MAC-UPPERCASE-NO-COLONS>.xml — note the required 'cfg' prefix.
+  # MAC: EC:74:D7:52:11:CF → cfgEC74D75211CF.xml
+  sops.templates."cfgEC74D75211CF.xml" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -61,44 +62,47 @@
       </HT801>
     '';
   };
-  environment.etc."tftp/ec74d75211cf.xml".source = config.sops.templates."ec74d75211cf.xml".path;
+  environment.etc."tftp/cfgEC74D75211CF.xml".source = config.sops.templates."cfgEC74D75211CF.xml".path;
 
   # Polycom SoundStation IP 7000: ext 817 (xstarfish Conference)
-  # Phones fetch 000000000000.cfg first, then <mac-lowercase-no-colons>.cfg
+  # Phone runs UC Software 4.0.15 — uses dot-notation params, NOT old uppercase Mink params.
+  # Fetches 000000000000.cfg first, then <mac-lowercase-no-colons>.cfg
   environment.etc."tftp/000000000000.cfg".text = ''
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <!-- Polycom master config: loaded by all Polycom devices before per-device config -->
-    <!-- SoundStation IP 7000 (Mink 4.0) only supports TLS 1.0 which OpenSSL 3.x rejects. -->
-    <!-- Use HTTP on port 80 — internal LAN only, no external exposure. -->
+    <!-- SoundStation IP 7000 runs UC Software 4.0.15 — HTTP provisioning, internal LAN only. -->
     <PHONE_CONFIG>
       <ALL
-        VOIP_PROT_SIP_OUTBOUND_PROXY="172.18.6.1"
-        VOIP_PROT_SIP_OUTBOUND_PROXY_PORT="5060"
-        VOICE_CODEC_PREFERENCE="G722,PCMU,PCMA"
-        PROV_SERVER_ADDR="172.18.6.1"
-        PROV_SERVER_TRANS="HTTP"
-        PROV_SERVER_PORT="80"
+        prov.serverName="172.18.6.1"
+        prov.serverType="0"
+        prov.serverPort="80"
+        voIpProt.SIP.outboundProxy.address="172.18.6.1"
+        voIpProt.SIP.outboundProxy.port="5060"
+        voice.codecPref.1="G722"
+        voice.codecPref.2="PCMU"
+        voice.codecPref.3="PCMA"
       />
     </PHONE_CONFIG>
   '';
 
   # Polycom SoundStation IP 7000 — ext 817 xstarfish — MAC: 00:04:F2:F9:E4:72
+  # UC Software 4.0.x uses reg.1.* dot-notation params for registration.
   sops.templates."0004f2f9e472.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-      <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish -->
+      <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish (UC Software 4.0.15) -->
       <PHONE_CONFIG>
         <ALL
-          DISPLAY_NAME="xstarfish Conference"
-          SIP_ADDRESS="817"
-          AUTH_USER_ID="817"
-          AUTH_PASSWORD="${config.sops.placeholder.ext_817_password}"
-          LABEL="817"
-          VOIP_PROT_SIP_PROXY_ADDRESS="172.18.6.1"
-          VOIP_PROT_SIP_PROXY_PORT="5060"
-          VOIP_PROT_SIP_REGISTRAR_ADDRESS="172.18.6.1"
-          VOIP_PROT_SIP_REGISTRAR_PORT="5060"
+          reg.1.address="817"
+          reg.1.auth.userId="817"
+          reg.1.auth.password="${config.sops.placeholder.ext_817_password}"
+          reg.1.displayName="xstarfish Conference"
+          reg.1.label="xstarfish Conference"
+          reg.1.server.1.address="172.18.6.1"
+          reg.1.server.1.port="5060"
+          reg.1.server.1.transport="UDPOnly"
+          reg.1.server.1.expires="3600"
         />
       </PHONE_CONFIG>
     '';
