@@ -70,14 +70,13 @@
   environment.etc."tftp/000000000000.cfg".text = ''
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <!-- Polycom master config: loaded by all Polycom devices before per-device config -->
-    <!-- SoundStation IP 7000 runs UC Software 4.0.15 — HTTP provisioning, internal LAN only. -->
+    <!-- SoundStation IP 7000 runs Mink 4.0.15 firmware — HTTP provisioning, internal LAN only. -->
+    <!-- Mink provisioning params: PROV_SERVER_ADDR/TRANS/PORT are the correct names. -->
     <PHONE_CONFIG>
       <ALL
-        prov.serverName="172.18.6.1"
-        prov.serverType="0"
-        prov.serverPort="80"
-        voIpProt.SIP.outboundProxy.address="172.18.6.1"
-        voIpProt.SIP.outboundProxy.port="5060"
+        PROV_SERVER_ADDR="172.18.6.1"
+        PROV_SERVER_TRANS="HTTP"
+        PROV_SERVER_PORT="80"
         voice.codecPref.1="G722"
         voice.codecPref.2="PCMU"
         voice.codecPref.3="PCMA"
@@ -86,12 +85,14 @@
   '';
 
   # Polycom SoundStation IP 7000 — ext 817 xstarfish — MAC: 00:04:F2:F9:E4:72
-  # UC Software 4.0.x uses reg.1.* dot-notation params for registration.
+  # Firmware: Mink 4.0.15 (NOT UC Software — different firmware family, different param names).
+  # Mink uses voIpProt.server.1.address for the global SIP registrar.
+  # reg.1.server.1.address is a UC Software 5.x+ feature and is silently ignored by Mink.
   sops.templates."0004f2f9e472.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-      <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish (UC Software 4.0.15) -->
+      <!-- Per-device config for SoundStation IP 7000 — ext 817 xstarfish (Mink 4.0.15) -->
       <PHONE_CONFIG>
         <ALL
           reg.1.address="817"
@@ -99,10 +100,10 @@
           reg.1.auth.password="${config.sops.placeholder.ext_817_password}"
           reg.1.displayName="xstarfish Conference"
           reg.1.label="xstarfish Conference"
-          reg.1.server.1.address="172.18.6.1"
-          reg.1.server.1.port="5060"
-          reg.1.server.1.transport="UDPOnly"
-          reg.1.server.1.expires="3600"
+          voIpProt.server.1.address="172.18.6.1"
+          voIpProt.server.1.port="5060"
+          voIpProt.server.1.transport="UDPOnly"
+          voIpProt.server.1.expires="3600"
         />
       </PHONE_CONFIG>
     '';
