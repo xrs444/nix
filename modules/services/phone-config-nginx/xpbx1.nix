@@ -1,7 +1,9 @@
 # Summary: HTTPS provisioning server config for xpbx1; serves phone configs by MAC address via DHCP option 66.
 # DHCP option 66 points to https://xpbx1.xrs444.net — nginx serves configs over HTTPS (cert pushed from xsvr1).
 # Sangoma P315 configs use Sangoma XML format (<accounts><account>...</account></accounts>).
-# Grandstream configs use Grandstream P-value XML: P2=SIP User ID, P3=Auth ID, P34=Auth Password, P35=Name (port 2 adds 2000). Polycom uses PHONE_CONFIG XML.
+# Grandstream configs use P-value XML: port1: P271=active, P47=SIP server, P35=user ID, P36=auth ID, P34=password, P3=display name.
+# Port 2 (HT802 only): P401=active, P747=SIP server, P735=user ID, P736=auth ID, P734=password, P703=display name.
+# Polycom SoundStation IP 7000 (Mink 4.0.15): <mac>.cfg for provisioning params; <mac>-phone.cfg for SIP config (dot-notation).
 # All configs use the static IP 172.18.6.1 directly to avoid DNS resolution on the phone.
 {
   config,
@@ -19,25 +21,20 @@
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT802>
         <!-- FXS Port 1 — Extension 815 Thomas' Desk -->
-        <P47>0</P47>
-        <P270>172.18.6.1</P270>
-        <P271>5060</P271>
-        <P2>815</P2>
-        <P3>815</P3>
+        <P271>1</P271>
+        <P47>172.18.6.1:5060</P47>
+        <P35>815</P35>
+        <P36>815</P36>
         <P34>${config.sops.placeholder.ext_815_password}</P34>
-        <P35>Thomas Desk</P35>
-        <P2342>0</P2342>
-        <P157>f1=440@-13,c=300/10000;</P157>
+        <P3>Thomas Desk</P3>
 
         <!-- FXS Port 2 — Extension 816 Samantha's Desk -->
-        <P2047>0</P2047>
-        <P2270>172.18.6.1</P2270>
-        <P2271>5060</P2271>
-        <P2002>816</P2002>
-        <P2003>816</P2003>
-        <P2034>${config.sops.placeholder.ext_816_password}</P2034>
-        <P2035>Samantha Desk</P2035>
-        <P2157>f1=440@-13,c=300/10000;</P2157>
+        <P401>1</P401>
+        <P747>172.18.6.1:5060</P747>
+        <P735>816</P735>
+        <P736>816</P736>
+        <P734>${config.sops.placeholder.ext_816_password}</P734>
+        <P703>Samantha Desk</P703>
       </HT802>
     '';
   };
@@ -53,13 +50,12 @@
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT801>
         <!-- FXS Port 1 — Extension 818 Master Bedroom -->
-        <P47>0</P47>
-        <P270>172.18.6.1</P270>
-        <P271>5060</P271>
-        <P2>818</P2>
-        <P3>818</P3>
+        <P271>1</P271>
+        <P47>172.18.6.1:5060</P47>
+        <P35>818</P35>
+        <P36>818</P36>
         <P34>${config.sops.placeholder.ext_818_password}</P34>
-        <P35>Master Bedroom</P35>
+        <P3>Master Bedroom</P3>
       </HT801>
     '';
   };
@@ -86,32 +82,43 @@
   '';
 
   # Polycom SoundStation IP 7000 — ext 817 xstarfish — MAC: 00:04:F2:F9:E4:72
-  # Firmware: Mink 4.0.15. Uses uppercase param names in <PHONE_CONFIG><ALL>.
-  # dot-notation params (reg.1.*, voIpProt.server.1.*) are silently ignored by Mink.
-  sops.templates."0004f2f9e472.cfg" = {
+  # Firmware: Mink 4.0.15 (UC Software 4.0).
+  # Provisioning uses dual-file approach:
+  #   <mac>.cfg  — parsed by Mink provisioning parser; sets PROV_SERVER_* (UPPERCASE OK here)
+  #   <mac>-phone.cfg — parsed by UC Software application parser; requires dot-notation for SIP
+  # UPPERCASE SIP params (DISPLAY_NAME, SIP_ADDRESS, etc.) are rejected by both parsers.
+  # The -phone.cfg UC Software parser accepts dot-notation (reg.1.*, voIpProt.server.1.*).
+  environment.etc."tftp/0004f2f9e472.cfg".text = ''
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <!-- Per-device config for SoundStation IP 7000 -- ext 817 xstarfish (Mink 4.0.15) -->
+    <!-- This file is parsed by the Mink provisioning parser. -->
+    <!-- SIP registration is configured in 0004f2f9e472-phone.cfg via dot-notation. -->
+    <PHONE_CONFIG>
+      <ALL />
+    </PHONE_CONFIG>
+  '';
+  sops.templates."0004f2f9e472-phone.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-      <!-- Per-device config for SoundStation IP 7000 -- ext 817 xstarfish (Mink 4.0.15) -->
+      <!-- SIP application config for SoundStation IP 7000 -- ext 817 xstarfish -->
+      <!-- Parsed by UC Software application parser (dot-notation). -->
       <PHONE_CONFIG>
         <ALL
-          DISPLAY_NAME="xstarfish Conference"
-          SIP_ADDRESS="817"
-          AUTH_USER_ID="817"
-          AUTH_PASSWORD="${config.sops.placeholder.ext_817_password}"
-          LABEL="817"
-          VOIP_PROT_SIP_PROXY_ADDRESS="172.18.6.1"
-          VOIP_PROT_SIP_PROXY_PORT="5060"
-          VOIP_PROT_SIP_REGISTRAR_ADDRESS="172.18.6.1"
-          VOIP_PROT_SIP_REGISTRAR_PORT="5060"
+          reg.1.address="817"
+          reg.1.auth.userId="817"
+          reg.1.auth.password="${config.sops.placeholder.ext_817_password}"
+          reg.1.displayName="xstarfish Conference"
+          reg.1.label="817"
+          voIpProt.server.1.address="172.18.6.1"
+          voIpProt.server.1.port="5060"
+          voIpProt.server.1.register="1"
         />
       </PHONE_CONFIG>
     '';
   };
-  environment.etc."tftp/0004f2f9e472.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
-  # Do NOT serve 0004f2f9e472-phone.cfg — Mink 4.0.15 uses a different (dot-notation) parser
-  # for -phone.cfg files and rejects all UPPERCASE params as "Unknown parameter", resetting
-  # the SIP line config. The plain .cfg file with UPPERCASE params is sufficient.
+  environment.etc."tftp/0004f2f9e472-phone.cfg".source =
+    config.sops.templates."0004f2f9e472-phone.cfg".path;
 
   # Sangoma P315 phones: exts 810-814
   # Config format: Sangoma XML (<config><accounts><account>))
@@ -294,9 +301,11 @@
   # Grandstream reads XML element content literally — <P34>pass\n</P34> — so it
   # authenticates with password+newline, which never matches. Strip the newline from
   # P-value elements in rendered Grandstream configs after sops activates.
-  system.activationScripts.trim-grandstream-xml-passwords = {
+  # Polycom -phone.cfg uses XML attribute format — strip \n before the closing quote.
+  system.activationScripts.trim-phone-xml-passwords = {
     deps = [ "setupSecrets" ];
     text = ''
+      # Grandstream: strip trailing \n from XML element content (<P\d+>pass\n</P\d+>)
       for f in ${lib.escapeShellArg config.sops.templates."cfgec74d75211cf.xml".path} \
                 ${lib.escapeShellArg config.sops.templates."cfgec74d722c911.xml".path}; do
         [ -f "$f" ] || continue
@@ -305,6 +314,14 @@
           's|(<P\d+>)([^<\n]*)\n(</P\d+>)|$1$2$3|g' "$f"
         chmod u-w "$f"
       done
+      # Polycom -phone.cfg: strip trailing \n from XML attribute values (pass\n" -> pass")
+      f=${lib.escapeShellArg config.sops.templates."0004f2f9e472-phone.cfg".path}
+      if [ -f "$f" ]; then
+        chmod u+w "$f"
+        ${pkgs.perl}/bin/perl -0777 -i -pe \
+          's|([^"]*)\n(")|\1\2|g' "$f"
+        chmod u-w "$f"
+      fi
     '';
   };
 }
