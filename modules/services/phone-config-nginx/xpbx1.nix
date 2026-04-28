@@ -259,9 +259,12 @@
 
   # /var/lib/acme is the acme user's home dir, created 700 by NixOS.
   # nginx (in the acme group) can't traverse it unless we widen the group bit.
-  systemd.tmpfiles.rules = [
-    "z /var/lib/acme 0750 acme acme -"
-  ];
+  # tmpfiles `z` runs early in activation; the acme module may reset the dir to
+  # 700 afterward. Use an activation script to ensure 750 survives every deploy.
+  system.activationScripts.acme-dir-perms = {
+    deps = [ "users" "groups" ];
+    text = "chmod 750 /var/lib/acme";
+  };
 
   # Reload nginx automatically when xsvr1 rsyncs a renewed cert
   systemd.paths.nginx-cert-reload = {
