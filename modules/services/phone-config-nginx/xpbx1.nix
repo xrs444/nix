@@ -109,6 +109,8 @@
     '';
   };
   environment.etc."tftp/0004f2f9e472.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
+  # Mink 4.0.15 also requests 0004f2f9e472-phone.cfg as a secondary config; serve the same file.
+  environment.etc."tftp/0004f2f9e472-phone.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
 
   # Sangoma P315 phones: exts 810-814
   # Config format: Sangoma XML (<config><accounts><account>))
@@ -227,6 +229,11 @@
       root = "/etc/tftp";
       extraConfig = ''
         autoindex off;
+        # Grandstream ATAs POST to / as a check-in before fetching their config file.
+        # Return 200 so they proceed to GET cfg<mac>.xml.
+        location = / {
+          return 200;
+        }
       '';
     };
     # HTTP vhost for Polycom SoundStation IP 7000 (Mink 4.0): only supports TLS 1.0
