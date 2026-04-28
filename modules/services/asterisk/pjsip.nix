@@ -192,15 +192,9 @@ in
 
         [816](aor-single)
 
-        [identify-815]
-        type = identify
-        endpoint = 815
-        match = 172.18.6.56
-
-        [identify-816]
-        type = identify
-        endpoint = 816
-        match = 172.18.6.56
+        ; HT802 has two ports on the same IP (172.18.6.56) — IP-based identify blocks
+        ; are ambiguous and cause Asterisk to pick the wrong endpoint. Username matching
+        ; from the SIP URI (To/From header) handles both ports unambiguously.
 
         ; ===============================================
         ; Extension 817 - xstarfish (Polycom SoundStation IP 7000)
