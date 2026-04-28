@@ -277,4 +277,23 @@
     80
     443
   ];
+
+  # sops-nix appends a trailing newline to every secret value it writes to /run/secrets/.
+  # Asterisk strips trailing whitespace from config file values, so its password is clean.
+  # Grandstream reads XML element content literally — <P34>pass\n</P34> — so it
+  # authenticates with password+newline, which never matches. Strip the newline from
+  # P-value elements in rendered Grandstream configs after sops activates.
+  system.activationScripts.trim-grandstream-xml-passwords = {
+    deps = [ "setupSecrets" ];
+    text = ''
+      for f in ${lib.escapeShellArg config.sops.templates."cfgec74d75211cf.xml".path} \
+                ${lib.escapeShellArg config.sops.templates."cfgec74d722c911.xml".path}; do
+        [ -f "$f" ] || continue
+        chmod u+w "$f"
+        ${pkgs.perl}/bin/perl -0777 -i -pe \
+          's|(<P\d+>)([^<\n]*)\n(</P\d+>)|$1$2$3|g' "$f"
+        chmod u-w "$f"
+      done
+    '';
+  };
 }
