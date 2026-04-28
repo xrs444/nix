@@ -194,7 +194,7 @@
   environment.etc."tftp/000fd3cfda34.cfg".source = config.sops.templates."000fd3cfda34.cfg".path;
 
   # Sangoma P315 — ext 813 Garage — MAC: pending
-  sops.templates."000fd3cfd9e7cfg" = {
+  sops.templates."000fd3cfd9e7.cfg" = {
     mode = "0444";
     content = ''
       <?xml version="1.0" ?>
@@ -211,7 +211,7 @@
       </config>
     '';
   };
-  environment.etc."tftp/000fd3cfd9e7cfg".source = config.sops.templates."000fd3cfd9e7cfg".path;
+  environment.etc."tftp/000fd3cfd9e7.cfg".source = config.sops.templates."000fd3cfd9e7.cfg".path;
 
   # Sangoma P315 — ext 814 Rack — MAC: 00:0F:D3:CF:D8:A7
   sops.templates."000fd3cfd8a7.cfg" = {

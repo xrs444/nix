@@ -28,6 +28,7 @@
       /export/zfs/media/books/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/books/ingest 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/users/syncthing 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -181,6 +182,15 @@
       options = "bind";
       wantedBy = [ "multi-user.target" ];
     }
+    {
+      what = "/zfs/users/syncthing";
+      where = "/export/zfs/users/syncthing";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
+    }
   ];
 
   # Ensure export directory structure exists
@@ -210,6 +220,12 @@
     mkdir -p /zfs/media/books/adult
     mkdir -p /zfs/media/books/ingest
     mkdir -p /zfs/system/matrix
+    mkdir -p /export/zfs/users/syncthing
+    mkdir -p /zfs/users/syncthing
+
+    # Ensure syncthing directory has correct ownership (UID/GID 1000)
+    chown -R 1000:1000 /zfs/users/syncthing
+    chmod 755 /zfs/users/syncthing
 
     # Ensure books directories have correct ownership and permissions for booklore (GID 1000)
     chown -R :1000 /zfs/media/books/fiction
