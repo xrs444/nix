@@ -109,8 +109,9 @@
     '';
   };
   environment.etc."tftp/0004f2f9e472.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
-  # Mink 4.0.15 also requests 0004f2f9e472-phone.cfg as a secondary config; serve the same file.
-  environment.etc."tftp/0004f2f9e472-phone.cfg".source = config.sops.templates."0004f2f9e472.cfg".path;
+  # Do NOT serve 0004f2f9e472-phone.cfg — Mink 4.0.15 uses a different (dot-notation) parser
+  # for -phone.cfg files and rejects all UPPERCASE params as "Unknown parameter", resetting
+  # the SIP line config. The plain .cfg file with UPPERCASE params is sufficient.
 
   # Sangoma P315 phones: exts 810-814
   # Config format: Sangoma XML (<config><accounts><account>))
