@@ -20,6 +20,10 @@
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT802>
+        <!-- Disable Grandstream GDMS/TR069 cloud management — it overwrites P34 via ACS -->
+        <P4506>0</P4506>
+        <P4503></P4503>
+
         <!-- FXS Port 1 — Extension 815 Thomas' Desk -->
         <P271>1</P271>
         <P47>172.18.6.1:5060</P47>
@@ -49,6 +53,10 @@
     content = ''
       <?xml version="1.0" encoding="UTF-8" ?>
       <HT801>
+        <!-- Disable Grandstream GDMS/TR069 cloud management — it overwrites P34 via ACS -->
+        <P4506>0</P4506>
+        <P4503></P4503>
+
         <!-- FXS Port 1 — Extension 818 Master Bedroom -->
         <P271>1</P271>
         <P47>172.18.6.1:5060</P47>
