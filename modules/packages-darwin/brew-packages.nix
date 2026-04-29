@@ -55,6 +55,7 @@
       "vlc"
       "google-chrome"
       "gitkraken"
+      "obsidian"
 
     ];
 
