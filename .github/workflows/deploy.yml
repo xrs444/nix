@@ -8,7 +8,7 @@ on:
 
 env:
   PUSHGATEWAY: http://localhost:9091
-  APPRISE_URL: https://apprise.xrs444.net/notify
+  APPRISE_URL: https://apprise.xrs444.net/notify/apprise
 
 jobs:
   deploy:
