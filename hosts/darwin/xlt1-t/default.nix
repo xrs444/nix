@@ -126,7 +126,7 @@
   launchd.user.agents.atuin-daemon = {
     serviceConfig = {
       ProgramArguments = [
-        "${pkgs.atuin}/bin/atuin"
+        "${pkgs.unstable.atuin}/bin/atuin"
         "daemon"
       ];
       KeepAlive = true;

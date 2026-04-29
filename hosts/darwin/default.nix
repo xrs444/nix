@@ -87,4 +87,21 @@
     home = "/Users/${username}";
     shell = pkgs.fish;
   };
+
+  # Re-sign critical Nix binaries after every rebuild.
+  # Nix fetches binaries from binary caches (including custom ones built on Linux)
+  # and may not always complete the macOS ad-hoc signing step. An unsigned or
+  # invalidly-signed binary is SIGKILL'd by macOS on Apple Silicon before it runs,
+  # which is fatal when the binary is the login shell.
+  system.activationScripts.signNixBinaries.text = ''
+    echo "Re-signing Nix binaries for macOS..." >&2
+    for bin in fish; do
+      bin_path=$(readlink -f /run/current-system/sw/bin/$bin 2>/dev/null || true)
+      if [ -n "$bin_path" ] && [ -f "$bin_path" ]; then
+        /usr/bin/codesign --force --sign - "$bin_path" 2>/dev/null \
+          && echo "  signed: $bin_path" >&2 \
+          || echo "  WARNING: failed to sign $bin_path" >&2
+      fi
+    done
+  '';
 }
