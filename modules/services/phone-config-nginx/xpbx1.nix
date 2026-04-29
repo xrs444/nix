@@ -133,6 +133,103 @@
   # Filename: <mac-lowercase-no-colons>.cfg
   # Placeholder filenames (MAC_P315_8xx) will be renamed once actual MACs are known.
 
+  # Internal extension phonebook — Sangoma P315 phones fetch this via HTTPS
+  environment.etc."tftp/phonebook.xml".text = ''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <phonebook>
+      <item>
+        <display_name>Home Assistant</display_name>
+        <number>801</number>
+      </item>
+      <item>
+        <display_name>RF Cabinet</display_name>
+        <number>810</number>
+      </item>
+      <item>
+        <display_name>Greyson's Room</display_name>
+        <number>811</number>
+      </item>
+      <item>
+        <display_name>Rowan's Room</display_name>
+        <number>812</number>
+      </item>
+      <item>
+        <display_name>Garage</display_name>
+        <number>813</number>
+      </item>
+      <item>
+        <display_name>Rack</display_name>
+        <number>814</number>
+      </item>
+      <item>
+        <display_name>Thomas' Desk</display_name>
+        <number>815</number>
+      </item>
+      <item>
+        <display_name>Samantha's Desk</display_name>
+        <number>816</number>
+      </item>
+      <item>
+        <display_name>xstarfish Conference</display_name>
+        <number>817</number>
+      </item>
+      <item>
+        <display_name>Master Bedroom</display_name>
+        <number>818</number>
+      </item>
+    </phonebook>
+  '';
+
+  # Polycom global directory — SoundStation IP 7000 auto-fetches this at boot
+  # Format: Polycom UC Software / Mink 4.0 directory XML (ln = display name, ct = number)
+  environment.etc."tftp/000000000000-directory.xml".text = ''
+    <?xml version="1.0" standalone="yes"?>
+    <directory>
+      <item_list>
+        <item>
+          <ln>Home Assistant</ln>
+          <ct>801</ct>
+        </item>
+        <item>
+          <ln>RF Cabinet</ln>
+          <ct>810</ct>
+        </item>
+        <item>
+          <ln>Greysons Room</ln>
+          <ct>811</ct>
+        </item>
+        <item>
+          <ln>Rowans Room</ln>
+          <ct>812</ct>
+        </item>
+        <item>
+          <ln>Garage</ln>
+          <ct>813</ct>
+        </item>
+        <item>
+          <ln>Rack</ln>
+          <ct>814</ct>
+        </item>
+        <item>
+          <ln>Thomas Desk</ln>
+          <ct>815</ct>
+        </item>
+        <item>
+          <ln>Samantha Desk</ln>
+          <ct>816</ct>
+        </item>
+        <item>
+          <ln>xstarfish Conf</ln>
+          <ct>817</ct>
+        </item>
+        <item>
+          <ln>Master Bedroom</ln>
+          <ct>818</ct>
+        </item>
+      </item_list>
+    </directory>
+  '';
+
   # Sangoma P315 — ext 810 RF Cabinet — MAC: pending
   sops.templates."000fd3cfd9a3.cfg" = {
     mode = "0444";
@@ -148,6 +245,9 @@
             <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
           </account>
         </accounts>
+        <contacts>
+          <phonebook url="https://xpbx1.xrs444.net/phonebook.xml" />
+        </contacts>
       </config>
     '';
   };
@@ -168,6 +268,9 @@
             <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
           </account>
         </accounts>
+        <contacts>
+          <phonebook url="https://xpbx1.xrs444.net/phonebook.xml" />
+        </contacts>
       </config>
     '';
   };
@@ -188,6 +291,9 @@
             <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
           </account>
         </accounts>
+        <contacts>
+          <phonebook url="https://xpbx1.xrs444.net/phonebook.xml" />
+        </contacts>
       </config>
     '';
   };
@@ -208,6 +314,9 @@
             <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
           </account>
         </accounts>
+        <contacts>
+          <phonebook url="https://xpbx1.xrs444.net/phonebook.xml" />
+        </contacts>
       </config>
     '';
   };
@@ -228,6 +337,9 @@
             <host_primary server="172.18.6.1" port="5060" transport="udp" reregister="300" />
           </account>
         </accounts>
+        <contacts>
+          <phonebook url="https://xpbx1.xrs444.net/phonebook.xml" />
+        </contacts>
       </config>
     '';
   };
