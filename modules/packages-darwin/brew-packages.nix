@@ -45,7 +45,7 @@
       "postman"
       "qmk-toolbox"
       "raspberry-pi-imager"
-      "raycast"
+      "monarch"
       "sf-symbols"
       "syncthing-app"
       "zoom"
