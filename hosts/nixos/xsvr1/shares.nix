@@ -415,7 +415,7 @@
         # per-share to accommodate HP ColorLaserJet M281 (uses earliest SMB2 dialect).
         "server min protocol" = "SMB3";
         # Allow LAN (172.16.0.0/12 covers 172.16–172.31) and Tailscale (100.64.0.0/10)
-        "hosts allow" = "172.16.0.0/12 100.64.0.0/10 127.0.0.1 localhost";
+        "hosts allow" = lib.mkForce "172.16.0.0/12 100.64.0.0/10 127.0.0.1 localhost";
         "hosts deny" = "0.0.0.0/0";
       };
       "public" = {
