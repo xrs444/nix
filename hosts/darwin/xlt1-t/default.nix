@@ -122,6 +122,20 @@
     fish
   ];
 
+  # Time Machine — register xsvr1 Samba share as backup destination.
+  # Manual first-time prerequisite (once, before rebuilding):
+  #   1. Finder → Go → Connect to Server → smb://xsvr1.lan/tm_xlt1-t
+  #   2. Authenticate with xrs444 Samba password, check "Remember in Keychain"
+  # After that the activation script runs on every rebuild and is a no-op if
+  # the destination is already configured.
+  system.activationScripts.timemachine.text = ''
+    if /usr/bin/tmutil destinationinfo 2>&1 | /usr/bin/grep -q "tm_xlt1-t"; then
+      echo "Time Machine destination already configured"
+    else
+      /usr/bin/tmutil setdestination -ap "smb://xrs444@xsvr1.lan/tm_xlt1-t" || true
+    fi
+  '';
+
   # Start atuin daemon as a LaunchAgent for the user
   launchd.user.agents.atuin-daemon = {
     serviceConfig = {

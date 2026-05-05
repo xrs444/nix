@@ -87,6 +87,11 @@
       "warpgate-admin" = {
         members = [ "admins" ];
       };
+      # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
+      # xsvr1's pam_allowed_login_groups references this group.
+      "posix_users" = {
+        members = [ "xrs444" "samantha" "rowan" "greyson" ];
+      };
       # Host access groups
       "xlt1-t" = { };
       "xlt1-t-admin" = { };
@@ -380,6 +385,7 @@
         mailAddresses = [ "xrs444@xrs444.net" ];
         groups = [
           "admins"
+          "posix_users"
         ];
       };
       "samantha" = {
@@ -388,6 +394,7 @@
         mailAddresses = [ "samantha@xrs444.net" ];
         groups = [
           "admins"
+          "posix_users"
         ];
       };
       "rowan" = {
@@ -396,6 +403,7 @@
         mailAddresses = [ "rowan@xrs444.net" ];
         groups = [
           "users"
+          "posix_users"
         ];
       };
       "greyson" = {
@@ -404,6 +412,7 @@
         mailAddresses = [ "greyson@xrs444.net" ];
         groups = [
           "users"
+          "posix_users"
         ];
       };
     };
