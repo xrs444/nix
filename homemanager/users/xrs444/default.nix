@@ -127,7 +127,7 @@
 
   # Claude Code CLI settings
   home.file.".claude/settings.json".text = builtins.toJSON {
-    model = "sonnet";
+    model = "opusplan";
     permissions.allow = [
       "WebFetch"
       "WebSearch"
