@@ -24,6 +24,18 @@
   };
   users.groups.scanner = {};
 
+  # Avahi (mDNS) — required for Samba to advertise the Time Machine share over Bonjour.
+  # Without this, macOS won't discover tm_xlt1-t as a Time Machine destination.
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    publish = {
+      enable = true;
+      addresses = true;
+      userServices = true;
+    };
+  };
+
   services.nfs.server = {
     enable = true;
     createMountPoints = lib.mkForce false;
