@@ -382,17 +382,17 @@
       set_smb_pass() {
         local user="$1"
         local passfile="$2"
-        id "$user" &>/dev/null || return
-        [ -f "$passfile" ] || return
+        id "$user" &>/dev/null || return 0
+        [ -f "$passfile" ] || return 0
         printf "%s\n%s\n" "$(cat "$passfile")" "$(cat "$passfile")" \
           | ${pkgs.samba}/bin/smbpasswd -a -s "$user" 2>/dev/null || true
         ${pkgs.samba}/bin/smbpasswd -e "$user" 2>/dev/null || true
       }
-      set_smb_pass xrs444   ${config.sops.secrets.xrs444_smb_password.path}
-      set_smb_pass samantha ${config.sops.secrets.samantha_smb_password.path}
-      set_smb_pass rowan    ${config.sops.secrets.rowan_smb_password.path}
-      set_smb_pass greyson  ${config.sops.secrets.greyson_smb_password.path}
-      set_smb_pass scanner  ${config.sops.secrets.scanner_smb_password.path}
+      set_smb_pass xrs444   ${config.sops.secrets.xrs444_smb_password.path} || true
+      set_smb_pass samantha ${config.sops.secrets.samantha_smb_password.path} || true
+      set_smb_pass rowan    ${config.sops.secrets.rowan_smb_password.path} || true
+      set_smb_pass greyson  ${config.sops.secrets.greyson_smb_password.path} || true
+      set_smb_pass scanner  ${config.sops.secrets.scanner_smb_password.path} || true
     '';
   };
 
