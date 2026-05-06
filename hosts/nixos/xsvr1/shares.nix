@@ -374,9 +374,9 @@
       chmod 755 /zfs/devicebackups
 
       # Ingest drop-box directories: world-writable + sticky bit (trusted LAN)
-      chmod 1777 /zfs/ingest/ebooks /zfs/ingest/documents /zfs/ingest/3dmodels
-      chmod 1777 /zfs/ingest/games /zfs/ingest/movies /zfs/ingest/tvshows /zfs/ingest/music
-      chmod 1777 /zfs/scan/scans
+      chmod 1777 /zfs/ingest/ebooks /zfs/ingest/documents /zfs/ingest/3dmodels || true
+      chmod 1777 /zfs/ingest/games /zfs/ingest/movies /zfs/ingest/tvshows /zfs/ingest/music || true
+      chmod 1777 /zfs/scan/scans || true
 
       # Set Samba passwords from sops secrets (idempotent)
       set_smb_pass() {
@@ -410,9 +410,10 @@
     openFirewall = true;
     settings = {
       global = {
-        # Global minimum is SMB3 for security. Scanner shares override to SMB2_02
-        # per-share to accommodate HP ColorLaserJet M281 (uses earliest SMB2 dialect).
-        "server min protocol" = "SMB3";
+        # SMB2_02 required globally to support HP ColorLaserJet M281 scanner (uses
+        # earliest SMB2 dialect). server min protocol is a global-only parameter in
+        # Samba 4.x and cannot be overridden per-share.
+        "server min protocol" = lib.mkForce "SMB2_02";
         # Extend base module's hosts allow to include Tailscale (100.64.0.0/10)
         "hosts allow" = lib.mkForce "172.16.0.0/12 100.64.0.0/10 127.0.0.1 localhost";
       };
@@ -541,7 +542,6 @@
         "valid users" = "@posix_users scanner";
         "create mask" = "0664";
         "directory mask" = "0775";
-        "server min protocol" = "SMB2_02";
       };
       "scans-paperless" = {
         # Points to the same path as ingest-documents — files dropped here are
@@ -553,7 +553,6 @@
         "valid users" = "scanner @posix_users";
         "create mask" = "0664";
         "directory mask" = "0775";
-        "server min protocol" = "SMB2_02";
       };
     };
   };
