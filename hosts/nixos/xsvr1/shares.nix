@@ -40,7 +40,7 @@
     enable = true;
     createMountPoints = lib.mkForce false;
     exports = ''
-      /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0)
+      /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt)
       /export/zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/devicebackups 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/documents/manyfold 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
