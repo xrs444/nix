@@ -247,7 +247,7 @@
           fastConnection = false;
           profiles.system = {
             user = "root";
-            path = inputs.deploy-rs.lib.${cfg.pkgs.system}.activate.nixos cfg;
+            path = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system}.activate.nixos cfg;
             magicRollback = true;
             confirmTimeout = 60;
           };
