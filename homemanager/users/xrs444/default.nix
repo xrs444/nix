@@ -173,6 +173,45 @@
     '';
   };
 
+  home.file.".claude/scripts/run-arr-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      RADARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /radarr_api_key:/{print $2; exit}' | tr -d '"')
+      SONARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /sonarr_api_key:/{print $2; exit}' | tr -d '"')
+      LIDARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /lidarr_api_key:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-arr 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-arr" \
+        -v mcp-arr-npm-cache:/root/.npm \
+        -e RADARR_URL="https://radarr.xrs444.net" \
+        -e RADARR_API_KEY="$RADARR_KEY" \
+        -e SONARR_URL="https://sonarr.xrs444.net" \
+        -e SONARR_API_KEY="$SONARR_KEY" \
+        -e LIDARR_URL="https://lidarr.xrs444.net" \
+        -e LIDARR_API_KEY="$LIDARR_KEY" \
+        node:20-alpine \
+        npx --yes mcp-arr-server
+    '';
+  };
+
+  home.file.".claude/scripts/run-jellyfin-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      JF_TOKEN=$(echo "$SECRETS" | awk '/^jellyfin:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-jellyfin 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-jellyfin" \
+        -e TRANSPORT=stdio \
+        -e JELLYFIN_BASE_URL="https://jellyfin.xrs444.net" \
+        -e JELLYFIN_TOKEN="$JF_TOKEN" \
+        knucklessg1/jellyfin-mcp:latest
+    '';
+  };
+
   # Enable font configuration
   fonts.fontconfig.enable = true;
 
