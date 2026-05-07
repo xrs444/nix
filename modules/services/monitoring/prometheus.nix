@@ -3,6 +3,7 @@
   hostname,
   hostRoles ? [ ],
   lib,
+  pkgs,
   ...
 }:
 let
@@ -84,6 +85,74 @@ let
     # Kubernetes API server (via first Talos node)
     apiServer = "172.20.3.10:6443";
   };
+
+  # Webhook bridge: translates Alertmanager POST payloads to Apprise API format.
+  # Alertmanager sends {"receiver":...,"alerts":[...]} but Apprise needs
+  # {"body":"...","title":"...","type":"...","tag":"..."}.
+  alertmanagerApprisebridge = pkgs.writeScript "alertmanager-apprise-bridge" ''
+    #!${pkgs.python3}/bin/python3
+    import json
+    import urllib.request
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+    APPRISE_URL = "http://apprise.apprise.svc.cluster.local:8000/notify/"
+    APPRISE_TAG = "alerts"
+
+    class Bridge(BaseHTTPRequestHandler):
+        def do_POST(self):
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                payload = json.loads(self.rfile.read(length))
+                status = payload.get("status", "firing")
+                alerts = payload.get("alerts", [])
+                if not alerts:
+                    self.send_response(200)
+                    self.end_headers()
+                    return
+                lines = []
+                for a in alerts:
+                    name = a["labels"].get("alertname", "Unknown")
+                    inst = a["labels"].get("instance", "")
+                    summ = a["annotations"].get("summary", "")
+                    desc = a["annotations"].get("description", "")
+                    line = f"• {name}"
+                    if inst:
+                        line += f" [{inst}]"
+                    if summ:
+                        line += f": {summ}"
+                    if desc and desc != summ:
+                        line += f"\n  {desc}"
+                    lines.append(line)
+                if status == "resolved":
+                    title = f"[RESOLVED] {len(alerts)} alert(s)"
+                    msg_type = "success"
+                else:
+                    sev = alerts[0]["labels"].get("severity", "warning")
+                    title = f"[FIRING] {len(alerts)} alert(s)"
+                    msg_type = "failure" if sev == "critical" else "warning"
+                body = json.dumps({
+                    "title": title,
+                    "body": "\n".join(lines),
+                    "type": msg_type,
+                    "tag": APPRISE_TAG,
+                }).encode()
+                req = urllib.request.Request(
+                    APPRISE_URL, data=body,
+                    headers={"Content-Type": "application/json"}, method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    r.read()
+                self.send_response(200)
+                self.end_headers()
+            except Exception as e:
+                print(f"Bridge error: {e}", flush=True)
+                self.send_response(500)
+                self.end_headers()
+        def log_message(self, fmt, *args):
+            print(fmt % args, flush=True)
+
+    HTTPServer(("127.0.0.1", 9099), Bridge).serve_forever()
+  '';
 in
 {
   config = lib.mkIf isMonitoringServer {
@@ -1229,7 +1298,8 @@ in
             name = "default";
             webhook_configs = [
               {
-                url = "http://apprise.apprise.svc.cluster.local:8000/notify?tag=critical-infra";
+                # Bridge on localhost translates Alertmanager JSON → Apprise format
+                url = "http://127.0.0.1:9099";
                 send_resolved = true;
               }
             ];
@@ -1238,7 +1308,8 @@ in
             name = "critical";
             webhook_configs = [
               {
-                url = "http://apprise.apprise.svc.cluster.local:8000/notify?tag=critical-infra";
+                # Bridge on localhost translates Alertmanager JSON → Apprise format
+                url = "http://127.0.0.1:9099";
                 send_resolved = true;
               }
             ];
@@ -1282,6 +1353,21 @@ in
         TimeoutStopSec = "30s";
         KillMode = "mixed";
         RestartSec = "5s";
+      };
+    };
+
+    # Alertmanager → Apprise webhook bridge
+    # Translates Alertmanager JSON payloads to Apprise API format,
+    # then forwards to Apprise with tag=alerts (routes to xrs444 ntfy topic).
+    systemd.services.alertmanager-apprise-bridge = {
+      description = "Alertmanager to Apprise webhook bridge";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "alertmanager.service" ];
+      serviceConfig = {
+        ExecStart = "${alertmanagerApprisebridge}";
+        Restart = "always";
+        RestartSec = "5s";
+        DynamicUser = true;
       };
     };
   };
