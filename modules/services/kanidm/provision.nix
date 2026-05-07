@@ -69,6 +69,12 @@
       "booklore-admin" = {
         members = [ "admins" ];
       };
+      "manyfold" = {
+        members = [ "users" ];
+      };
+      "manyfold-admin" = {
+        members = [ "admins" ];
+      };
       "matrix" = {
         members = [ "users" ];
       };
@@ -352,6 +358,26 @@
               "email"
             ];
             "termix-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_manyfold" = {
+          displayName = "Manyfold";
+          originUrl = "https://manyfold.xrs444.net";
+          originLanding = "https://manyfold.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_manyfold_secret";
+          scopeMaps = {
+            "manyfold" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "manyfold-admin" = [
               "openid"
               "profile"
               "email"

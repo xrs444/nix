@@ -146,6 +146,13 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_manyfold_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_manyfold_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -296,6 +303,7 @@ in
           add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
           add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
           add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
+          add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
         '';
       };
 
