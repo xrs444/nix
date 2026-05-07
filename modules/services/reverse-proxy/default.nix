@@ -31,7 +31,7 @@ let
     };
     cockpit = {
       subdomain = "cockpit";
-      port = 9091;
+      port = 9092;
       description = "Cockpit System Management";
     };
   };

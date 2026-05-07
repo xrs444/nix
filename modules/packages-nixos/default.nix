@@ -3,7 +3,6 @@
 {
   imports = [
     ./cockpit/default.nix
-    ./comin/default.nix
     ./kanidm/default.nix
   ];
 }

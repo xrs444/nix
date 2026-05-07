@@ -71,7 +71,7 @@ in
       meld
       nil
       nixfmt-rfc-style
-      nodePackages.prettier
+      prettier
       nodejs_24
       python3
       uv
@@ -91,6 +91,7 @@ in
         "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
         "git.enableSmartCommit" = true;
         "git.confirmSync" = false;
+        "workbench.colorTheme" = "Catppuccin Mocha";
         "catppuccin-icons.hidesExplorerArrows" = false;
         "catppuccin-icons.specificFolders" = true;
         "catppuccin-icons.monochrome" = false;
@@ -355,4 +356,24 @@ in
     mutableExtensionsDir = true;
     package = pkgs.unstable.vscode;
   };
+
+  # Remove stale settings.json.backup before home-manager tries to create it,
+  # since makeVSCodeSettingsWritable leaves a real file that triggers a backup each run.
+  home.activation.cleanVSCodeBackup = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+    rm -f "${vscodeUserDir}/settings.json.backup"
+  '';
+
+  # Make settings.json writable by replacing symlink with a copy
+  home.activation.makeVSCodeSettingsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    SETTINGS_FILE="${vscodeUserDir}/settings.json"
+
+    # If it's a symlink, replace it with a writable copy
+    if [ -L "$SETTINGS_FILE" ]; then
+      echo "Making VSCode settings.json writable..."
+      SETTINGS_TARGET=$(readlink "$SETTINGS_FILE")
+      $DRY_RUN_CMD rm -f "$SETTINGS_FILE"
+      $DRY_RUN_CMD cp "$SETTINGS_TARGET" "$SETTINGS_FILE"
+      $DRY_RUN_CMD chmod u+w "$SETTINGS_FILE"
+    fi
+  '';
 }

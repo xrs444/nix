@@ -9,10 +9,7 @@
       "admins" = { };
       "users" = { };
       # Application access groups
-      "nocodb" = {
-        members = [ "users" ];
-      };
-      "nocodb-admin" = {
+      "seatable-admin" = {
         members = [ "admins" ];
       };
       "paperless" = {
@@ -72,11 +69,34 @@
       "booklore-admin" = {
         members = [ "admins" ];
       };
+      "manyfold" = {
+        members = [ "users" ];
+      };
+      "manyfold-admin" = {
+        members = [ "admins" ];
+      };
       "matrix" = {
         members = [ "users" ];
       };
       "matrix-admin" = {
         members = [ "admins" ];
+      };
+      "termix" = {
+        members = [ "users" ];
+      };
+      "termix-admin" = {
+        members = [ "admins" ];
+      };
+      "warpgate" = {
+        members = [ "users" ];
+      };
+      "warpgate-admin" = {
+        members = [ "admins" ];
+      };
+      # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
+      # xsvr1's pam_allowed_login_groups references this group.
+      "posix_users" = {
+        members = [ "xrs444" "samantha" "rowan" "greyson" ];
       };
       # Host access groups
       "xlt1-t" = { };
@@ -94,19 +114,15 @@
     };
     systems = {
       oauth2 = {
-        "oauth2_nocodb" = {
-          displayName = "NocoDB";
-          originUrl = "https://nocodb.xrs444.net";
-          originLanding = "https://nocodb.xrs444.net";
+        "oauth2_seatable" = {
+          displayName = "Seatable";
+          originUrl = "https://seatable.xrs444.net";
+          originLanding = "https://seatable.xrs444.net";
           allowInsecureClientDisablePkce = true;
-          basicSecretFile = "/run/secrets/kanidm_oauth2_nocodb_secret";
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_seatable_secret";
           scopeMaps = {
-            "nocodb" = [
-              "openid"
-              "profile"
-              "email"
-            ];
-            "nocodb-admin" = [
+            "seatable-admin" = [
               "openid"
               "profile"
               "email"
@@ -289,19 +305,21 @@
           displayName = "Booklore";
           originUrl = "https://booklore.xrs444.net";
           originLanding = "https://booklore.xrs444.net";
+          public = true; # BookLore is a public client (PKCE only, no client secret)
           preferShortUsername = true;
-          basicSecretFile = "/run/secrets/kanidm_oauth2_booklore_secret";
           scopeMaps = {
             "booklore" = [
               "openid"
               "profile"
               "email"
+              "groups"
               "offline_access"
             ];
             "booklore-admin" = [
               "openid"
               "profile"
               "email"
+              "groups"
               "offline_access"
             ];
           };
@@ -326,6 +344,64 @@
             ];
           };
         };
+        "oauth2_termix" = {
+          displayName = "Termix Server Management";
+          originUrl = "https://termix.xrs444.net";
+          originLanding = "https://termix.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_termix_secret";
+          scopeMaps = {
+            "termix" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "termix-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_manyfold" = {
+          displayName = "Manyfold";
+          originUrl = "https://manyfold.xrs444.net";
+          originLanding = "https://manyfold.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_manyfold_secret";
+          scopeMaps = {
+            "manyfold" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "manyfold-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_warpgate" = {
+          displayName = "Warpgate Bastion";
+          originUrl = "https://warpgate.xrs444.net";
+          originLanding = "https://warpgate.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_warpgate_secret";
+          scopeMaps = {
+            "warpgate" = [
+              "openid"
+              "email"
+            ];
+            "warpgate-admin" = [
+              "openid"
+              "email"
+            ];
+          };
+        };
       };
     };
     persons = {
@@ -335,6 +411,7 @@
         mailAddresses = [ "xrs444@xrs444.net" ];
         groups = [
           "admins"
+          "posix_users"
         ];
       };
       "samantha" = {
@@ -343,6 +420,7 @@
         mailAddresses = [ "samantha@xrs444.net" ];
         groups = [
           "admins"
+          "posix_users"
         ];
       };
       "rowan" = {
@@ -351,6 +429,7 @@
         mailAddresses = [ "rowan@xrs444.net" ];
         groups = [
           "users"
+          "posix_users"
         ];
       };
       "greyson" = {
@@ -359,6 +438,7 @@
         mailAddresses = [ "greyson@xrs444.net" ];
         groups = [
           "users"
+          "posix_users"
         ];
       };
     };

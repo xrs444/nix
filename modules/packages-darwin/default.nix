@@ -57,7 +57,6 @@
     zstd
 
     # Utilities
-    gitkraken
     iterm2
     wireshark
     openscad

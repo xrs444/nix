@@ -1,0 +1,110 @@
+# =============================================================================
+# Home Assistant Configuration Snippet
+# For Home Assistant OS (Running on Raspberry Pi)
+# Add this to your Home Assistant configuration.yaml
+# =============================================================================
+
+# Prometheus Integration - Expose metrics for Prometheus scraping
+prometheus:
+  # Namespace for all metrics (default: homeassistant)
+  namespace: homeassistant
+
+  # Filter which entities/domains to expose
+  filter:
+    # Include these domains
+    include_domains:
+      - sensor          # All sensors (temperature, humidity, power, etc.)
+      - binary_sensor   # Binary sensors (motion, door/window, etc.)
+      - switch          # Switches
+      - light           # Lights
+      - climate         # Thermostats and climate control
+      - cover           # Blinds, garage doors, etc.
+      - weather         # Weather data
+      - person          # Person tracking
+      - device_tracker  # Device presence
+      - lock            # Smart locks
+      - camera          # Camera states (not streams)
+      - media_player    # Media players
+      - fan             # Fans
+
+    # Optional: Include specific entities not in above domains
+    # include_entities:
+    #   - automation.important_automation
+    #   - script.critical_script
+
+    # Optional: Exclude specific noisy entities
+    exclude_entities:
+      - sensor.time
+      - sensor.date
+      - sensor.uptime
+      # Add any high-frequency sensors that create too much data
+
+  # Optional: Override metric names for specific patterns
+  # component_config_glob:
+  #   sensor.*_battery:
+  #     override_metric: battery_percent
+
+# Logging Configuration - Control what gets logged
+logger:
+  default: info
+  logs:
+    homeassistant.core: info
+    homeassistant.components.prometheus: info
+    homeassistant.components.http: warning
+
+# Optional: System log component (view logs in HA UI)
+system_log:
+  max_entries: 500
+
+# =============================================================================
+# Apprise Integration (for sending alerts from HA)
+# =============================================================================
+# If you want to send Home Assistant notifications/alerts to Apprise:
+#
+# Option 1: Apprise Add-on (Recommended for HAOS)
+# 1. Install Apprise add-on from Add-on Store
+# 2. Configure URLs in the add-on
+# 3. Use notify service in automations:
+#    service: notify.apprise
+#
+# Option 2: Apprise REST API (if Apprise is external)
+# notify:
+#   - name: apprise
+#     platform: rest
+#     resource: http://apprise.apprise.svc.cluster.local:8000/notify/homeassistant
+#     method: POST_JSON
+#     data:
+#       title: "{{ title }}"
+#       body: "{{ message }}"
+#
+# Example automation:
+# automation:
+#   - alias: "Alert on high temperature"
+#     trigger:
+#       - platform: numeric_state
+#         entity_id: sensor.temperature
+#         above: 30
+#     action:
+#       - service: notify.apprise
+#         data:
+#           message: "Temperature is {{ states('sensor.temperature') }}°C!"
+
+# =============================================================================
+# Log Shipping to Loki
+# =============================================================================
+# For Home Assistant OS, you cannot configure rsyslog/journald directly.
+# Instead, use the Promtail Add-on:
+# 1. Install Promtail add-on from community repository
+# 2. Configure it to send to http://loki.xrs444.net:3100
+# See setup documentation for details.
+#
+# Note: The 'syslog' integration only sends HA notifications to local syslog,
+# it does NOT ship logs to a remote server.
+
+# =============================================================================
+# After adding this configuration:
+# 1. Go to Settings > System > Check Configuration
+# 2. If valid, restart Home Assistant
+# 3. Test metrics endpoint: http://your-ha-ip:8123/api/prometheus
+# 4. Create a long-lived access token for Prometheus
+# =============================================================================

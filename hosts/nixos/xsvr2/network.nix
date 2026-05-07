@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ ... }:
 {
 
   systemd.network = {
@@ -50,15 +50,6 @@
           Name = "bond0.10";
         };
         vlanConfig.Id = 10;
-      };
-      "23-macvlan-dns" = {
-        netdevConfig = {
-          Kind = "macvlan";
-          Name = "dns0";
-        };
-        macvlanConfig = {
-          Mode = "bridge";
-        };
       };
       "25-bridge21" = {
         netdevConfig = {
@@ -184,7 +175,6 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
-        macvlan = [ "dns0" ];
       };
       "70-bridge21" = {
         matchConfig.Name = "bridge21";
@@ -230,33 +220,6 @@
         linkConfig = {
           RequiredForOnline = "carrier";
         };
-      };
-      "95-dns0" = {
-        matchConfig.Name = "dns0";
-        address = [ "172.18.10.20/24" ];
-        gateway = [ "172.18.10.250" ];
-        networkConfig = {
-          ConfigureWithoutCarrier = true;
-          DHCP = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "no";
-          MACAddress = "02:00:00:02:10:20";
-        };
-        # Ensure this gateway only applies to traffic from the DNS IP
-        routes = [
-          {
-            Gateway = "172.18.10.250";
-            GatewayOnLink = true;
-            Metric = 1024; # High metric so it's not preferred for general traffic
-          }
-        ];
-        routingPolicyRules = [
-          {
-            From = "172.18.10.20/32";
-            Priority = 100;
-          }
-        ];
       };
     };
   };

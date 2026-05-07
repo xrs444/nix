@@ -25,3 +25,10 @@ jobs:
             lazy-trees = true
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
       - uses: DeterminateSystems/flake-checker-action@v12
+
+      - name: Notify build failure
+        if: failure()
+        run: |
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"FlakeChecker Failed\",\"body\":\"GitHub Actions FlakeChecker failed. $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true

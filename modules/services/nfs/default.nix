@@ -10,7 +10,7 @@
   services.nfs.server = {
     enable = true;
     createMountPoints = true;
-    exports = ''
+    exports = lib.mkDefault ''
       /export *(rw,no_subtree_check,fsid=0)
     '';
   };

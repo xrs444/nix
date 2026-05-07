@@ -11,6 +11,18 @@
   home.username = username;
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
   programs = {
+    wezterm = {
+      enable = true;
+      extraConfig = ''
+        local config = wezterm.config_builder()
+        config.initial_cols = 120
+        config.initial_rows = 28
+        config.font_size = 12
+        config.color_scheme = 'Catppuccin Mocha'
+        config.font = wezterm.font 'SpaceMono Nerd Font'
+        return config
+      '';
+    };
     home-manager.enable = true;
     git = {
       enable = true;
@@ -55,6 +67,7 @@
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
+
   ];
 
   # Install non-standard fonts
@@ -67,7 +80,9 @@
     nerd-fonts.iosevka
     nerd-fonts.space-mono
     nerd-fonts.symbols-only
-    direnv
+    (direnv.overrideAttrs (_: {
+      doCheck = false;
+    }))
     teams
     kustomize
     kubeconform
@@ -112,7 +127,89 @@
 
   # Claude Code CLI settings
   home.file.".claude/settings.json".text = builtins.toJSON {
-    model = "sonnet";
+    model = "opusplan";
+    permissions.allow = [
+      "WebFetch"
+      "WebSearch"
+    ];
+  };
+
+  # SOPS config for ~/.claude secrets (kept separate from project secrets)
+  home.file.".claude/.sops.yaml".text = ''
+    creation_rules:
+      - path_regex: secrets/.*\.yaml$
+        age: age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
+  '';
+
+  # MCP server wrapper scripts — decrypt SOPS credentials and launch containers
+  home.file.".claude/scripts/run-ha-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      HA_URL=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /url:/{print $2; exit}' | tr -d '"')
+      HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-homeassistant 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-homeassistant" \
+        -e HOMEASSISTANT_URL="$HA_URL" \
+        -e HOMEASSISTANT_TOKEN="$HA_TOKEN" \
+        ghcr.io/homeassistant-ai/ha-mcp:stable
+    '';
+  };
+
+  home.file.".claude/scripts/run-firewalla-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-firewalla 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-firewalla" \
+        -e FIREWALLA_MSP_ID=dn-j3almw \
+        -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
+        amittell/firewalla-mcp-server:latest
+    '';
+  };
+
+  home.file.".claude/scripts/run-arr-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      RADARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /radarr_api_key:/{print $2; exit}' | tr -d '"')
+      SONARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /sonarr_api_key:/{print $2; exit}' | tr -d '"')
+      LIDARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /lidarr_api_key:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-arr 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-arr" \
+        -v mcp-arr-npm-cache:/root/.npm \
+        -e RADARR_URL="https://radarr.xrs444.net" \
+        -e RADARR_API_KEY="$RADARR_KEY" \
+        -e SONARR_URL="https://sonarr.xrs444.net" \
+        -e SONARR_API_KEY="$SONARR_KEY" \
+        -e LIDARR_URL="https://lidarr.xrs444.net" \
+        -e LIDARR_API_KEY="$LIDARR_KEY" \
+        node:20-alpine \
+        npx --yes mcp-arr-server
+    '';
+  };
+
+  home.file.".claude/scripts/run-jellyfin-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      JF_TOKEN=$(echo "$SECRETS" | awk '/^jellyfin:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
+      docker rm -f mcp-jellyfin 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-jellyfin" \
+        -e TRANSPORT=stdio \
+        -e JELLYFIN_BASE_URL="https://jellyfin.xrs444.net" \
+        -e JELLYFIN_TOKEN="$JF_TOKEN" \
+        knucklessg1/jellyfin-mcp:latest
+    '';
   };
 
   # Enable font configuration
@@ -125,22 +222,24 @@
   # };
 
   # Prevent Home Manager from overriding PATH
-  home.sessionPath = [ ];
+  home.sessionPath = [ "$HOME/.npm-global/bin" ];
 
   # Set default shell preferences
   home.sessionVariables = {
     EDITOR = "micro";
-    BROWSER = "firefox";
+    BROWSER = "chrome";
     SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
     KUBECONFIG = "/Users/xrs444/k8s/kubeconfig";
     TALOSCONFIG = "/Users/xrs444/k8s/talosconfig";
     # PATH is managed by nix-darwin - don't override it
   };
 
-  # Enable Catppuccin theme globally
-  # catppuccin = {
-  #   enable = true;
-  #   flavor = "mocha";
-  # };
+  catppuccin = {
+    enable = true;
+    flavor = "mocha";
+    # VSCode extensions and theme are managed manually in common/apps/vscode
+    # to use up-to-date marketplace versions; catppuccin module adds older pins
+    vscode.profiles.default.enable = false;
+  };
 
 }

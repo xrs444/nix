@@ -15,9 +15,18 @@
     ./network.nix
     ./desktop.nix
     ./disks.nix
+    ./wake.nix
     ../../common
   ];
 
   networking.hostName = "xcomm1";
   nixpkgs.config.allowUnfree = true;
+
+  boot = {
+    initrd = {
+      availableKernelModules = [
+        "nvme"
+      ];
+    };
+};
 }

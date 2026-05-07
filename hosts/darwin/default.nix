@@ -20,27 +20,20 @@
   # Enable fish shell system-wide
   programs.fish.enable = true;
 
-  nix = {
-    enable = false;
-    extraOptions = ''
-      experimental-features = nix-command flakes
-      download-buffer-size = 134217728
-    '';
-    settings = {
-      trusted-users = [
-        "@admin"
-        username
-      ];
-      substituters = [
-        "http://nixcache.xrs444.net?priority=10"
-        "https://cache.nixos.org?priority=20"
-      ];
-      trusted-public-keys = [
-        "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
-        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      ];
-    };
-  };
+  # DS Nix owns /etc/nix/nix.conf and will overwrite it on updates.
+  # User settings go in nix.custom.conf (included via !include in nix.conf).
+  # With nix.enable = false, nix-darwin's nix.settings is never written anywhere,
+  # so we manage nix.custom.conf directly via environment.etc instead.
+  nix.enable = false;
+  environment.etc."nix/nix.custom.conf".text = ''
+    sandbox = false
+    trusted-users = root @admin ${username}
+    extra-substituters = http://nixcache.xrs444.net?priority=10
+    extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+    extra-experimental-features = nix-command flakes
+    download-buffer-size = 134217728
+    builders-use-substitutes = true
+  '';
 
   # Configure nixpkgs
   nixpkgs = {
@@ -54,6 +47,19 @@
             # Skip tests on macOS due to fork-related segfaults in test suite
             # See: https://github.com/dvarrazzo/py-setproctitle/issues/113
             doCheck = false;
+          });
+          aiohttp = python-prev.aiohttp.overridePythonAttrs (old: {
+            # test_base_ctor calls socket.getfqdn() at build time; on this machine
+            # it returns the search-domain FQDN (xlt1-t.i.xrs444.net.lan) which
+            # doesn't match the short hostname the test expects (xlt1-t.lan)
+            doCheck = false;
+          });
+          inline-snapshot = python-prev.inline-snapshot.overridePythonAttrs (old: {
+            # inline-snapshot is a pytest plugin; pytest is a runtime dep but is
+            # missing from nixpkgs 25.11 propagatedBuildInputs, causing
+            # pythonRuntimeDepsCheckHook to fail. Add it directly.
+            doCheck = false;
+            propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [ python-prev.pytest ];
           });
         })
       ];
@@ -81,4 +87,21 @@
     home = "/Users/${username}";
     shell = pkgs.fish;
   };
+
+  # Re-sign critical Nix binaries after every rebuild.
+  # Nix fetches binaries from binary caches (including custom ones built on Linux)
+  # and may not always complete the macOS ad-hoc signing step. An unsigned or
+  # invalidly-signed binary is SIGKILL'd by macOS on Apple Silicon before it runs,
+  # which is fatal when the binary is the login shell.
+  system.activationScripts.signNixBinaries.text = ''
+    echo "Re-signing Nix binaries for macOS..." >&2
+    for bin in fish; do
+      bin_path=$(readlink -f /run/current-system/sw/bin/$bin 2>/dev/null || true)
+      if [ -n "$bin_path" ] && [ -f "$bin_path" ]; then
+        /usr/bin/codesign --force --sign - "$bin_path" 2>/dev/null \
+          && echo "  signed: $bin_path" >&2 \
+          || echo "  WARNING: failed to sign $bin_path" >&2
+      fi
+    done
+  '';
 }

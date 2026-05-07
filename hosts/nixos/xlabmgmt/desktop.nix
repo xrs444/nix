@@ -75,6 +75,10 @@
     };
   };
 
+  # Override the GNOME portal that programs.niri.enable adds automatically.
+  # xdg-desktop-portal-gnome pulls in gjs -> ostree -> flatpak; unnecessary on a non-GNOME host.
+  xdg.portal.extraPortals = lib.mkForce [ pkgs.xdg-desktop-portal-gtk ];
+
   programs = {
     gnupg.agent = {
       enable = true;

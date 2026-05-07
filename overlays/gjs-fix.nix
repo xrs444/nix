@@ -1,18 +1,33 @@
 # overlays/gjs-fix.nix
-# Workaround for gjs build issues in CI/remote builds
-# The gjs build requires GTK 3 or 4 for tests, which may not be available
-# in all build environments. This overlay disables GTK tests and the full
-# test suite since gjs is well-tested upstream.
+# Workaround for gjs build failures on CI/remote builders.
+#
+# The upstream gjs-1.86.0 postFixup calls wrapProgram on
+# $installedTests/libexec/installed-tests/gjs/minijasmine, but the meson
+# build installs that file without the executable bit, causing:
+#   "Cannot wrap ... because it is not an executable file"
+#
+# Root cause: `installTests` is a *function parameter* (default true) in the
+# upstream package.nix, not a derivation attribute. overrideAttrs cannot
+# change it, so the wrapProgram call was always present regardless of what
+# we put in postFixup/preFixup. The fix is to use .override to set
+# installTests=false, which makes lib.optionalString produce "" and removes
+# the wrapProgram call entirely.
 { inputs }:
 final: prev: {
-  gjs = prev.gjs.overrideAttrs (oldAttrs: {
+  gjs = (prev.gjs.override { installTests = false; }).overrideAttrs (oldAttrs: {
     doCheck = false;
-    mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-      "-Dskip_gtk_tests=true"  # Skip GTK tests when GTK is not available
-    ];
-    # Keep the meta to explain why tests are disabled
-    meta = oldAttrs.meta // {
-      description = oldAttrs.meta.description or "" + " (tests disabled, GTK tests skipped)";
-    };
+    # The upstream mesonFlags uses `finalAttrs.finalPackage.doCheck` to set
+    # skip_gtk_tests, but that self-reference doesn't propagate through the
+    # override+overrideAttrs chain. Append explicitly so meson sees it last
+    # (meson uses the last occurrence of a duplicate -D flag).
+    mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [ "-Dskip_gtk_tests=true" ];
+    # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
+    postInstall = ''
+      installedTestsSchemaDatadir="$installedTests/share/gsettings-schemas/gjs-${oldAttrs.version}"
+      mkdir -p "$installedTestsSchemaDatadir"
+      if [ -d "$installedTests/share/glib-2.0" ]; then
+        mv "$installedTests/share/glib-2.0" "$installedTestsSchemaDatadir"
+      fi
+    '';
   });
 }

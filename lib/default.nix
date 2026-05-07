@@ -38,6 +38,7 @@ rec {
           platform = hostConfig.platform;
         };
         modules = [
+          inputs.catppuccin.homeModules.catppuccin
           (
             { config, specialArgs, ... }:
             {
@@ -132,6 +133,7 @@ rec {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "backup";
+                sharedModules = [ inputs.catppuccin.homeModules.catppuccin ];
                 extraSpecialArgs = {
                   inherit inputs outputs stateVersion;
                   username = hostConfig.user;
@@ -166,7 +168,6 @@ rec {
       armHostsWithDisko = [
         "xts1"
         "xts2"
-        "xdash1"
         "xlt1-t-vnixos"
       ];
       modulesList = [
@@ -192,6 +193,7 @@ rec {
             username = hostConfig.user;
             platform = hostConfig.platform;
             desktop = hostConfig.desktop or null;
+            hostRoles = hostConfig.roles or [ ];
             lib = inputs.nixpkgs.lib;
             config = { };
             pkgs = import inputs.nixpkgs { system = hostConfig.platform; };
@@ -211,6 +213,7 @@ rec {
         isWorkstation = (hostConfig.desktop or null) != null;
         minimalImage = false;
         hostRoles = hostConfig.roles or [ ];
+        generateManCache = hostConfig.generateManCache or false;
         lib = inputs.nixpkgs.lib;
       };
       modules = modulesList;
@@ -236,6 +239,7 @@ rec {
           [
             inputs.disko.nixosModules.disko
             (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix"))
+            ../modules/sdImage/base.nix
           ]
         else
           [ ]
@@ -257,6 +261,7 @@ rec {
         isWorkstation = (hostConfig.desktop or null) != null;
         minimalImage = true;
         hostRoles = hostConfig.roles or [ ];
+        generateManCache = hostConfig.generateManCache or false;
       };
       modules = modulesList;
     };

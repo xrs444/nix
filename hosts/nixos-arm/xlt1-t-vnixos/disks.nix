@@ -1,11 +1,10 @@
-
 { lib, ... }:
 
 {
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/vda";
+        device = "/dev/disk/by-id/virtio-49C10A30F1F0406CB59B";
         type = "disk";
         content = {
           type = "gpt";

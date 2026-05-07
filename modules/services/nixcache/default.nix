@@ -19,8 +19,10 @@ in
       sopsFile = ../../../secrets/nixcache-signing-key.yaml;
       key = "nixcache_signing_key";
       owner = "root";
-      group = "root";
-      mode = "0400";
+      # Allow the builders group (which the CI runner runs as) to read the key
+      # so `nix store sign --key-file` works in the CI workflow without sudo.
+      group = "builders";
+      mode = "0440";
     };
 
     nix.settings.secret-key-files = [ config.sops.secrets.nixcache_signing_key.path ];

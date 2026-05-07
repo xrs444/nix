@@ -2,7 +2,7 @@
 { config, lib, pkgs, inputs, ... }:
 let
   # Get the Determinate Nix package
-  determinateNixPkg = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.system}.default;
+  determinateNixPkg = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   # Ensure it has the pname attribute for NixOS 25.11+ compatibility
   nixPackageWithPname = determinateNixPkg.overrideAttrs (oldAttrs: {

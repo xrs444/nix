@@ -48,13 +48,6 @@ in
     # Primary server configuration (xsvr1)
     (lib.mkIf isPrimaryServer {
       # OAuth2 client secrets for provisioning
-      sops.secrets.kanidm_oauth2_nocodb_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_nocodb_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
       sops.secrets.kanidm_oauth2_paperless_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_paperless_secret";
@@ -132,6 +125,34 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_seatable_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_seatable_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_termix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_termix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_warpgate_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_warpgate_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_manyfold_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_manyfold_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -189,7 +210,10 @@ in
       # The kanidm CLI requires an interactive TTY for login and cannot be used in systemd.
       systemd.services.kanidm-oauth2-redirect-urls = {
         description = "Add OAuth2 redirect URLs to Kanidm clients";
-        after = [ "kanidm.service" "network-online.target" ];
+        after = [
+          "kanidm.service"
+          "network-online.target"
+        ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
@@ -198,7 +222,10 @@ in
           # Don't fail activation if this service fails - it will retry on next boot
           SuccessExitStatus = "0 1 6";
         };
-        path = [ pkgs.curl pkgs.jq ];
+        path = [
+          pkgs.curl
+          pkgs.jq
+        ];
         script = ''
           IDM_URL="https://idm.xrs444.net"
           COOKIES=$(mktemp)
@@ -234,25 +261,32 @@ in
             exit 1
           fi
 
-          # Add base origin for OAuth2 client (extract base URL from redirect URL)
-          add_origin() {
+          # Add OAuth2 redirect URL to oauth2_rs_origin
+          # Kanidm stores both base origins and supplemental redirect URLs in oauth2_rs_origin
+          add_redirect() {
             local client="$1"
             local redirect_url="$2"
+
             # Extract base origin (protocol://domain:port/)
             local base_origin=$(echo "$redirect_url" | sed -E 's|(https?://[^/]+).*|\1/|')
-            echo "Adding origin $base_origin for $client (from redirect $redirect_url)"
-            CURRENT=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
-              | jq -r '.attrs.oauth2_rs_origin[]' 2>/dev/null)
-            ALL=$(printf '%s\n' $CURRENT "$base_origin" | sort -u | jq -R . | jq -s .)
+
+            echo "Adding redirect URL $redirect_url and origin $base_origin to $client"
+
+            # Get current oauth2_rs_origin values
+            local current_origins=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
+              | jq -r '.attrs.oauth2_rs_origin[]?' 2>/dev/null)
+
+            # Add both the base origin and full redirect URL to oauth2_rs_origin
+            # This ensures both the domain root and the callback path are allowed
+            local all_origins=$(printf '%s\n' $current_origins "$base_origin" "$redirect_url" | sort -u | jq -R . | jq -s .)
+
+            # Apply to oauth2_rs_origin
             curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
               "$IDM_URL/v1/oauth2/$client" \
-              -d "{\"attrs\":{\"oauth2_rs_origin\": $ALL}}"
+              -d "{\"attrs\":{\"oauth2_rs_origin\": $all_origins}}"
           }
-          # Backwards compatibility alias
-          add_redirect() { add_origin "$@"; }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
-          add_redirect oauth2_traefik   "https://nocodb.xrs444.net/oauth2/callback"
           add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
           add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
@@ -266,7 +300,22 @@ in
           add_redirect oauth2_booklore "https://booklore.xrs444.net/oauth2-callback"
           add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
+          add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
+          add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
+          add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
+          add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
         '';
+      };
+
+      # Restart the OAuth2 redirect URLs service on every activation
+      # This ensures redirect URLs are re-applied after nixos-rebuild switch.
+      # --no-block avoids blocking activation; the service has its own kanidm-readiness retry loop.
+      system.activationScripts.kanidm-oauth2-redirect-urls = {
+        text = ''
+          echo "Scheduling kanidm-oauth2-redirect-urls restart to re-apply OAuth2 redirect URLs..."
+          systemctl restart --no-block kanidm-oauth2-redirect-urls.service || true
+        '';
+        deps = [ "setupSecrets" ];
       };
 
       # Open firewall ports

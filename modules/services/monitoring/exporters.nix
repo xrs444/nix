@@ -54,14 +54,19 @@ in
     };
 
     # Libvirt exporter - for VM monitoring on KVM hosts
-    # DISABLED: Package has incorrect meta.mainProgram, needs investigation
-    # TODO: Re-enable after fixing package or using custom systemd service
-    # services.prometheus.exporters.libvirt = lib.mkIf hasLibvirt {
-    #   enable = true;
-    #   port = 9177;
-    #   listenAddress = "0.0.0.0";
-    #   openFirewall = false;
-    # };
+    # Uses a custom systemd service because the nixpkgs module has a meta.mainProgram
+    # mismatch that prevents the NixOS module from working correctly.
+    systemd.services.prometheus-libvirt-exporter = lib.mkIf hasLibvirt {
+      description = "Prometheus Libvirt Exporter";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "libvirtd.service" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.prometheus-libvirt-exporter}/bin/prometheus-libvirt-exporter --web.listen-address=0.0.0.0:9177";
+        User = "root";
+        Restart = "on-failure";
+        RestartSec = "5s";
+      };
+    };
 
     # SMART disk health exporter - all monitoring hosts
     services.prometheus.exporters.smartctl = {
@@ -137,7 +142,7 @@ in
       9134 # zfs_exporter
     ]
     ++ lib.optionals hasLibvirt [
-      9177 # libvirt_exporter
+      9177 # libvirt_exporter (custom systemd service)
     ]
     ++ lib.optionals hasBIND [
       9119 # bind_exporter
@@ -145,6 +150,13 @@ in
     ++ lib.optionals isMonitoringServer [
       9116 # snmp_exporter
       9115 # blackbox_exporter
+      9091 # pushgateway
     ];
+
+    # Pushgateway — receives deployment metrics pushed from CI (deploy.yml).
+    # Only needed on the monitoring server (xsvr1).
+    services.prometheus.pushgateway = lib.mkIf isMonitoringServer {
+      enable = true;
+    };
   };
 }

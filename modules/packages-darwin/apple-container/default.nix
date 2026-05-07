@@ -6,13 +6,13 @@
     # Fetches and installs the latest release from github.com/apple/container
     CONTAINER_BIN="/usr/local/bin/container"
     GITHUB_API="https://api.github.com/repos/apple/container/releases/latest"
-    PKG_NAME="container-installer-signed.pkg"
     TMP_DIR=$(mktemp -d)
 
     echo "Checking Apple Container installation..."
 
     # Get the latest release version from GitHub
     LATEST_VERSION=$(${pkgs.curl}/bin/curl -sL "$GITHUB_API" | ${pkgs.jq}/bin/jq -r '.tag_name')
+    PKG_NAME="container-$LATEST_VERSION-installer-signed.pkg"
 
     if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
       echo "  Warning: Could not fetch latest Apple Container version from GitHub. Skipping."
@@ -39,13 +39,12 @@
         ${pkgs.curl}/bin/curl -sL -o "$TMP_DIR/$PKG_NAME" "$DOWNLOAD_URL"
 
         echo "  Installing..."
-        /usr/sbin/installer -pkg "$TMP_DIR/$PKG_NAME" -target / 2>&1 || {
+        if /usr/sbin/installer -pkg "$TMP_DIR/$PKG_NAME" -target / 2>&1; then
+          echo "  Apple Container $LATEST_VERSION installed successfully."
+        else
           echo "  Error: Failed to install Apple Container .pkg"
-          rm -rf "$TMP_DIR"
-        }
-
+        fi
         rm -rf "$TMP_DIR"
-        echo "  Apple Container $LATEST_VERSION installed successfully."
       fi
     fi
   '';

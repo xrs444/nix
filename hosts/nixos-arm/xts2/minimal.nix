@@ -11,9 +11,8 @@
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    ../common/hardware-arm64-server.nix
+    ../common/hardware-sweet-potato.nix
     ../common/boot.nix
-    ./disks.nix
     ../../../modules/sdImage/custom.nix
   ];
 

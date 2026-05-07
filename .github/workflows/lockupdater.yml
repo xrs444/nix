@@ -2,7 +2,7 @@ name: Flake Lock Updater
 
 on:
   schedule:
-    - cron: '3 14 * * *'
+    - cron: '30 3 * * THU'
   workflow_dispatch:
 
 concurrency:
@@ -44,9 +44,9 @@ jobs:
     steps:
       - name: Notify pending update is blocking new update
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify \
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Blocked","body":"A pending flake-lock-update branch exists with unmerged content. Skipping new flake update — rechecking cache for existing update.","type":"warning"}' || true
+            -d '{"title":"Flake Update: Blocked","body":"A pending flake-lock-update branch exists with unmerged content. Skipping new flake update — rechecking cache for existing update.","type":"warning","tag":"critical-infra"}' || true
 
   update-lock:
     name: Update Flake Lock
@@ -90,9 +90,9 @@ jobs:
       - name: Notify no changes
         if: steps.changes.outputs.changed == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify \
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info"}' || true
+            -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info","tag":"critical-infra"}' || true
 
   check-cache:
     name: Check Heavy Package Cache
@@ -138,6 +138,7 @@ jobs:
             "webkitgtk_4_1|WebKitGTK 4.1"
             "gst_all_1.gst-plugins-rs|GStreamer Rust plugins"
             "qemu|QEMU"
+            "ffmpeg|FFmpeg"
           )
 
           for entry in "${PACKAGES[@]}"; do
@@ -189,23 +190,24 @@ jobs:
       - name: Notify cache not ready
         if: steps.check.outputs.ready == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify \
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning"}' || true
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning","tag":"critical-infra"}' || true
 
   build-and-cache:
     name: Build ${{ matrix.host }}
     needs: [check-pending, update-lock, check-cache]
     if: >-
       always() &&
-      needs.check-cache.result == 'success'
+      needs.check-cache.result == 'success' &&
+      needs.check-cache.outputs.ready == 'true'
     runs-on: [self-hosted, nixos, builder]
     timeout-minutes: 360
     strategy:
       matrix:
-        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xdash1, xhac-radio, xlt1-t-vnixos, xts1, xts2]
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos]
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -219,9 +221,7 @@ jobs:
           nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
             --no-link \
             --max-jobs 2 \
-            --cores 4 \
-            --option extra-substituters "$CACHE_URL" \
-            --option trusted-public-keys ""
+            --cores 4
 
           echo "Copying ${{ matrix.host }} to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"
@@ -267,8 +267,8 @@ jobs:
           body: |
             Automated flake.lock update.
 
-            All 10 hosts built and cached successfully on xsvr1:
-            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2`
+            All 9 hosts built and cached successfully on xsvr1:
+            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos`
           labels: |
             dependencies
             automated
@@ -276,13 +276,13 @@ jobs:
       - name: Notify build success
         if: steps.results.outputs.all_succeeded == 'true'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify \
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success"}' || true
+            -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success","tag":"critical-infra"}' || true
 
       - name: Notify build failure
         if: steps.results.outputs.all_succeeded == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify \
+          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
-            -d '{"title":"Flake Update: Build Failed","body":"Some hosts failed to build. Check GitHub Actions logs for details.","type":"failure"}' || true
+            -d '{"title":"Flake Update: Build Failed","body":"Some hosts failed to build. Check GitHub Actions logs for details.","type":"failure","tag":"critical-infra"}' || true

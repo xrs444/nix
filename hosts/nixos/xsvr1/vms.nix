@@ -3,37 +3,9 @@
 let
   vmSpecs = [
     {
-      name = "v-xhac1";
-      vcpu = "2";
-      memory = "6";  # Right-sized based on actual usage (~1.5 cores, 8 GiB actual)
-      nicType = "bridge"; # or "macvtap"
-      hostNic = "bridge17";
-      mac = "52:54:00:00:00:10";
-      autostart = true;
-      firmware = "efi";
-      withVnic = true;
-      storage = {
-        path = "/vm/v-xhac1/v-xhac1.qcow2";
-      };
-    }
-    {
-      name = "v-xpbx1";
-      vcpu = "2";
-      memory = "4";  # Reduced from 6 GiB - FreePBX with 2 vCPUs doesn't need 6GB
-      nicType = "bridge";
-      hostNic = "bridge16";
-      mac = "52:54:00:c7:8c:80";
-      autostart = true;
-      firmware = "bios";
-      withVnic = true;
-      storage = {
-        path = "/vm/v-xpbx1/v-xpbx1.qcow2";
-      };
-    }
-    {
       name = "v-k8s-xsvr1";
-      vcpu = "10";  # Increased from 8 - running at 140% CPU, heavily utilized
-      memory = "24";  # Increased from 16 GiB - node needs full allocation
+      vcpu = "10"; # Increased from 8 - running at 140% CPU, heavily utilized
+      memory = "24"; # Increased from 16 GiB - node needs full allocation
       nicType = "bridge"; # or "bridge"
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";

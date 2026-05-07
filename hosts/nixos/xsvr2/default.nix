@@ -22,6 +22,10 @@
   networking.hostName = hostname;
   networking.hostId = "8f9996ca";
   networking.useNetworkd = true;
+  # Temporary: Add nixcache to hosts for troubleshooting DNS issues
+  networking.hosts = {
+    "172.20.1.10" = [ "nixcache.xrs444.net" ];
+  };
 
   boot = {
     initrd = {
