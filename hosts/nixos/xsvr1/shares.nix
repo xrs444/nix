@@ -390,6 +390,12 @@
       chmod 1777 /zfs/ingest/games /zfs/ingest/movies /zfs/ingest/tvshows /zfs/ingest/music || true
       chmod 1777 /zfs/scan/scans || true
 
+      # Media library root dirs: owned by UID/GID 1000 (linuxserver abc user)
+      # Radarr/Sonarr/Lidarr run as abc (1000:1000) and need write access to move files in.
+      # Only chown the directory itself, not recursively, to avoid slowness on large libraries.
+      chown 1000:1000 /zfs/media/movies /zfs/media/tvshows /zfs/media/music || true
+      chmod 775 /zfs/media/movies /zfs/media/tvshows /zfs/media/music || true
+
       # Set Samba passwords from sops secrets (idempotent)
       set_smb_pass() {
         local user="$1"
