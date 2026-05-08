@@ -694,7 +694,7 @@ in
           job_name = "lidarr";
           static_configs = [
             {
-              targets = [ "172.20.3.10:30112" ];
+              targets = [ "172.20.3.10:30113" ];
               labels = {
                 cluster = "home-k8s";
                 component = "lidarr";
