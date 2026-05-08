@@ -2,6 +2,7 @@
 {
   hostname,
   hostRoles ? [ ],
+  config,
   lib,
   pkgs,
   ...
@@ -156,6 +157,16 @@ let
 in
 {
   config = lib.mkIf isMonitoringServer {
+    # Deliver the HA long-lived access token via sops-nix.
+    # The file homeassistant-prometheus.yaml must be encrypted before first deploy:
+    #   sops -e -i secrets/homeassistant-prometheus.yaml
+    sops.secrets."homeassistant-token" = {
+      sopsFile = ../../../secrets/homeassistant-prometheus.yaml;
+      key = "token";
+      owner = "prometheus";
+      mode = "0400";
+    };
+
     services.prometheus = {
       enable = true;
       port = 9090;
@@ -466,7 +477,7 @@ in
           # Bearer token authentication
           authorization = {
             type = "Bearer";
-            credentials_file = "/var/lib/prometheus/homeassistant-token";
+            credentials_file = config.sops.secrets."homeassistant-token".path;
           };
 
           static_configs = [
@@ -1334,17 +1345,16 @@ in
       };
     };
 
-    # Fix permissions on manually-placed k8s/homeassistant token files so
-    # the prometheus user (not thomas-local) can read them.
+    # Fix permissions on manually-placed k8s token file so
+    # the prometheus user (not thomas-local) can read it.
+    # (homeassistant-token is now managed by sops-nix with owner = "prometheus")
     system.activationScripts.prometheus-token-permissions = {
       deps = [ "users" ];
       text = ''
-        for f in /var/lib/prometheus/k8s-token /var/lib/prometheus/homeassistant-token; do
-          if [ -f "$f" ]; then
-            chown prometheus:prometheus "$f"
-            chmod 600 "$f"
-          fi
-        done
+        if [ -f /var/lib/prometheus/k8s-token ]; then
+          chown prometheus:prometheus /var/lib/prometheus/k8s-token
+          chmod 600 /var/lib/prometheus/k8s-token
+        fi
       '';
     };
 
