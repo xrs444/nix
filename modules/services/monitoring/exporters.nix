@@ -135,6 +135,7 @@ in
 
     # Open firewall for exporters on bond0 (LAN interface) for server-to-server monitoring
     networking.firewall.interfaces.bond0.allowedTCPPorts = [
+      9080 # promtail
       9100 # node_exporter
       9633 # smartctl_exporter
     ]

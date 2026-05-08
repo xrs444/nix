@@ -20,7 +20,7 @@ let
     "xts2.lan"
     "xcomm1.lan"
     "xpbx1.lan"
-    "cmrpi1.lan" # cmrpi1 - AdGuard Home / RPi5
+    # cmrpi1 removed — host decommissioned, DNS NXDOMAIN
   ];
 
   # Hosts with ZFS
@@ -1332,6 +1332,20 @@ in
           }
         ];
       };
+    };
+
+    # Fix permissions on manually-placed k8s/homeassistant token files so
+    # the prometheus user (not thomas-local) can read them.
+    system.activationScripts.prometheus-token-permissions = {
+      deps = [ "users" ];
+      text = ''
+        for f in /var/lib/prometheus/k8s-token /var/lib/prometheus/homeassistant-token; do
+          if [ -f "$f" ]; then
+            chown prometheus:prometheus "$f"
+            chmod 600 "$f"
+          fi
+        done
+      '';
     };
 
     # Ensure Prometheus service has proper restart behavior
