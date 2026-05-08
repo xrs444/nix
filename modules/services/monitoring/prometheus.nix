@@ -607,7 +607,7 @@ in
         # Kubernetes - ntfy push notification metrics (via NodePort)
         {
           job_name = "ntfy";
-          metrics_path = "/v1/metrics";
+          metrics_path = "/metrics";
           static_configs = [
             {
               targets = [ "172.20.3.10:30103" ];
