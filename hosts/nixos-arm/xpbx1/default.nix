@@ -53,6 +53,14 @@
     thomas-local ALL=(root) NOPASSWD: /nix/store/*/bin/switch-to-configuration *
   '';
 
+  # Open monitoring exporter ports on the LAN interface (xpbx1 uses enu1u1u1, not bond0)
+  # The common exporters.nix only opens on bond0 which doesn't exist here.
+  networking.firewall.interfaces.enu1u1u1.allowedTCPPorts = [
+    9080 # promtail
+    9100 # node_exporter
+    9633 # smartctl_exporter
+  ];
+
   environment.systemPackages = with pkgs; [
     libraspberrypi
     raspberrypi-eeprom
