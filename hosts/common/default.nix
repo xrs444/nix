@@ -27,6 +27,7 @@ in
     services.flakehub-auth.enable = true;
 
     # Common Nix configuration (experimental-features already set in base-nixos.nix)
+    nix.channel.enable = false; # flake-only setup — no nix-channel, no ~/.nix-defexpr/channels in NIX_PATH
     nix.settings.flake-registry = "";
     nix.settings.trusted-users = [
       "root"
