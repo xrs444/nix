@@ -159,6 +159,7 @@ jobs:
             #      at xsvr1) — the wrong machine would return a different hostname, causing
             #      deploy-rs to activate the wrong config on xsvr1 and kill the CI runner.
             REMOTE_HOSTNAME=$(ssh \
+              -4 \
               -i /run/secrets/deploy_private_key \
               -o StrictHostKeyChecking=no \
               -o UserKnownHostsFile=/dev/null \

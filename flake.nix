@@ -229,7 +229,8 @@
       deploy = {
         sshUser = "deploy";
         sshOpts = [
-          "-i"
+          "-4"                          # Force IPv4 — hosts like xcomm1 have many IPv6 addresses
+          "-i"                          # that may be unreachable from xsvr1 (different subnet)
           "/run/secrets/deploy_private_key"
           "-o"
           "StrictHostKeyChecking=no"
