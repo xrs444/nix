@@ -55,13 +55,13 @@ in
 
     # Libvirt exporter - for VM monitoring on KVM hosts
     # Uses a custom systemd service because the nixpkgs module has a meta.mainProgram
-    # mismatch that prevents the NixOS module from working correctly.
+    # mismatch. Binary is named libvirt-exporter (not prometheus-libvirt-exporter) in nixpkgs 25.11.
     systemd.services.prometheus-libvirt-exporter = lib.mkIf hasLibvirt {
       description = "Prometheus Libvirt Exporter";
       wantedBy = [ "multi-user.target" ];
       after = [ "libvirtd.service" ];
       serviceConfig = {
-        ExecStart = "${pkgs.prometheus-libvirt-exporter}/bin/prometheus-libvirt-exporter --web.listen-address=0.0.0.0:9177";
+        ExecStart = "${pkgs.prometheus-libvirt-exporter}/bin/libvirt-exporter --web.listen-address=0.0.0.0:9177";
         User = "root";
         Restart = "on-failure";
         RestartSec = "5s";
