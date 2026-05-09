@@ -29,6 +29,14 @@ lib.mkIf hasRole {
   systemd.services.nixos-rebuild-ci = {
     description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
     after = [ "network.target" ];
+    environment = {
+      # The CI runner checks out the repo as a non-root user. When the service runs
+      # as root, git (via libgit2 in nix) refuses to open repos not owned by root.
+      # GIT_CONFIG_COUNT/KEY/VALUE injects safe.directory for that specific path.
+      GIT_CONFIG_COUNT = "1";
+      GIT_CONFIG_KEY_0 = "safe.directory";
+      GIT_CONFIG_VALUE_0 = "/zfs/nixcache/builds/github-runner/nix/nix";
+    };
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = false;
