@@ -150,6 +150,10 @@ in
       # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
       # push-mode to work when nix.custom.conf is the only config Determinate reads.
       require-sigs = false
+      # Auto-sign all paths built by the daemon so deploy-rs push-mode works for first-time
+      # deploys. Without this, paths built at deploy-time (e.g. activate-path derivations)
+      # are unsigned and remote daemons with require-sigs=true reject them on push.
+      secret-key-files = /run/secrets/nixcache_signing_key
       # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
       # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
       # can succeed.
