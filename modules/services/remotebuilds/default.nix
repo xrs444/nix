@@ -175,4 +175,21 @@ in
       User builder
       IdentityFile /root/.ssh/id_builder
   '';
+
+  # Known host keys for the build machines — prevents host key verification failures
+  # after a client host is rebuilt fresh. Refresh with: ssh-keyscan -t ed25519 xsvr1 xsvr2 xsvr3
+  programs.ssh.knownHosts = lib.mkIf (!isBuilder) {
+    "xsvr1.lan" = {
+      hostNames = [ "xsvr1.lan" "xsvr1" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPi6pOq7wjkPhbRs19XO1g9oud5JTq6O46KuEqVnKp09";
+    };
+    "xsvr2.lan" = {
+      hostNames = [ "xsvr2.lan" "xsvr2" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILqV1INQL4xXMLnypfJQrB/R/i+xl4UR4dWdYTa8Ghae";
+    };
+    "xsvr3.lan" = {
+      hostNames = [ "xsvr3.lan" "xsvr3" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE3iLniG9niDNFxK3Z3INcwqc6N6R1+2v/PfD88klFAX";
+    };
+  };
 }
