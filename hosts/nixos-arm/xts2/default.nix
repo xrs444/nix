@@ -12,7 +12,7 @@ in
     ../common/performance.nix
     ../common/hardware-sweet-potato.nix
     ./disks.nix
-    #    ./network.nix
+    ./network.nix
     ../../common
   ];
 
