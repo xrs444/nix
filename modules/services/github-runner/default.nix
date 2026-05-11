@@ -29,19 +29,17 @@ lib.mkIf hasRole {
   systemd.services.nixos-rebuild-ci = {
     description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
     after = [ "network.target" ];
-    environment = {
-      # The CI runner checks out the repo as a non-root user. When the service runs
-      # as root, git (via libgit2 in nix) refuses to open repos not owned by root.
-      # GIT_CONFIG_COUNT/KEY/VALUE injects safe.directory for that specific path.
-      GIT_CONFIG_COUNT = "1";
-      GIT_CONFIG_KEY_0 = "safe.directory";
-      GIT_CONFIG_VALUE_0 = "/zfs/nixcache/builds/github-runner/nix/nix";
-    };
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = false;
       ExecStartPre = "/bin/sh -c 'test -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted && rm -f /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted || { echo \"nixos-rebuild-ci: no permit token — refusing to run\"; exit 1; }'";
-      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake /zfs/nixcache/builds/github-runner/nix/nix#xsvr1";
+      # Fetch from GitHub directly rather than the local runner checkout.
+      # The local checkout is owned by the github-runner user; nix (via libgit2) refuses
+      # to open a git repo not owned by the current process user (root), and libgit2 does
+      # not respect GIT_CONFIG_COUNT/safe.directory env vars — only the git binary does.
+      # Fetching from GitHub avoids the ownership issue entirely. The commit is the same:
+      # CI pushes the commit, builds it, then drops the permit token.
+      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake github:xrs444/nix#xsvr1";
       User = "root";
     };
   };
