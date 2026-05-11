@@ -11,7 +11,7 @@
     ../common/default.nix
     ../common/hardware-rpi.nix
     ../../../modules/hardware/RaspberryPi4
-    #    ./network.nix
+    ./network.nix
     ../../common
   ];
 

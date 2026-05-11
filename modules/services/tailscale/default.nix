@@ -209,7 +209,8 @@ in
         };
         vrrpInstances = {
           ts-vip = {
-            interface = "eth0";
+            # xts1 = RPi4 (end0), xts2 = Sweet Potato (eth0, confirm on first boot)
+            interface = if hostname == "xts1" then "end0" else "eth0";
             virtualRouterId = 51;
             priority =
               if hostname == "xts1" then
