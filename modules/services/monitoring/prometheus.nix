@@ -1025,16 +1025,16 @@ in
               rules = [
                 {
                   alert = "LonghornVolumeDegraded";
-                  # robustness: 0=healthy, 1=degraded, 2=faulted, 3=unknown
-                  # unknown (3) is normal for detached volumes — only alert on 1 and 2
-                  expr = "longhorn_volume_robustness == 1 or longhorn_volume_robustness == 2";
+                  # robustness: 0=unknown, 1=healthy, 2=degraded, 3=faulted
+                  # unknown (0) is normal for detached volumes — only alert on 2 and 3
+                  expr = "longhorn_volume_robustness >= 2";
                   for = "5m";
                   labels = {
                     severity = "critical";
                   };
                   annotations = {
                     summary = "Longhorn volume {{ $labels.volume }} is degraded";
-                    description = "Longhorn volume {{ $labels.volume }} has robustness state {{ $value }} (1=degraded, 2=faulted).";
+                    description = "Longhorn volume {{ $labels.volume }} has robustness state {{ $value }} (2=degraded, 3=faulted).";
                   };
                 }
                 {
