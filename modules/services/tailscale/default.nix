@@ -192,7 +192,7 @@ in
         enable = true;
         port = 9324;
         listenAddress = "0.0.0.0";
-        openFirewall = false;
+        openFirewall = true;
       };
 
       # Keepalived with BGP health monitoring
