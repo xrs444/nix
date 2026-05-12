@@ -52,24 +52,44 @@
     '';
   };
 
-  # ZFS replication to xsvr2 — critical datasets only until Phase 5 jobs refactor.
-  # Phase 5 will split into critical (zpool-xsvr2) and media (zpool-xsvr2-media) jobs.
+  # ZFS replication to xsvr2 — two jobs splitting critical vs media across pools.
+  # Critical data goes to zpool-xsvr2 (younger 2TB drives).
+  # Media goes to zpool-xsvr2-media (5x3TB from xsvr1 — Phase 4, pending drive connectivity fix).
   services.zfsReplication = {
     enable = true;
 
-    sourceDatasets = [
-      "zpool-xsvr1-main/systembackups"
-      "zpool-xsvr1-main/devicebackups"
-      "zpool-xsvr1-main/googlebackups"
-      "zpool-xsvr1-main/documents"
-      "zpool-xsvr1-main/users"
-      "zpool-xsvr1-main/system"
-      "zpool-xsvr1-main/media/books"
-      "zpool-xsvr1-main/timemachine"
-    ];
+    jobs = {
+      critical = {
+        sourceDatasets = [
+          "zpool-xsvr1-main/systembackups"
+          "zpool-xsvr1-main/devicebackups"
+          "zpool-xsvr1-main/googlebackups"
+          "zpool-xsvr1-main/documents"
+          "zpool-xsvr1-main/users"
+          "zpool-xsvr1-main/system"
+          "zpool-xsvr1-main/media/books"
+          "zpool-xsvr1-main/timemachine"
+        ];
+        targetHost = "xsvr2.lan";
+        targetPool = "zpool-xsvr2";
+        interval = "hourly";
+      };
 
-    targetHost = "xsvr2.lan";
-    interval = "hourly";
+      media = {
+        sourceDatasets = [
+          "zpool-xsvr1-main/media/movies"
+          "zpool-xsvr1-main/media/tvshows"
+          "zpool-xsvr1-main/media/music"
+          "zpool-xsvr1-main/media/audiobooks"
+          "zpool-xsvr1-main/media/games"
+          "zpool-xsvr1-main/ingest"
+          "zpool-xsvr1-main/scan"
+        ];
+        targetHost = "xsvr2.lan";
+        targetPool = "zpool-xsvr2-media";
+        interval = "hourly";
+      };
+    };
   };
 
   # Sanoid snapshot configuration
