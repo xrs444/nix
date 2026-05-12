@@ -133,34 +133,45 @@ in
     })
   ];
 
-  # Determinate Nix uses /etc/nix/nix.custom.conf for user settings
-  # Write extra-platforms and trusted-substituters directly to nix.custom.conf so Determinate Nix picks it up
-  # Note: Using extra-trusted-substituters instead of trusted-users for better security
-  environment.etc."nix/nix.custom.conf" = lib.mkIf isBuilder {
-    text = ''
-      # Custom Nix configuration for builder
-      extra-platforms = aarch64-linux i686-linux
-      extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
-      extra-trusted-substituters = file:///zfs/nixcache/cache
-      # Duplicated from nix.settings because Determinate Nix reads nix.custom.conf
-      # instead of nix.conf for runtime settings (trusted-public-keys, require-sigs,
-      # filter-syscalls are all ignored from nix.conf under Determinate Nix).
-      extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-      # Accept paths signed by xsvr1.lan-1 (CI builds) without requiring they also
-      # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
-      # push-mode to work when nix.custom.conf is the only config Determinate reads.
-      require-sigs = false
-      # Auto-sign all paths built by the daemon so deploy-rs push-mode works for first-time
-      # deploys. Without this, paths built at deploy-time (e.g. activate-path derivations)
-      # are unsigned and remote daemons with require-sigs=true reject them on push.
-      secret-key-files = /run/secrets/nixcache_signing_key
-      # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
-      # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
-      # can succeed.
-      filter-syscalls = false
-      system-features = nixos-test benchmark big-parallel kvm
-    '';
-  };
+  # Determinate Nix reads nix.custom.conf for runtime daemon settings (trusted-public-keys,
+  # require-sigs, substituters, secret-key-files, filter-syscalls) and ignores nix.conf for
+  # these settings. Both builder and client hosts need this file — without it, Determinate
+  # Nix daemons have no xsvr1.lan-1 key trusted and reject signed paths from the binary cache.
+  environment.etc."nix/nix.custom.conf" = lib.mkMerge [
+    (lib.mkIf isBuilder {
+      text = ''
+        # Custom Nix configuration for builder
+        extra-platforms = aarch64-linux i686-linux
+        extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
+        extra-trusted-substituters = file:///zfs/nixcache/cache
+        # Duplicated from nix.settings because Determinate Nix reads nix.custom.conf
+        # instead of nix.conf for runtime settings (trusted-public-keys, require-sigs,
+        # filter-syscalls are all ignored from nix.conf under Determinate Nix).
+        extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        # Accept paths signed by xsvr1.lan-1 (CI builds) without requiring they also
+        # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
+        # push-mode to work when nix.custom.conf is the only config Determinate reads.
+        require-sigs = false
+        # Auto-sign all paths built by the daemon so deploy-rs push-mode works for first-time
+        # deploys. Without this, paths built at deploy-time (e.g. activate-path derivations)
+        # are unsigned and remote daemons with require-sigs=true reject them on push.
+        secret-key-files = /run/secrets/nixcache_signing_key
+        # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
+        # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
+        # can succeed.
+        filter-syscalls = false
+        system-features = nixos-test benchmark big-parallel kvm
+      '';
+    })
+    (lib.mkIf (!isBuilder) {
+      text = ''
+        # Determinate Nix ignores nix.conf for these settings — must be set here so the
+        # daemon trusts xsvr1.lan-1 signatures and can substitute from the binary cache.
+        trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI=
+        substituters = http://xsvr1.lan https://cache.nixos.org
+      '';
+    })
+  ];
 
   # Deploy builder SSH key on all non-builder hosts
   sops.secrets.builder_private_key = lib.mkIf (!isBuilder) {
