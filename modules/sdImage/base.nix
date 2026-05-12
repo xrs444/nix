@@ -24,6 +24,11 @@
     "console=tty0"
   ];
 
+  # Expand the root partition to fill the SD card on first boot.
+  # Without this, the partition stays at image size (~4GB) even on a 128GB card,
+  # leaving no room for disko-install or package downloads during bootstrapping.
+  sdImage.expandOnBoot = true;
+
   # Populate the root filesystem with bootloader configuration
   sdImage.populateRootCommands = ''
     mkdir -p ./files/boot

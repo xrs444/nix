@@ -16,6 +16,17 @@
               size = "8M";
               type = "EF02";
             };
+            # Separate ext4 /boot so U-Boot can read extlinux.conf.
+            # U-Boot (ubootLibreTechCC) does not support XFS; without this
+            # partition it finds 0 bootflows and fails to boot the XFS root.
+            boot = {
+              size = "512M";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/boot";
+              };
+            };
             root = {
               size = "100%";
               content = {
@@ -30,12 +41,15 @@
     };
   };
 
-  # Override sd-image.nix's default fileSystems."/" (ext4, label-based) so the
-  # full deployed config uses the correct partition and filesystem type.
-  # Without mkForce here, sd-image.nix wins and the fsType conflict is fatal.
-  # Root is -part2: uboot (EF02) is -part1.
-  fileSystems."/" = {
+  # Part layout: uboot=part1 (EF02), boot=part2 (ext4), root=part3 (xfs).
+  # mkForce overrides sd-image.nix's label-based ext4 defaults.
+  fileSystems."/boot" = {
     device = lib.mkForce "/dev/by-id/mmc-SR128_0xeec59d30-part2";
+    fsType = lib.mkForce "ext4";
+  };
+
+  fileSystems."/" = {
+    device = lib.mkForce "/dev/by-id/mmc-SR128_0xeec59d30-part3";
     fsType = lib.mkForce "xfs";
   };
 }
