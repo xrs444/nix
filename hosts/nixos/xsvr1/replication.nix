@@ -1,5 +1,7 @@
 # ZFS Replication Configuration for xsvr1 (Source Host)
 # Replicates critical datasets to xsvr2 for redundancy
+# Pool: zpool-xsvr1-main (2x22TB Seagate Exos mirror)
+# Phase 5 will refactor services.zfsReplication to the jobs API with targetPool mapping.
 { pkgs, ... }:
 {
   # Import the ZFS replication module
@@ -48,22 +50,25 @@
       chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519.pub
       chmod 644 /var/lib/syncoid/.ssh/id_ed25519.pub
     '';
-  }; # Enable ZFS replication
+  };
+
+  # ZFS replication to xsvr2 — critical datasets only until Phase 5 jobs refactor.
+  # Phase 5 will split into critical (zpool-xsvr2) and media (zpool-xsvr2-media) jobs.
   services.zfsReplication = {
     enable = true;
 
-    # Datasets to replicate from xsvr1 to xsvr2
     sourceDatasets = [
-      "zpool-xsvr1/systembackups" # Longhorn and system backups
-      "zpool-xsvr1/devicebackups" # Device backups
-      "zpool-xsvr1/googlebackups" # Google backups
-      "zpool-xsvr1/media/books" # Booklore book libraries (fiction, nonfiction, adult)
+      "zpool-xsvr1-main/systembackups"
+      "zpool-xsvr1-main/devicebackups"
+      "zpool-xsvr1-main/googlebackups"
+      "zpool-xsvr1-main/documents"
+      "zpool-xsvr1-main/users"
+      "zpool-xsvr1-main/system"
+      "zpool-xsvr1-main/media/books"
+      "zpool-xsvr1-main/timemachine"
     ];
 
-    # Target host for replication
     targetHost = "xsvr2.lan";
-
-    # Replication runs every hour
     interval = "hourly";
   };
 
@@ -72,37 +77,148 @@
     enable = true;
 
     datasets = {
-      # System backups (Longhorn, etc.) - frequent snapshots, shorter retention
-      "zpool-xsvr1/systembackups" = {
+      # Backups and critical data — replicated to xsvr2
+      "zpool-xsvr1-main/systembackups" = {
+        useTemplate = [ "backup" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/devicebackups" = {
+        useTemplate = [ "backup" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/googlebackups" = {
+        useTemplate = [ "backup" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/documents" = {
+        useTemplate = [ "backup" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/users" = {
         useTemplate = [ "backup" ];
         recursive = true;
       };
 
-      # Device backups - daily snapshots, longer retention
-      "zpool-xsvr1/devicebackups" = {
+      # Book library — replicated to xsvr2
+      "zpool-xsvr1-main/media/books" = {
         useTemplate = [ "backup" ];
         recursive = true;
       };
 
-      # Google backups - daily snapshots, longer retention
-      "zpool-xsvr1/googlebackups" = {
-        useTemplate = [ "backup" ];
+      # Media — changes infrequently after import; daily snapshots sufficient
+      "zpool-xsvr1-main/media/movies" = {
+        useTemplate = [ "media" ];
+        recursive = false;
+      };
+      "zpool-xsvr1-main/media/tvshows" = {
+        useTemplate = [ "media" ];
+        recursive = false;
+      };
+      "zpool-xsvr1-main/media/music" = {
+        useTemplate = [ "media" ];
+        recursive = false;
+      };
+      "zpool-xsvr1-main/media/audiobooks" = {
+        useTemplate = [ "media" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/media/games" = {
+        useTemplate = [ "media" ];
         recursive = true;
       };
 
-      # Booklore book libraries - replicated to xsvr2
-      "zpool-xsvr1/media/books" = {
-        useTemplate = [ "backup" ];
+      # VM — high churn, short retention; Talos VMs are declarative/rebuildable
+      "zpool-xsvr1-main/vm" = {
+        useTemplate = [ "vm" ];
+        recursive = false;
+      };
+
+      # App system data — database-like, frequent snapshots
+      "zpool-xsvr1-main/system" = {
+        useTemplate = [ "system" ];
         recursive = true;
       };
+
+      # Ingest and transient staging — short retention
+      "zpool-xsvr1-main/ingest" = {
+        useTemplate = [ "ingest" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/scan" = {
+        useTemplate = [ "ingest" ];
+        recursive = true;
+      };
+      "zpool-xsvr1-main/nixcache" = {
+        useTemplate = [ "ingest" ];
+        recursive = false;
+      };
+
+      # Time Machine — manages its own versioning; daily snapshots only
+      "zpool-xsvr1-main/timemachine" = {
+        useTemplate = [ "timemachine" ];
+        recursive = true;
+      };
+
+      # OldDataToOrganize — excluded: transient, unstructured, not worth snapshotting
     };
 
     templates = {
+      # Critical data replicated to xsvr2
       backup = {
-        hourly = 24; # Keep 24 hourly snapshots (1 day)
-        daily = 7; # Keep 7 daily snapshots (1 week)
-        weekly = 4; # Keep 4 weekly snapshots (1 month)
-        monthly = 3; # Keep 3 monthly snapshots (3 months)
+        hourly = 24;
+        daily = 7;
+        weekly = 4;
+        monthly = 3;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # Media library — rarely changes post-import
+      media = {
+        hourly = 0;
+        daily = 3;
+        weekly = 2;
+        monthly = 1;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # VM disks — high churn, Longhorn provides in-cluster replication
+      vm = {
+        hourly = 6;
+        daily = 3;
+        weekly = 1;
+        monthly = 0;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # App system data (Crafty, Matrix)
+      system = {
+        hourly = 24;
+        daily = 7;
+        weekly = 4;
+        monthly = 3;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # Ingest/staging — transient; keep just enough for recovery from bad imports
+      ingest = {
+        hourly = 6;
+        daily = 3;
+        weekly = 0;
+        monthly = 0;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # Time Machine — TM manages its own versioning internally
+      timemachine = {
+        hourly = 0;
+        daily = 7;
+        weekly = 4;
+        monthly = 1;
         autosnap = true;
         autoprune = true;
       };
