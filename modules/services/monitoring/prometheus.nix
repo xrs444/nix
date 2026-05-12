@@ -96,7 +96,7 @@ let
     import urllib.request
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
-    APPRISE_URL = "https://apprise.xrs444.net/notify/"
+    APPRISE_URL = "https://apprise.xrs444.net/notify/apprise"
     APPRISE_TAG = "alerts"
 
     class Bridge(BaseHTTPRequestHandler):
