@@ -260,9 +260,16 @@ in
         '';
       };
 
+      # Allow syncoid to create mountpoint directories under /zfs when receiving datasets
+      systemd.tmpfiles.rules = [
+        "d /zfs 2775 root syncoid -"
+      ];
+
       environment.systemPackages = with pkgs; [
         sanoid
         zfs
+        lzop
+        mbuffer
       ];
     })
   ];
