@@ -18,12 +18,13 @@
   # Disable automatic SSH key generation since we're using sops
   systemd.services.syncoid-ssh-keygen.enable = false;
 
-  # Create syncoid user and setup SSH keys from sops
+  # Create syncoid user and setup SSH keys from sops.
+  # sops-nix decrypts secrets during activation (not a systemd service),
+  # so /run/secrets/ is available before any services start.
   systemd.services.syncoid-ssh-setup = {
     description = "Setup Syncoid SSH keys from sops";
     wantedBy = [ "multi-user.target" ];
-    after = [ "sops-nix.service" ];
-    requires = [ "sops-nix.service" ];
+    after = [ "local-fs.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
