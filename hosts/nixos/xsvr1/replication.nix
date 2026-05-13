@@ -18,38 +18,26 @@
   # Disable automatic SSH key generation since we're using sops
   systemd.services.syncoid-ssh-keygen.enable = false;
 
-  # Create syncoid user and setup SSH keys from sops.
-  # sops-nix decrypts secrets during activation (not a systemd service),
-  # so /run/secrets/ is available before any services start.
-  systemd.services.syncoid-ssh-setup = {
-    description = "Setup Syncoid SSH keys from sops";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "local-fs.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      # Ensure syncoid user exists
-      if ! id syncoid &>/dev/null; then
-        echo "ERROR: syncoid user does not exist yet"
-        exit 1
+  # Install syncoid SSH key from sops during activation.
+  # sops-nix populates /run/secrets/ via its own activation script, which runs
+  # before this one. Using activationScripts (not a systemd service) guarantees
+  # the key is in place before any replication services start — no ordering
+  # dependencies required.
+  system.activationScripts.syncoid-ssh-setup = {
+    deps = [ "users" "groups" ];
+    text = ''
+      key_src="/run/secrets/syncoid-private-key"
+      ssh_dir="/var/lib/syncoid/.ssh"
+
+      if [ ! -f "$key_src" ]; then
+        echo "syncoid-ssh-setup: $key_src not found, skipping"
+        exit 0
       fi
 
-      # Setup SSH directory
-      mkdir -p /var/lib/syncoid/.ssh
-      chown syncoid:syncoid /var/lib/syncoid/.ssh
-      chmod 700 /var/lib/syncoid/.ssh
-
-      # Copy private key from sops-managed location
-      cp /run/secrets/syncoid-private-key /var/lib/syncoid/.ssh/id_ed25519
-      chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519
-      chmod 600 /var/lib/syncoid/.ssh/id_ed25519
-
-      # Extract public key from private key
-      ${pkgs.openssh}/bin/ssh-keygen -y -f /var/lib/syncoid/.ssh/id_ed25519 > /var/lib/syncoid/.ssh/id_ed25519.pub
-      chown syncoid:syncoid /var/lib/syncoid/.ssh/id_ed25519.pub
-      chmod 644 /var/lib/syncoid/.ssh/id_ed25519.pub
+      install -d -o syncoid -g syncoid -m 700 "$ssh_dir"
+      install -o syncoid -g syncoid -m 600 "$key_src" "$ssh_dir/id_ed25519"
+      ${pkgs.openssh}/bin/ssh-keygen -y -f "$ssh_dir/id_ed25519" \
+        | install -o syncoid -g syncoid -m 644 /dev/stdin "$ssh_dir/id_ed25519.pub"
     '';
   };
 

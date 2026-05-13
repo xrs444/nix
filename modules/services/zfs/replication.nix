@@ -57,7 +57,6 @@ let
         "network-online.target"
         "zfs.target"
         "syncoid-ssh-keygen.service"
-        "syncoid-ssh-setup.service"
         "syncoid-zfs-permissions.service"
       ];
       wants = [ "network-online.target" ];
