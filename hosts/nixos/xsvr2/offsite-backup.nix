@@ -14,16 +14,23 @@
 #        restic -r sftp:restic@<synology-host>:/volume1/restic-xsvr2 init
 {
   config,
+  lib,
   pkgs,
   ...
 }:
 let
+  # Set to true after:
+  #   1. Adding restic_offsite_password + restic_offsite_ssh_key to nix/secrets/secrets.yaml
+  #   2. Setting up Synology SSH user and authorized_keys
+  #   3. Updating synologyHost below
+  enabled = false;
+
   # Update this to the Synology's actual hostname or IP
   synologyHost = "synology.xrs444.net";
   synologyUser = "restic";
   repoPath = "/volume1/restic-xsvr2";
 in
-{
+lib.mkIf enabled {
   # Before deploying, add these two keys to nix/secrets/secrets.yaml:
   #   sops nix/secrets/secrets.yaml
   #   restic_offsite_password: <strong random repo password>
