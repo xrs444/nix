@@ -42,7 +42,10 @@
         "md_mod"
       ];
     };
-    zfs.extraPools = [ "zpool-xsvr2" ];
+    zfs.extraPools = [
+      "zpool-xsvr2"
+      "zpool-xsvr2-media"
+    ];
     swraid = {
       enable = true;
       mdadmConf = ''
