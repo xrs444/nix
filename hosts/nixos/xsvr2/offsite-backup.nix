@@ -1,8 +1,8 @@
 # Offsite backup for xsvr2 — restic via SFTP to Synology
 #
 # Backs up critical datasets received from xsvr1 replication.
-# Rate limited to 40 Mbps (5 MiB/s) to leave headroom on <50 Mbps WAN.
-# Initial seed (~300 GB) will take ~17 days at full rate — restic is resumable.
+# Rate limited to 10 Mbps (1.25 MiB/s) to leave headroom on 30 Mbps WAN.
+# Initial seed (~300 GB) will take ~67 days at full rate — restic is resumable.
 #
 # Prerequisites (one-time manual steps):
 #   1. Create sops secret file:
@@ -86,8 +86,8 @@ in
     ];
 
     extraBackupArgs = [
-      # 40 Mbps = 5 MiB/s — leaves 10 Mbps headroom on <50 Mbps WAN
-      "--limit-upload 5120"
+      # 10 Mbps = 1.25 MiB/s — leaves 20 Mbps headroom on 30 Mbps WAN
+      "--limit-upload 1280"
       # Time Machine sparse bundles have large internal structure — exclude trash
       "--exclude=/zfs/timemachine/.Trash*"
     ];
