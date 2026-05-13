@@ -44,6 +44,7 @@ let
         --no-privilege-elevation \
         --sshkey ${sshKeyPath} \
         --recursive \
+        --force-delete \
         ${dataset} \
         ${target}:${targetDataset}
     '';
