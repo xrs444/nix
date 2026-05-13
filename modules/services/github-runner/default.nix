@@ -24,8 +24,9 @@ lib.mkIf hasRole {
   # Guard: ExecStartPre consumes the token atomically. Any stale invocation without
   # a token exits immediately without touching the system.
   #
-  # NOTE: token path must NOT be in /tmp — the github-runner service has PrivateTmp=true,
-  # so the runner's `touch /tmp/...` writes to a private tmpfs invisible to this service.
+  # NOTE: token path must NOT be in /tmp — PrivateTmp=true gives the runner a private
+  # tmpfs invisible to this service. Similarly, PrivateMounts=true (disabled below)
+  # would prevent host-visible inotify events even for bind-mounted paths.
   systemd.services.nixos-rebuild-ci = {
     description = "Apply NixOS configuration for xsvr1 (CI self-deploy)";
     after = [ "network.target" ];
@@ -90,6 +91,13 @@ lib.mkIf hasRole {
       # Auto-restart on failure (default is Restart=no which requires manual intervention)
       Restart = lib.mkForce "on-failure";
       RestartSec = "30s";
+      # PrivateMounts=true (module default) creates an isolated mount namespace.
+      # File creation inside this namespace does NOT generate inotify events visible
+      # to systemd's nixos-rebuild-ci.path unit on the host, so the CI deploy trigger
+      # never fires. Disabling it allows host-visible file creation while retaining
+      # all other restrictions (CapabilityBoundingSet=, PrivateUsers=true,
+      # RestrictNamespaces=true, InaccessiblePaths on secrets).
+      PrivateMounts = lib.mkForce false;
     };
   };
 

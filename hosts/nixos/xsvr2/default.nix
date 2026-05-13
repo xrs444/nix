@@ -1,7 +1,6 @@
 # Summary: NixOS host configuration for xsvr2, imports hardware, boot, VM, and disk modules.
 {
   hostname,
-  inputs,
   ...
 }:
 {
@@ -12,6 +11,7 @@
     ../common/performance.nix
     ./network.nix
     ./replication.nix
+    ./offsite-backup.nix
     ./vms.nix
     ./disks.nix
     ../../common

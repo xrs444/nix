@@ -888,6 +888,78 @@ in
               ];
             }
             {
+              name = "zfs_replication_alerts";
+              interval = "60s";
+              rules = [
+                {
+                  alert = "ZFSReplicationFailed";
+                  expr = "node_systemd_unit_state{name=~\"zfs-replication-.*\\\\.service\",state=\"failed\"} == 1";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "ZFS replication job failed on {{ $labels.instance }}";
+                    description = "Systemd unit {{ $labels.name }} on {{ $labels.instance }} is in failed state.";
+                  };
+                }
+                {
+                  alert = "ZFSReplicationStale";
+                  expr = "(time() - node_systemd_unit_state_change_timestamp_seconds{name=~\"zfs-replication-.*\\\\.service\"}) > 7200";
+                  for = "30m";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "ZFS replication job has not run in over 2 hours on {{ $labels.instance }}";
+                    description = "Unit {{ $labels.name }} last changed state {{ $value | humanizeDuration }} ago. Expected to run hourly.";
+                  };
+                }
+                {
+                  alert = "ZFSScrubRunningLong";
+                  expr = "zfs_pool_scrub_errors == 0 and zfs_pool_health == 0";
+                  for = "24h";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "ZFS pool {{ $labels.pool }} scrub has been running for over 24 hours on {{ $labels.instance }}";
+                    description = "22TB drives take longer to scrub. This alert fires if a scrub spans more than 24 hours.";
+                  };
+                }
+              ];
+            }
+            {
+              name = "offsite_backup_alerts";
+              interval = "60s";
+              rules = [
+                {
+                  alert = "OffsiteBackupFailed";
+                  expr = "node_systemd_unit_state{name=~\"restic-backups-.*\\\\.service\",state=\"failed\"} == 1";
+                  for = "5m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "Offsite restic backup failed on {{ $labels.instance }}";
+                    description = "Systemd unit {{ $labels.name }} on {{ $labels.instance }} is in failed state.";
+                  };
+                }
+                {
+                  alert = "OffsiteBackupStale";
+                  expr = "(time() - node_systemd_unit_state_change_timestamp_seconds{name=~\"restic-backups-.*\\\\.service\"}) > 172800";
+                  for = "1h";
+                  labels = {
+                    severity = "warning";
+                  };
+                  annotations = {
+                    summary = "Offsite backup has not run in over 48 hours on {{ $labels.instance }}";
+                    description = "Unit {{ $labels.name }} last changed state {{ $value | humanizeDuration }} ago. Expected to run daily.";
+                  };
+                }
+              ];
+            }
+            {
               name = "backup_alerts";
               interval = "30s";
               rules = [
