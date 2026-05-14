@@ -102,6 +102,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/documents/photos";
@@ -109,6 +111,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/ingest";
@@ -179,6 +183,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/systembackups/crafty";
@@ -186,6 +192,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/media/books/fiction";
