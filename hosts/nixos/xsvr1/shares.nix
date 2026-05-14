@@ -329,6 +329,8 @@
     text = ''
       mkdir -p /export/zfs/systembackups/longhorn
       mkdir -p /zfs/systembackups/homeassistant
+      chown homeassistant:homeassistant /zfs/systembackups/homeassistant
+      chmod 755 /zfs/systembackups/homeassistant
       mkdir -p /export/zfs/devicebackups
       mkdir -p /export/zfs/documents/manyfold
       mkdir -p /export/zfs/documents/photos
