@@ -40,7 +40,7 @@ lib.mkIf hasRole {
       # not respect GIT_CONFIG_COUNT/safe.directory env vars — only the git binary does.
       # Fetching from GitHub avoids the ownership issue entirely. The commit is the same:
       # CI pushes the commit, builds it, then drops the permit token.
-      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --flake github:xrs444/nix#xsvr1";
+      ExecStart = "/run/current-system/sw/bin/nixos-rebuild switch --refresh --flake github:xrs444/nix#xsvr1";
       User = "root";
     };
   };
