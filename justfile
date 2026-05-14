@@ -49,10 +49,15 @@ build-and-cache-all:
 deploy host:
     deploy ".#{{host}}"
 
-# Deploy all remote hosts via deploy-rs, then self-deploy xsvr1
+# Deploy all remote hosts via deploy-rs, then trigger xsvr1 self-deploy via path unit
+# (nixos-rebuild must run as a systemd service to have systemctl in PATH — same as CI)
 deploy-all:
     deploy .
-    sudo nixos-rebuild switch --flake ".#xsvr1"
+    touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
+
+# Trigger xsvr1 self-deploy (must run on xsvr1; uses path unit so systemd provides full env)
+deploy-xsvr1:
+    touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
 
 # SD Card Operations
 # ==================
