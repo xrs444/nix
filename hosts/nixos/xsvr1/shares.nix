@@ -9,11 +9,12 @@
   # Samba passwords managed via sops — set automatically on every nixos-rebuild switch.
   # Kanidm does not store NTLM hashes, so Samba uses its own tdbsam passdb.
   # Linux session login still goes through Kanidm PAM (enablePam = true on xsvr1).
-  sops.secrets.xrs444_smb_password   = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.samantha_smb_password = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.rowan_smb_password    = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.greyson_smb_password  = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.scanner_smb_password  = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.xrs444_smb_password        = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.samantha_smb_password      = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.rowan_smb_password         = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.greyson_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.scanner_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.homeassistant_smb_password = { sopsFile = ../../../secrets/samba.yaml; };
 
   # Scanner service account — exists only for Samba authentication (HP M281 printer)
   users.users.scanner = {
@@ -23,6 +24,15 @@
     description = "HP printer SMB service account";
   };
   users.groups.scanner = {};
+
+  # Home Assistant service account — exists only for Samba authentication
+  users.users.homeassistant = {
+    isSystemUser = true;
+    group = "homeassistant";
+    shell = "${pkgs.shadow}/bin/nologin";
+    description = "Home Assistant SMB service account";
+  };
+  users.groups.homeassistant = {};
 
   # Avahi (mDNS) — required for Samba to advertise the Time Machine share over Bonjour.
   # Without this, macOS won't discover tm_xlt1-t as a Time Machine destination.
@@ -318,6 +328,7 @@
     deps = [ "setupSecrets" ];
     text = ''
       mkdir -p /export/zfs/systembackups/longhorn
+      mkdir -p /zfs/systembackups/homeassistant
       mkdir -p /export/zfs/devicebackups
       mkdir -p /export/zfs/documents/manyfold
       mkdir -p /export/zfs/documents/photos
@@ -410,7 +421,8 @@
       set_smb_pass samantha ${config.sops.secrets.samantha_smb_password.path} || true
       set_smb_pass rowan    ${config.sops.secrets.rowan_smb_password.path} || true
       set_smb_pass greyson  ${config.sops.secrets.greyson_smb_password.path} || true
-      set_smb_pass scanner  ${config.sops.secrets.scanner_smb_password.path} || true
+      set_smb_pass scanner        ${config.sops.secrets.scanner_smb_password.path} || true
+      set_smb_pass homeassistant  ${config.sops.secrets.homeassistant_smb_password.path} || true
     '';
   };
 
@@ -469,6 +481,15 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "yes";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+      };
+      "homeassistant-backups" = {
+        "path" = "/zfs/systembackups/homeassistant";
+        "browseable" = "no";
+        "read only" = "no";
+        "guest ok" = "no";
+        "valid users" = "homeassistant";
         "create mask" = "0644";
         "directory mask" = "0755";
       };
