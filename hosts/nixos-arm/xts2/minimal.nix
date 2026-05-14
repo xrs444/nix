@@ -13,7 +13,6 @@
     ../common/default.nix
     ../common/hardware-sweet-potato.nix
     ../common/boot.nix
-    ../../../modules/sdImage/custom.nix
   ];
 
   system.stateVersion = stateVersion;

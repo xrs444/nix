@@ -1,30 +1,23 @@
-# Hardware configuration for Libre Computer AML-S905X-CC2 "Sweet Potato"
-# Amlogic S905X2 SoC — no UEFI, boots via U-Boot + extlinux
+# Hardware configuration for Libre Computer AML-S905X-CC-V2 "Sweet Potato"
+# Amlogic S905X SoC — boots via UEFI firmware stored in onboard SPI flash.
+# LibreTech provides UEFI firmware at boot.libre.computer/release/aml-s905x-cc-v2/
+# Flash spiflash.img to SD, boot once to write UEFI to SPI, then boot from eMMC.
 {
   lib,
   pkgs,
   ...
 }:
-let
-  # ubootLibreTechCC is marked broken in the current nixpkgs pin. Clear the
-  # flag locally — the binary works fine for the AML-S905X-CC / CC2 platform.
-  uboot = pkgs.ubootLibreTechCC.overrideAttrs (o: {
-    meta = o.meta // { broken = false; };
-  });
-in
 {
-  # Amlogic has no UEFI. Override the mkDefault values from hardware-arm64-server.nix
-  # (mkDefault = mkOverride 1000; mkForce = mkOverride 50, so these win).
   boot = {
     loader = {
-      grub.enable = lib.mkForce false;
-      systemd-boot.enable = lib.mkForce false;
+      # Board boots UEFI from SPI flash; EFI vars not writable on this platform.
+      systemd-boot.enable = lib.mkForce true;
       efi.canTouchEfiVariables = lib.mkForce false;
-      # U-Boot reads /boot/extlinux/extlinux.conf at startup
-      generic-extlinux-compatible.enable = lib.mkForce true;
+      grub.enable = lib.mkForce false;
+      generic-extlinux-compatible.enable = lib.mkForce false;
     };
 
-    # Amlogic serial is ttyAML0, not ttyAMA0 (BCM/RPi)
+    # Amlogic serial console
     kernelParams = lib.mkForce [
       "console=ttyAML0,115200n8"
       "console=tty0"
@@ -41,21 +34,9 @@ in
       "mmc_block"
     ];
 
-    # Mainline kernel has solid Amlogic GXL/G12 support
+    # Mainline kernel has solid Amlogic GXL support
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
   };
-
-  # Embed U-Boot into the SD image at the offsets the Amlogic boot ROM expects.
-  # ubootLibreTechCC targets the AML-S905X-CC (Le Potato); the CC2 (Sweet Potato)
-  # shares the same Amlogic GXL platform and boots with the same binary.
-  # Two dd passes are required: one for the main body (sector 1+), one for the
-  # 444-byte header at sector 0 that the boot ROM reads first.
-  sdImage.postBuildCommands = ''
-    dd if=${uboot}/u-boot.gxl.sd.bin \
-       of=$img conv=fsync,notrunc bs=512 skip=1 seek=1
-    dd if=${uboot}/u-boot.gxl.sd.bin \
-       of=$img conv=fsync,notrunc bs=1 count=444
-  '';
 
   hardware.enableRedistributableFirmware = lib.mkDefault true;
 
