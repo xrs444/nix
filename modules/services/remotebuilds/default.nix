@@ -161,6 +161,10 @@ in
         # can succeed.
         filter-syscalls = false
         system-features = nixos-test benchmark big-parallel kvm
+        # Determinate Nix ignores nix.conf trusted-users — must be set here so the
+        # builder daemon allows 'builder' to build input-addressed derivations sent
+        # by remote clients via nix-store --serve.
+        trusted-users = root builder
       '';
     })
     (lib.mkIf (!isBuilder) {

@@ -17,8 +17,8 @@ let
     "172.20.1.20" # xsvr2
     "172.20.1.30" # xsvr3
     "v-xlabmgmt.lan"
-    "xts1.lan"
-    "xts2.lan"
+    "172.18.10.1" # xts1 — static IP avoids VIP/keepalived routing issues
+    "172.18.10.2" # xts2 — static IP avoids VIP/keepalived routing issues
     "xcomm1.lan"
     "xpbx1.lan"
     # cmrpi1 removed — host decommissioned, DNS NXDOMAIN
@@ -32,8 +32,8 @@ let
 
   # Hosts with bird BGP
   birdHosts = [
-    "xts1.lan"
-    "xts2.lan"
+    "172.18.10.1" # xts1
+    "172.18.10.2" # xts2
   ];
 
   # Hosts with libvirt
