@@ -37,11 +37,11 @@ jobs:
           RESULT="${{ needs.flake-checker.result }}"
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           if [ "$RESULT" = "success" ]; then
-            curl -f --show-error --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
               -H "Content-Type: application/json" \
               -d "{\"title\":\"FlakeChecker: OK\",\"body\":\"Flake check passed.\",\"type\":\"success\",\"tag\":\"critical-infra\"}" || true
           else
-            curl -f --show-error --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
               -H "Content-Type: application/json" \
               -d "{\"title\":\"FlakeChecker: Failed\",\"body\":\"Flake check failed. $RUN_URL\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
           fi

@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: Notify pending update is blocking new update
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: Blocked","body":"A pending flake-lock-update branch exists with unmerged content. Skipping new flake update — rechecking cache for existing update.","type":"warning","tag":"critical-infra"}' || true
 
@@ -90,7 +90,7 @@ jobs:
       - name: Notify no changes
         if: steps.changes.outputs.changed == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info","tag":"critical-infra"}' || true
 
@@ -190,7 +190,7 @@ jobs:
       - name: Notify cache not ready
         if: steps.check.outputs.ready == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning","tag":"critical-infra"}' || true
 
@@ -276,13 +276,13 @@ jobs:
       - name: Notify build success
         if: steps.results.outputs.all_succeeded == 'true'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success","tag":"critical-infra"}' || true
 
       - name: Notify build failure
         if: steps.results.outputs.all_succeeded == 'false'
         run: |
-          curl -sf -X POST https://apprise.xrs444.net/notify/apprise \
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: Build Failed","body":"Some hosts failed to build. Check GitHub Actions logs for details.","type":"failure","tag":"critical-infra"}' || true

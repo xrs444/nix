@@ -166,7 +166,6 @@ rec {
       isArm = hostConfig.platform == "aarch64-linux";
       # ARM hosts that use disko for disk configuration
       armHostsWithDisko = [
-        "xts1"
         "xts2"
         "xlt1-t-vnixos"
       ];
@@ -177,7 +176,6 @@ rec {
         if isArm && builtins.elem hostName armHostsWithDisko then
           [
             inputs.disko.nixosModules.disko
-            (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix"))
           ]
         else
           [ ]
