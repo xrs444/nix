@@ -26,7 +26,7 @@ let
   enabled = false;
 
   # Update this to the Synology's actual hostname or IP
-  synologyHost = "synology.xrs444.net";
+  synologyHost = "cmrnas.xrs444.net";
   synologyUser = "restic";
   repoPath = "/volume1/restic-xsvr2";
 in
@@ -44,14 +44,14 @@ lib.mkIf enabled {
   #   cat /tmp/restic-synology      → restic_offsite_ssh_key value
   #   cat /tmp/restic-synology.pub  → add to Synology restic user authorized_keys
   sops.secrets.restic-offsite-password = {
-    sopsFile = ../../../secrets/secrets.yaml;
+    sopsFile = ../../../secrets/restic-xsvr2.yaml;
     key = "restic_offsite_password";
     owner = "root";
     mode = "0400";
   };
 
   sops.secrets.restic-offsite-ssh-key = {
-    sopsFile = ../../../secrets/secrets.yaml;
+    sopsFile = ../../../secrets/restic-xsvr2.yaml;
     key = "restic_offsite_ssh_key";
     owner = "root";
     mode = "0400";
