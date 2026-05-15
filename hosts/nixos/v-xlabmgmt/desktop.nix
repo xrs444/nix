@@ -15,7 +15,7 @@
     };
   };
 
-  # Disable audio - xlabmgmt has no audio hardware
+  # Disable audio - v-xlabmgmt has no audio hardware
   services.pipewire.enable = lib.mkForce false;
   services.pulseaudio.enable = false;
 

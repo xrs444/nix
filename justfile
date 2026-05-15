@@ -28,7 +28,7 @@ build host:
 # Build and cache all hosts (run on xsvr1 where the nix store is local)
 build-and-cache-all:
     #!/usr/bin/env fish
-    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
+    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
     set -l cache_url "file:///zfs/nixcache/cache"
 
     echo "Building all hosts in parallel..."

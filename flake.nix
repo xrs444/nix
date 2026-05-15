@@ -113,11 +113,11 @@
             "auto-upgrade"
           ];
         };
-        xlabmgmt = {
+        v-xlabmgmt = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
-          desktop = "gnome";
+          desktop = "niri";
           enableHomeManager = false;
           roles = [
             "bind"

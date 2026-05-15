@@ -1,4 +1,4 @@
-# Summary: Minimal installer configuration for xlabmgmt, bootstraps with comin for full config deployment.
+# Summary: Minimal installer configuration for v-xlabmgmt VM, bootstraps with comin for full config deployment.
 {
   pkgs,
   lib,

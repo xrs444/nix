@@ -39,7 +39,7 @@ in
 
             ns1               IN      A       172.25.2.251
 
-            xlabmgmt          IN      A       172.25.2.251
+            v-xlabmgmt        IN      A       172.25.2.251
 
             xntnx1            IN      A       172.25.1.10
 

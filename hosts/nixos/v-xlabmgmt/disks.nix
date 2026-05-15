@@ -2,7 +2,7 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/ata-SAMSUNG_SSD_830_Series_S0XXNEAC706979";
+        device = "/dev/vda"; # virtio disk in KVM VM
         type = "disk";
         content = {
           type = "gpt";

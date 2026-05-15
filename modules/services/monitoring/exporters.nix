@@ -26,7 +26,7 @@ let
 
   # Detect if host runs BIND DNS
   hasBIND = builtins.elem hostname [
-    "xlabmgmt"
+    "v-xlabmgmt"
   ];
 in
 {
@@ -123,14 +123,181 @@ in
     };
 
     # SNMP exporter - for network devices (only on monitoring server)
-    # SNMP exporter disabled temporarily due to config format changes
-    # TODO: Re-enable after generating proper config with snmp_exporter generator
-    # See: https://github.com/prometheus/snmp_exporter/tree/main/generator
+    # Devices are discovered via NetBox (tag: snmp-monitor).
+    # See prometheus.nix for the netbox-snmp-discovery timer that populates
+    # /var/lib/prometheus/snmp-sd.json for Prometheus file_sd_configs.
     services.prometheus.exporters.snmp = lib.mkIf isMonitoringServer {
-      enable = false;
+      enable = true;
       port = 9116;
       listenAddress = "0.0.0.0";
       openFirewall = false;
+
+      # snmp.yml: top-level auths (v0.26+ format) + IF-MIB module.
+      # The scrape URL will be:
+      #   http://localhost:9116/snmp?auth=public_v2&module=if_mib&target=<device-ip>
+      # Add additional auth profiles here for devices using non-default communities.
+      configurationPath = pkgs.writeText "snmp.yml" ''
+        auths:
+          public_v2:
+            community: public
+            security_level: noAuthNoPriv
+            auth_protocol: MD5
+            priv_protocol: DES
+            version: 2
+
+        modules:
+          # Standard interface MIB — works with virtually all SNMP-capable devices.
+          # Exposes: link state, 32-bit and 64-bit byte counters, error counters.
+          if_mib:
+            walk:
+              - 1.3.6.1.2.1.2.2       # ifTable
+              - 1.3.6.1.2.1.31.1.1    # ifXTable
+            get:
+              - 1.3.6.1.2.1.1.3.0     # sysUpTime
+              - 1.3.6.1.2.1.1.5.0     # sysName
+            metrics:
+              - name: sysUpTime
+                oid: 1.3.6.1.2.1.1.3
+                type: gauge
+                help: "Time since last re-initialization (hundredths of a second)."
+
+              - name: ifAdminStatus
+                oid: 1.3.6.1.2.1.2.2.1.7
+                type: gauge
+                help: "Desired state of the interface. 1=up 2=down 3=testing"
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifOperStatus
+                oid: 1.3.6.1.2.1.2.2.1.8
+                type: gauge
+                help: "Operational state. 1=up 2=down 3=testing 4=unknown 5=dormant 6=notPresent 7=lowerLayerDown"
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifInOctets
+                oid: 1.3.6.1.2.1.2.2.1.10
+                type: counter
+                help: "Total octets received on the interface (32-bit)."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifOutOctets
+                oid: 1.3.6.1.2.1.2.2.1.16
+                type: counter
+                help: "Total octets transmitted out of the interface (32-bit)."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifInErrors
+                oid: 1.3.6.1.2.1.2.2.1.14
+                type: counter
+                help: "Inbound packets containing errors."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifOutErrors
+                oid: 1.3.6.1.2.1.2.2.1.20
+                type: counter
+                help: "Outbound packets that could not be transmitted due to errors."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              # 64-bit counters — use these for high-throughput links (>1 Gbps)
+              - name: ifHCInOctets
+                oid: 1.3.6.1.2.1.31.1.1.1.6
+                type: counter
+                help: "Total octets received on the interface (64-bit)."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+
+              - name: ifHCOutOctets
+                oid: 1.3.6.1.2.1.31.1.1.1.10
+                type: counter
+                help: "Total octets transmitted out of the interface (64-bit)."
+                indexes:
+                  - labelname: ifIndex
+                    type: gauge
+                lookups:
+                  - labels: [ifIndex]
+                    labelname: ifDescr
+                    oid: 1.3.6.1.2.1.2.2.1.2
+                    type: DisplayString
+                  - labels: [ifIndex]
+                    labelname: ifName
+                    oid: 1.3.6.1.2.1.31.1.1.1.1
+                    type: DisplayString
+      '';
     };
 
     # Open firewall for exporters on bond0 (LAN interface) for server-to-server monitoring

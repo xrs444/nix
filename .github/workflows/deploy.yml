@@ -20,7 +20,7 @@ jobs:
 
       - name: Build all hosts
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           FAILED=()
           for host in "${HOSTS[@]}"; do
             echo "Building $host..."
@@ -67,8 +67,8 @@ jobs:
             echo "  purged $count stale narinfos"
           }
 
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           for host in "${HOSTS[@]}"; do
             if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
@@ -142,7 +142,7 @@ jobs:
       - name: Deploy remote hosts
         run: |
           REVISION=$(git rev-parse HEAD)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           DEPLOY_FAILED=()
 

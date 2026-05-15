@@ -27,7 +27,7 @@ keys:
   - &host_xts2 age1ud88p7dps3dyjwcmdcfhx2557maj33xplllq56dz5f6snzr4m4xq8gcg4z
   - &host_xlt1-t-vnixos age1fyew76ywr5zyhm4vs670g2g5mzel49k20p25dyexs3x22x2kl4rqxj3urm
   - &host_xlt1-t age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
-  - &host_xlabmgmt age1khgdesh65739s5pvtsq5k38u9wnjys0f668c6ydrx86647lus54qap0mda
+  - &host_v-xlabmgmt age1khgdesh65739s5pvtsq5k38u9wnjys0f668c6ydrx86647lus54qap0mda
   - &host_xlt2-s age16yu4jhkj0q88hmfpn5dhl8y8wjawa4wjx5zaktpmvduadcmwmgxqd9z0ps
   - &host_xdt2-g age1y6zaftf5unztga8fw7qwl9w0n5hkeca8m25fagqckavnmla4pg8sm6grqz
   - &host-xdt3-r age1c284tt2erjny8g8s3u4gp8h9f2x3rhzf7j6fuwlz4704uwdnhv5s3zl9zq
@@ -48,7 +48,7 @@ creation_rules:
       - *host_xts2
       - *host_xlt1-t-vnixos
       - *host_xlt1-t
-      - *host_xlabmgmt
+      - *host_v-xlabmgmt
       - *host_xlt2-s
       - *host_xdt2-g
       - *host-xdt3-r

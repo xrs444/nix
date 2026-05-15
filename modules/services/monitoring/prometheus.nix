@@ -16,7 +16,7 @@ let
     "172.20.1.10" # xsvr1
     "172.20.1.20" # xsvr2
     "172.20.1.30" # xsvr3
-    "xlabmgmt.lan"
+    "v-xlabmgmt.lan"
     "xts1.lan"
     "xts2.lan"
     "xcomm1.lan"
@@ -45,7 +45,7 @@ let
 
   # Hosts with BIND DNS
   bindHosts = [
-    "xlabmgmt.lan"
+    "v-xlabmgmt.lan"
   ];
 
   # Talos VMs (Kubernetes nodes)
@@ -86,6 +86,112 @@ let
     # Kubernetes API server (via first Talos node)
     apiServer = "172.20.3.10:6443";
   };
+
+  # NetBox SNMP service discovery script.
+  # Queries NetBox for devices tagged 'snmp-monitor', writes Prometheus file_sd JSON.
+  #
+  # NetBox setup required (one-time, via the NetBox UI or API):
+  #   1. Create tag:          Administration → Tags → "snmp-monitor"
+  #   2. Create custom field: Customization → Custom Fields
+  #        - Object type: dcim | device
+  #        - Name: snmp_module   Type: Text   Default: if_mib
+  #          (options: if_mib — add more modules to snmp.yml in exporters.nix as needed)
+  #   3. Tag devices and set snmp_module custom field as appropriate.
+  #   4. Create a read-only API token: Profile → API Tokens
+  #   5. Encrypt the token: see the sops.secrets."netbox-token" block above.
+  netboxSnmpDiscovery = pkgs.writeScript "netbox-snmp-discovery" ''
+    #!${pkgs.python3}/bin/python3
+    """
+    Queries NetBox for devices tagged 'snmp-monitor' and writes a Prometheus
+    file_sd JSON file to /var/lib/prometheus/snmp-sd.json.
+
+    Each device entry carries:
+      __param_module  — SNMP module (from custom field snmp_module, default: if_mib)
+      device_name     — NetBox device name (used as the 'instance' label)
+      device_role     — NetBox device role name
+      site            — NetBox site name
+    """
+    import json
+    import os
+    import sys
+    import urllib.request
+    import urllib.error
+
+    NETBOX_URL    = "https://netbox.xrs444.net"
+    TOKEN_FILE    = "${config.sops.secrets."netbox-token".path}"
+    OUTPUT_FILE   = "/var/lib/prometheus/snmp-sd.json"
+    TAG_FILTER    = "snmp-monitor"
+    DEFAULT_MODULE = "if_mib"
+
+    def read_token():
+        try:
+            with open(TOKEN_FILE) as f:
+                return f.read().strip()
+        except Exception as e:
+            print(f"ERROR reading NetBox token from {TOKEN_FILE}: {e}", flush=True)
+            sys.exit(1)
+
+    def fetch_devices(token):
+        url = f"{NETBOX_URL}/api/dcim/devices/?tag={TAG_FILTER}&status=active&limit=1000"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Token {token}",
+                "Accept":        "application/json",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read())
+                return data.get("results", [])
+        except urllib.error.HTTPError as e:
+            print(f"ERROR fetching devices from NetBox: HTTP {e.code} {e.reason}", flush=True)
+            sys.exit(1)
+        except Exception as e:
+            print(f"ERROR fetching devices from NetBox: {e}", flush=True)
+            sys.exit(1)
+
+    def build_targets(devices):
+        targets = []
+        skipped = 0
+        for device in devices:
+            primary_ip = device.get("primary_ip")
+            if not primary_ip:
+                print(f"SKIP {device['name']}: no primary IP assigned in NetBox", flush=True)
+                skipped += 1
+                continue
+            # Strip prefix length: "192.168.1.1/24" → "192.168.1.1"
+            ip = primary_ip["address"].split("/")[0]
+            cf     = device.get("custom_fields") or {}
+            module = (cf.get("snmp_module") or "").strip() or DEFAULT_MODULE
+            role   = ((device.get("device_role") or {}).get("name") or "unknown")
+            site   = ((device.get("site")        or {}).get("name") or "unknown")
+            targets.append({
+                "targets": [ip],
+                "labels": {
+                    "device_name":    device["name"],
+                    "device_role":    role,
+                    "site":           site,
+                    "__param_module": module,
+                },
+            })
+        if skipped:
+            print(f"Skipped {skipped} device(s) with no primary IP.", flush=True)
+        return targets
+
+    def main():
+        token   = read_token()
+        devices = fetch_devices(token)
+        sd      = build_targets(devices)
+        payload = json.dumps(sd, indent=2)
+        tmp     = OUTPUT_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            f.write(payload)
+        os.rename(tmp, OUTPUT_FILE)
+        print(f"Wrote {len(sd)} SNMP target(s) to {OUTPUT_FILE}", flush=True)
+
+    main()
+  '';
 
   # Webhook bridge: translates Alertmanager POST payloads to Apprise API format.
   # Alertmanager sends {"receiver":...,"alerts":[...]} but Apprise needs
@@ -167,6 +273,21 @@ in
       mode = "0400";
     };
 
+    # NetBox read-only API token for SNMP device discovery.
+    # Create and encrypt the secrets file before first deploy:
+    #   echo 'token: <your-netbox-read-only-api-token>' > nix/secrets/netbox-prometheus.yaml
+    #   sops -e -i nix/secrets/netbox-prometheus.yaml
+    # The token is read by the netbox-snmp-discovery service (not by Prometheus directly).
+    sops.secrets."netbox-token" = {
+      sopsFile = ../../../secrets/netbox-prometheus.yaml;
+      key = "token";
+      # Runs as DynamicUser so we need world-readable (0444) or a group approach.
+      # Using mode 0440 + group "prometheus" so the discovery service can read it.
+      owner = "root";
+      group = "prometheus";
+      mode = "0440";
+    };
+
     services.prometheus = {
       enable = true;
       port = 9090;
@@ -238,75 +359,60 @@ in
           ];
         }
 
-        # SNMP - Network devices (DISABLED - exporter needs reconfiguration)
-        # TODO: Re-enable after fixing SNMP exporter config format
-        # See exporters.nix for details
-        # Brocade switches
-        # {
-        #   job_name = "snmp-brocade";
-        #   scrape_interval = "60s";
-        #   static_configs = [
-        #     {
-        #       targets = [
-        #         # "192.168.1.10" # brocade-7250-1 - Replace with your IPs
-        #         # "192.168.1.11" # brocade-7250-2
-        #         # "192.168.1.12" # brocade-6610
-        #       ];
-        #     }
-        #   ];
-        #   metrics_path = "/snmp";
-        #   params = {
-        #     module = [ "brocade" ];
-        #     # auth = [ "public_v2" ]; # Reference to snmp.yml auth config
-        #   };
-        #   relabel_configs = [
-        #     {
-        #       source_labels = [ "__address__" ];
-        #       target_label = "__param_target";
-        #     }
-        #     {
-        #       source_labels = [ "__param_target" ];
-        #       target_label = "instance";
-        #     }
-        #     {
-        #       target_label = "__address__";
-        #       replacement = "localhost:9116";
-        #     }
-        #   ];
-        # }
-
         # Generic network devices (Firewalla, Omada, etc.)
-        # {
-        #   job_name = "snmp-network";
-        #   scrape_interval = "60s";
-        #   static_configs = [
-        #     {
-        #       targets = [
-        #         # "192.168.1.1" # firewalla-pro - Replace with your IPs
-        #         # "192.168.1.20" # omada-controller
-        #         # "192.168.1.21" # omada-ap-1
-        #       ];
-        #     }
-        #   ];
-        #   metrics_path = "/snmp";
-        #   params = {
-        #     module = [ "if_mib" ];
-        #   };
-        #   relabel_configs = [
-        #     {
-        #       source_labels = [ "__address__" ];
-        #       target_label = "__param_target";
-        #     }
-        #     {
-        #       source_labels = [ "__param_target" ];
-        #       target_label = "instance";
-        #     }
-        #     {
-        #       target_label = "__address__";
-        #       replacement = "localhost:9116";
-        #     }
-        #   ];
-        # }
+        # (replaced by the NetBox-driven snmp job below — see netbox-snmp-discovery timer)
+
+        # SNMP — devices discovered from NetBox (tag: snmp-monitor)
+        # Targets written to /var/lib/prometheus/snmp-sd.json by the
+        # netbox-snmp-discovery timer.  The discovery script sets:
+        #   __param_module  — from NetBox custom field snmp_module (default: if_mib)
+        #   device_name     — used as the instance label
+        #   device_role / site — informational labels
+        # All devices use the 'public_v2' auth profile (SNMPv2c, community: public).
+        # To add a device with a non-default community:
+        #   1. Add a new auth entry to the snmp.yml in exporters.nix.
+        #   2. Set __param_auth in the discovery script (snmp_community custom field).
+        {
+          job_name = "snmp";
+          scrape_interval = "60s";
+          scrape_timeout = "30s";
+          metrics_path = "/snmp";
+          params = {
+            # Global auth profile — SNMPv2c community 'public'.
+            # Overridden per-device via __param_auth label in file_sd if needed.
+            auth = [ "public_v2" ];
+          };
+          file_sd_configs = [
+            {
+              files = [ "/var/lib/prometheus/snmp-sd.json" ];
+              refresh_interval = "5m";
+            }
+          ];
+          relabel_configs = [
+            # Forward the device IP as the SNMP ?target= parameter
+            {
+              source_labels = [ "__address__" ];
+              target_label = "__param_target";
+            }
+            # Use the NetBox device name as the Prometheus instance label
+            {
+              source_labels = [ "device_name" ];
+              target_label = "instance";
+            }
+            # Default __param_module to if_mib if the discovery script didn't set it
+            {
+              source_labels = [ "__param_module" ];
+              regex = "";
+              replacement = "if_mib";
+              target_label = "__param_module";
+            }
+            # Route all SNMP scrapes through the local SNMP exporter
+            {
+              target_label = "__address__";
+              replacement = "localhost:9116";
+            }
+          ];
+        }
 
         # Talos VMs - node_exporter
         # System-level metrics from Talos Kubernetes nodes
@@ -1466,6 +1572,35 @@ in
         Restart = "always";
         RestartSec = "5s";
         DynamicUser = true;
+      };
+    };
+
+    # NetBox → Prometheus SNMP service discovery
+    # Queries NetBox API for devices tagged 'snmp-monitor', writes
+    # /var/lib/prometheus/snmp-sd.json consumed by the snmp file_sd_configs job.
+    # Runs once immediately on boot, then every 5 minutes via the timer below.
+    systemd.services.netbox-snmp-discovery = {
+      description = "NetBox SNMP target discovery for Prometheus";
+      after = [ "network-online.target" "prometheus.service" ];
+      wants = [ "network-online.target" ];
+      # Also run once at boot so the file exists before Prometheus starts
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${netboxSnmpDiscovery}";
+        # Run as the prometheus user so it can write to /var/lib/prometheus/
+        User = "prometheus";
+        Group = "prometheus";
+      };
+    };
+
+    systemd.timers.netbox-snmp-discovery = {
+      description = "Run NetBox SNMP discovery every 5 minutes";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "5min";
+        Unit = "netbox-snmp-discovery.service";
       };
     };
   };
