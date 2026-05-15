@@ -1,12 +1,22 @@
 { inputs, ... }:
 (final: prev: {
   # Fix gobject-introspection distutils import error with Python 3.13+
-  # Python 3.12+ removed distutils from stdlib, g-ir-scanner needs setuptools
-  # Override to use our fixed python3 (with distutils tests disabled)
+  # Python 3.12+ removed distutils from stdlib; Python 3.13 removed it entirely.
+  # g-ir-scanner's giscanner/utils.py does `import distutils.cygwinccompiler`.
+  # The nixpkgs wrapper for g-ir-scanner does NOT include setuptools (the distutils
+  # shim) in its PYTHONPATH, so we append it via postFixup. The `override { python3 }`
+  # call alone only changes the interpreter — it doesn't inject setuptools.
   # https://bugs.gentoo.org/865183
-  gobject-introspection = prev.gobject-introspection.override {
+  gobject-introspection = (prev.gobject-introspection.override {
     python3 = final.python3;
-  };
+  }).overrideAttrs (oldAttrs: {
+    postFixup = (oldAttrs.postFixup or "") + ''
+      if [ -f "$dev/bin/g-ir-scanner" ]; then
+        wrapProgram "$dev/bin/g-ir-scanner" \
+          --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
+      fi
+    '';
+  });
 
   # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
   # have been moved to xdash1-specific config since other hosts need GIR files

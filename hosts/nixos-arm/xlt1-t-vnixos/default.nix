@@ -8,8 +8,8 @@
   # xlt1-t-vnixos-specific package overrides
   # Disable introspection for packages that fail under QEMU aarch64 emulation.
   # The gobject-introspection / Python 3.13 distutils fix is handled globally
-  # in overlays/pkgs.nix (python3 override + distutils doCheck=false). We do
-  # NOT re-patch gobject-introspection here — doing so creates a host-unique
+  # in overlays/pkgs.nix (adds setuptools to g-ir-scanner's PYTHONPATH wrapper).
+  # We do NOT re-patch gobject-introspection here — doing so creates a host-unique
   # derivation hash for glib that is not in any binary cache, forcing a rebuild
   # under QEMU which then fails because g-ir-scanner exits 1 in that environment.
   # Instead we rely on the global overlay's gobject-introspection (same hash as
