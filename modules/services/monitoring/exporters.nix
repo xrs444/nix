@@ -308,6 +308,9 @@ in
       port = 9116;
       listenAddress = "0.0.0.0";
       openFirewall = false;
+      # Disable config validation at eval time — the file lives at a runtime
+      # path (/run/...) that doesn't exist in the Nix sandbox.
+      enableConfigCheck = false;
       # Points to a runtime path written by ExecStartPre below.
       configurationPath = "/run/prometheus-snmp-exporter/snmp.yml";
     };
