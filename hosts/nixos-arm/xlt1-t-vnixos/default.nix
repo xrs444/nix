@@ -51,17 +51,20 @@
       });
 
       # Fix libsecret distutils error by disabling introspection
+      # NOTE: libsecret uses `type: 'boolean'` for introspection in meson.build;
+      # meson 1.9.1 enforces this strictly — 'disabled' is rejected. Use false.
       libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
         mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-          "-Dintrospection=disabled"
+          "-Dintrospection=false"
           "-Dgtk_doc=false"
         ];
       });
 
       # Fix gcr distutils error by disabling introspection
+      # gcr also uses `type: 'boolean'` for introspection — use false, not 'disabled'.
       gcr = prev.gcr.overrideAttrs (oldAttrs: {
         mesonFlags = (oldAttrs.mesonFlags or []) ++ [
-          "-Dintrospection=disabled"
+          "-Dintrospection=false"
           "-Dgtk_doc=false"
         ];
       });
