@@ -21,6 +21,18 @@ final: prev: {
     # override+overrideAttrs chain. Append explicitly so meson sees it last
     # (meson uses the last occurrence of a duplicate -D flag).
     mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [ "-Dskip_gtk_tests=true" ];
+    # Remove the gobject-introspection-tests subproject before meson configure.
+    # The subproject is declared `required: false` in gjs's meson.build, so meson
+    # skips it cleanly when the directory is absent. Without this, the build tries
+    # to generate .gir files by running g-ir-scanner, which fails on Python 3.13
+    # with "No module named 'distutils'".
+    #
+    # Root cause: gjs-fix.nix uses prev.gjs, so gjs's gobject-introspection
+    # nativeBuildInput comes from prev (pre-overlay) and does NOT get the
+    # setuptools PYTHONPATH fix applied to final.gobject-introspection in pkgs.nix.
+    postPatch = (oldAttrs.postPatch or "") + ''
+      rm -rf subprojects/gobject-introspection-tests
+    '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''
       installedTestsSchemaDatadir="$installedTests/share/gsettings-schemas/gjs-${oldAttrs.version}"
