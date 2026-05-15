@@ -78,6 +78,12 @@
     }
   ).claude-code;
 
+  # Fix nbd TLS test timeouts (tlshuge, tlswrongcert) in sandboxed builds
+  # Tests require real TLS socket timing that doesn't work in the sandbox
+  nbd = prev.nbd.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
   # Fix inetutils format-security compilation errors on macOS
   # https://github.com/NixOS/nixpkgs/issues/XXXXX
   inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
