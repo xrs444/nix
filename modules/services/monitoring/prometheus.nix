@@ -117,18 +117,19 @@ let
     import urllib.request
     import urllib.error
 
-    NETBOX_URL    = "https://netbox.xrs444.net"
-    TOKEN_FILE    = "${config.sops.secrets."netbox-token".path}"
-    OUTPUT_FILE   = "/var/lib/prometheus/snmp-sd.json"
-    TAG_FILTER    = "snmp-monitor"
-    DEFAULT_MODULE = "if_mib"
+    NETBOX_URL      = "https://netbox.xrs444.net"
+    TOKEN_FILE      = "${config.sops.secrets."netbox-token".path}"
+    COMMUNITY_FILE  = "${config.sops.secrets."snmp-community".path}"
+    OUTPUT_FILE     = "/var/lib/prometheus/snmp-sd.json"
+    TAG_FILTER      = "snmp-monitor"
+    DEFAULT_MODULE  = "if_mib"
 
-    def read_token():
+    def read_file(path, label):
         try:
-            with open(TOKEN_FILE) as f:
+            with open(path) as f:
                 return f.read().strip()
         except Exception as e:
-            print(f"ERROR reading NetBox token from {TOKEN_FILE}: {e}", flush=True)
+            print(f"ERROR reading {label} from {path}: {e}", flush=True)
             sys.exit(1)
 
     def fetch_devices(token):
@@ -151,9 +152,13 @@ let
             print(f"ERROR fetching devices from NetBox: {e}", flush=True)
             sys.exit(1)
 
-    def build_targets(devices):
+    def build_targets(devices, community):
         targets = []
         skipped = 0
+        # Auth profile name is derived from the community so the snmp.yml auth
+        # section stays in sync. Currently only one community is supported;
+        # the profile name is always "snmp_community" (static entry in snmp.yml).
+        auth_profile = "snmp_community"
         for device in devices:
             primary_ip = device.get("primary_ip")
             if not primary_ip:
@@ -173,6 +178,7 @@ let
                     "device_role":    role,
                     "site":           site,
                     "__param_module": module,
+                    "__param_auth":   auth_profile,
                 },
             })
         if skipped:
@@ -180,11 +186,12 @@ let
         return targets
 
     def main():
-        token   = read_token()
-        devices = fetch_devices(token)
-        sd      = build_targets(devices)
-        payload = json.dumps(sd, indent=2)
-        tmp     = OUTPUT_FILE + ".tmp"
+        token     = read_file(TOKEN_FILE, "NetBox API token")
+        community = read_file(COMMUNITY_FILE, "SNMP community")
+        devices   = fetch_devices(token)
+        sd        = build_targets(devices, community)
+        payload   = json.dumps(sd, indent=2)
+        tmp       = OUTPUT_FILE + ".tmp"
         with open(tmp, "w") as f:
             f.write(payload)
         os.rename(tmp, OUTPUT_FILE)
@@ -281,8 +288,16 @@ in
     sops.secrets."netbox-token" = {
       sopsFile = ../../../secrets/netbox-prometheus.yaml;
       key = "token";
-      # Runs as DynamicUser so we need world-readable (0444) or a group approach.
-      # Using mode 0440 + group "prometheus" so the discovery service can read it.
+      owner = "root";
+      group = "prometheus";
+      mode = "0440";
+    };
+
+    # SNMP community string from the same secrets file (key: snmp).
+    # The discovery script passes this as the community for SNMPv2c auth.
+    sops.secrets."snmp-community" = {
+      sopsFile = ../../../secrets/netbox-prometheus.yaml;
+      key = "snmp";
       owner = "root";
       group = "prometheus";
       mode = "0440";
