@@ -1,4 +1,4 @@
-# Summary: Minimal SD image configuration for xts2, bootstraps with comin for full config deployment.
+# Summary: Minimal SD image configuration for xts2; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,

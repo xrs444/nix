@@ -1,4 +1,4 @@
-# Summary: Minimal SD image configuration for xlt1-t-vnixos, bootstraps with comin for full config deployment.
+# Summary: Minimal SD image configuration for xlt1-t-vnixos; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,

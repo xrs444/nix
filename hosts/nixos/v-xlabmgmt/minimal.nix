@@ -1,4 +1,4 @@
-# Summary: Minimal installer configuration for v-xlabmgmt VM, bootstraps with comin for full config deployment.
+# Summary: Minimal installer configuration for v-xlabmgmt VM; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,

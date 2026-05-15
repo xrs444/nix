@@ -1,4 +1,4 @@
-# Summary: Minimal installer configuration for xsvr3, bootstraps with comin for full config deployment.
+# Summary: Minimal installer configuration for xsvr3; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,

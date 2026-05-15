@@ -1,5 +1,4 @@
-# Summary: Network configuration for xpbx1 - Uses DHCP for initial boot
-# The full static IP configuration will be deployed by comin
+# Summary: Network configuration for xpbx1 - Uses DHCP; deployed via deploy-rs
 { ... }:
 {
   networking = {

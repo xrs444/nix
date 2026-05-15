@@ -1,4 +1,4 @@
-# Summary: Minimal SD image configuration for cmrpi1, bootstraps with comin for full config deployment.
+# Summary: Minimal SD image configuration for cmrpi1; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,
