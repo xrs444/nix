@@ -53,7 +53,10 @@
       # Fix libsecret distutils error by disabling introspection
       # NOTE: libsecret uses `type: 'boolean'` for introspection in meson.build;
       # meson 1.9.1 enforces this strictly — 'disabled' is rejected. Use false.
+      # Also remove 'devdoc' from outputs: -Dgtk_doc=false means the devdoc
+      # output is never produced, causing a "failed to produce output path" error.
       libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
+        outputs = builtins.filter (x: x != "devdoc") oldAttrs.outputs;
         mesonFlags = (oldAttrs.mesonFlags or []) ++ [
           "-Dintrospection=false"
           "-Dgtk_doc=false"
@@ -62,7 +65,9 @@
 
       # Fix gcr distutils error by disabling introspection
       # gcr also uses `type: 'boolean'` for introspection — use false, not 'disabled'.
+      # Remove 'devdoc' from outputs for the same reason as libsecret above.
       gcr = prev.gcr.overrideAttrs (oldAttrs: {
+        outputs = builtins.filter (x: x != "devdoc") oldAttrs.outputs;
         mesonFlags = (oldAttrs.mesonFlags or []) ++ [
           "-Dintrospection=false"
           "-Dgtk_doc=false"
