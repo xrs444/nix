@@ -31,7 +31,13 @@ final: prev: {
     # nativeBuildInput comes from prev (pre-overlay) and does NOT get the
     # setuptools PYTHONPATH fix applied to final.gobject-introspection in pkgs.nix.
     postPatch = (oldAttrs.postPatch or "") + ''
+      # Remove both the subproject directory AND the .wrap file so meson
+      # does not attempt to download it (sandbox blocks all network access).
+      # Previous versions had required: false; 1.86.0 changed it to required: true,
+      # so leaving the .wrap file causes: "Automatic wrap-based subproject
+      # downloading is disabled".
       rm -rf subprojects/gobject-introspection-tests
+      rm -f subprojects/gobject-introspection-tests.wrap
     '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''

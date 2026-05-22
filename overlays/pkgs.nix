@@ -11,10 +11,15 @@
     python3 = final.python3;
   }).overrideAttrs (oldAttrs: {
     postFixup = (oldAttrs.postFixup or "") + ''
-      if [ -f "$dev/bin/g-ir-scanner" ]; then
-        wrapProgram "$dev/bin/g-ir-scanner" \
+      # nixpkgs 25.11 may place g-ir-scanner in $out/bin or $dev/bin depending
+      # on how the package configures its outputs. Check both; the `break` ensures
+      # we only wrap once even if $dev == $out (no separate dev output).
+      for scanner_loc in "$out/bin/g-ir-scanner" "''${dev:+$dev/bin/g-ir-scanner}"; do
+        [ -n "$scanner_loc" ] && [ -f "$scanner_loc" ] || continue
+        wrapProgram "$scanner_loc" \
           --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
-      fi
+        break
+      done
     '';
   });
 
@@ -81,6 +86,12 @@
   # Fix nbd TLS test timeouts (tlshuge, tlswrongcert) in sandboxed builds
   # Tests require real TLS socket timing that doesn't work in the sandbox
   nbd = prev.nbd.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
+  # Fix openvswitch test failures in sandboxed builds
+  # Tests require real network interfaces / kernel modules not available in sandbox
+  openvswitch = prev.openvswitch.overrideAttrs (oldAttrs: {
     doCheck = false;
   });
 
