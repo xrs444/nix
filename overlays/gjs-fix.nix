@@ -21,15 +21,10 @@ final: prev: {
     # override+overrideAttrs chain. Append explicitly so meson sees it last
     # (meson uses the last occurrence of a duplicate -D flag).
     mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [ "-Dskip_gtk_tests=true" ];
-    # Remove the gobject-introspection-tests subproject before meson configure.
-    # The subproject is declared `required: false` in gjs's meson.build, so meson
-    # skips it cleanly when the directory is absent. Without this, the build tries
-    # to generate .gir files by running g-ir-scanner, which fails on Python 3.13
-    # with "No module named 'distutils'".
-    #
-    # Root cause: gjs-fix.nix uses prev.gjs, so gjs's gobject-introspection
-    # nativeBuildInput comes from prev (pre-overlay) and does NOT get the
-    # setuptools PYTHONPATH fix applied to final.gobject-introspection in pkgs.nix.
+    # Remove the gobject-introspection-tests subproject and patch meson.build.
+    # gjs-1.86.0 changed this subproject from required:false (older versions)
+    # to required:true, which means meson fails if neither the subproject
+    # directory nor the .wrap file is present — even after removing both.
     postPatch = (oldAttrs.postPatch or "") + ''
       # Remove both the subproject directory AND the .wrap file so meson
       # does not attempt to download it (sandbox blocks all network access).
@@ -38,6 +33,12 @@ final: prev: {
       # downloading is disabled".
       rm -rf subprojects/gobject-introspection-tests
       rm -f subprojects/gobject-introspection-tests.wrap
+      # gjs-1.86.0 changed gobject-introspection-tests from required:false to
+      # required:true in meson.build. Removing the directory+wrap is not enough;
+      # meson still errors "Neither a subproject directory nor a .wrap file was
+      # found." Patch the meson.build declaration to required:false so meson
+      # skips it cleanly when neither source nor wrap is present.
+      sed -i "/subproject('gobject-introspection-tests'/s/required: *true/required: false/" meson.build
     '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''

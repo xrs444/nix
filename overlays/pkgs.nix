@@ -1,25 +1,28 @@
 { inputs, ... }:
 (final: prev: {
   # Fix gobject-introspection distutils import error with Python 3.13+
-  # Python 3.12+ removed distutils from stdlib; Python 3.13 removed it entirely.
-  # g-ir-scanner's giscanner/utils.py does `import distutils.cygwinccompiler`.
-  # The nixpkgs wrapper for g-ir-scanner does NOT include setuptools (the distutils
-  # shim) in its PYTHONPATH, so we append it via postFixup. The `override { python3 }`
-  # call alone only changes the interpreter — it doesn't inject setuptools.
-  # https://bugs.gentoo.org/865183
-  gobject-introspection = (prev.gobject-introspection.override {
-    python3 = final.python3;
-  }).overrideAttrs (oldAttrs: {
+  # Python 3.13 removed distutils from stdlib entirely. g-ir-scanner's
+  # giscanner/utils.py does `import distutils.cygwinccompiler`. setuptools
+  # provides the distutils shim, but it must be on PYTHONPATH at runtime.
+  #
+  # Key architecture insight: `gobject-introspection` (nixpkgs) is actually
+  # `gobject-introspection-wrapped`, built by wrapper.nix. Its buildCommand
+  # does `eval fixupPhase` BEFORE `lndir`, so any postFixup on the wrapper
+  # package runs on empty directories — completely ineffective.
+  #
+  # The scanner binary lives in `gobject-introspection-unwrapped`. Fixing
+  # postFixup there ensures the scanner is wrapped before lndir symlinks it
+  # into gobject-introspection-wrapped. makeWrapper is not in the upstream
+  # nativeBuildInputs, so we add it explicitly.
+  "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.makeWrapper ];
     postFixup = (oldAttrs.postFixup or "") + ''
-      # nixpkgs 25.11 may place g-ir-scanner in $out/bin or $dev/bin depending
-      # on how the package configures its outputs. Check both; the `break` ensures
-      # we only wrap once even if $dev == $out (no separate dev output).
-      for scanner_loc in "$out/bin/g-ir-scanner" "''${dev:+$dev/bin/g-ir-scanner}"; do
-        [ -n "$scanner_loc" ] && [ -f "$scanner_loc" ] || continue
-        wrapProgram "$scanner_loc" \
+      # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
+      # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
+      if [ -f "$dev/bin/g-ir-scanner" ]; then
+        wrapProgram "$dev/bin/g-ir-scanner" \
           --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
-        break
-      done
+      fi
     '';
   });
 
@@ -92,6 +95,13 @@
   # Fix openvswitch test failures in sandboxed builds
   # Tests require real network interfaces / kernel modules not available in sandbox
   openvswitch = prev.openvswitch.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
+  # Fix swtpm test failures in sandboxed builds
+  # test_tpm2_swtpm_setup_create_cert and pkcs11-related tests require softhsm2
+  # which is not available in the nix sandbox environment
+  swtpm = prev.swtpm.overrideAttrs (oldAttrs: {
     doCheck = false;
   });
 
