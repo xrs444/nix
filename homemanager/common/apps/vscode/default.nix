@@ -263,7 +263,7 @@ in
           vscode-marketplace.davidanson.vscode-markdownlint
           vscode-marketplace.dhoeric.ansible-vault
           vscode-marketplace.docker.docker
-          vscode-marketplace.eamodio.gitlens
+          vscode-marketplace-release.eamodio.gitlens
           vscode-marketplace.esbenp.prettier-vscode
           vscode-marketplace.formulahendry.code-runner
           vscode-marketplace.foxundermoon.shell-format
