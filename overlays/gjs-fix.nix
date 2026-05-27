@@ -33,12 +33,12 @@ final: prev: {
       # downloading is disabled".
       rm -rf subprojects/gobject-introspection-tests
       rm -f subprojects/gobject-introspection-tests.wrap
-      # gjs-1.86.0 changed gobject-introspection-tests from required:false to
-      # required:true in meson.build. Removing the directory+wrap is not enough;
-      # meson still errors "Neither a subproject directory nor a .wrap file was
-      # found." Patch the meson.build declaration to required:false so meson
+      # gjs-1.86.0 meson.build declares gobject-introspection-tests with NO
+      # required: keyword (defaults to required: true). Removing the directory
+      # and .wrap is not enough; meson still errors "Neither a subproject
+      # directory nor a .wrap file was found." Insert required: false, so meson
       # skips it cleanly when neither source nor wrap is present.
-      sed -i "/subproject('gobject-introspection-tests'/s/required: *true/required: false/" meson.build
+      sed -i "s/subproject('gobject-introspection-tests',/subproject('gobject-introspection-tests', required: false,/" meson.build
     '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''

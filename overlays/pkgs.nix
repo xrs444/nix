@@ -12,16 +12,30 @@
   #
   # The scanner binary lives in `gobject-introspection-unwrapped`. Fixing
   # postFixup there ensures the scanner is wrapped before lndir symlinks it
-  # into gobject-introspection-wrapped. makeWrapper is not in the upstream
-  # nativeBuildInputs, so we add it explicitly.
+  # into gobject-introspection-wrapped.
+  #
+  # We write the wrapper manually (no makeWrapper/wrapProgram) to avoid adding
+  # to nativeBuildInputs, which caused meson configure to fail with
+  # "python3 is missing modules: setuptools" during the gobject-introspection
+  # build itself. postFixup runs after install and does not affect meson.
+  #
+  # Nix string escaping note: in '' strings, \${...} is NOT a Nix escape —
+  # only ''${...} produces a literal ${...}. printf is used instead of echo so
+  # that ${PYTHONPATH} is not expanded by bash at postFixup time.
   "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
-    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.makeWrapper ];
     postFixup = (oldAttrs.postFixup or "") + ''
       # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
       # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
       if [ -f "$dev/bin/g-ir-scanner" ]; then
-        wrapProgram "$dev/bin/g-ir-scanner" \
-          --prefix PYTHONPATH : "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}"
+        mv "$dev/bin/g-ir-scanner" "$dev/bin/.g-ir-scanner-wrapped"
+        printf '#!/bin/sh\n' > "$dev/bin/g-ir-scanner"
+        printf 'export PYTHONPATH=%s''${PYTHONPATH:+:}''${PYTHONPATH}\n' \
+          "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}" \
+          >> "$dev/bin/g-ir-scanner"
+        printf 'exec %s "$@"\n' \
+          "$dev/bin/.g-ir-scanner-wrapped" \
+          >> "$dev/bin/g-ir-scanner"
+        chmod +x "$dev/bin/g-ir-scanner"
       fi
     '';
   });
