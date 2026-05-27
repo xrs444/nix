@@ -10,7 +10,7 @@
     ./bind
     ./borgbackup
     ./determinate-nix
-    ./ffr
+    ./bird-bgp
     ./flakehub-auth
     ./github-runner
     ./iprouting

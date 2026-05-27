@@ -112,7 +112,7 @@ else
             track_script {
               check_tailscale_subnet
             }
-            notify_master "/run/current-system/systemd/bin/systemctl restart frr"
+            notify_master "/run/current-system/systemd/bin/systemctl restart bird"
           '';
         };
         network-gateway = {
@@ -135,7 +135,7 @@ else
             track_script {
               check_tailscale_subnet
             }
-            notify_master "/etc/setup-vip-routing.sh && /run/current-system/systemd/bin/systemctl restart frr"
+            notify_master "/etc/setup-vip-routing.sh && /run/current-system/systemd/bin/systemctl restart bird"
           '';
         };
         kanidm-idm = {

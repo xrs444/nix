@@ -295,7 +295,7 @@
         kanidm = import ./modules/services/kanidm;
         Samba = import ./modules/services/Samba;
         bind = import ./modules/services/bind;
-        ffr = import ./modules/services/ffr;
+        bird-bgp = import ./modules/services/bird-bgp;
         iprouting = import ./modules/services/iprouting;
         keepalived = import ./modules/services/keepalived;
         kvm = import ./modules/services/kvm;

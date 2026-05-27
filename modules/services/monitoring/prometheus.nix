@@ -30,10 +30,17 @@ let
     "172.20.1.20" # xsvr2
   ];
 
-  # Hosts with bird BGP
-  birdHosts = [
+  # Hosts with bird BGP — Tailscale exit nodes
+  birdExitHosts = [
     "172.18.10.1" # xts1
     "172.18.10.2" # xts2
+  ];
+
+  # Hosts with bird BGP — K8s gateway nodes (xsvr)
+  birdGatewayHosts = [
+    "172.20.1.10" # xsvr1
+    "172.20.1.20" # xsvr2
+    "172.20.1.30" # xsvr3
   ];
 
   # Hosts with libvirt
@@ -62,7 +69,8 @@ let
   zfsTargets = map (host: "${host}:9134") zfsHosts;
 
   # Generate scrape targets for bird_exporter
-  birdTargets = map (host: "${host}:9324") birdHosts;
+  birdExitTargets = map (host: "${host}:9324") birdExitHosts;
+  birdGatewayTargets = map (host: "${host}:9324") birdGatewayHosts;
 
   # Generate scrape targets for libvirt_exporter
   libvirtTargets = map (host: "${host}:9177") libvirtHosts;
@@ -364,12 +372,17 @@ in
           ];
         }
 
-        # Bird BGP exporter - Tailscale exit nodes
+        # Bird BGP exporter - all nodes (Tailscale exit + K8s gateway)
         {
           job_name = "bird";
           static_configs = [
             {
-              targets = birdTargets;
+              targets = birdExitTargets;
+              labels = { role = "tailscale-exit"; };
+            }
+            {
+              targets = birdGatewayTargets;
+              labels = { role = "k8s-gateway"; };
             }
           ];
         }
@@ -1188,7 +1201,7 @@ in
                 }
                 {
                   alert = "TailscaleExitNodeBothDown";
-                  expr = "count(up{job=\"bird\"} == 0) == 2";
+                  expr = "count(up{job=\"bird\",role=\"tailscale-exit\"} == 0) == 2";
                   for = "3m";
                   labels = {
                     severity = "critical";
@@ -1196,6 +1209,18 @@ in
                   annotations = {
                     summary = "Both Tailscale exit nodes are down";
                     description = "Both xts1 and xts2 are unreachable. Tailscale exit node service is unavailable.";
+                  };
+                }
+                {
+                  alert = "K8sGatewayBGPAllDown";
+                  expr = "count(up{job=\"bird\",role=\"k8s-gateway\"} == 0) == 3";
+                  for = "3m";
+                  labels = {
+                    severity = "critical";
+                  };
+                  annotations = {
+                    summary = "All K8s gateway BGP nodes are down";
+                    description = "Bird exporter is unreachable on all three xsvr nodes. K8s LoadBalancer service reachability may be impaired.";
                   };
                 }
                 {
