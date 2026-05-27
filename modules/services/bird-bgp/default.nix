@@ -50,12 +50,6 @@ else
           scan time 10;
         }
 
-        # Expose bridge22 (Kubernetes VLAN) so Bird can resolve BGP next-hops
-        protocol direct {
-          ipv4;
-          interface "bridge22";
-        }
-
         protocol kernel {
           ipv4 {
             export all;
@@ -67,7 +61,6 @@ else
         template bgp cilium_template {
           local ${vipAddress} as ${toString localASN};
           passive;
-          multihop 4;
           hold time 9;
           keepalive time 3;
           connect retry time 15;
