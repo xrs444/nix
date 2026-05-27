@@ -50,6 +50,12 @@ else
           scan time 10;
         }
 
+        # Expose bridge22 (Kubernetes VLAN) so Bird can resolve BGP next-hops
+        protocol direct {
+          ipv4;
+          interface "bridge22";
+        }
+
         protocol kernel {
           ipv4 {
             export all;
