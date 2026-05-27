@@ -20,7 +20,13 @@ final: prev: {
     # skip_gtk_tests, but that self-reference doesn't propagate through the
     # override+overrideAttrs chain. Append explicitly so meson sees it last
     # (meson uses the last occurrence of a duplicate -D flag).
-    mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [ "-Dskip_gtk_tests=true" ];
+    mesonFlags = (oldAttrs.mesonFlags or [ ]) ++ [
+      "-Dskip_gtk_tests=true"
+      # Disable installed tests so installed-tests/js/meson.build is never
+      # processed. That file calls gi_tests.get_variable() which fails when
+      # the gobject-introspection-tests subproject is disabled (required:false).
+      "-Dinstalled_tests=false"
+    ];
     # Remove the gobject-introspection-tests subproject and patch meson.build.
     # gjs-1.86.0 changed this subproject from required:false (older versions)
     # to required:true, which means meson fails if neither the subproject

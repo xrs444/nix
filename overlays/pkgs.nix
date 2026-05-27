@@ -23,6 +23,12 @@
   # only ''${...} produces a literal ${...}. printf is used instead of echo so
   # that ${PYTHONPATH} is not expanded by bash at postFixup time.
   "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
+    # gobject-introspection's meson.build:29 calls
+    # find_installation('python3', modules: ['setuptools']). Our python3
+    # overlay changes the python3 hash, causing a fresh rebuild. The fresh
+    # build environment doesn't have setuptools accessible to python3 (the
+    # nixpkgs 25.11 package doesn't add it). Add it explicitly.
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
     postFixup = (oldAttrs.postFixup or "") + ''
       # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
       # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
