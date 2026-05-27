@@ -104,6 +104,10 @@ else
       mode = "0755";
     };
 
+    # Ensure Bird starts after keepalived has assigned the VIP (172.20.3.200)
+    systemd.services.bird.after = [ "keepalived.service" ];
+    systemd.services.bird.wants = [ "keepalived.service" ];
+
     networking.firewall = {
       allowedTCPPorts = [ 179 ]; # BGP port
     };
