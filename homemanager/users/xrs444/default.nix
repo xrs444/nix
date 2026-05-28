@@ -132,6 +132,36 @@
       "WebFetch"
       "WebSearch"
     ];
+    mcpServers = {
+      homeassistant = {
+        command = "/Users/xrs444/.claude/scripts/run-ha-mcp.sh";
+        args = [];
+      };
+      firewalla = {
+        command = "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh";
+        args = [];
+      };
+      arr = {
+        command = "/Users/xrs444/.claude/scripts/run-arr-mcp.sh";
+        args = [];
+      };
+      jellyfin = {
+        command = "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh";
+        args = [];
+      };
+      omada = {
+        command = "docker";
+        args = [
+          "run" "-i" "--rm"
+          "-e" "OMADA_BASE_URL=https://omada.xrs444.net"
+          "-e" "OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99"
+          "-e" "OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f"
+          "-e" "OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f"
+          "-e" "OMADA_STRICT_SSL=false"
+          "jmtvms/tplink-omada-mcp:latest"
+        ];
+      };
+    };
   };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
@@ -168,6 +198,7 @@
       docker rm -f mcp-firewalla 2>/dev/null || true
       exec docker run --rm -i --name "mcp-firewalla" \
         -e FIREWALLA_MSP_ID=dn-j3almw \
+        -e FIREWALLA_MSP_URL=https://dn-j3almw.firewalla.net \
         -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
         amittell/firewalla-mcp-server:latest
     '';
