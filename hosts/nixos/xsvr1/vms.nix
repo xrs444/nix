@@ -213,15 +213,17 @@ let
 
                 # Wait up to 60 seconds for graceful shutdown
                 for i in {1..60}; do
-                  if ! virsh domstate "${vm.name}" | grep -q "running"; then
+                  state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+                  if [ "$state" = "shut off" ] || [ "$state" = "undefined" ]; then
                     echo "VM ${vm.name} shut down gracefully"
                     break
                   fi
                   sleep 1
                 done
 
-                # Force destroy if still running
-                if virsh domstate "${vm.name}" | grep -q "running"; then
+                # Force destroy if not fully stopped
+                state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+                if [ "$state" != "shut off" ] && [ "$state" != "undefined" ]; then
                   echo "VM ${vm.name} did not shut down gracefully, forcing destruction..."
                   virsh destroy "${vm.name}" || true
                   sleep 2
