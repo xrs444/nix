@@ -71,7 +71,6 @@ in
       meld
       nil
       nixfmt-rfc-style
-      prettier
       nodejs_24
       python3
       uv

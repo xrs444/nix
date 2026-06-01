@@ -58,16 +58,6 @@ jobs:
             echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
           fi
 
-      - name: Show post-build hook debug log
-        if: always()
-        run: |
-          if [[ -f /tmp/nix-hook-debug.log ]]; then
-            echo "=== nix-post-build-hook debug log ==="
-            cat /tmp/nix-hook-debug.log
-          else
-            echo "No hook debug log found — hook was never invoked or log path not writable"
-          fi
-
       - name: Cache deploy-rs binary
         run: |
           # deploy-rs pushes its own binary (deploy-rs-0.1.0) and activate-rs to each

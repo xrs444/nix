@@ -63,6 +63,14 @@
         doCheck = false;
         doInstallCheck = false;
       });
+      # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
+      # network access unavailable in the nix sandbox. Strip it from yt-dlp's
+      # dependencies so it is never built.
+      yt-dlp = pprev.yt-dlp.overrideAttrs (old: {
+        propagatedBuildInputs = builtins.filter
+          (x: (x.pname or "") != "yt-dlp-ejs")
+          (old.propagatedBuildInputs or [ ]);
+      });
     };
   };
   python3Packages = final.python3.pkgs;

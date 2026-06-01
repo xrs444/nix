@@ -1,6 +1,7 @@
 # Summary: Home Manager configuration for user 'xrs444', setting up shell, git, and common development tools for Darwin and Linux systems.
 {
   pkgs,
+  lib,
   stateVersion,
   username,
   ...
@@ -126,43 +127,48 @@
   ];
 
   # Claude Code CLI settings
-  home.file.".claude/settings.json".text = builtins.toJSON {
-    model = "opusplan";
-    permissions.allow = [
-      "WebFetch"
-      "WebSearch"
-    ];
-    mcpServers = {
-      homeassistant = {
-        command = "/Users/xrs444/.claude/scripts/run-ha-mcp.sh";
-        args = [];
-      };
-      firewalla = {
-        command = "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh";
-        args = [];
-      };
-      arr = {
-        command = "/Users/xrs444/.claude/scripts/run-arr-mcp.sh";
-        args = [];
-      };
-      jellyfin = {
-        command = "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh";
-        args = [];
-      };
-      omada = {
-        command = "docker";
-        args = [
-          "run" "-i" "--rm"
-          "-e" "OMADA_BASE_URL=https://omada.xrs444.net"
-          "-e" "OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99"
-          "-e" "OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f"
-          "-e" "OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f"
-          "-e" "OMADA_STRICT_SSL=false"
-          "jmtvms/tplink-omada-mcp:latest"
-        ];
+  # PATH must be explicit — VSCode's extension host launches with a bare PATH
+  # that excludes /usr/local/bin (docker/OrbStack) and nix profile paths (sops).
+  home.file.".claude/settings.json".text =
+    let
+      mcpPath = "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+    in
+    builtins.toJSON {
+      model = "opusplan";
+      permissions.allow = [
+        "WebFetch"
+        "WebSearch"
+      ];
+      mcpServers = {
+        homeassistant = {
+          command = "/Users/xrs444/.claude/scripts/run-ha-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        firewalla = {
+          command = "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        arr = {
+          command = "/Users/xrs444/.claude/scripts/run-arr-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        omada = {
+          command = "/usr/local/bin/docker";
+          args = [
+            "run" "-i" "--rm"
+            "-e" "OMADA_BASE_URL=https://omada.xrs444.net"
+            "-e" "OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99"
+            "-e" "OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f"
+            "-e" "OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f"
+            "-e" "OMADA_STRICT_SSL=false"
+            "jmtvms/tplink-omada-mcp:latest"
+          ];
+        };
       };
     };
-  };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
   home.file.".claude/.sops.yaml".text = ''
@@ -227,6 +233,9 @@
     '';
   };
 
+  # NOTE: knucklessg1/jellyfin-mcp was removed from Docker Hub and januszadlo/jellyfin-mcp
+  # only supports HTTP transport (not stdio). Jellyfin MCP is disabled until a working
+  # stdio-compatible image is found. Script kept as reference.
   home.file.".claude/scripts/run-jellyfin-mcp.sh" = {
     executable = true;
     text = ''
@@ -239,7 +248,7 @@
         -e TRANSPORT=stdio \
         -e JELLYFIN_BASE_URL="https://jellyfin.xrs444.net" \
         -e JELLYFIN_TOKEN="$JF_TOKEN" \
-        knucklessg1/jellyfin-mcp:latest
+        januszadlo/jellyfin-mcp:latest
     '';
   };
 
@@ -272,5 +281,28 @@
     # to use up-to-date marketplace versions; catppuccin module adds older pins
     vscode.profiles.default.enable = false;
   };
+
+  # VSCode reads .extensions-immutable.json using a single readlink() call, not realpath().
+  # home-manager creates two-level symlinks (ext → home-manager-files → nix-store), so the
+  # single readlink doesn't match the fsPath in immutable.json. VSCode then skips the
+  # immutable protection and marks every nix-managed extension as obsolete at startup,
+  # preventing them from loading. This activation script collapses each symlink to a direct
+  # pointer so readlink() and realpath() agree.
+  home.activation.fixVscodeExtensionSymlinks = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    ext_dir="$HOME/.vscode/extensions"
+    if [ -d "$ext_dir" ]; then
+      for link in "$ext_dir"/*/; do
+        link="''${link%/}"
+        if [ -L "$link" ]; then
+          real=$(${pkgs.coreutils}/bin/realpath "$link" 2>/dev/null) || continue
+          current=$(readlink "$link")
+          if [ "$real" != "$current" ]; then
+            ln -sfn "$real" "$link"
+          fi
+        fi
+      done
+      rm -f "$ext_dir/.obsolete"
+    fi
+  '';
 
 }
