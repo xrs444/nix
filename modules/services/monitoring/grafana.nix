@@ -6,7 +6,7 @@
   ...
 }:
 let
-  isMonitoringServer = lib.elem "monitoring-server" hostRoles;
+  isGrafanaServer = lib.elem "grafana-server" hostRoles;
 
   # All dashboard JSON files in ./dashboards/
   allDashboards = lib.filesystem.listFilesRecursive ./dashboards;
@@ -106,7 +106,7 @@ let
     '';
 in
 {
-  config = lib.mkIf isMonitoringServer {
+  config = lib.mkIf isGrafanaServer {
     services.grafana = {
       enable = true;
 
