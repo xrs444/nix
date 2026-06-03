@@ -186,6 +186,7 @@
         -e OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99 \
         -e OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f \
         -e OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f \
+        -e OMADA_SITE_ID=697265cd09f80c5efb95b309 \
         -e OMADA_STRICT_SSL=false \
         jmtvms/tplink-omada-mcp:latest
     '';
@@ -218,8 +219,7 @@
       FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-firewalla 2>/dev/null || true
       exec docker run --rm -i --name "mcp-firewalla" \
-        -e FIREWALLA_MSP_ID=dn-j3almw \
-        -e FIREWALLA_MSP_URL=https://dn-j3almw.firewalla.net \
+        -e FIREWALLA_MSP_ID=dn-j3almw.firewalla.net \
         -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
         amittell/firewalla-mcp-server:latest
     '';
@@ -248,9 +248,6 @@
     '';
   };
 
-  # NOTE: knucklessg1/jellyfin-mcp was removed from Docker Hub and januszadlo/jellyfin-mcp
-  # only supports HTTP transport (not stdio). Jellyfin MCP is disabled until a working
-  # stdio-compatible image is found. Script kept as reference.
   home.file.".claude/scripts/run-jellyfin-mcp.sh" = {
     executable = true;
     text = ''
@@ -260,10 +257,11 @@
       JF_TOKEN=$(echo "$SECRETS" | awk '/^jellyfin:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-jellyfin 2>/dev/null || true
       exec docker run --rm -i --name "mcp-jellyfin" \
-        -e TRANSPORT=stdio \
-        -e JELLYFIN_BASE_URL="https://jellyfin.xrs444.net" \
-        -e JELLYFIN_TOKEN="$JF_TOKEN" \
-        januszadlo/jellyfin-mcp:latest
+        -v mcp-jellyfin-npm-cache:/root/.npm \
+        -e JELLYFIN_URL="https://jellyfin.xrs444.net" \
+        -e JELLYFIN_API_KEY="$JF_TOKEN" \
+        node:20-alpine \
+        npx --yes jellyfin-mcp
     '';
   };
 

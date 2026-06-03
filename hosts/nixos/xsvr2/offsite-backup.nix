@@ -23,7 +23,7 @@ let
   #   1. Adding restic_offsite_password + restic_offsite_ssh_key to nix/secrets/secrets.yaml
   #   2. Setting up Synology SSH user and authorized_keys
   #   3. Updating synologyHost below
-  enabled = false;
+  enabled = true;
 
   # Update this to the Synology's actual hostname or IP
   synologyHost = "cmrnas.xrs444.net";
