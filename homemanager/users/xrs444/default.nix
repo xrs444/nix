@@ -156,16 +156,9 @@
           env = { PATH = mcpPath; };
         };
         omada = {
-          command = "/usr/local/bin/docker";
-          args = [
-            "run" "-i" "--rm"
-            "-e" "OMADA_BASE_URL=https://omada.xrs444.net"
-            "-e" "OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99"
-            "-e" "OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f"
-            "-e" "OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f"
-            "-e" "OMADA_STRICT_SSL=false"
-            "jmtvms/tplink-omada-mcp:latest"
-          ];
+          command = "/Users/xrs444/.claude/scripts/run-omada-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
         };
       };
     };
@@ -178,6 +171,22 @@
   '';
 
   # MCP server wrapper scripts — decrypt SOPS credentials and launch containers
+  home.file.".claude/scripts/run-omada-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      docker rm -f mcp-omada 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-omada" \
+        -e OMADA_BASE_URL=https://omada.xrs444.net \
+        -e OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99 \
+        -e OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f \
+        -e OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f \
+        -e OMADA_STRICT_SSL=false \
+        jmtvms/tplink-omada-mcp:latest
+    '';
+  };
+
   home.file.".claude/scripts/run-ha-mcp.sh" = {
     executable = true;
     text = ''
