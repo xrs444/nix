@@ -20,6 +20,14 @@
 #    "disabled can't get_variable on it". Fix: inject a subdir_done() guard
 #    at the top of installed-tests/js/meson.build so meson exits immediately
 #    when gi_tests is absent.
+#
+# 4. test/meson.build:45 unknown variable "libgjstesttools_dep": with
+#    skip_gtk_tests=true the library that defines libgjstesttools_dep is
+#    never built, but line 45 still references it unconditionally → meson
+#    "Unknown variable" error. Fix: inject libgjstesttools_dep = disabler()
+#    at the top of test/meson.build when skip_gtk_tests is set; disabler()
+#    propagates through meson and silently skips any target that depends on
+#    it without erroring.
 { inputs }:
 final: prev: {
   gjs = (prev.gjs.override { installTests = false; }).overrideAttrs (oldAttrs: {
@@ -61,6 +69,15 @@ final: prev: {
       # absent, without needing to parse the rest of the file.
       if [ -f installed-tests/js/meson.build ]; then
         sed -i "1s|^|if not gi_tests.found()\n  subdir_done()\nendif\n|" installed-tests/js/meson.build
+      fi
+      # test/meson.build:45 references libgjstesttools_dep which is only
+      # defined when the testtools library is actually built (i.e. when GTK
+      # tests run). With skip_gtk_tests=true the definition is skipped but
+      # the reference remains, causing "Unknown variable". Inject a
+      # disabler() placeholder so meson silently skips all targets that
+      # depend on it rather than erroring.
+      if [ -f test/meson.build ]; then
+        sed -i "1s|^|if get_option('skip_gtk_tests')\n  libgjstesttools_dep = disabler()\nendif\n|" test/meson.build
       fi
     '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
