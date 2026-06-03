@@ -159,6 +159,11 @@
           args = [];
           env = { PATH = mcpPath; };
         };
+        jellyfin = {
+          command = "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
       };
     };
 
@@ -196,9 +201,11 @@
       HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-homeassistant 2>/dev/null || true
       exec docker run --rm -i --name "mcp-homeassistant" \
-        -e HOMEASSISTANT_URL="$HA_URL" \
-        -e HOMEASSISTANT_TOKEN="$HA_TOKEN" \
-        ghcr.io/homeassistant-ai/ha-mcp:stable
+        -v mcp-ha-npm-cache:/root/.npm \
+        -e HOME_ASSISTANT_URL="$HA_URL" \
+        -e HOME_ASSISTANT_TOKEN="$HA_TOKEN" \
+        node:20-alpine \
+        npx --yes home-assistant-mcp
     '';
   };
 
