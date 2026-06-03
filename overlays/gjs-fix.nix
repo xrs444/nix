@@ -1,17 +1,25 @@
 # overlays/gjs-fix.nix
-# Workaround for gjs build failures on CI/remote builders.
+# Workaround for gjs-1.86.0 build failures on CI/remote builders.
 #
-# The upstream gjs-1.86.0 postFixup calls wrapProgram on
-# $installedTests/libexec/installed-tests/gjs/minijasmine, but the meson
-# build installs that file without the executable bit, causing:
-#   "Cannot wrap ... because it is not an executable file"
+# Three layered problems in gjs-1.86.0:
 #
-# Root cause: `installTests` is a *function parameter* (default true) in the
-# upstream package.nix, not a derivation attribute. overrideAttrs cannot
-# change it, so the wrapProgram call was always present regardless of what
-# we put in postFixup/preFixup. The fix is to use .override to set
-# installTests=false, which makes lib.optionalString produce "" and removes
-# the wrapProgram call entirely.
+# 1. wrapProgram failure: postFixup calls wrapProgram on
+#    $installedTests/libexec/installed-tests/gjs/minijasmine which is not
+#    executable. Fix: .override { installTests = false; } removes the
+#    wrapProgram call entirely (it's gated by lib.optionalString installTests).
+#
+# 2. gobject-introspection-tests subproject: 1.86.0 changed the required:
+#    keyword from false → implicit true. Removing the subproject dir/wrap is
+#    not enough — meson still errors "Neither a subproject directory nor a
+#    .wrap file was found." Fix: patch meson.build to insert required: false.
+#
+# 3. installed-tests/js/meson.build:78 get_variable failure: even with
+#    -Dinstalled_tests=false, meson still *configures* installed-tests/js/
+#    (the flag only controls installation, not configure-time processing).
+#    Line 78 calls gi_tests.get_variable() on the now-disabled subproject →
+#    "disabled can't get_variable on it". Fix: inject a subdir_done() guard
+#    at the top of installed-tests/js/meson.build so meson exits immediately
+#    when gi_tests is absent.
 { inputs }:
 final: prev: {
   gjs = (prev.gjs.override { installTests = false; }).overrideAttrs (oldAttrs: {
@@ -45,6 +53,15 @@ final: prev: {
       # directory nor a .wrap file was found." Insert required: false, so meson
       # skips it cleanly when neither source nor wrap is present.
       sed -i "s/subproject('gobject-introspection-tests',/subproject('gobject-introspection-tests', required: false,/" meson.build
+      # Even with -Dinstalled_tests=false, meson still processes
+      # installed-tests/js/meson.build during configure and hits a
+      # gi_tests.get_variable() call (line 78) on the now-disabled subproject,
+      # producing "disabled can't get_variable on it". Add a subdir_done() guard
+      # at the top of the file so meson exits it immediately when gi_tests is
+      # absent, without needing to parse the rest of the file.
+      if [ -f installed-tests/js/meson.build ]; then
+        sed -i "1s|^|if not gi_tests.found()\n  subdir_done()\nendif\n|" installed-tests/js/meson.build
+      fi
     '';
     # Make the glib-2.0 mv conditional in case it is absent when doCheck=false.
     postInstall = ''
