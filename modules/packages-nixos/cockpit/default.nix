@@ -15,11 +15,8 @@ in
   config = lib.mkIf hasRole {
     services.cockpit = {
       enable = true;
-      port = 9091; # Changed from default 9090 to avoid conflict with Prometheus
+      port = 9092; # 9090=prometheus, 9091=pushgateway
       openFirewall = true;
     };
-
-    # Update firewall to use new port
-    networking.firewall.allowedTCPPorts = [ 9091 ];
   };
 }

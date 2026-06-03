@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ ... }:
 {
 
   systemd.network = {
@@ -43,6 +43,13 @@
           Name = "bond0.22";
         };
         vlanConfig.Id = 22;
+      };
+      "22-bond0.10" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "bond0.10";
+        };
+        vlanConfig.Id = 10;
       };
       "25-bridge21" = {
         netdevConfig = {
@@ -104,8 +111,11 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
+        address = [ "172.20.1.20/24" ];
+        gateway = [ "172.20.1.250" ];
+        dns = [ "172.20.1.250" ];
         networkConfig = {
-          DHCP = "yes";
+          DHCP = "no";
           IPv6AcceptRA = true;
         };
         vlan = [
@@ -113,6 +123,7 @@
           "bond0.16"
           "bond0.17"
           "bond0.22"
+          "bond0.10"
         ];
       };
       "55-bond0.21" = {
@@ -150,6 +161,15 @@
         matchConfig.Name = "bond0.16";
         networkConfig = {
           Bridge = "bridge16";
+          LinkLocalAddressing = "no";
+        };
+        linkConfig = {
+          RequiredForOnline = "carrier";
+        };
+      };
+      "68-bond0.10" = {
+        matchConfig.Name = "bond0.10";
+        networkConfig = {
           LinkLocalAddressing = "no";
         };
         linkConfig = {

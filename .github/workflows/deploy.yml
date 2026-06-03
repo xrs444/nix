@@ -1,0 +1,175 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PUSHGATEWAY: http://localhost:9091
+  APPRISE_URL: https://apprise.xrs444.net/notify/apprise
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    name: Build, Cache, and Deploy All Hosts
+    runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 480
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare post-build cache hook
+        run: |
+          echo "=== Signing diagnostics ==="
+          echo "Running as: $(id)"
+          echo "Key permissions: $(ls -la /run/secrets/nixcache_signing_key 2>&1 || echo 'KEY NOT FOUND')"
+          echo "==========================="
+          chmod +x .github/scripts/nix-post-build-hook.sh
+
+      - name: Build and cache all hosts
+        run: |
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          FAILED=()
+
+          for host in "${HOSTS[@]}"; do
+            echo "Building $host..."
+            if ! nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
+              --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh"; then
+              FAILED+=("$host")
+              echo "$host: BUILD FAILED"
+              continue
+            fi
+            echo "$host: BUILD OK"
+
+            # For remote hosts, also build and cache the deploy-rs activatable path.
+            # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
+            # toplevel. Evaluate via the same flake attribute deploy-rs uses so the
+            # signed hash matches exactly what gets pushed to the remote.
+            if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
+              nix build --no-link \
+                --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+                ".#deploy.nodes.$host.profiles.system.path" 2>/dev/null || true
+            fi
+          done
+
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            echo "BUILD_FAILED_HOSTS=${FAILED[*]}" >> "$GITHUB_ENV"
+            echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
+          fi
+
+      - name: Cache deploy-rs binary
+        run: |
+          # deploy-rs pushes its own binary (deploy-rs-0.1.0) and activate-rs to each
+          # remote host so it can invoke activate-rs for the system switch. These paths
+          # are not part of any NixOS system closure, so the per-host build loop above
+          # never covers them. Without a signed narinfo in the file cache, the remote
+          # daemon rejects them (require-sigs=true, no trusted-user bypass in modern Nix).
+          nix build --no-link \
+            --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+            "deploy-rs#deploy-rs" 2>/dev/null \
+            && echo "deploy-rs binary signed and cached" \
+            || echo "WARNING: could not build deploy-rs binary — deploy may fail"
+
+      - name: Deploy remote hosts
+        run: |
+          REVISION=$(git rev-parse HEAD)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
+          DEPLOY_FAILED=()
+
+          for host in "${REMOTE_HOSTS[@]}"; do
+            if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
+              echo "$host: skipping deploy (build failed)"
+              continue
+            fi
+
+            # Hostname pre-flight: SSH to the target and verify it reports the expected
+            # hostname before deploying. Guards against two failure modes:
+            #   1. Host is offline (SSH times out → skip safely)
+            #   2. DNS resolves to the wrong machine (e.g. stale cache pointing xcomm1.lan
+            #      at xsvr1) — the wrong machine would return a different hostname, causing
+            #      deploy-rs to activate the wrong config on xsvr1 and kill the CI runner.
+            REMOTE_HOSTNAME=$(ssh \
+              -4 \
+              -i /run/secrets/deploy_private_key \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=10 \
+              -o BatchMode=yes \
+              deploy@${host}.lan \
+              "hostname" 2>/dev/null || echo "UNREACHABLE")
+
+            if [[ "$REMOTE_HOSTNAME" != "$host" ]]; then
+              echo "$host: SKIPPED — hostname verification failed (got '${REMOTE_HOSTNAME}', expected '${host}')"
+              DEPLOY_FAILED+=("$host")
+              continue
+            fi
+
+            echo "Deploying $host..."
+            START=$(date +%s)
+            if nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
+              DURATION=$(( $(date +%s) - START ))
+              printf 'deploy_last_success_timestamp_seconds{host="%s"} %s\ndeploy_duration_seconds{host="%s"} %s\ndeploy_git_revision_info{host="%s",revision="%s"} 1\ndeploy_total{host="%s",result="success"} 1\n' \
+                "$host" "$(date +%s)" \
+                "$host" "$DURATION" \
+                "$host" "$REVISION" \
+                "$host" \
+                | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
+              echo "$host: DEPLOY OK (${DURATION}s)"
+            else
+              DEPLOY_FAILED+=("$host")
+              printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
+                | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
+              echo "$host: DEPLOY FAILED"
+            fi
+          done
+
+          ALL_FAILED=("${FAILED_HOSTS[@]}" "${DEPLOY_FAILED[@]}")
+          if [ ${#ALL_FAILED[@]} -gt 0 ]; then
+            echo "DEPLOY_FAILED_HOSTS=${DEPLOY_FAILED[*]}" >> "$GITHUB_ENV"
+            curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${FAILED_HOSTS[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
+          fi
+
+      - name: Deploy xsvr1 (self)
+        run: |
+          read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
+          if [[ " ${FAILED_HOSTS[*]} " == *" xsvr1 "* ]]; then
+            echo "xsvr1: skipping deploy (build failed)"
+            exit 0
+          fi
+          echo "Deploying xsvr1 (self)..."
+          # Create permit token. nixos-rebuild-ci.path watches for this file and
+          # triggers nixos-rebuild-ci.service automatically — no systemctl call needed.
+          # The builder user cannot call systemctl from inside the sandbox-hardened
+          # runner service (D-Bus is inaccessible). Path-unit activation runs entirely
+          # within systemd as root, bypassing the restriction.
+          #
+          # NOTE: nixos-rebuild will restart the github-runner service as part of
+          # activation, killing this CI job. That is expected — the deploy succeeds
+          # even though CI reports failure for this step. The runner comes back up
+          # and picks up the next job with the new config applied.
+          touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
+          echo "xsvr1: deploy triggered (path unit will fire nixos-rebuild asynchronously)"
+
+      - name: Report final status
+        if: always()
+        run: |
+          REVISION=$(git rev-parse --short HEAD)
+          read -ra BUILD_FAILED <<< "${BUILD_FAILED_HOSTS:-}"
+          read -ra DEPLOY_FAILED <<< "${DEPLOY_FAILED_HOSTS:-}"
+          ALL_FAILED=("${BUILD_FAILED[@]}" "${DEPLOY_FAILED[@]}")
+
+          if [ ${#ALL_FAILED[@]} -eq 0 ]; then
+            curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)\",\"type\":\"success\",\"tag\":\"critical-infra\"}" || true
+          else
+            curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${BUILD_FAILED[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none} ($REVISION) — $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
+            exit 1
+          fi

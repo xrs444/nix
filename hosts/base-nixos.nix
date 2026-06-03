@@ -3,15 +3,21 @@
 {
   inputs,
   stateVersion ? "25.05",
+  hostRoles ? [ ],
+  generateManCache ? false,
   ...
 }:
 {
+  # Make hostRoles available to all imported modules
+  _module.args = {
+    inherit hostRoles;
+  };
+
   imports = [
     inputs.home-manager.nixosModules.home-manager
     inputs.agenix.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     inputs.disko.nixosModules.disko
-    inputs.comin.nixosModules.comin
     ../modules/users/default.nix
     ../modules/packages-nixos/default.nix
     ../modules/services/default.nix
@@ -22,6 +28,7 @@
     "nix-command"
     "flakes"
   ];
+  nix.settings.download-buffer-size = 134217728; # 128 MiB
 
   # Automated garbage collection (NixOS only)
   nix.gc = {
@@ -30,9 +37,14 @@
     options = "--delete-older-than 30d";
   };
 
+  # Automatically hard-link identical files in the store after each build
+  nix.settings.auto-optimise-store = true;
+
   # Configure sops-nix to use the age key file
   sops.age.keyFile = "/etc/ssh/sops-age-key.txt";
 
   system.stateVersion = stateVersion;
   nixpkgs.config.allowUnfree = true;
+
+  documentation.man.generateCaches = generateManCache;
 }

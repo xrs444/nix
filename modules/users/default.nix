@@ -9,9 +9,9 @@
   imports = [
     ./thomas-local.nix
     ./xrs444.nix
+    ./deploy.nix
   ]
-  ++ lib.optional (!minimalImage) ./builder.nix
-  ++ lib.optional (!minimalImage) ./acme.nix;
+  ++ lib.optional (!minimalImage) ./builder.nix;
 
   config = {
     security.sudo.wheelNeedsPassword = true;

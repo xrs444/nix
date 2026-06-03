@@ -12,10 +12,12 @@ let
 
   # Role-based configuration from flake.nix host definitions
   isPrimaryServer = lib.elem "letsencrypt-primary" hostRoles;
+  isLetsencryptHost = lib.elem "letsencrypt-host" hostRoles || isPrimaryServer;
   isKanidmServer =
     lib.elem "kanidm-server" hostRoles
     || lib.elem "kanidm-primary" hostRoles
     || lib.elem "kanidm-replica" hostRoles;
+  hasReverseProxy = lib.elem "reverse-proxy" hostRoles;
 
   # Generate certificates for all letsencrypt hosts
   allHosts = [
@@ -25,9 +27,8 @@ let
     "xcomm1"
     "xts1"
     "xts2"
+    "xpbx1"
   ];
-  isSdImageBuild =
-    pkgs.stdenv.hostPlatform.system ? build && pkgs.stdenv.hostPlatform.system.build ? sdImage;
   # Provide a default for minimalImage if not defined
   minimalImage = if config ? minimalImage then config.minimalImage else false;
 in
@@ -43,8 +44,16 @@ lib.mkIf (!minimalImage) {
         group = "acme";
         mode = "0400";
       };
+      # Private key used to rsync certs to remote letsencrypt-host nodes after renewal
+      acme_ssh_private_key = {
+        sopsFile = ../../../secrets/acme.yaml;
+        key = "ssh-private-key";
+        owner = "acme";
+        group = "acme";
+        mode = "0400";
+      };
     })
-    {
+    (lib.mkIf isLetsencryptHost {
       acme_ssh_key = {
         sopsFile = ../../../secrets/acme.yaml;
         key = "ssh-key";
@@ -52,7 +61,7 @@ lib.mkIf (!minimalImage) {
         group = "root";
         mode = "0400";
       };
-    }
+    })
   ];
 
   # ACME config: xsvr1 generates all host certs + idm.xrs444.net
@@ -81,6 +90,30 @@ lib.mkIf (!minimalImage) {
         };
       }) allHosts)
       ++
+        # Push xpbx1 cert to xpbx1 after renewal so nginx can serve phone configs over HTTPS
+        [
+          {
+            "xpbx1.${domain}" = {
+              postRun = ''
+                SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+                # chmod 750 on the home dir itself — createHome sets it 700 which blocks nginx
+                $SSH acme@xpbx1.lan "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
+                ${pkgs.rsync}/bin/rsync \
+                  -e "$SSH" \
+                  --perms --chmod=F640 \
+                  /var/lib/acme/xpbx1.${domain}/ \
+                  acme@xpbx1.lan:/var/lib/acme/xpbx1.${domain}/
+                # cert/chain/fullchain are public — world-readable so nginx can read them
+                # without requiring group membership. key.pem stays 640 (acme-only).
+                $SSH acme@xpbx1.lan \
+                  "chmod 644 /var/lib/acme/xpbx1.${domain}/cert.pem \
+                              /var/lib/acme/xpbx1.${domain}/chain.pem \
+                              /var/lib/acme/xpbx1.${domain}/fullchain.pem"
+              '';
+            };
+          }
+        ]
+      ++
         # Kanidm shared certificate
         (lib.optional isKanidmServer {
           "idm.${domain}" = {
@@ -90,33 +123,53 @@ lib.mkIf (!minimalImage) {
             ];
           };
         })
+      ++
+        # Reverse proxy service certificates
+        (lib.optional hasReverseProxy {
+          "prometheus.${domain}" = {
+            extraDomainNames = [
+              "alertmanager.${domain}"
+              "grafana.${domain}"
+              "cockpit.${domain}"
+              "auth.${domain}"
+            ];
+          };
+        })
     );
   };
 
-  # Ensure acme user/group exists only on relevant hosts
-  users.users = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
-      {
-        acme = {
-          isSystemUser = true;
-          group = "acme";
-          home = "/var/lib/acme";
-          createHome = true;
-          openssh.authorizedKeys.keyFiles = [
-            (pkgs.writeText "acme-ssh-key" config.sops.secrets.acme_ssh_key.text)
-          ];
-        };
-      }
-    )
-  ];
-  users.groups = lib.mkMerge [
-    (lib.mkIf
-      (!isSdImageBuild && (config.sops.secrets ? acme_ssh_key && config.sops.secrets.acme_ssh_key ? text))
-      {
-        acme = { };
-      }
-    )
-  ];
+  # Ensure acme user/group exists only on letsencrypt hosts
+  users.users.acme = lib.mkIf isLetsencryptHost {
+    isSystemUser = true;
+    group = "acme";
+    home = "/var/lib/acme";
+    createHome = true;
+    # bash shell required for SSH-based cert delivery from xsvr1
+    shell = pkgs.bash;
+    # Explicitly set empty authorized keys to prevent NixOS from building them at build time
+    openssh.authorizedKeys.keys = [ ];
+  };
+
+  users.groups.acme = lib.mkIf isLetsencryptHost { };
+
+  # Set up SSH authorized keys at boot time when secrets are available
+  systemd.services.acme-ssh-setup = lib.mkIf isLetsencryptHost {
+    description = "Set up ACME user SSH authorized keys";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "sops-nix.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      mkdir -p /var/lib/acme/.ssh
+      cat ${config.sops.secrets.acme_ssh_key.path} > /var/lib/acme/.ssh/authorized_keys
+      chown -R acme:acme /var/lib/acme/.ssh
+      chmod 700 /var/lib/acme/.ssh
+      chmod 600 /var/lib/acme/.ssh/authorized_keys
+      # createHome sets /var/lib/acme to 700; widen to 750 so nginx (acme group) can traverse it
+      chmod 750 /var/lib/acme
+    '';
+  };
 
 }

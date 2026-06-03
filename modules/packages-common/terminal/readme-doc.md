@@ -1,10 +1,10 @@
 # Terminal Configuration Module
 
 ## Overview
-This module provides terminal information database (terminfo) support for all NixOS hosts, with specific support for GhostTTY terminal emulator.
+This module provides terminal information database (terminfo) support for all NixOS hosts, with specific support for WezTerm terminal emulator.
 
 ## Purpose
-When SSH from a terminal emulator like GhostTTY to remote servers, the remote system needs terminfo definitions to properly handle terminal capabilities. Without these definitions, you may experience:
+When SSH from a terminal emulator like WezTerm to remote servers, the remote system needs terminfo definitions to properly handle terminal capabilities. Without these definitions, you may experience:
 - Garbled output
 - Broken cursor positioning
 - Non-functional special keys
@@ -21,12 +21,12 @@ When SSH from a terminal emulator like GhostTTY to remote servers, the remote sy
 
 ### Terminfo Entries
 The module creates terminfo entries for:
-- `ghostty`: Symlinked to xterm-256color definition
-- `xterm-ghostty`: Symlinked to xterm-256color definition
+- `wezterm`: Symlinked to xterm-256color definition
+- `xterm-wezterm`: Symlinked to xterm-256color definition
 
 ## How It Works
 
-GhostTTY is compatible with xterm-256color, so we create symlinks pointing to the standard xterm-256color terminfo definition. This ensures that when you SSH from GhostTTY to a NixOS host, the remote system knows how to handle the terminal properly.
+WezTerm is compatible with xterm-256color, so we create symlinks pointing to the standard xterm-256color terminfo definition. This ensures that when you SSH from WezTerm to a NixOS host, the remote system knows how to handle the terminal properly.
 
 ## Automatic Integration
 
@@ -40,8 +40,8 @@ To verify the configuration is working:
 # Check if terminfo is available
 infocmp xterm-256color
 
-# Check if GhostTTY entry exists
-ls -la /etc/terminfo/g/ghostty
+# Check if WezTerm entry exists
+ls -la /etc/terminfo/g/wezterm
 
 # Test with SSH
 ssh user@host "echo \$TERM && tput colors"
@@ -58,6 +58,6 @@ If you experience terminal issues after SSHing:
 
 ## Related
 
-- GhostTTY: https://ghostty.org/
+- WezTerm: https://wezterm.org/
 - ncurses terminfo: https://invisible-island.net/ncurses/
 - TERM environment variable: https://www.gnu.org/software/termutils/manual/termutils-2.0/html_chapter/tput_1.html

@@ -1,4 +1,4 @@
-# Summary: Minimal SD image configuration for xts2, bootstraps with comin for full config deployment.
+# Summary: Minimal SD image configuration for xts2; deploy with deploy-rs after boot.
 {
   pkgs,
   lib,
@@ -11,10 +11,8 @@
   imports = [
     ../../base-nixos.nix
     ../common/default.nix
-    ../common/hardware-arm64-server.nix
+    ../common/hardware-sweet-potato.nix
     ../common/boot.nix
-    ./disks.nix
-    ../../../modules/sdImage/custom.nix
   ];
 
   system.stateVersion = stateVersion;

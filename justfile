@@ -15,8 +15,8 @@ flake_dir := scripts_dir / ".."
 # Build Operations
 # ================
 
-# Build SD card image for a host (default: xdash1)
-build-sdimage host="xdash1":
+# Build SD card image for a host (default: xts1)
+build-sdimage host="xts1":
     nix build .#nixosConfigurations.{{host}}.config.system.build.sdImage
     @echo "SD image built successfully in ./result/sd-image/"
 
@@ -25,21 +25,39 @@ build host:
     nix build .#nixosConfigurations.{{host}}.config.system.build.toplevel
     @echo "Build complete for {{host}}"
 
-# Build and cache all xsvr hosts using xsvr1 as remote builder
+# Build and cache all hosts (run on xsvr1 where the nix store is local)
 build-and-cache-all:
     #!/usr/bin/env fish
-    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xdash1 xhac-radio xlt1-t-vnixos xts1 xts2
-    set -l cache_url "http://nixcache.xrs444.net"
-    set -l remote_builder "ssh-ng://xsvr1"
-    
+    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
+    set -l cache_url "file:///zfs/nixcache/cache"
+
+    echo "Building all hosts in parallel..."
     for host in $hosts
-        echo "Building $host on xsvr1..."
-        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --builders $remote_builder
-        echo "Copying $host to cache..."
-        nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel"
+        nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link &
     end
-    
+    wait
+
+    echo "Caching all hosts..."
+    for host in $hosts
+        echo "Caching $host..."
+        nix copy --to $cache_url ".#nixosConfigurations.$host.config.system.build.toplevel" || true
+    end
+
     echo "All hosts built and cached"
+
+# Deploy a single remote host via deploy-rs (not xsvr1)
+deploy host:
+    deploy ".#{{host}}"
+
+# Deploy all remote hosts via deploy-rs, then trigger xsvr1 self-deploy via path unit
+# (nixos-rebuild must run as a systemd service to have systemctl in PATH — same as CI)
+deploy-all:
+    deploy .
+    touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
+
+# Trigger xsvr1 self-deploy (must run on xsvr1; uses path unit so systemd provides full env)
+deploy-xsvr1:
+    touch /zfs/nixcache/builds/github-runner/nixos-rebuild-ci-permitted
 
 # SD Card Operations
 # ==================
@@ -100,66 +118,6 @@ list-disks:
 
 # Deployment Operations
 # ======================
-
-# Deploy xdash1 using nixos-anywhere (standard method with kexec)
-deploy-xdash1 ip user="root":
-    #!/usr/bin/env fish
-    set -l host "xdash1"
-    set -l target_ip "{{ip}}"
-    set -l target_user "{{user}}"
-    
-    # Check if nixos-anywhere is installed
-    if not command -v nixos-anywhere &> /dev/null
-        echo "Installing nixos-anywhere..."
-        nix profile install github:nix-community/nixos-anywhere
-    end
-    
-    echo "Deploying NixOS to $host at $target_ip"
-    echo "⚠️  This will WIPE the target disk and install NixOS!"
-    echo "Press Ctrl+C to cancel, or Enter to continue..."
-    read -P ""
-    
-    echo "Starting nixos-anywhere deployment..."
-    echo "Note: ARM devices may have issues with kexec."
-    
-    nixos-anywhere \
-        --flake ".#$host" \
-        --build-on-remote \
-        --no-reboot \
-        --phases "kexec,disko,install" \
-        "$target_user@$target_ip"
-    
-    if test $status -eq 0
-        echo "Installation complete!"
-        echo "Manually reboot the device:"
-        echo "  ssh $target_user@$target_ip 'reboot'"
-        echo "After reboot, SSH using: ssh thomas-local@$target_ip"
-    else
-        echo "ERROR: Deployment failed"
-        echo "Alternative: Try: just deploy-xdash1-simple {{ip}} {{user}}"
-        exit 1
-    end
-
-# Deploy xdash1 using QEMU emulation (no kexec, slower but more reliable)
-deploy-xdash1-simple ip user="root":
-    #!/usr/bin/env fish
-    set -l host "xdash1"
-    set -l target_ip "{{ip}}"
-    set -l target_user "{{user}}"
-    
-    echo "Deploying xdash1 to $target_ip"
-    echo "⚠️  This will WIPE /dev/mmcblk0!"
-    echo "Building with QEMU emulation (may be slow)"
-    echo "Press Enter to continue or Ctrl+C to cancel..."
-    read -P ""
-    
-    echo "Note: This uses QEMU to build ARM binaries"
-    echo "It will be slow but doesn't require kexec"
-    
-    nix run github:nix-community/nixos-anywhere -- \
-        --flake ".#$host" \
-        --extra-experimental-features "nix-command flakes" \
-        "$target_user@$target_ip"
 
 # Host Management
 # ===============
@@ -373,3 +331,59 @@ run-nixable host:
     @echo "Running nixible playbook for {{host}}..."
     @echo "This will be available after nixible is added to flake inputs"
     @echo "For now, use: nix run .#{{host}}"
+
+# Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
+# Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
+# Secrets file: nix/secrets/ansible-network.yaml (shared with other network gear)
+#
+# Create secrets first: sops {{flake_dir}}/secrets/ansible-network.yaml
+#   Required keys:
+#     ansible_private_key: |          # SSH private key for ansible-local user
+#       -----BEGIN OPENSSH PRIVATE KEY-----
+#       ...
+#     ansible_public_key: "ssh-ed25519 AAAA..."  # uploaded to switch
+#     ansible_become_password: "<enable/super-user password>"
+#     vault_snmp_community: "<SNMP RO community string>"
+#     vault_user_super_password: "<super user password>"
+#     vault_user_ansible_password: "<ansible-local switch account password>"
+#     vault_user_thomas_password: "<thomas-local password>"
+#     vault_user_dog_password: "<dog user password>"
+configure-xswcore:
+    #!/usr/bin/env fish
+    set -l flake "{{flake_dir}}"
+    set -l secrets "$flake/secrets/ansible-network.yaml"
+    set -l inventory "$flake/nix/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
+    chmod 600 $tmp_key
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        echo "Create it with: sops $secrets"
+        exit 1
+    end
+
+    echo "Decrypting ansible-network secrets..."
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_key
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    # Extract private key to its own chmod-600 temp file
+    if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
+        rm -f $tmp_vars $tmp_key
+        echo "ERROR: Failed to extract ansible_private_key from $secrets"
+        exit 1
+    end
+
+    echo "Configuring xswcore..."
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "ansible_private_key_file=$tmp_key" \
+        $argv \
+        "$flake/nix/hosts/nixable/xswcore/playbook.yml"
+
+    rm -f $tmp_vars $tmp_key
+    echo "xswcore configuration complete"

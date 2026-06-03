@@ -23,16 +23,25 @@ in
   };
 
   config = {
+    # Enable FlakeHub authentication
+    services.flakehub-auth.enable = true;
+
     # Common Nix configuration (experimental-features already set in base-nixos.nix)
+    nix.channel.enable = false; # flake-only setup — no nix-channel, no ~/.nix-defexpr/channels in NIX_PATH
     nix.settings.flake-registry = "";
     nix.settings.trusted-users = [
       "root"
       "${username}"
     ];
     nix.settings.warn-dirty = false;
+    nix.settings.connect-timeout = 10; # fail fast if a builder is unreachable
     nix.settings.substituters = [
-      "http://xsvr1.lan?priority=10"
+      "http://nixcache.xrs444.net?priority=10"
       "https://cache.nixos.org?priority=20"
+    ];
+    nix.settings.trusted-public-keys = [
+      "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
     ];
     # Use proper flake registry without builtins.toFile warnings
     nix.registry = lib.mapAttrs (_: flake: {

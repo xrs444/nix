@@ -22,6 +22,11 @@ in
       sops
       git
       just # Command runner for project-specific commands
+      gh # GitHub CLI
+      jq # JSON processor
+      bind # DNS utilities (dig, host, nslookup)
+    ] ++ lib.optionals pkgs.stdenv.isLinux [
+      traceroute # Network path tracing utility (macOS has built-in traceroute)
     ];
   };
 }

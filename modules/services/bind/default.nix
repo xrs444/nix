@@ -1,4 +1,4 @@
-# Summary: NixOS module for Bind DNS service, enables and configures DNS forwarding for specified hosts.
+# Summary: NixOS module for Bind DNS service, serves lab.xrs444.net zone authoritatively.
 {
   hostRoles ? [ ],
   lib,
@@ -12,18 +12,20 @@ in
 {
   config = lib.mkIf hasRole {
 
+    # Open DNS port in firewall
+    networking.firewall.allowedTCPPorts = [ 53 ];
+    networking.firewall.allowedUDPPorts = [ 53 ];
+
     services.bind = {
       enable = true;
-      forwarders = [ "172.18.11.250" ];
-      cacheNetworks = [
-        "172.16.0.0/12"
-        "100.64.0.0/10"
-      ];
+      # Temporarily listen on all IPs for troubleshooting
+      # listenOn = lib.mkIf hasDedicatedDnsIP [ dnsIP ];
+      # listenOnIpv6 = lib.mkIf hasDedicatedDnsIP [ ];
       zones = {
         "lab.xrs444.net" = {
           master = true;
           file = pkgs.writeText "lab_xrs444_net" ''
-            $ORIGIN example.com.
+            $ORIGIN lab.xrs444.net.
             $TTL    1h
             @            IN      SOA     ns1 hostmaster (
                                              1    ; Serial
@@ -37,7 +39,7 @@ in
 
             ns1               IN      A       172.25.2.251
 
-            xlabmgmt          IN      A       172.25.2.251
+            v-xlabmgmt        IN      A       172.25.2.251
 
             xntnx1            IN      A       172.25.1.10
 

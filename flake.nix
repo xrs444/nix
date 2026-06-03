@@ -12,9 +12,8 @@
   inputs = {
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    catppuccin.url = "github:catppuccin/nix";
-    comin.url = "github:nlewo/comin";
-    comin.inputs.nixpkgs.follows = "nixpkgs";
+    catppuccin.url = "github:catppuccin/nix/63c423c"; # pin: last commit before opencode support (incompatible with home-manager 25.11)
+    deploy-rs.url = "github:serokell/deploy-rs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-25.11";
@@ -59,6 +58,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           roles = [
             "kvm"
             "samba"
@@ -69,15 +69,18 @@
             "kanidm-primary"
             "letsencrypt-primary"
             "cockpit"
-            "homeassistant"
             "tailscale-package"
             "monitoring-server"
+            "github-runner"
+            "bind"
+            "auto-upgrade"
           ];
         };
         xsvr2 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           roles = [
             "kvm"
             "samba"
@@ -89,12 +92,15 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
+            "bind"
+            "auto-upgrade"
           ];
         };
         xsvr3 = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
+          generateManCache = true;
           desktop = "xfce";
           roles = [
             "kvm"
@@ -104,17 +110,19 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
-        xlabmgmt = {
+        v-xlabmgmt = {
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
-          desktop = "gnome";
+          desktop = "niri";
           enableHomeManager = false;
           roles = [
             "bind"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xts1 = {
@@ -127,6 +135,7 @@
             "letsencrypt-host"
             "tailscale-exit-node"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xts2 = {
@@ -138,6 +147,7 @@
             "letsencrypt-host"
             "tailscale-exit-node"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
         xcomm1 = {
@@ -148,29 +158,51 @@
           roles = [
             "letsencrypt-host"
             "monitoring-client"
+            "auto-upgrade"
           ];
         };
-        xdash1 = {
-          user = "thomas-local";
-          platform = "aarch64-linux";
+        xdt1-t = {
+          user = "xrs444";
+          platform = "x86_64-linux";
           type = "nixos";
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
+          desktop = "niri";
+          roles = [
+            "letsencrypt-host"
+            "monitoring-client"
+            "auto-upgrade"
+          ];
         };
-        xhac-radio = {
+        cmrpi1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
           enableHomeManager = false;
-          enableWifi = true;
-          roles = [ "monitoring-client" ];
+          roles = [
+            "adguard"
+            "tailscale-package"
+            "monitoring-client"
+            "letsencrypt-host"
+            "auto-upgrade"
+          ];
+        };
+        xpbx1 = {
+          user = "thomas-local";
+          platform = "aarch64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          roles = [
+            "asterisk"
+            "monitoring-client"
+            "letsencrypt-host"
+            "auto-upgrade"
+          ];
         };
         xlt1-t-vnixos = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
           desktop = "gnome";
-          roles = [ ];
+          roles = [ "auto-upgrade" ];
         };
         xlt1-t = {
           user = "xrs444";
@@ -195,11 +227,45 @@
     in
     let
       allHomes = lib.mkAllHomes;
+      # All NixOS configs except xsvr1, which self-deploys via nixos-rebuild in CI.
+      remoteNixosConfigs = builtins.removeAttrs lib.mkAllNixosConfigs [ "xsvr1" ];
     in
     {
       homeConfigurations = allHomes;
       nixosConfigurations = lib.mkAllNixosConfigs // lib.forAllHosts lib.mkMinimalNixosConfig;
       darwinConfigurations = lib.mkAllDarwinConfigs;
+
+      # deploy-rs deployment configuration.
+      # xsvr1 is excluded — it runs nixos-rebuild switch locally in CI as the final step.
+      deploy = {
+        sshUser = "deploy";
+        sshOpts = [
+          "-4"                          # Force IPv4 — hosts like xcomm1 have many IPv6 addresses
+          "-i"                          # that may be unreachable from xsvr1 (different subnet)
+          "/run/secrets/deploy_private_key"
+          "-o"
+          "StrictHostKeyChecking=no"
+          "-o"
+          "UserKnownHostsFile=/dev/null"
+          "-o"
+          "ConnectTimeout=30"
+        ];
+        nodes = builtins.mapAttrs (hostname: cfg: {
+          hostname = "${hostname}.lan";
+          # fastConnection = false so deploy-rs passes --substitute-on-destination to nix copy.
+          # Remote hosts fetch paths from http://xsvr1.lan (nixcache) where paths are signed
+          # via nix.settings.secret-key-files, rather than receiving unsigned paths pushed
+          # directly from the local nix store on xsvr1.
+          fastConnection = false;
+          profiles.system = {
+            user = "root";
+            path = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system}.activate.nixos cfg;
+            magicRollback = true;
+            confirmTimeout = 60;
+          };
+        }) remoteNixosConfigs;
+      };
+
       devShells = lib.forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = with inputs.nixpkgs.legacyPackages.${system}; [
@@ -211,28 +277,36 @@
         };
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };
       });
+
       checks = lib.forAllSystems (
         system:
         let
           validHomes = inputs.nixpkgs.lib.filterAttrs (
             _: cfg: cfg ? config && cfg.config ? activationPackage
           ) (inputs.nixpkgs.lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) allHomes);
+          homeChecks = inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
+            name = name;
+            value = cfg.config.activationPackage;
+          }) validHomes;
+          # Validate deploy-rs node configuration for the current system.
+          deployChecks =
+            if inputs.deploy-rs.lib ? ${system} then
+              inputs.deploy-rs.lib.${system}.deployChecks self.deploy
+            else
+              { };
         in
-        inputs.nixpkgs.lib.mapAttrs' (name: cfg: {
-          name = name;
-          value = cfg.config.activationPackage;
-        }) validHomes
+        homeChecks // deployChecks
       );
+
       nixosModules = {
+        asterisk = import ./modules/services/asterisk;
         cockpit = import ./modules/packages-nixos/cockpit;
-        comin = import ./modules/packages-nixos/comin;
         zfs = import ./modules/services/zfs;
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;
         Samba = import ./modules/services/Samba;
         bind = import ./modules/services/bind;
-        ffr = import ./modules/services/ffr;
-        homeassistant = import ./modules/services/homeassistant;
+        bird-bgp = import ./modules/services/bird-bgp;
         iprouting = import ./modules/services/iprouting;
         keepalived = import ./modules/services/keepalived;
         kvm = import ./modules/services/kvm;
@@ -242,6 +316,7 @@
         remotebuilds = import ./modules/services/remotebuilds;
         talos = import ./modules/services/talos;
         tailscale = import ./modules/services/tailscale;
+        github-runner = import ./modules/services/github-runner;
       };
       formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
       overlays = {

@@ -3,6 +3,7 @@
   hostname,
   lib,
   pkgs,
+  config,
   ...
 }:
 let
@@ -14,6 +15,17 @@ let
 in
 {
   config = lib.mkIf isServer {
+    sops.secrets.nixcache_signing_key = {
+      sopsFile = ../../../secrets/nixcache-signing-key.yaml;
+      key = "nixcache_signing_key";
+      owner = "root";
+      # Allow the builders group (which the CI runner runs as) to read the key
+      # so `nix store sign --key-file` works in the CI workflow without sudo.
+      group = "builders";
+      mode = "0440";
+    };
+
+    nix.settings.secret-key-files = [ config.sops.secrets.nixcache_signing_key.path ];
     # Create the cache directories on ZFS with builder ownership, nginx in builder group for read access
     systemd.tmpfiles.rules = [
       "d /zfs/nixcache 0755 root root -"
@@ -98,6 +110,7 @@ in
       '';
 
       virtualHosts."xsvr1.lan" = {
+        serverAliases = [ "nixcache.xrs444.net" ];
         locations."/" = {
           root = "/zfs/nixcache/cache";
           extraConfig = ''

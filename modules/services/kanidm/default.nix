@@ -48,13 +48,6 @@ in
     # Primary server configuration (xsvr1)
     (lib.mkIf isPrimaryServer {
       # OAuth2 client secrets for provisioning
-      sops.secrets.kanidm_oauth2_nocodb_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_nocodb_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
       sops.secrets.kanidm_oauth2_paperless_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_paperless_secret";
@@ -111,8 +104,57 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_audiobookshelf_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_audiobookshelf_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_booklore_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_booklore_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_matrix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_matrix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_seatable_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_seatable_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_termix_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_termix_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_warpgate_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_warpgate_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_manyfold_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_manyfold_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_7;
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
         enableServer = true;
         enablePam = lib.mkForce true;
@@ -164,31 +206,116 @@ in
       users.users.kanidm.extraGroups = [ "acme" ];
 
       # Add OAuth2 redirect URLs after provisioning
-      # kanidm-provision doesn't support redirect URLs, so we add them manually
+      # kanidm-provision doesn't support redirect URLs, so we add them via the REST API.
+      # The kanidm CLI requires an interactive TTY for login and cannot be used in systemd.
       systemd.services.kanidm-oauth2-redirect-urls = {
         description = "Add OAuth2 redirect URLs to Kanidm clients";
-        after = [ "kanidm.service" ];
+        after = [
+          "kanidm.service"
+          "network-online.target"
+        ];
+        wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          # Don't fail activation if this service fails - it will retry on next boot
+          SuccessExitStatus = "0 1 6";
         };
+        path = [
+          pkgs.curl
+          pkgs.jq
+        ];
         script = ''
-          # Wait for kanidm to be fully up
-          sleep 5
+          IDM_URL="https://idm.xrs444.net"
+          COOKIES=$(mktemp)
+          trap "rm -f $COOKIES" EXIT
 
-          # Login as idm_admin
-          export KANIDM_PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
-          echo "$KANIDM_PASSWORD" | ${pkgs.kanidm}/bin/kanidm login -D idm_admin || true
+          # Wait for Kanidm to be fully ready (with retries)
+          echo "Waiting for Kanidm to be ready..."
+          for i in {1..30}; do
+            if curl -sf "$IDM_URL/v1/auth" >/dev/null 2>&1; then
+              echo "Kanidm is ready!"
+              break
+            fi
+            echo "Attempt $i/30: Kanidm not ready yet, waiting..."
+            sleep 2
+          done
 
-          # Add redirect URLs for oauth2 clients (using --name to avoid interactive token selection)
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_longhorn https://longhorn.xrs444.net/oauth2/callback || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_traefik https://traefik.xrs444.net/oauth2/callback || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_linkwarden https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_paperless https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/ || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_mealie https://mealie.xrs444.net/login || true
-          ${pkgs.kanidm}/bin/kanidm system oauth2 add-redirect-url --name idm_admin oauth2_netbox https://netbox.xrs444.net/oauth/complete/oidc/ || true
+          # Authenticate via REST API (kanidm CLI requires interactive TTY)
+          echo "Authenticating to Kanidm..."
+          PASSWORD=$(cat /run/secrets/kanidm_idm_admin_password)
+          curl -s -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"step":{"init":"idm_admin"}}' > /dev/null
+          curl -s -b "$COOKIES" -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d '{"step":{"begin":"password"}}' > /dev/null
+          TOKEN=$(curl -s -b "$COOKIES" -c "$COOKIES" -X POST "$IDM_URL/v1/auth" \
+            -H "Content-Type: application/json" \
+            -d "{\"step\":{\"cred\":{\"password\":\"$PASSWORD\"}}}" \
+            | jq -r '.state.success')
+
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "ERROR: Failed to authenticate to Kanidm" >&2
+            exit 1
+          fi
+
+          # Add OAuth2 redirect URL to oauth2_rs_origin
+          # Kanidm stores both base origins and supplemental redirect URLs in oauth2_rs_origin
+          add_redirect() {
+            local client="$1"
+            local redirect_url="$2"
+
+            # Extract base origin (protocol://domain:port/)
+            local base_origin=$(echo "$redirect_url" | sed -E 's|(https?://[^/]+).*|\1/|')
+
+            echo "Adding redirect URL $redirect_url and origin $base_origin to $client"
+
+            # Get current oauth2_rs_origin values
+            local current_origins=$(curl -s -H "Authorization: Bearer $TOKEN" "$IDM_URL/v1/oauth2/$client" \
+              | jq -r '.attrs.oauth2_rs_origin[]?' 2>/dev/null)
+
+            # Add both the base origin and full redirect URL to oauth2_rs_origin
+            # This ensures both the domain root and the callback path are allowed
+            local all_origins=$(printf '%s\n' $current_origins "$base_origin" "$redirect_url" | sort -u | jq -R . | jq -s .)
+
+            # Apply to oauth2_rs_origin
+            curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+              "$IDM_URL/v1/oauth2/$client" \
+              -d "{\"attrs\":{\"oauth2_rs_origin\": $all_origins}}"
+          }
+
+          add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
+          add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
+          add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
+          add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
+          add_redirect oauth2_romm      "https://romm.xrs444.net/oauth/callback"
+          add_redirect oauth2_immich    "https://immich.xrs444.net/auth/login"
+          add_redirect oauth2_immich    "app.immich:///oauth-callback"
+          add_redirect oauth2_netbox    "https://netbox.xrs444.net/oauth/complete/oidc/"
+          add_redirect oauth2_linkwarden "https://linkwarden.xrs444.net/api/v1/auth/callback/keycloak"
+          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/audiobookshelf/auth/openid/callback"
+          add_redirect oauth2_audiobookshelf "https://audiobookshelf.xrs444.net/auth/openid/mobile-redirect"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/oauth2-callback"
+          add_redirect oauth2_booklore "https://booklore.xrs444.net/login/oauth2/code/kanidm"
+          add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
+          add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
+          add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
+          add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
+          add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
         '';
+      };
+
+      # Restart the OAuth2 redirect URLs service on every activation
+      # This ensures redirect URLs are re-applied after nixos-rebuild switch.
+      # --no-block avoids blocking activation; the service has its own kanidm-readiness retry loop.
+      system.activationScripts.kanidm-oauth2-redirect-urls = {
+        text = ''
+          echo "Scheduling kanidm-oauth2-redirect-urls restart to re-apply OAuth2 redirect URLs..."
+          systemctl restart --no-block kanidm-oauth2-redirect-urls.service || true
+        '';
+        deps = [ "setupSecrets" ];
       };
 
       # Open firewall ports

@@ -1,5 +1,72 @@
 { inputs, ... }:
 (final: prev: {
+  # Fix gobject-introspection distutils import error with Python 3.13+
+  # Python 3.13 removed distutils from stdlib entirely. g-ir-scanner's
+  # giscanner/utils.py does `import distutils.cygwinccompiler`. setuptools
+  # provides the distutils shim, but it must be on PYTHONPATH at runtime.
+  #
+  # Key architecture insight: `gobject-introspection` (nixpkgs) is actually
+  # `gobject-introspection-wrapped`, built by wrapper.nix. Its buildCommand
+  # does `eval fixupPhase` BEFORE `lndir`, so any postFixup on the wrapper
+  # package runs on empty directories — completely ineffective.
+  #
+  # The scanner binary lives in `gobject-introspection-unwrapped`. Fixing
+  # postFixup there ensures the scanner is wrapped before lndir symlinks it
+  # into gobject-introspection-wrapped.
+  #
+  # We write the wrapper manually (no makeWrapper/wrapProgram) to avoid adding
+  # to nativeBuildInputs, which caused meson configure to fail with
+  # "python3 is missing modules: setuptools" during the gobject-introspection
+  # build itself. postFixup runs after install and does not affect meson.
+  #
+  # Nix string escaping note: in '' strings, \${...} is NOT a Nix escape —
+  # only ''${...} produces a literal ${...}. printf is used instead of echo so
+  # that ${PYTHONPATH} is not expanded by bash at postFixup time.
+  "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
+    # gobject-introspection's meson.build:29 calls
+    # find_installation('python3', modules: ['setuptools']). Our python3
+    # overlay changes the python3 hash, causing a fresh rebuild. The fresh
+    # build environment doesn't have setuptools accessible to python3 (the
+    # nixpkgs 25.11 package doesn't add it). Add it explicitly.
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
+    postPatch = (oldAttrs.postPatch or "") + ''
+      # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
+      # module level. In Python 3.13 distutils is gone from stdlib; setuptools
+      # provides a shim but omits cygwinccompiler on non-Windows platforms.
+      # g-ir-scanner is invoked during the build itself to scan test libraries,
+      # so the import fires at build time and kills the build. Wrap it in a
+      # try/except so non-Windows platforms continue without it.
+      python3 -c "
+import pathlib
+p = pathlib.Path('giscanner/utils.py')
+t = p.read_text()
+t = t.replace(
+    'import distutils.cygwinccompiler',
+    'try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass  # Windows-only, not in setuptools shim on Linux'
+)
+p.write_text(t)
+"
+    '';
+    postFixup = (oldAttrs.postFixup or "") + ''
+      # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
+      # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
+      if [ -f "$dev/bin/g-ir-scanner" ]; then
+        mv "$dev/bin/g-ir-scanner" "$dev/bin/.g-ir-scanner-wrapped"
+        printf '#!/bin/sh\n' > "$dev/bin/g-ir-scanner"
+        printf 'export PYTHONPATH=%s''${PYTHONPATH:+:}''${PYTHONPATH}\n' \
+          "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}" \
+          >> "$dev/bin/g-ir-scanner"
+        printf 'exec %s "$@"\n' \
+          "$dev/bin/.g-ir-scanner-wrapped" \
+          >> "$dev/bin/g-ir-scanner"
+        chmod +x "$dev/bin/g-ir-scanner"
+      fi
+    '';
+  });
+
+  # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
+  # have been moved to xdash1-specific config since other hosts need GIR files
+
   # Fix libsecret test failures in sandboxed builds
   # https://github.com/NixOS/nixpkgs/issues/370724
   libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
@@ -14,15 +81,35 @@
         doCheck = false;
         doInstallCheck = false;
       });
+      # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
+      # network access unavailable in the nix sandbox. Strip it from yt-dlp's
+      # dependencies so it is never built.
+      yt-dlp = pprev.yt-dlp.overrideAttrs (old: {
+        propagatedBuildInputs = builtins.filter
+          (x: (x.pname or "") != "yt-dlp-ejs")
+          (old.propagatedBuildInputs or [ ]);
+      });
     };
   };
   python3Packages = final.python3.pkgs;
 
   # Fix pipewire test-support timeout in sandboxed builds
   # logger_debug_env_invalid test hangs in sandbox environment
-  pipewire = prev.pipewire.overrideAttrs (oldAttrs: {
+  # Also disable roc-toolkit and ffado support which require i686-linux
+  pipewire = (prev.pipewire.override {
+    rocSupport = false;   # Disable roc-toolkit (requires i686-linux via scons)
+    ffadoSupport = false; # Disable ffado (requires i686-linux via scons)
+  }).overrideAttrs (oldAttrs: {
     doCheck = false;
   });
+
+  # Override wireplumber to disable docs (requires Python sphinx modules)
+  # Use override instead of overrideAttrs to set feature flags properly
+  wireplumber = prev.wireplumber.override {
+    pipewire = final.pipewire;
+    # Meson feature options need to be set via override, not mesonFlags
+    enableDocs = false;
+  };
 
   # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
   # Tests run via CMake build target, not checkPhase, so doCheck doesn't help
@@ -44,6 +131,25 @@
       config.allowUnfree = true;
     }
   ).claude-code;
+
+  # Fix nbd TLS test timeouts (tlshuge, tlswrongcert) in sandboxed builds
+  # Tests require real TLS socket timing that doesn't work in the sandbox
+  nbd = prev.nbd.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
+  # Fix openvswitch test failures in sandboxed builds
+  # Tests require real network interfaces / kernel modules not available in sandbox
+  openvswitch = prev.openvswitch.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
+  # Fix swtpm test failures in sandboxed builds
+  # test_tpm2_swtpm_setup_create_cert and pkcs11-related tests require softhsm2
+  # which is not available in the nix sandbox environment
+  swtpm = prev.swtpm.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
 
   # Fix inetutils format-security compilation errors on macOS
   # https://github.com/NixOS/nixpkgs/issues/XXXXX

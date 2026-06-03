@@ -3,26 +3,68 @@
   config,
   pkgs,
   lib,
+  minimalImage ? false,
   ...
 }:
 let
-  builder = [ "xsvr1" ];
+  buildHosts = [
+    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; } # Ryzen 7 7700 — primary builder
+    { name = "xsvr2"; maxJobs = 6; speedFactor = 1; } # Atom C3758 — leave 2 cores for ZFS/k8s
+    { name = "xsvr3"; maxJobs = 4; speedFactor = 2; } # i5-8500 — leave 2 cores for VMs/Samba
+  ];
+  isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
+
+  mkBuildMachine = b: {
+    hostName = "${b.name}.lan";
+    sshUser = "builder";
+    sshKey = "/root/.ssh/id_builder";
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+    ];
+    maxJobs = b.maxJobs;
+    speedFactor = b.speedFactor;
+    supportedFeatures = [
+      "nixos-test"
+      "benchmark"
+      "big-parallel"
+      "kvm"
+    ];
+  };
 in
 {
   # Import SOPS secrets (not needed for clients, only for builder)
 
   ## Server configuration
-  boot.binfmt.emulatedSystems = lib.mkIf (lib.elem config.networking.hostName builder) [
+  # Use emulatedSystems to get the base binfmt registration (magic bytes, etc),
+  # then override specific settings below for sandbox compatibility.
+  boot.binfmt.emulatedSystems = lib.mkIf isBuilder [
     "aarch64-linux"
   ];
 
+  # Use fixBinary (F flag) so binfmt works inside Nix's sandboxed build environments.
+  # The default P flag loses interpreter visibility when the sandbox creates a new mount
+  # namespace; F pre-opens the interpreter fd at registration time, surviving namespace changes.
+  # We must disable preserveArgvZero (P flag) because it conflicts with F - only F should be used.
+  # Explicitly set the interpreter to the unwrapped QEMU binary to avoid the binfmt-P wrapper.
+  # Wrap the whole attrset in mkIf so the submodule is not instantiated on non-builder hosts
+  # (instantiating it without magicOrExtension causes a flake check evaluation error).
+  boot.binfmt.registrations = lib.mkIf isBuilder {
+    "aarch64-linux" = {
+      fixBinary = lib.mkForce true;
+      preserveArgvZero = lib.mkForce false;
+      wrapInterpreterInShell = lib.mkForce false;
+      interpreter = lib.mkForce "${pkgs.qemu}/bin/qemu-aarch64";
+    };
+  };
+
   # Create builders group for local organization
-  users.groups.builders = lib.mkIf (lib.elem config.networking.hostName builder) { };
+  users.groups.builders = lib.mkIf isBuilder { };
 
   # The builder user is now defined globally in modules/users/builder.nix
 
   # Additional sudo rules specific to build server
-  security.sudo.extraRules = lib.optional (lib.elem config.networking.hostName builder) {
+  security.sudo.extraRules = lib.optional isBuilder {
     users = [ "builder" ];
     commands = [
       {
@@ -32,10 +74,19 @@ in
     ];
   };
 
+  # Deploy the deploy SSH private key on the builder so CI can push to target hosts.
+  # Key lives at /run/secrets/deploy_private_key (default sops path) so the github
+  # runner service can access it — ProtectHome=true blocks /home/builder/.ssh/.
+  sops.secrets.deploy_private_key = lib.mkIf (isBuilder && !minimalImage) {
+    sopsFile = ../../../secrets/deploy-ssh-key.yaml;
+    owner = "builder";
+    mode = "0600";
+  };
+
   ## Combined nix configuration for both server and client
   nix = lib.mkMerge [
     # Server-specific settings
-    (lib.mkIf (lib.elem config.networking.hostName builder) {
+    (lib.mkIf isBuilder {
       settings = {
         system-features = [
           "nixos-test"
@@ -43,46 +94,117 @@ in
           "big-parallel"
           "kvm"
         ];
-        trusted-users = [ "builder" ];
+        # builder must be a trusted-user so it can build input-addressed derivations
+        # sent by remote clients (nix-store --serve --write requires this privilege).
+        trusted-users = [ "root" "builder" ];
+        trusted-substituters = [ "file:///zfs/nixcache/cache" ];
+        # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
+        # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
+        # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
+        filter-syscalls = false;
       };
     })
 
     # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
-    (lib.mkIf (!lib.elem config.networking.hostName builder) {
+    (lib.mkIf (!isBuilder) {
       distributedBuilds = true;
-      buildMachines = [
-        {
-          hostName = "xsvr1.lan";
-          sshUser = "builder";
-          sshKey = "/root/.ssh/id_builder";
-          systems = [
-            "x86_64-linux"
-            "aarch64-linux"
-          ];
-          maxJobs = 8;
-          speedFactor = 2;
-          supportedFeatures = [
-            "nixos-test"
-            "benchmark"
-            "big-parallel"
-            "kvm"
-          ];
-        }
-      ];
+      # Don't build locally — delegate everything to the builder pool.
+      # Without this, Nix uses local jobs first and never touches remote builders.
+      settings = {
+        max-jobs = 0;
+        # Let builders fetch their own inputs from substituters directly, rather than
+        # requiring the client to copy every dependency across the wire first.
+        builders-use-substitutes = true;
+        # Use xsvr1's binary cache as primary substituter before falling back to cache.nixos.org.
+        # Paths built by CI on xsvr1 (including ARM cross-compiled configs) are pre-populated
+        # here, so deploy-rs activations require no local building at all.
+        substituters = [
+          "http://xsvr1.lan"
+          "https://cache.nixos.org"
+        ];
+        trusted-public-keys = [
+          # Run: sudo cat /run/secrets/nixcache_signing_key | nix key convert-secret-to-public
+          # then paste the result here.
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI="
+        ];
+      };
+      buildMachines = map mkBuildMachine buildHosts;
+    })
+  ];
+
+  # Determinate Nix reads nix.custom.conf for runtime daemon settings (trusted-public-keys,
+  # require-sigs, substituters, secret-key-files, filter-syscalls) and ignores nix.conf for
+  # these settings. Both builder and client hosts need this file — without it, Determinate
+  # Nix daemons have no xsvr1.lan-1 key trusted and reject signed paths from the binary cache.
+  environment.etc."nix/nix.custom.conf" = lib.mkMerge [
+    (lib.mkIf isBuilder {
+      text = ''
+        # Custom Nix configuration for builder
+        extra-platforms = aarch64-linux i686-linux
+        extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
+        extra-trusted-substituters = file:///zfs/nixcache/cache
+        # Duplicated from nix.settings because Determinate Nix reads nix.custom.conf
+        # instead of nix.conf for runtime settings (trusted-public-keys, require-sigs,
+        # filter-syscalls are all ignored from nix.conf under Determinate Nix).
+        extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        # Accept paths signed by xsvr1.lan-1 (CI builds) without requiring they also
+        # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
+        # push-mode to work when nix.custom.conf is the only config Determinate reads.
+        require-sigs = false
+        # Auto-sign all paths built by the daemon so deploy-rs push-mode works for first-time
+        # deploys. Without this, paths built at deploy-time (e.g. activate-path derivations)
+        # are unsigned and remote daemons with require-sigs=true reject them on push.
+        secret-key-files = /run/secrets/nixcache_signing_key
+        # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
+        # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
+        # can succeed.
+        filter-syscalls = false
+        system-features = nixos-test benchmark big-parallel kvm
+        # Determinate Nix ignores nix.conf trusted-users — must be set here so the
+        # builder daemon allows 'builder' to build input-addressed derivations sent
+        # by remote clients via nix-store --serve.
+        trusted-users = root builder
+      '';
+    })
+    (lib.mkIf (!isBuilder) {
+      text = ''
+        # Determinate Nix ignores nix.conf for these settings — must be set here so the
+        # daemon trusts xsvr1.lan-1 signatures and can substitute from the binary cache.
+        trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI=
+        substituters = http://xsvr1.lan https://cache.nixos.org
+      '';
     })
   ];
 
   # Deploy builder SSH key on all non-builder hosts
-  sops.secrets.builder_private_key = lib.mkIf (!lib.elem config.networking.hostName builder) {
+  sops.secrets.builder_private_key = lib.mkIf (!isBuilder) {
     sopsFile = ../../../secrets/builder-ssh-key.yaml;
     path = "/root/.ssh/id_builder";
     mode = "0600";
   };
 
-  # SSH config so nixos-rebuild --build-host finds the right key
-  programs.ssh.extraConfig = lib.mkIf (!lib.elem config.networking.hostName builder) ''
-    Host xsvr1.lan
+  # SSH config so nixos-rebuild --build-host and nix distributed builds find the right key
+  programs.ssh.extraConfig = lib.mkIf (!isBuilder) ''
+    Host ${lib.concatStringsSep " " (map (b: "${b.name}.lan") buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
   '';
+
+  # Known host keys for the build machines — prevents host key verification failures
+  # after a client host is rebuilt fresh. Refresh with: ssh-keyscan -t ed25519 xsvr1 xsvr2 xsvr3
+  programs.ssh.knownHosts = lib.mkIf (!isBuilder) {
+    "xsvr1.lan" = {
+      hostNames = [ "xsvr1.lan" "xsvr1" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPi6pOq7wjkPhbRs19XO1g9oud5JTq6O46KuEqVnKp09";
+    };
+    "xsvr2.lan" = {
+      hostNames = [ "xsvr2.lan" "xsvr2" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILqV1INQL4xXMLnypfJQrB/R/i+xl4UR4dWdYTa8Ghae";
+    };
+    "xsvr3.lan" = {
+      hostNames = [ "xsvr3.lan" "xsvr3" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE3iLniG9niDNFxK3Z3INcwqc6N6R1+2v/PfD88klFAX";
+    };
+  };
 }

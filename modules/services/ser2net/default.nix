@@ -51,33 +51,43 @@ in
       default = "";
       description = "Additional ser2net configuration";
     };
+
+    configFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Path to custom ser2net YAML configuration file. When set, overrides port, device, and baudrate options.";
+    };
   };
 
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.device != "";
-        message = "services.ser2net.device must be set when ser2net is enabled";
+        assertion = cfg.configFile != null || cfg.device != "";
+        message = "services.ser2net.device must be set when ser2net is enabled (unless configFile is provided)";
       }
     ];
 
-    # Generate ser2net.yaml configuration
-    environment.etc."ser2net/ser2net.yaml".text = ''
-      %YAML 1.1
-      ---
-      define: &banner \r\nser2net port \p device \d [\s] (NixOS)\r\n\r\n
+    # Generate or use custom ser2net.yaml configuration
+    environment.etc."ser2net/ser2net.yaml" =
+      if cfg.configFile != null then
+        { source = cfg.configFile; }
+      else
+        { text = ''
+          %YAML 1.1
+          ---
+          define: &banner \r\nser2net port \p device \d [\s] (NixOS)\r\n\r\n
 
-      connection: &con01
-        accepter: tcp,${toString cfg.port}
-        enable: on
-        options:
-          banner: *banner
-          kickolduser: true
-          telnet-brk-on-sync: true
-        connector: serialdev,
-                  ${cfg.device},
-                  ${cfg.baudrate}n81,local
-    '';
+          connection: &con01
+            accepter: tcp,${toString cfg.port}
+            enable: on
+            options:
+              banner: *banner
+              kickolduser: true
+              telnet-brk-on-sync: true
+            connector: serialdev,
+                      ${cfg.device},
+                      ${cfg.baudrate}n81,local
+        ''; };
 
     environment.systemPackages = [ pkgs.ser2net ];
 

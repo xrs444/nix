@@ -26,7 +26,7 @@ No content to summarize in secrets.yaml.
 Encrypted certificate for Kanidm replication between primary and replica servers.
 
 ### kanidm_oauth2_secrets.yaml
-Encrypted OAuth2 client secrets for Kanidm OIDC integration with applications (NocoDB, Paperless-ngx, Linkwarden).
+Encrypted OAuth2 client secrets for Kanidm OIDC integration with applications (Paperless-ngx, Linkwarden, Seatable).
 
 ### bgp.yaml
 bgp: ENC[AES256_GCM,data:pllOqFgexDYVXLlZB2QGGx83jQI=,iv:qVv66OVhbna1cDGRdv1g98Vl9X59m50Xu3nktQy5jgU=,tag:Qauja1nGRKvkWzcdSL7xlA==,type:str]

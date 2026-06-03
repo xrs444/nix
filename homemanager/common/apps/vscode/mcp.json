@@ -28,6 +28,10 @@
     //  "command": "uvx",
     //  "args": ["mcp-server-git"]
     //},
+    "basic-memory": {
+      "command": "basic-memory",
+      "args": ["mcp"]
+    },
     //"github": {
     //  "command": "github-mcp-server",
     //  "args": ["stdio"],

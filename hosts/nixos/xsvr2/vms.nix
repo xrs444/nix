@@ -4,8 +4,8 @@ let
   vmSpecs = [
     {
       name = "v-k8s-xsvr2";
-      vcpu = "6";  # Increased from 4 - was CPU starved at 288%, max out Atom cores (leave 2 for host)
-      memory = "80";  # MASSIVELY increased from 16 GiB - xsvr2 has 128GB and only uses 21GB total!
+      vcpu = "6"; # Increased from 4 - was CPU starved at 288%, max out Atom cores (leave 2 for host)
+      memory = "80"; # MASSIVELY increased from 16 GiB - xsvr2 has 128GB and only uses 21GB total!
       nicType = "bridge";
       hostNic = "bridge22"; # Use the VLAN interface for direct mode
       mac = "52:54:00:8d:2e:fe";
@@ -23,7 +23,7 @@ let
           driverType = "raw";
         }
       ];
-      withVnic = false; # Set to true to enable the virtual NIC
+      withVnic = true; # Set to true to enable the virtual NIC
       pciDevices = [ ];
     }
   ];
@@ -182,8 +182,9 @@ let
             # Check if VM exists and get autostart status
             if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
-              # Try to undefine if not running
-              if ! virsh domstate "${vm.name}" | grep -q "running"; then
+              # Try to undefine only when fully stopped
+              state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+              if [ "$state" = "shut off" ] || [ "$state" = "undefined" ]; then
                 ${
                   if vm.firmware == "efi" then
                     "virsh undefine \"${vm.name}\" --nvram || true"

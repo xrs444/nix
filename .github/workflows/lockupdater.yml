@@ -2,28 +2,287 @@ name: Flake Lock Updater
 
 on:
   schedule:
-    - cron: '3 14 * * 1,5'
+    - cron: '30 3 * * THU'
   workflow_dispatch:
 
+concurrency:
+  group: flake-lock-update
+  cancel-in-progress: true
+
 jobs:
-  lock-updater:
-    name: Flake Lock Updater
+  check-pending:
+    name: Check for Pending Update
+    runs-on: ubuntu-latest
+    outputs:
+      has_pending: ${{ steps.check.outputs.has_pending }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if flake-lock-update branch has unmerged content
+        id: check
+        run: |
+          if git ls-remote --exit-code origin refs/heads/flake-lock-update 2>/dev/null; then
+            git fetch origin flake-lock-update
+            if git merge-base --is-ancestor FETCH_HEAD origin/main 2>/dev/null; then
+              echo "Branch exists but is already merged — safe to update."
+              echo "has_pending=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Pending flake-lock-update branch found with unmerged content."
+              echo "has_pending=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "No pending flake-lock-update branch."
+            echo "has_pending=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  notify-pending:
+    name: Notify Pending Update Blocking
+    needs: check-pending
+    if: needs.check-pending.outputs.has_pending == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify pending update is blocking new update
+        run: |
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Blocked","body":"A pending flake-lock-update branch exists with unmerged content. Skipping new flake update — rechecking cache for existing update.","type":"warning","tag":"critical-infra"}' || true
+
+  update-lock:
+    name: Update Flake Lock
+    needs: check-pending
+    if: needs.check-pending.outputs.has_pending == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
-      pull-requests: write
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
       - uses: wimpysworld/nothing-but-nix@main
         with:
           hatchet-protocol: 'holster'
       - uses: DeterminateSystems/determinate-nix-action@v3
-#      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/update-flake-lock@v27
+
+      - name: Update flake.lock
+        run: nix flake update
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push to branch
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B flake-lock-update
+          git add flake.lock
+          git commit -m "chore: update flake.lock"
+          git push --force origin flake-lock-update
+
+      - name: Notify no changes
+        if: steps.changes.outputs.changed == 'false'
+        run: |
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: No Changes","body":"No flake.lock changes detected. Skipping build.","type":"info","tag":"critical-infra"}' || true
+
+  check-cache:
+    name: Check Heavy Package Cache
+    needs: [check-pending, update-lock]
+    if: >-
+      always() &&
+      needs.check-pending.result == 'success' &&
+      (needs.check-pending.outputs.has_pending == 'true' ||
+      (needs.update-lock.result == 'success' && needs.update-lock.outputs.changed == 'true'))
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
         with:
-          pr-title: "chore: update flake.lock"
-          # Labels to be set on the PR
-          pr-labels: |
+          ref: flake-lock-update
+      - uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Check if heavy packages need source compilation
+        id: check
+        run: |
+          # Check if the actual heavy packages (not wrappers/completions) are in cache
+          # xlabmgmt: webkitgtk_6_0, webkitgtk_4_1, gst-plugins-rs
+          # xsvr1: qemu
+
+          echo "Checking cache availability for heavy packages..."
+          UNCACHED=""
+          EVAL_FAILED_COUNT=0
+
+          # Get nixpkgs revision from flake.lock
+          NIXPKGS_REV=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
+          if [ -z "$NIXPKGS_REV" ] || [ "$NIXPKGS_REV" = "null" ]; then
+            echo "Error: Could not determine nixpkgs revision from flake.lock"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          NIXPKGS_REF="github:nixos/nixpkgs/$NIXPKGS_REV"
+          echo "Using nixpkgs: $NIXPKGS_REF"
+
+          # Package list (pkg_attr|description)
+          PACKAGES=(
+            "webkitgtk_6_0|WebKitGTK 6.0"
+            "webkitgtk_4_1|WebKitGTK 4.1"
+            "gst_all_1.gst-plugins-rs|GStreamer Rust plugins"
+            "qemu|QEMU"
+            "ffmpeg|FFmpeg"
+          )
+
+          for entry in "${PACKAGES[@]}"; do
+            pkg="${entry%%|*}"
+            desc="${entry##*|}"
+            echo "Checking $pkg ($desc)..."
+
+            # Get the store path for this package from nixpkgs
+            STORE_PATH=$(nix eval --raw --system x86_64-linux "${NIXPKGS_REF}#${pkg}.outPath" 2>&1 || echo "EVAL_FAILED")
+
+            if [[ "$STORE_PATH" == "EVAL_FAILED" ]] || [[ "$STORE_PATH" == *"error:"* ]]; then
+              echo "  ⚠ Could not evaluate $pkg"
+              EVAL_FAILED_COUNT=$((EVAL_FAILED_COUNT + 1))
+              continue
+            fi
+
+            # Check if it's available in cache.nixos.org
+            if nix path-info --store https://cache.nixos.org "$STORE_PATH" >/dev/null 2>&1; then
+              echo "  ✓ Cached: $STORE_PATH"
+            else
+              echo "  ✗ NOT cached: $STORE_PATH"
+              UNCACHED="${UNCACHED}  - ${desc} (${pkg})\n"
+            fi
+          done
+
+          if [ $EVAL_FAILED_COUNT -gt 0 ]; then
+            echo "Error: Failed to evaluate $EVAL_FAILED_COUNT package(s)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          elif [ -n "$UNCACHED" ]; then
+            echo "Heavy packages not yet cached:"
+            echo -e "$UNCACHED"
+
+            # Check if flake.lock has been waiting for more than 48 hours
+            LOCK_AGE_HOURS=$(( ($(date +%s) - $(git log -1 --format=%ct flake.lock)) / 3600 ))
+            echo "flake.lock age: $LOCK_AGE_HOURS hours"
+
+            if [ $LOCK_AGE_HOURS -gt 48 ]; then
+              echo "⚠️  flake.lock is $LOCK_AGE_HOURS hours old (>48h), proceeding with build despite uncached packages"
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "All heavy packages available in binary cache."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify cache not ready
+        if: steps.check.outputs.ready == 'false'
+        run: |
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Waiting for Cache","body":"Heavy packages (webkitgtk, gst-plugins-rs, qemu) not yet on cache.nixos.org. Will retry tomorrow (will proceed with source build after 48h).","type":"warning","tag":"critical-infra"}' || true
+
+  build-and-cache:
+    name: Build ${{ matrix.host }}
+    needs: [check-pending, update-lock, check-cache]
+    if: >-
+      always() &&
+      needs.check-cache.result == 'success' &&
+      needs.check-cache.outputs.ready == 'true'
+    runs-on: [self-hosted, nixos, builder]
+    timeout-minutes: 360
+    strategy:
+      matrix:
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos]
+      fail-fast: false
+      max-parallel: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flake-lock-update
+
+      - name: Build and cache ${{ matrix.host }}
+        run: |
+          CACHE_URL="file:///zfs/nixcache/cache"
+
+          echo "Building ${{ matrix.host }}..."
+          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
+            --no-link \
+            --max-jobs 2 \
+            --cores 4
+
+          echo "Copying ${{ matrix.host }} to cache..."
+          nix copy --to "$CACHE_URL" ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"
+
+          echo "${{ matrix.host }}: SUCCESS"
+
+  create-pr:
+    name: Create Pull Request
+    needs: build-and-cache
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flake-lock-update
+
+      - name: Check build results
+        id: results
+        run: |
+          # Get results from all matrix jobs
+          JOBS='${{ toJSON(needs.build-and-cache.result) }}'
+
+          if [ "$JOBS" = "success" ]; then
+            echo "all_succeeded=true" >> "$GITHUB_OUTPUT"
+            echo "succeeded_count=10" >> "$GITHUB_OUTPUT"
+            echo "failed_count=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "all_succeeded=false" >> "$GITHUB_OUTPUT"
+            # Note: With matrix jobs, we can't easily get individual success/failure counts
+            # unless we use job outputs or artifacts
+            echo "Check individual job results in the Actions UI"
+          fi
+
+      - name: Create Pull Request
+        if: steps.results.outputs.all_succeeded == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: flake-lock-update
+          title: "chore: update flake.lock"
+          body: |
+            Automated flake.lock update.
+
+            All 9 hosts built and cached successfully on xsvr1:
+            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos`
+          labels: |
             dependencies
             automated
+
+      - name: Notify build success
+        if: steps.results.outputs.all_succeeded == 'true'
+        run: |
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success","tag":"critical-infra"}' || true
+
+      - name: Notify build failure
+        if: steps.results.outputs.all_succeeded == 'false'
+        run: |
+          curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
+            -H "Content-Type: application/json" \
+            -d '{"title":"Flake Update: Build Failed","body":"Some hosts failed to build. Check GitHub Actions logs for details.","type":"failure","tag":"critical-infra"}' || true

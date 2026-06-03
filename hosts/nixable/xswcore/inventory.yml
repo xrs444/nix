@@ -1,0 +1,13 @@
+# Static inventory for xswcore (Brocade ICX-7250 stack)
+# ansible_private_key_file and ansible_become_password are injected
+# at runtime from nix/secrets/ansible-network.yaml via the justfile recipe.
+---
+all:
+  hosts:
+    xswcore:
+      ansible_host: 172.18.4.100
+      ansible_connection: network_cli
+      ansible_network_os: community.network.icx
+      ansible_user: ansible-local
+      ansible_become: true
+      ansible_become_method: enable

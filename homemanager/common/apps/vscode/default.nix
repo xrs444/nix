@@ -71,7 +71,6 @@ in
       meld
       nil
       nixfmt-rfc-style
-      nodePackages.prettier
       nodejs_24
       python3
       uv
@@ -91,13 +90,19 @@ in
         "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
         "git.enableSmartCommit" = true;
         "git.confirmSync" = false;
+        "workbench.colorTheme" = "Catppuccin Mocha";
         "catppuccin-icons.hidesExplorerArrows" = false;
         "catppuccin-icons.specificFolders" = true;
         "catppuccin-icons.monochrome" = false;
         "files.autoSave" = "afterDelay";
         "files.autoSaveDelay" = 60000;
         "chat.mcp.autostart" = "newAndOutdated";
-        "chat.mcp.discovery.enabled" = true;
+        "chat.mcp.discovery.enabled" = {
+          "claude-desktop" = true;
+          "windsurf" = true;
+          "cursor-global" = true;
+          "cursor-workspace" = true;
+        };
         "chat.mcp.enabled" = true;
         "cSpell.diagnosticLevel" = "Hint";
         "dart.updateDevTools" = false;
@@ -173,9 +178,7 @@ in
         # Kubernetes settings
         "vs-kubernetes.crd-code-completion" = "enabled";
         # Claude Code specific settings
-        "claude.defaultModel" = "claude-sonnet-4-5-20250929";
-        "claude.maxTokens" = 200000;
-        "claude.autoStartChat" = false;
+        "claudeCode.selectedModel" = "sonnet";
         "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
           You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
 
@@ -238,13 +241,13 @@ in
                     - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
         '';
       }
-      // lib.mkIf isDarwin {
+      // lib.optionalAttrs isDarwin {
         "terminal.integrated.defaultProfile.osx" = "fish";
         "terminal.integrated.env.osx" = { };
         "cline.chromeExecutablePath" = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
         "window.controlsStyle" = "native";
       }
-      // lib.mkIf isLinux {
+      // lib.optionalAttrs isLinux {
         "terminal.integrated.env.linux" = { };
         "cline.chromeExecutablePath" = "/usr/bin/google-chrome-stable";
         "window.controlsStyle" =
@@ -259,7 +262,7 @@ in
           vscode-marketplace.davidanson.vscode-markdownlint
           vscode-marketplace.dhoeric.ansible-vault
           vscode-marketplace.docker.docker
-          vscode-marketplace.eamodio.gitlens
+          vscode-marketplace-release.eamodio.gitlens
           vscode-marketplace.esbenp.prettier-vscode
           vscode-marketplace.formulahendry.code-runner
           vscode-marketplace.foxundermoon.shell-format
@@ -352,4 +355,24 @@ in
     mutableExtensionsDir = true;
     package = pkgs.unstable.vscode;
   };
+
+  # Remove stale settings.json.backup before home-manager tries to create it,
+  # since makeVSCodeSettingsWritable leaves a real file that triggers a backup each run.
+  home.activation.cleanVSCodeBackup = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+    rm -f "${vscodeUserDir}/settings.json.backup"
+  '';
+
+  # Make settings.json writable by replacing symlink with a copy
+  home.activation.makeVSCodeSettingsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    SETTINGS_FILE="${vscodeUserDir}/settings.json"
+
+    # If it's a symlink, replace it with a writable copy
+    if [ -L "$SETTINGS_FILE" ]; then
+      echo "Making VSCode settings.json writable..."
+      SETTINGS_TARGET=$(readlink "$SETTINGS_FILE")
+      $DRY_RUN_CMD rm -f "$SETTINGS_FILE"
+      $DRY_RUN_CMD cp "$SETTINGS_TARGET" "$SETTINGS_FILE"
+      $DRY_RUN_CMD chmod u+w "$SETTINGS_FILE"
+    fi
+  '';
 }

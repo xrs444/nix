@@ -5,3 +5,6 @@ tmp/
 # Nix build results
 result
 result-*
+
+# direnv generated files
+.direnv/

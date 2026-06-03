@@ -1,7 +1,6 @@
 # Summary: NixOS host configuration for xsvr2, imports hardware, boot, VM, and disk modules.
 {
   hostname,
-  inputs,
   ...
 }:
 {
@@ -12,9 +11,10 @@
     ../common/performance.nix
     ./network.nix
     ./replication.nix
+    ./offsite-backup.nix
     ./vms.nix
     ./disks.nix
-    # Common imports are now handled by hosts/common/default.nix
+    ../../common
   ];
 
   # Add other heavy modules here as needed
@@ -22,6 +22,10 @@
   networking.hostName = hostname;
   networking.hostId = "8f9996ca";
   networking.useNetworkd = true;
+  # Temporary: Add nixcache to hosts for troubleshooting DNS issues
+  networking.hosts = {
+    "172.20.1.10" = [ "nixcache.xrs444.net" ];
+  };
 
   boot = {
     initrd = {
@@ -38,7 +42,10 @@
         "md_mod"
       ];
     };
-    zfs.extraPools = [ "zpool-xsvr2" ];
+    zfs.extraPools = [
+      "zpool-xsvr2"
+      "zpool-xsvr2-media"
+    ];
     swraid = {
       enable = true;
       mdadmConf = ''

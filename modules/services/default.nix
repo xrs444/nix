@@ -3,11 +3,16 @@
 {
   imports = [
     ./Samba
+    ./adguard
+    ./auto-upgrade
+    ./asterisk
+    ./phone-config-nginx
     ./bind
     ./borgbackup
     ./determinate-nix
-    ./ffr
-    ./homeassistant
+    ./bird-bgp
+    ./flakehub-auth
+    ./github-runner
     ./iprouting
     ./kanidm
     ./keepalived
@@ -16,8 +21,10 @@
     ./monitoring
     ./nfs
     ./nixcache
+    ./oauth2-proxy
     ./openssh
     ./remotebuilds
+    ./reverse-proxy
     ./ser2net
     ./socat
     ./tailscale

@@ -3,37 +3,9 @@
 let
   vmSpecs = [
     {
-      name = "v-xhac1";
-      vcpu = "2";
-      memory = "6";  # Right-sized based on actual usage (~1.5 cores, 8 GiB actual)
-      nicType = "bridge"; # or "macvtap"
-      hostNic = "bridge17";
-      mac = "52:54:00:00:00:10";
-      autostart = true;
-      firmware = "efi";
-      withVnic = true;
-      storage = {
-        path = "/vm/v-xhac1/v-xhac1.qcow2";
-      };
-    }
-    {
-      name = "v-xpbx1";
-      vcpu = "2";
-      memory = "4";  # Reduced from 6 GiB - FreePBX with 2 vCPUs doesn't need 6GB
-      nicType = "bridge";
-      hostNic = "bridge16";
-      mac = "52:54:00:c7:8c:80";
-      autostart = true;
-      firmware = "bios";
-      withVnic = true;
-      storage = {
-        path = "/vm/v-xpbx1/v-xpbx1.qcow2";
-      };
-    }
-    {
       name = "v-k8s-xsvr1";
-      vcpu = "10";  # Increased from 8 - running at 140% CPU, heavily utilized
-      memory = "24";  # Increased from 16 GiB - node needs full allocation
+      vcpu = "10"; # Increased from 8 - running at 140% CPU, heavily utilized
+      memory = "24"; # Increased from 16 GiB - node needs full allocation
       nicType = "bridge"; # or "bridge"
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
@@ -51,6 +23,21 @@ let
           driverType = "raw";
         }
       ];
+      withVnic = true; # Set to true to enable the virtual NIC
+      pciDevices = [ ];
+    }
+    {
+      name = "v-xlabmgmt";
+      vcpu = "2"; # Increased from 8 - running at 140% CPU, heavily utilized
+      memory = "4"; # Increased from 16 GiB - node needs full allocation
+      nicType = "bridge"; # or "bridge"
+      hostNic = "bridge21";
+      mac = "52:54:00:8d:2e:01";
+      autostart = true;
+      firmware = "efi";
+      storage = {
+        path = "/vm/v-xlabmgmt/v-xlabmgmt.qcow2";
+      };
       withVnic = true; # Set to true to enable the virtual NIC
       pciDevices = [ ];
     }
@@ -226,15 +213,17 @@ let
 
                 # Wait up to 60 seconds for graceful shutdown
                 for i in {1..60}; do
-                  if ! virsh domstate "${vm.name}" | grep -q "running"; then
+                  state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+                  if [ "$state" = "shut off" ] || [ "$state" = "undefined" ]; then
                     echo "VM ${vm.name} shut down gracefully"
                     break
                   fi
                   sleep 1
                 done
 
-                # Force destroy if still running
-                if virsh domstate "${vm.name}" | grep -q "running"; then
+                # Force destroy if not fully stopped
+                state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+                if [ "$state" != "shut off" ] && [ "$state" != "undefined" ]; then
                   echo "VM ${vm.name} did not shut down gracefully, forcing destruction..."
                   virsh destroy "${vm.name}" || true
                   sleep 2

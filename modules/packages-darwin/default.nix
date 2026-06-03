@@ -57,8 +57,6 @@
     zstd
 
     # Utilities
-    gitkraken
-    iterm2
     wireshark
     openscad
     powershell
@@ -67,6 +65,5 @@
     # Other utilities
     pipx
     virtualenv
-    ollama
   ];
 }

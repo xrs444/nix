@@ -192,7 +192,7 @@ in
         enable = true;
         port = 9324;
         listenAddress = "0.0.0.0";
-        openFirewall = false;
+        openFirewall = true;
       };
 
       # Keepalived with BGP health monitoring
@@ -209,7 +209,8 @@ in
         };
         vrrpInstances = {
           ts-vip = {
-            interface = "eth0";
+            # xts1 = RPi4 (end0), xts2 = Sweet Potato (eth0, confirm on first boot)
+            interface = if hostname == "xts1" then "end0" else "eth0";
             virtualRouterId = 51;
             priority =
               if hostname == "xts1" then
@@ -223,6 +224,14 @@ in
               { addr = "172.18.10.100/24"; }
             ];
             extraConfig = ''
+              # use_vmac creates a macvlan interface (vrrp.51) with the VRRP virtual MAC
+              # (00:00:5e:00:01:33 for VRID 51). The VIP is assigned to this macvlan so
+              # all traffic to/from .100 uses the virtual MAC — no split routing, and
+              # Firewalla treats the VIP as a separate device from the host's real MAC.
+              # vmac_xmit_base keeps VRRP heartbeat advertisements on the base interface
+              # so peering between xts1 and xts2 continues to work normally.
+              use_vmac
+              vmac_xmit_base
               authentication {
                 auth_type PASS
                 auth_pass tsexit
