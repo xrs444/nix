@@ -161,6 +161,17 @@
             "auto-upgrade"
           ];
         };
+        xdt1-t = {
+          user = "xrs444";
+          platform = "x86_64-linux";
+          type = "nixos";
+          desktop = "niri";
+          roles = [
+            "letsencrypt-host"
+            "monitoring-client"
+            "auto-upgrade"
+          ];
+        };
         cmrpi1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
