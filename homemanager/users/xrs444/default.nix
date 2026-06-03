@@ -84,7 +84,7 @@
     (direnv.overrideAttrs (_: {
       doCheck = false;
     }))
-    teams
+
     kustomize
     kubeconform
     pre-commit

@@ -29,8 +29,8 @@ jobs:
 
       - name: Build and cache all hosts
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           FAILED=()
 
           for host in "${HOSTS[@]}"; do
@@ -75,7 +75,7 @@ jobs:
       - name: Deploy remote hosts
         run: |
           REVISION=$(git rev-parse HEAD)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           DEPLOY_FAILED=()
 
