@@ -116,7 +116,6 @@
     wimlib
     xz
     zstd
-    iterm2
     wireshark
     openscad
     powershell
@@ -289,6 +288,11 @@
     # VSCode extensions and theme are managed manually in common/apps/vscode
     # to use up-to-date marketplace versions; catppuccin module adds older pins
     vscode.profiles.default.enable = false;
+    # catppuccin-nix reads the starship theme TOML via IFD at eval time.
+    # On aarch64-darwin evaluating x86_64-linux targets the derivation isn't in
+    # the local store, breaking nix flake check. Disable on Linux until the
+    # catppuccin-starship x86_64-linux binary lands in a reachable cache.
+    starship.enable = pkgs.stdenv.isDarwin;
   };
 
   # VSCode reads .extensions-immutable.json using a single readlink() call, not realpath().
