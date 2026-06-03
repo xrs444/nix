@@ -57,6 +57,36 @@
     "nixos": {
       "command": "mcp-nixos"
     },
+    "arr": {
+      "command": "/Users/xrs444/.claude/scripts/run-arr-mcp.sh",
+      "env": {
+        "PATH": "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    },
+    "firewalla": {
+      "command": "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh",
+      "env": {
+        "PATH": "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    },
+    "homeassistant": {
+      "command": "/Users/xrs444/.claude/scripts/run-ha-mcp.sh",
+      "env": {
+        "PATH": "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    },
+    "omada": {
+      "command": "/Users/xrs444/.claude/scripts/run-omada-mcp.sh",
+      "env": {
+        "PATH": "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    },
+    "jellyfin": {
+      "command": "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh",
+      "env": {
+        "PATH": "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    },
     //"Ref": {
     //  "type": "http",
     //  "url": "https://api.ref.tools/mcp?apiKey=${input:refApiKey}"
