@@ -29,6 +29,24 @@
     # build environment doesn't have setuptools accessible to python3 (the
     # nixpkgs 25.11 package doesn't add it). Add it explicitly.
     nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
+    postPatch = (oldAttrs.postPatch or "") + ''
+      # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
+      # module level. In Python 3.13 distutils is gone from stdlib; setuptools
+      # provides a shim but omits cygwinccompiler on non-Windows platforms.
+      # g-ir-scanner is invoked during the build itself to scan test libraries,
+      # so the import fires at build time and kills the build. Wrap it in a
+      # try/except so non-Windows platforms continue without it.
+      python3 -c "
+import pathlib
+p = pathlib.Path('giscanner/utils.py')
+t = p.read_text()
+t = t.replace(
+    'import distutils.cygwinccompiler',
+    'try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass  # Windows-only, not in setuptools shim on Linux'
+)
+p.write_text(t)
+"
+    '';
     postFixup = (oldAttrs.postFixup or "") + ''
       # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
       # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
