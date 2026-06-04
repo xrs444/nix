@@ -37,13 +37,28 @@
       # so the import fires at build time and kills the build. Wrap it in a
       # try/except so non-Windows platforms continue without it.
       python3 -c "
-import pathlib
+import pathlib, types
 p = pathlib.Path('giscanner/utils.py')
 t = p.read_text()
-t = t.replace(
-    'import distutils.cygwinccompiler',
-    'try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass  # Windows-only, not in setuptools shim on Linux'
-)
+# The bare 'import distutils.cygwinccompiler' at module level fails on
+# Python 3.13+ Linux because setuptools' distutils shim omits the
+# Windows-only cygwinccompiler sub-module. The lines immediately following
+# the import reference 'distutils.cygwinccompiler.get_msvcr', so a bare
+# 'pass' in the except block causes NameError there.
+# Fix: provide a minimal stub module so all downstream references resolve.
+stub = '''try:
+    import distutils.cygwinccompiler
+except ImportError:
+    # cygwinccompiler is Windows-only and absent from setuptools shim on Linux.
+    # Provide a stub so the module-level references to
+    # distutils.cygwinccompiler.get_msvcr on the lines immediately following
+    # this import resolve without NameError.
+    import types as _types
+    distutils = _types.SimpleNamespace(
+        cygwinccompiler=_types.SimpleNamespace(get_msvcr=lambda: [])
+    )
+'''
+t = t.replace('import distutils.cygwinccompiler\n', stub)
 p.write_text(t)
 "
     '';
