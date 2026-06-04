@@ -847,6 +847,21 @@ in
             }
           ];
         }
+
+        # Kubernetes - Windmill automation engine metrics (CE: /metrics on port 8000, via NodePort)
+        {
+          job_name = "windmill";
+          metrics_path = "/metrics";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30120" ];
+              labels = {
+                cluster = "home-k8s";
+                component = "windmill";
+              };
+            }
+          ];
+        }
       ];
 
       # Alert rules
