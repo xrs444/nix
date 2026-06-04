@@ -164,22 +164,10 @@ rec {
     hostName: hostConfig:
     let
       isArm = hostConfig.platform == "aarch64-linux";
-      # ARM hosts that use disko for disk configuration
-      armHostsWithDisko = [
-        "xts2"
-        "xlt1-t-vnixos"
-      ];
       modulesList = [
         { nixpkgs.overlays = overlays; }
+        inputs.disko.nixosModules.disko
       ]
-      ++ (
-        if isArm && builtins.elem hostName armHostsWithDisko then
-          [
-            inputs.disko.nixosModules.disko
-          ]
-        else
-          [ ]
-      )
       ++ [
         (import
           (
@@ -232,10 +220,12 @@ rec {
           networking.wireless.enable = hostConfig.enableWifi or false;
         }
       ]
+      ++ [
+        inputs.disko.nixosModules.disko
+      ]
       ++ (
         if isArm then
           [
-            inputs.disko.nixosModules.disko
             (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix"))
             ../modules/sdImage/base.nix
           ]

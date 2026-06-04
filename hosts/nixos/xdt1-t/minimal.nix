@@ -12,6 +12,7 @@
     ../common/hardware-amd.nix
     ../common/boot.nix
     ../../../modules/sdImage/custom.nix
+    ./disks.nix
   ];
 
   system.stateVersion = stateVersion;
@@ -27,11 +28,4 @@
   };
 
   security.sudo.wheelNeedsPassword = lib.mkForce false;
-
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-  };
-  boot.loader.systemd-boot.enable = lib.mkDefault true;
-  boot.loader.efi.canTouchEfiVariables = lib.mkDefault false;
 }
