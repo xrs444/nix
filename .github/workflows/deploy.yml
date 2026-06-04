@@ -10,6 +10,7 @@ env:
   PUSHGATEWAY: http://localhost:9091
   APPRISE_URL: https://apprise.xrs444.net/notify/apprise
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NIX_CONFIG: "accept-flake-config = true"
 
 jobs:
   deploy:

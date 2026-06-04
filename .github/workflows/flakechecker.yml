@@ -23,6 +23,7 @@ jobs:
         with:
           extra-conf: |
             lazy-trees = true
+            accept-flake-config = true
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
       - uses: DeterminateSystems/flake-checker-action@v12
 

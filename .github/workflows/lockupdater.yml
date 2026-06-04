@@ -5,6 +5,9 @@ on:
     - cron: '30 3 * * THU'
   workflow_dispatch:
 
+env:
+  NIX_CONFIG: "accept-flake-config = true"
+
 concurrency:
   group: flake-lock-update
   cancel-in-progress: true
