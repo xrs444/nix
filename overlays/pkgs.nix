@@ -22,6 +22,11 @@
   # Nix string escaping note: in '' strings, \${...} is NOT a Nix escape —
   # only ''${...} produces a literal ${...}. printf is used instead of echo so
   # that ${PYTHONPATH} is not expanded by bash at postFixup time.
+  #
+  # IMPORTANT: in Nix '' strings, ''' (three single-quotes) is the escape
+  # sequence for a literal '' (two single-quotes) — so Python triple-quoted
+  # strings like '''stub''' inside a '' string become ''stub'' in the shell,
+  # which is a Python SyntaxError. Use \n-escaped single-quoted strings instead.
   "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
     # gobject-introspection's meson.build:29 calls
     # find_installation('python3', modules: ['setuptools']). Our python3
@@ -36,28 +41,14 @@
       # g-ir-scanner is invoked during the build itself to scan test libraries,
       # so the import fires at build time and kills the build. Wrap it in a
       # try/except so non-Windows platforms continue without it.
+      # NOTE: stub uses \n-escaped single-quoted string (not triple-quotes) because
+      # in Nix indented strings, two single-quotes end the string and three produce
+      # a literal two-single-quote sequence -- both corrupt the embedded Python.
       python3 -c "
-import pathlib, types
+import pathlib
 p = pathlib.Path('giscanner/utils.py')
 t = p.read_text()
-# The bare 'import distutils.cygwinccompiler' at module level fails on
-# Python 3.13+ Linux because setuptools' distutils shim omits the
-# Windows-only cygwinccompiler sub-module. The lines immediately following
-# the import reference 'distutils.cygwinccompiler.get_msvcr', so a bare
-# 'pass' in the except block causes NameError there.
-# Fix: provide a minimal stub module so all downstream references resolve.
-stub = '''try:
-    import distutils.cygwinccompiler
-except ImportError:
-    # cygwinccompiler is Windows-only and absent from setuptools shim on Linux.
-    # Provide a stub so the module-level references to
-    # distutils.cygwinccompiler.get_msvcr on the lines immediately following
-    # this import resolve without NameError.
-    import types as _types
-    distutils = _types.SimpleNamespace(
-        cygwinccompiler=_types.SimpleNamespace(get_msvcr=lambda: [])
-    )
-'''
+stub = 'try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    import types as _types\n    distutils = _types.SimpleNamespace(\n        cygwinccompiler=_types.SimpleNamespace(get_msvcr=lambda: [])\n    )\n'
 t = t.replace('import distutils.cygwinccompiler\n', stub)
 p.write_text(t)
 "
