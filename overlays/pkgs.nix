@@ -34,13 +34,19 @@
     # build environment doesn't have setuptools accessible to python3 (the
     # nixpkgs 25.11 package doesn't add it). Add it explicitly.
     nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
+    # meson invokes giscanner Python modules at build time. Adding setuptools to
+    # nativeBuildInputs is not sufficient — Python may not process .pth files if
+    # invoked without site-packages (e.g. from the meson build dir). Exporting
+    # PYTHONPATH explicitly ensures `import distutils` resolves via setuptools'
+    # shim regardless of how Python is invoked during the build.
+    preBuild = (oldAttrs.preBuild or "") + ''
+      export PYTHONPATH="${final.python3.pkgs.setuptools}/${final.python3.sitePackages}''${PYTHONPATH:+:$PYTHONPATH}"
+    '';
     postPatch = (oldAttrs.postPatch or "") + ''
       # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
-      # module level. In Python 3.13 distutils is gone from stdlib; setuptools
-      # provides a shim but omits cygwinccompiler on non-Windows platforms.
-      # g-ir-scanner is invoked during the build itself to scan test libraries,
-      # so the import fires at build time and kills the build. Wrap it in a
-      # try/except so non-Windows platforms continue without it.
+      # module level. setuptools' distutils shim omits cygwinccompiler on
+      # non-Windows platforms even when distutils itself is available.
+      # Wrap it in a try/except so non-Windows platforms continue without it.
       # NOTE: stub uses \n-escaped single-quoted string (not triple-quotes) because
       # in Nix indented strings, two single-quotes end the string and three produce
       # a literal two-single-quote sequence -- both corrupt the embedded Python.
