@@ -115,6 +115,10 @@ p.write_text(t)
           (x: (x.pname or "") != "yt-dlp-ejs")
           (old.propagatedBuildInputs or [ ]);
       });
+      # Fix rich subprocess test failures in sandboxed builds
+      # test suite spawns subprocesses (process error, retcode != 0) which
+      # fail in the Nix sandbox where subprocess spawning is restricted
+      rich = pprev.rich.overrideAttrs (_: { doCheck = false; });
     };
   };
   python3Packages = final.python3.pkgs;
