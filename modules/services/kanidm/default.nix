@@ -156,13 +156,13 @@ in
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
-        enableServer = true;
-        enablePam = lib.mkForce true;
-        enableClient = true;
+        server.enable = true;
+        unix.enable = lib.mkForce true;
+        client.enable = true;
         unixSettings = {
           pam_allowed_login_groups = [ "posix_users" ];
         };
-        serverSettings = {
+        server.settings = {
           bindaddress = "0.0.0.0:443";
           ldapbindaddress = "0.0.0.0:3636";
           origin = kanidmServerUri;
@@ -186,7 +186,7 @@ in
             };
           };
         };
-        clientSettings = {
+        client.settings = {
           uri = kanidmServerUri;
         };
       };
@@ -339,9 +339,9 @@ in
       };
 
       services.kanidm = {
-        enableServer = true;
-        enablePam = false;
-        serverSettings = {
+        server.enable = true;
+        unix.enable = false;
+        server.settings = {
           bindaddress = "0.0.0.0:443";
           ldapbindaddress = "0.0.0.0:3636";
           origin = kanidmServerUri;

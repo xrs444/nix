@@ -38,7 +38,7 @@
     foot              # Lightweight Wayland terminal
 
     # File manager
-    xfce.thunar       # Simple GUI file manager
+    thunar            # Simple GUI file manager
 
     # System utilities
     networkmanagerapplet  # Network manager GUI

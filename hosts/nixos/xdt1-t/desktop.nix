@@ -111,7 +111,7 @@ in
       foot
 
       # File manager
-      xfce.thunar
+      thunar
 
       # Audio / network
       pavucontrol

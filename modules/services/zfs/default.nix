@@ -15,6 +15,7 @@ in
 
   config = lib.mkIf hasRole {
     boot.supportedFilesystems = [ "zfs" ];
+    boot.zfs.forceImportRoot = false;
     environment = {
       systemPackages = with pkgs; [ zfs ];
       etc = {

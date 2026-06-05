@@ -55,7 +55,7 @@
     foot              # Lightweight Wayland terminal
 
     # File manager
-    xfce.thunar       # Simple GUI file manager
+    thunar            # Simple GUI file manager
 
     # System utilities
     pavucontrol       # Audio control

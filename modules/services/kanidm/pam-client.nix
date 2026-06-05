@@ -6,9 +6,9 @@
 { ... }:
 {
   services.kanidm = {
-    enableClient = true;
-    enablePam = true;
-    clientSettings.uri = "https://idm.xrs444.net";
+    client.enable = true;
+    unix.enable = true;
+    client.settings.uri = "https://idm.xrs444.net";
     unixSettings = {
       pam_allowed_login_groups = [ "posix_users" ];
       home_prefix = "/home";

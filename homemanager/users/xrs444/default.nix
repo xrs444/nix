@@ -46,15 +46,15 @@
     ssh = {
       enable = true;
       enableDefaultConfig = false;
-      matchBlocks = {
+      settings = {
         # Explicit default configuration to replace removed defaults
         "*" = {
-          serverAliveInterval = 60;
-          serverAliveCountMax = 3;
+          ServerAliveInterval = 60;
+          ServerAliveCountMax = 3;
         };
         "*.lan thomas-local@*" = {
-          user = "thomas-local";
-          identityFile =
+          User = "thomas-local";
+          IdentityFile =
             if pkgs.stdenv.isDarwin then "~/.ssh/thomas-local_key" else "/run/secrets/thomas-local-ssh-key";
         };
       };
