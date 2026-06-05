@@ -73,6 +73,13 @@ p.write_text(t)
   # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
   # have been moved to xdash1-specific config since other hosts need GIR files
 
+  # Fix upower self-test SIGABRT in sandboxed builds
+  # test 7/86 "self-test" is killed by signal 6 (SIGABRT) — requires a real
+  # D-Bus system bus and hardware access not available in the Nix sandbox.
+  upower = prev.upower.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
   # Fix xdg-desktop-portal USB integration test failure in sandboxed builds
   # test_queries[2-template_params3-vnd:0001] in test_usb.py fails because
   # the sandbox has no D-Bus USB device session bus / real USB device access.
