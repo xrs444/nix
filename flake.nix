@@ -12,17 +12,17 @@
   inputs = {
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    catppuccin.url = "github:catppuccin/nix/63c423c"; # pin: last commit before opencode support (incompatible with home-manager 25.11)
+    catppuccin.url = "github:catppuccin/nix";
     deploy-rs.url = "github:serokell/deploy-rs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     # Use main branch which has fix for nix-dev path issue
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.11";
+    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-26.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -269,7 +269,7 @@
       devShells = lib.forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = with inputs.nixpkgs.legacyPackages.${system}; [
-            nixfmt-rfc-style
+            nixfmt
             sops
             age
             git
@@ -318,7 +318,7 @@
         tailscale = import ./modules/services/tailscale;
         github-runner = import ./modules/services/github-runner;
       };
-      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt);
       overlays = {
         kanidm = import ./overlays/kanidm.nix { inherit inputs; };
         pkgs = import ./overlays/pkgs.nix { inherit inputs; };

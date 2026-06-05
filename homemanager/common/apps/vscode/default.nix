@@ -70,7 +70,7 @@ in
       # unstable.mcp-nixos
       meld
       nil
-      nixfmt-rfc-style
+      nixfmt
       nodejs_24
       python3
       uv
