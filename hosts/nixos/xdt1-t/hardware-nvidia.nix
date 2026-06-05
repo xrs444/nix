@@ -1,25 +1,31 @@
 { config, lib, pkgs, ... }:
 {
-  # common/hardware-amd.nix enables amdgpu via mkDefault — override it since
-  # the GPU is NVIDIA. Keep kvm-amd for the AMD CPU's virtualisation support.
-  boot.initrd.kernelModules = lib.mkForce [ "kvm-amd" ];
+  # common/hardware-amd.nix enables amdgpu via mkDefault. Keep it — the
+  # machine has an AMD iGPU alongside the discrete NVIDIA GPU. Keep kvm-amd
+  # for AMD CPU virtualisation support.
+  boot.initrd.kernelModules = lib.mkForce [ "kvm-amd" "amdgpu" ];
 
   services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.graphics.enable = true;
+
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      nvidia-vaapi-driver   # VA-API via NVDEC/NVENC for hardware video decode/encode
+    ];
+  };
 
   hardware.nvidia = {
-    modesetting.enable = true; # required for Wayland / niri
-    open = false;              # switch to true if stable causes issues on Turing+
+    modesetting.enable = true;   # required for Wayland / niri
+    open = true;                 # recommended for Blackwell (RTX 5000 series)
     nvidiaSettings = true;
     powerManagement.enable = false;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # Wayland env vars expected by NVIDIA + Wayland compositors
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME = "nvidia";
+    NVD_BACKEND = "direct";              # nvidia-vaapi-driver: use direct backend on Wayland
     GBM_BACKEND = "nvidia-drm";
     __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-    WLR_NO_HARDWARE_CURSORS = "1"; # some NVIDIA setups need this
   };
 }
