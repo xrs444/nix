@@ -71,7 +71,7 @@ lib.mkIf (!minimalImage) {
       email = "admin@${domain}";
       dnsProvider = "cloudflare";
       dnsResolver = "1.1.1.1:53";
-      credentialsFile = pkgs.writeText "cloudflare-creds" ''
+      environmentFile = pkgs.writeText "cloudflare-creds" ''
         CLOUDFLARE_DNS_API_TOKEN_FILE=${config.sops.secrets.cloudflare_dns_api_token.path}
         CLOUDFLARE_PROPAGATION_TIMEOUT=300
         CLOUDFLARE_POLLING_INTERVAL=15
