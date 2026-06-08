@@ -20,10 +20,13 @@
   # networking.firewall.interfaces.enp6s0.allowedTCPPorts = [ 9080 9100 9633 ];
 
   boot.initrd.availableKernelModules = [
-    "nvme"
     "xhci_pci"
     "ahci"
     "usb_storage"
     "sd_mod"
   ];
+
+  # nvme must be in kernelModules (not just availableKernelModules) so it is
+  # loaded before systemd-initrd attempts to mount the root filesystem.
+  boot.initrd.kernelModules = [ "nvme" ];
 }

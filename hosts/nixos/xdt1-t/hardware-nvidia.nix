@@ -1,9 +1,9 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 {
-  # common/hardware-amd.nix enables amdgpu via mkDefault. Keep it — the
-  # machine has an AMD iGPU alongside the discrete NVIDIA GPU. Keep kvm-amd
-  # for AMD CPU virtualisation support.
-  boot.initrd.kernelModules = lib.mkForce [ "kvm-amd" "amdgpu" ];
+  # common/hardware-amd.nix enables amdgpu + kvm-amd via mkDefault; keep
+  # those by not using mkForce here. nvme is added in default.nix so the
+  # lists merge cleanly rather than one overriding the other.
+  boot.initrd.kernelModules = [ "kvm-amd" "amdgpu" ];
 
   services.xserver.videoDrivers = [ "nvidia" ];
 
