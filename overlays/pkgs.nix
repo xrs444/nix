@@ -162,6 +162,13 @@ p.write_text(t)
     }
   ).claude-code;
 
+  # Fix tinysparql test_notifier SIGABRT in sandboxed builds
+  # test_notifier requires a real D-Bus session / notification infrastructure
+  # not available in the Nix sandbox
+  tinysparql = prev.tinysparql.overrideAttrs (oldAttrs: {
+    doCheck = false;
+  });
+
   # Fix nbd TLS test timeouts (tlshuge, tlswrongcert) in sandboxed builds
   # Tests require real TLS socket timing that doesn't work in the sandbox
   nbd = prev.nbd.overrideAttrs (oldAttrs: {
