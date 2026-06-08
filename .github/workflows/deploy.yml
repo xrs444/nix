@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  actions: read
+
 env:
   PUSHGATEWAY: http://localhost:9091
   APPRISE_URL: https://apprise.xrs444.net/notify/apprise
@@ -13,8 +16,30 @@ env:
   NIX_CONFIG: "accept-flake-config = true"
 
 jobs:
+  check-queue:
+    name: Skip if newer run queued
+    runs-on: [self-hosted, nixos, builder]
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        run: |
+          NEWER=$(curl -sf \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?branch=${{ github.ref_name }}&status=queued&per_page=20" \
+            | jq "[.workflow_runs[] | select(.id > ${{ github.run_id }})] | length")
+          if [ "${NEWER:-0}" -gt 0 ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping — ${NEWER} newer run(s) already queued for this branch."
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     name: Build, Cache, and Deploy All Hosts
+    needs: check-queue
+    if: needs.check-queue.outputs.should_run == 'true'
     runs-on: [self-hosted, nixos, builder]
     timeout-minutes: 480
     steps:
