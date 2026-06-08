@@ -159,7 +159,7 @@ in
         server.enable = true;
         unix.enable = lib.mkForce true;
         client.enable = true;
-        unixSettings = {
+        unix.settings.kanidm = {
           pam_allowed_login_groups = [ "posix_users" ];
         };
         server.settings = {

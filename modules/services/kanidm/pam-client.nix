@@ -9,8 +9,8 @@
     client.enable = true;
     unix.enable = true;
     client.settings.uri = "https://idm.xrs444.net";
-    unixSettings = {
-      pam_allowed_login_groups = [ "posix_users" ];
+    unix.settings = {
+      kanidm.pam_allowed_login_groups = [ "posix_users" ];
       home_prefix = "/home";
       home_attr = "uuid";
       home_alias = "spn";
