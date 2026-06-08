@@ -33,15 +33,15 @@
     # overlay changes the python3 hash, causing a fresh rebuild. The fresh
     # build environment doesn't have setuptools accessible to python3 (the
     # nixpkgs 25.11 package doesn't add it). Add it explicitly.
-    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
-    # meson invokes giscanner Python modules at build time. Adding setuptools to
-    # nativeBuildInputs is not sufficient — Python may not process .pth files if
-    # invoked without site-packages (e.g. from the meson build dir). Exporting
-    # PYTHONPATH explicitly ensures `import distutils` resolves via setuptools'
-    # shim regardless of how Python is invoked during the build.
-    preBuild = (oldAttrs.preBuild or "") + ''
-      export PYTHONPATH="${final.python3.pkgs.setuptools}/${final.python3.sitePackages}''${PYTHONPATH:+:$PYTHONPATH}"
-    '';
+    #
+    # python3.pkgs.distutils installs distutils/ as real Python files in
+    # site-packages (not via .pth hooks). The Python setup hook adds it to
+    # PYTHONPATH so `import distutils` works in all giscanner modules
+    # (ccompiler.py, utils.py, etc.) without needing a .pth activation shim.
+    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [
+      final.python3.pkgs.setuptools
+      final.python3.pkgs.distutils
+    ];
     postPatch = (oldAttrs.postPatch or "") + ''
       # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
       # module level. setuptools' distutils shim omits cygwinccompiler on
