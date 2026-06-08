@@ -119,6 +119,10 @@ p.write_text(t)
       # test suite spawns subprocesses (process error, retcode != 0) which
       # fail in the Nix sandbox where subprocess spawning is restricted
       rich = pprev.rich.overrideAttrs (_: { doCheck = false; });
+      # Fix pipx 1.8.0 test failures — tests expect `black@ https://` (no space)
+      # but the code now produces PEP 440-compliant `black @ https://` (with space)
+      # Tests run via doInstallCheck (not doCheck) in this package
+      pipx = pprev.pipx.overrideAttrs (_: { doInstallCheck = false; });
     };
   };
   python3Packages = final.python3.pkgs;
@@ -193,4 +197,11 @@ p.write_text(t)
   inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
     hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
   });
+
+  # Fix gtkmm3/gtkmm4 test failures in sandboxed builds
+  # Tests call Gdk::Display::get_default() which requires a live display
+  # server (X11/Wayland). The Nix sandbox has none, causing "failed to get
+  # display" / "failed to get children" test failures.
+  gtkmm3 = prev.gtkmm3.overrideAttrs (_: { doCheck = false; });
+  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
 })
