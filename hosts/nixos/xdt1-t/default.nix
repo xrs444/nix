@@ -16,8 +16,8 @@
   networking.hostName = "xdt1-t";
   nixpkgs.config.allowUnfree = true;
 
-  # Open monitoring exporter ports — update NIC name (enp*/wlp*) after first boot
-  # networking.firewall.interfaces.enp6s0.allowedTCPPorts = [ 9080 9100 9633 ];
+  # Wired NIC is enp8s0 (confirmed from installer). Open monitoring exporter ports.
+  networking.firewall.interfaces.enp8s0.allowedTCPPorts = [ 9080 9100 9633 ];
 
   boot.initrd.availableKernelModules = [
     "xhci_pci"
