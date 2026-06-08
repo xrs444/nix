@@ -14,7 +14,7 @@ lib.mkIf hasRole {
   environment.systemPackages =
     with pkgs;
     [
-      qemu
+      (if isWorkstation then qemu else qemu.override { gtkSupport = false; })
       OVMF
     ]
     ++ lib.optionals isWorkstation [
