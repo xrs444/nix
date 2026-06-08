@@ -39,6 +39,7 @@ rec {
         };
         modules = [
           inputs.catppuccin.homeModules.catppuccin
+          { catppuccin.autoEnable = inputs.nixpkgs.lib.mkDefault false; catppuccin.enable = inputs.nixpkgs.lib.mkDefault true; }
           (
             { config, specialArgs, ... }:
             {
@@ -133,7 +134,10 @@ rec {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "backup";
-                sharedModules = [ inputs.catppuccin.homeModules.catppuccin ];
+                sharedModules = [
+                  inputs.catppuccin.homeModules.catppuccin
+                  { catppuccin.autoEnable = inputs.nixpkgs.lib.mkDefault false; catppuccin.enable = inputs.nixpkgs.lib.mkDefault true; }
+                ];
                 extraSpecialArgs = {
                   inherit inputs outputs stateVersion;
                   username = hostConfig.user;

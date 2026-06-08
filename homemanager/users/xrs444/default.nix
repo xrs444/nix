@@ -289,6 +289,7 @@
 
   catppuccin = {
     enable = true;
+    autoEnable = true;
     flavor = "mocha";
     # VSCode extensions and theme are managed manually in common/apps/vscode
     # to use up-to-date marketplace versions; catppuccin module adds older pins
