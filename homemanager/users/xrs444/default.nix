@@ -100,7 +100,6 @@
     kubeseal
     talosctl
     arping
-    baobab
     nmap
     sops
     sshpass
@@ -123,6 +122,8 @@
     virtualenv
     just
     claude-code
+  ] ++ lib.optionals pkgs.stdenv.isLinux [
+    baobab
   ];
 
   # Claude Code CLI settings

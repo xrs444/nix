@@ -31,6 +31,16 @@ let
   repoPath = "/volume1/restic-xsvr2";
 in
 lib.mkIf enabled {
+  # SSH config for root so restic's sftp transport picks up the identity key without
+  # passing -i on the command line (the NixOS restic module doesn't quote extraOptions,
+  # so space-delimited sftp.args values get word-split and break restic's arg parser).
+  programs.ssh.extraConfig = ''
+    Host ${synologyHost}
+      IdentityFile /run/secrets/restic-offsite-ssh-key
+      StrictHostKeyChecking accept-new
+      BatchMode yes
+  '';
+
   # Before deploying, add these two keys to nix/secrets/secrets.yaml:
   #   sops nix/secrets/secrets.yaml
   #   restic_offsite_password: <strong random repo password>
@@ -72,11 +82,6 @@ lib.mkIf enabled {
 
     repository = "sftp:${synologyUser}@${synologyHost}:${repoPath}";
     passwordFile = config.sops.secrets.restic-offsite-password.path;
-
-    # Use the sops-managed SSH key for SFTP transport
-    extraOptions = [
-      "sftp.args=-i /run/secrets/restic-offsite-ssh-key -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-    ];
 
     # Daily at 02:00; Persistent so it runs after downtime
     timerConfig = {
