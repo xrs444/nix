@@ -14,7 +14,7 @@
         # Public key for the windmill-ssh-key SealedSecret.
         # Replace AAAA... with the actual public key after running:
         #   ssh-keygen -t ed25519 -C "windmill@cluster" -f /tmp/windmill_ssh_key -N ""
-        "ssh-ed25519 PLACEHOLDER_REPLACE_WITH_PUBKEY windmill@cluster"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILZl+FgtqBk0oqWhbDaDLm8wZ85n/9IR39YhqhO/4i2j windmill@cluster"
       ];
     };
 

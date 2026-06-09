@@ -93,6 +93,12 @@
       "warpgate-admin" = {
         members = [ "admins" ];
       };
+      "windmill" = {
+        members = [ "users" ];
+      };
+      "windmill-admin" = {
+        members = [ "admins" ];
+      };
       # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
       # xsvr1's pam_allowed_login_groups references this group.
       "posix_users" = {
@@ -398,6 +404,25 @@
             ];
             "warpgate-admin" = [
               "openid"
+              "email"
+            ];
+          };
+        };
+        "oauth2_windmill" = {
+          displayName = "Windmill";
+          originUrl = "https://windmill.xrs444.net";
+          originLanding = "https://windmill.xrs444.net";
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_windmill_secret";
+          scopeMaps = {
+            "windmill" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "windmill-admin" = [
+              "openid"
+              "profile"
               "email"
             ];
           };
