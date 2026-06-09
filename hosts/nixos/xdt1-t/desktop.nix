@@ -152,20 +152,6 @@ in
     };
   };
 
-  # Autostart noctalia-shell after niri session comes up
-  systemd.user.services.noctalia = {
-    description = "Noctalia shell";
-    wantedBy = [ "graphical-session.target" ];
-    wants = [ "graphical-session.target" ];
-    after = [ "graphical-session.target" ];
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${pkgs.unstable.noctalia-shell}/bin/noctalia-shell";
-      Restart = "on-failure";
-      RestartSec = 2;
-    };
-  };
-
   programs.gnupg.agent = {
     enable = true;
     enableSSHSupport = true;
