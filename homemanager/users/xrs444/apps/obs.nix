@@ -156,7 +156,7 @@ lib.mkIf pkgs.stdenv.isLinux {
       # Scene collection from the flatpak import — copied as-is.
       # Audio/video device names may need reconfiguring in OBS if they differ
       # from the Bazzite flatpak device paths.
-      scenesJson = ../../../../../configimports/obs/obs-studio/basic/scenes/default.json;
+      scenesJson = ../../../../configimports/obs/obs-studio/basic/scenes/default.json;
     in
     ''
       obs_dir="$HOME/.config/obs-studio"
