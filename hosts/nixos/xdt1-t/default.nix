@@ -16,6 +16,11 @@
   networking.hostName = "xdt1-t";
   nixpkgs.config.allowUnfree = true;
 
+  # Allow wheel users to override Nix daemon settings (e.g. --builders "").
+  # Required so xrs444 can run home-manager with remote builders disabled on
+  # first bootstrap before SOPS secrets are available.
+  nix.settings.trusted-users = [ "@wheel" ];
+
   # Wired NIC is enp8s0 (confirmed from installer). Open monitoring exporter ports.
   networking.firewall.interfaces.enp8s0.allowedTCPPorts = [ 9080 9100 9633 ];
 
