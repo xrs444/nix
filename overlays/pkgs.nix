@@ -42,6 +42,21 @@
       final.python3.pkgs.setuptools
       final.python3.pkgs.distutils
     ];
+    # g-ir-scanner uses ctypes.util.find_library which calls ldconfig, but the
+    # Nix sandbox has no ldconfig cache. g-ir-scanner also reads GIR_EXTRA_LIBS_PATH
+    # directly in its library resolution code. Set it to glib's lib dir so the
+    # scanner can find libgobject-2.0.so when generating GLib-2.0.gir.
+    # This fixes aarch64-linux builds where the package is not in binary cache.
+    preBuild = (oldAttrs.preBuild or "") + ''
+      # Help g-ir-scanner find libgobject-2.0.so in the Nix sandbox.
+      # ctypes.util.find_library calls ldconfig which has no Nix store cache.
+      # Use pkg-config at build time to get the actual glib lib dir and set
+      # GIR_EXTRA_LIBS_PATH so the scanner finds the library without ldconfig.
+      _girLibPath=$(pkg-config --variable=libdir glib-2.0 2>/dev/null || true)
+      if [ -n "$_girLibPath" ]; then
+        export GIR_EXTRA_LIBS_PATH="$_girLibPath''${GIR_EXTRA_LIBS_PATH:+:$GIR_EXTRA_LIBS_PATH}"
+      fi
+    '';
     postPatch = (oldAttrs.postPatch or "") + ''
       # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
       # module level. setuptools' distutils shim omits cygwinccompiler on
@@ -90,6 +105,15 @@ p.write_text(t)
   # bindings/pygobject installs IBus.py twice in parallel: second install fails
   # with "File exists". Disabling parallel build/install serialises the make.
   ibus = prev.ibus.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
+
+  # Fix libcanberra parallel install race in sandboxed builds
+  # make install runs plugin relink steps in parallel: libcanberra-multi.la tries
+  # to relink against -lcanberra before libcanberra.so has been installed to its
+  # output path, causing ld to fail with "cannot find -lcanberra". Serialising
+  # the install ensures libcanberra.so is present before plugins try to link it.
+  libcanberra = prev.libcanberra.overrideAttrs (_: {
     enableParallelBuilding = false;
   });
 
