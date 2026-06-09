@@ -65,6 +65,7 @@
   imports = [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
+    ./apps/obs.nix
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
@@ -308,6 +309,15 @@
   # immutable protection and marks every nix-managed extension as obsolete at startup,
   # preventing them from loading. This activation script collapses each symlink to a direct
   # pointer so readlink() and realpath() agree.
+  home.activation.openrgbVirtualControllers = lib.mkIf pkgs.stdenv.isLinux (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      dest="$HOME/.config/OpenRGB/plugins/settings/virtual-controllers"
+      $DRY_RUN_CMD mkdir -p "$dest"
+      $DRY_RUN_CMD cp -f ${./openrgb/visual-map-xrs444.json} "$dest/xrs444"
+      $DRY_RUN_CMD chmod 644 "$dest/xrs444"
+    ''
+  );
+
   home.activation.fixVscodeExtensionSymlinks = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     ext_dir="$HOME/.vscode/extensions"
     if [ -d "$ext_dir" ]; then

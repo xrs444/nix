@@ -159,4 +159,17 @@ in
 
   # Use GTK portal instead of GNOME portal (avoids pulling in gjs/ostree/flatpak)
   xdg.portal.extraPortals = lib.mkForce [ pkgs.xdg-desktop-portal-gtk ];
+
+  # OpenRGB server — starts at boot, applies the color profile before the login screen
+  services.hardware.openrgb = {
+    enable = true;
+    motherboard = "amd";  # B850M AORUS ELITE WIFI6E ICE
+  };
+
+  systemd.services.openrgb.serviceConfig = {
+    # Copy profile into the state dir on each start so git changes propagate
+    ExecStartPre = "${pkgs.coreutils}/bin/cp -f ${./openrgb/xrs444.orp} /var/lib/OpenRGB/xrs444.orp";
+    # Use state dir as config dir and load the profile at startup
+    ExecStart = lib.mkForce "${pkgs.openrgb}/bin/openrgb --server --server-port 6742 --config /var/lib/OpenRGB --profile xrs444";
+  };
 }
