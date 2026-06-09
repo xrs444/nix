@@ -79,6 +79,28 @@ p.write_text(t)
   # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
   # have been moved to xdash1-specific config since other hosts need GIR files
 
+  # Fix dconf test failure in sandboxed builds
+  # test dconf:dconf runs `dconf write` which requires a real D-Bus session bus
+  # not available in the Nix sandbox.
+  dconf = prev.dconf.overrideAttrs (_: {
+    doCheck = false;
+  });
+
+  # Fix ibus parallel install race in sandboxed builds
+  # bindings/pygobject installs IBus.py twice in parallel: second install fails
+  # with "File exists". Disabling parallel build/install serialises the make.
+  ibus = prev.ibus.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
+
+  # Fix edk2 BaseTools parallel build race
+  # VfrCompile runs ANTLR to generate VfrLexer.h, but parallel make starts
+  # compiling VfrSyntax.o before VfrLexer.h exists. Single-threaded build
+  # serialises the ANTLR step before the compilation that depends on it.
+  edk2 = prev.edk2.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
+
   # Fix upower self-test SIGABRT in sandboxed builds
   # test 7/86 "self-test" is killed by signal 6 (SIGABRT) — requires a real
   # D-Bus system bus and hardware access not available in the Nix sandbox.
