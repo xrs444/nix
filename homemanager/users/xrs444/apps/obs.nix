@@ -136,8 +136,8 @@ lib.mkIf pkgs.stdenv.isLinux {
         HdrNominalPeakLevel=1000
 
         [Audio]
-        MonitoringDeviceId=obs_sink
-        MonitoringDeviceName=OBS Output
+        MonitoringDeviceId=combined-obs
+        MonitoringDeviceName=Pebble + Schiit + SPDIF Out
         SampleRate=48000
         ChannelSetup=Stereo
         MeterDecayRate=23.53
@@ -178,6 +178,19 @@ lib.mkIf pkgs.stdenv.isLinux {
 
         $DRY_RUN_CMD cp ${scenesJson} "$obs_dir/basic/scenes/default.json"
         $DRY_RUN_CMD chmod 644 "$obs_dir/basic/scenes/default.json"
+      fi
+    ''
+  );
+
+  # Always patch the monitoring device, even if the profile was seeded before this change.
+  home.activation.obsMonitoringDevice = lib.mkIf pkgs.stdenv.isLinux (
+    lib.hm.dag.entryAfter [ "obsConfig" ] ''
+      obs_ini="$HOME/.config/obs-studio/basic/profiles/Webcam_On/basic.ini"
+      if [ -f "$obs_ini" ]; then
+        $DRY_RUN_CMD ${pkgs.gnused}/bin/sed -i \
+          -e 's|^MonitoringDeviceId=.*|MonitoringDeviceId=combined-obs|' \
+          -e 's|^MonitoringDeviceName=.*|MonitoringDeviceName=Pebble + Schiit + SPDIF Out|' \
+          "$obs_ini"
       fi
     ''
   );

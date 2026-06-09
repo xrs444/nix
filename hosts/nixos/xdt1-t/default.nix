@@ -8,6 +8,7 @@
     ../common/boot.nix
     ./network.nix
     ./desktop.nix
+    ./audio.nix
     ./disks.nix
     ./hardware-nvidia.nix
     ../../common

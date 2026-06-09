@@ -58,15 +58,63 @@ jobs:
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           FAILED=()
+          FAILED_DRVS=()
+
+          # Pre-evaluate all host derivation paths (evaluation only — no building).
+          # Stored so we can quickly check each host's transitive drv closure later
+          # without re-evaluating the flake inside the build loop.
+          declare -A HOST_DRV
+          echo "=== Pre-evaluating host derivation paths ==="
+          for host in "${HOSTS[@]}"; do
+            drv=$(nix eval --quiet --raw \
+              ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath" 2>/dev/null || true)
+            HOST_DRV[$host]="${drv}"
+            [ -n "$drv" ] && echo "  $host: $(basename "$drv")" \
+                          || echo "  $host: eval failed (will attempt build anyway)"
+          done
+          echo "============================================"
 
           for host in "${HOSTS[@]}"; do
             echo "Building $host..."
-            if ! nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
-              --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh"; then
+
+            # Short-circuit: if a prior build failed, check whether this host's closure
+            # contains the same failing derivation before wasting a full build attempt.
+            # nix-store --query --requisites lists all transitive drv inputs of a .drv,
+            # so a hash match means this host would hit the identical build failure.
+            if [ ${#FAILED_DRVS[@]} -gt 0 ] && [ -n "${HOST_DRV[$host]:-}" ]; then
+              HOST_DEPS=$(nix-store --query --requisites "${HOST_DRV[$host]}" 2>/dev/null || true)
+              for failed_drv in "${FAILED_DRVS[@]}"; do
+                if echo "$HOST_DEPS" | grep -qxF "$failed_drv"; then
+                  echo "$host: SKIPPED — closure shares previously failed derivation: $(basename "$failed_drv")"
+                  FAILED+=("$host")
+                  continue 2
+                fi
+              done
+            fi
+
+            BUILD_LOG=$(mktemp)
+            nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
+              --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+              2>&1 | tee "$BUILD_LOG"
+            BUILD_RC=${PIPESTATUS[0]}
+
+            if [ $BUILD_RC -ne 0 ]; then
+              # Extract leaf-failing drv paths from Nix's error output and propagate
+              # them forward so subsequent hosts that share the same drv can be skipped.
+              mapfile -t NEW_FAILED_DRVS < <(
+                grep -oP "(?<=error: builder for ')(/nix/store/[^']+\.drv)(?=' failed)" "$BUILD_LOG" || true
+              )
+              if [ ${#NEW_FAILED_DRVS[@]} -gt 0 ]; then
+                FAILED_DRVS+=("${NEW_FAILED_DRVS[@]}")
+                printf '  Tracking failed drv: %s\n' "${NEW_FAILED_DRVS[@]}"
+              fi
               FAILED+=("$host")
               echo "$host: BUILD FAILED"
+              rm -f "$BUILD_LOG"
               continue
             fi
+
+            rm -f "$BUILD_LOG"
             echo "$host: BUILD OK"
 
             # For remote hosts, also build and cache the deploy-rs activatable path.
