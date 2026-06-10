@@ -22,3 +22,5 @@ jobs:
       - uses: renovatebot/github-action@v46.1.15
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: xrs444/nix
