@@ -143,6 +143,16 @@ in
       };
       buildMachines = map mkBuildMachine buildHosts;
     })
+
+    # xsvr1 is the CI runner — distribute builds to the other pool members while
+    # continuing to build locally (max-jobs stays at default, not zeroed).
+    # builders-use-substitutes lets remote machines pull inputs from substituters
+    # directly rather than having xsvr1 copy every dependency over the wire first.
+    (lib.mkIf (config.networking.hostName == "xsvr1") {
+      distributedBuilds = true;
+      settings.builders-use-substitutes = true;
+      buildMachines = map mkBuildMachine (lib.filter (b: b.name != "xsvr1") buildHosts);
+    })
   ];
 
   # Determinate Nix reads nix.custom.conf for runtime daemon settings (trusted-public-keys,

@@ -133,6 +133,20 @@ jobs:
             echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
           fi
 
+      - name: Cache paths built by remote builders
+        run: |
+          # The --post-build-hook in the build step fires only for locally-built
+          # derivations. Paths built on xsvr2/xsvr3/xdt1-t and copied back to
+          # xsvr1's store are not covered. Sign and cache their closures here.
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          for host in "${HOSTS[@]}"; do
+            toplevel=$(nix path-info \
+              ".#nixosConfigurations.$host.config.system.build.toplevel" 2>/dev/null) || continue
+            nix-store --query --requisites "$toplevel" 2>/dev/null \
+              | xargs -r nix store sign --key-file /run/secrets/nixcache_signing_key || true
+            nix copy --to "file:///zfs/nixcache/cache" "$toplevel" 2>/dev/null || true
+          done
+
       - name: Cache deploy-rs binary
         run: |
           # deploy-rs pushes its own binary (deploy-rs-0.1.0) and activate-rs to each
