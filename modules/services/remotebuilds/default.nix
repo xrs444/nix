@@ -84,6 +84,17 @@ in
     mode = "0600";
   };
 
+  # Deploy the nix cache signing key on all builder hosts so the Nix daemon can
+  # sign store paths after building them (nix.custom.conf: secret-key-files).
+  # xsvr1 also gets this via the nixcache module; identical attrs merge cleanly.
+  sops.secrets.nixcache_signing_key = lib.mkIf (isBuilder && !minimalImage) {
+    sopsFile = ../../../secrets/nixcache-signing-key.yaml;
+    key = "nixcache_signing_key";
+    owner = "root";
+    group = "builders";
+    mode = "0440";
+  };
+
   ## Combined nix configuration for both server and client
   nix = lib.mkMerge [
     # Server-specific settings
