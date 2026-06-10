@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Renovate Dependency Dashboard",
+  "packageRules": [
+    {
+      "description": "nixpkgs, home-manager, nix-darwin are managed by lockupdater.yml with build verification — show in dashboard only, require manual checkbox to open a PR",
+      "matchPackageNames": [
+        "NixOS/nixpkgs",
+        "nix-community/home-manager",
+        "LnL7/nix-darwin"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "All nix flake input updates require build verification — never automerge",
+      "matchManagers": ["nix"],
+      "automerge": false
+    },
+    {
+      "description": "GitHub Actions minor and patch updates are safe to automerge",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "GitHub Actions major updates always require review",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "wimpysworld/nothing-but-nix intentionally tracks @main — skip pinning",
+      "matchPackageNames": ["wimpysworld/nothing-but-nix"],
+      "enabled": false
+    }
+  ]
+}
