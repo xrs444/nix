@@ -14,11 +14,7 @@
     fsType = "vfat";
   };
 
-  # Swap file configuration (optional, useful for Pi3B with limited RAM)
-  swapDevices = [
-    {
-      device = "/swapfile";
-      size = 2048; # 2GB swap
-    }
-  ];
+  # No swap — running swap on SD card causes I/O hangs and burns write cycles.
+  # Pi3B has 1GB RAM; if memory pressure becomes a problem, use a USB drive instead.
+  swapDevices = [ ];
 }
