@@ -72,7 +72,6 @@
             "tailscale-package"
             "monitoring-server"
             "github-runner"
-            "bind"
             "auto-upgrade"
           ];
         };
@@ -92,7 +91,6 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
-            "bind"
             "auto-upgrade"
           ];
         };
@@ -109,18 +107,6 @@
             "talos"
             "letsencrypt-host"
             "tailscale-package"
-            "monitoring-client"
-            "auto-upgrade"
-          ];
-        };
-        v-xlabmgmt = {
-          user = "thomas-local";
-          platform = "x86_64-linux";
-          type = "nixos";
-          desktop = "niri";
-          enableHomeManager = false;
-          roles = [
-            "bind"
             "monitoring-client"
             "auto-upgrade"
           ];
@@ -305,7 +291,6 @@
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;
         Samba = import ./modules/services/Samba;
-        bind = import ./modules/services/bind;
         bird-bgp = import ./modules/services/bird-bgp;
         iprouting = import ./modules/services/iprouting;
         keepalived = import ./modules/services/keepalived;

@@ -55,8 +55,8 @@ jobs:
 
       - name: Build and cache all hosts
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           FAILED=()
           FAILED_DRVS=()
 
@@ -138,7 +138,7 @@ jobs:
           # The --post-build-hook in the build step fires only for locally-built
           # derivations. Paths built on xsvr2/xsvr3/xdt1-t and copied back to
           # xsvr1's store are not covered. Sign and cache their closures here.
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           for host in "${HOSTS[@]}"; do
             toplevel=$(nix path-info \
               ".#nixosConfigurations.$host.config.system.build.toplevel" 2>/dev/null) || continue
@@ -163,7 +163,7 @@ jobs:
       - name: Deploy remote hosts
         run: |
           REVISION=$(git rev-parse HEAD)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           DEPLOY_FAILED=()
 

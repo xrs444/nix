@@ -26,21 +26,6 @@ let
       withVnic = true; # Set to true to enable the virtual NIC
       pciDevices = [ ];
     }
-    {
-      name = "v-xlabmgmt";
-      vcpu = "2"; # Increased from 8 - running at 140% CPU, heavily utilized
-      memory = "4"; # Increased from 16 GiB - node needs full allocation
-      nicType = "bridge"; # or "bridge"
-      hostNic = "bridge21";
-      mac = "52:54:00:8d:2e:01";
-      autostart = true;
-      firmware = "efi";
-      storage = {
-        path = "/vm/v-xlabmgmt/v-xlabmgmt.qcow2";
-      };
-      withVnic = true; # Set to true to enable the virtual NIC
-      pciDevices = [ ];
-    }
   ];
 
   makeDriveXml = drive: ''

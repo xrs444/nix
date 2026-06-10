@@ -16,7 +16,6 @@ let
     "172.20.1.10" # xsvr1
     "172.20.1.20" # xsvr2
     "172.20.1.30" # xsvr3
-    "v-xlabmgmt.lan"
     "172.18.10.1" # xts1 — static IP avoids VIP/keepalived routing issues
     "172.18.10.2" # xts2 — static IP avoids VIP/keepalived routing issues
     "xcomm1.lan"
@@ -50,11 +49,6 @@ let
     "172.20.1.30" # xsvr3
   ];
 
-  # Hosts with BIND DNS
-  bindHosts = [
-    "v-xlabmgmt.lan"
-  ];
-
   # Talos VMs (Kubernetes nodes)
   talosVMs = [
     "172.20.3.10"
@@ -77,9 +71,6 @@ let
 
   # Generate scrape targets for smartctl_exporter (all hosts)
   smartctlTargets = map (host: "${host}:9633") allHosts;
-
-  # Generate scrape targets for bind_exporter
-  bindTargets = map (host: "${host}:9119") bindHosts;
 
   # Generate scrape targets for Talos node_exporter (port 9100)
   talosNodeTargets = map (ip: "${ip}:9100") talosVMs;
@@ -534,16 +525,6 @@ in
           static_configs = [
             {
               targets = smartctlTargets;
-            }
-          ];
-        }
-
-        # BIND DNS exporter
-        {
-          job_name = "bind";
-          static_configs = [
-            {
-              targets = bindTargets;
             }
           ];
         }
