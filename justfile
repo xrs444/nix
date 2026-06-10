@@ -221,7 +221,7 @@ deep-clean: clean gc optimize
 extract-thomas-local-key:
     #!/usr/bin/env fish
     set -l key_path "$HOME/.ssh/thomas-local_key"
-    set -l secrets_file "{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+    set -l secrets_file "{{scripts_dir}}/secrets/deploy-ssh-key.yaml"
 
     if not test -f "$secrets_file"
         echo "ERROR: Secrets file not found at $secrets_file"
@@ -248,7 +248,7 @@ deploy-ssh-key hostname user="$USER":
 
     HOSTNAME="{{hostname}}"
     INITIAL_USER="{{user}}"
-    SECRETS_FILE="{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+    SECRETS_FILE="{{scripts_dir}}/secrets/deploy-ssh-key.yaml"
 
     # Extract public key from SOPS-encrypted private key
     echo "Extracting public key from SOPS..."
@@ -332,27 +332,72 @@ run-nixable host:
     @echo "This will be available after nixible is added to flake inputs"
     @echo "For now, use: nix run .#{{host}}"
 
+# Install Ansible collections required for network gear management
+# Run this once on any machine before using configure-xswcore or bootstrap-xswcore
+install-collections:
+    ansible-galaxy collection install -r "{{scripts_dir}}/hosts/nixable/xswcore/requirements.yml"
+
+# Bootstrap xswcore: connect as ansible-local with password to create ansible-brocade + push RSA key.
+# Run this ONCE before configure-xswcore. Uses vault_user_ansible_password from ansible-network.yaml.
+bootstrap-xswcore:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
+    chmod 600 $tmp_vars $tmp_conn
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        exit 1
+    end
+
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_conn
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    # Extract bootstrap credentials (ansible-local password == ansible-brocade password)
+    set -l boot_pass (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
+    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
+
+    # Write connection overrides to a separate vars file to avoid just variable interpolation
+    printf "ansible_user: ansible-local\nansible_password: '%s'\nansible_become_password: '%s'\n" \
+        (string replace --all "'" "''" $boot_pass) \
+        (string replace --all "'" "''" $enable_pass) > $tmp_conn
+
+    echo "Bootstrapping xswcore (password auth as ansible-local)..."
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "@$tmp_conn" \
+        $argv \
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
+
+    rm -f $tmp_vars $tmp_conn
+    echo "Bootstrap complete — run 'just configure-xswcore' for all subsequent runs"
+
 # Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
 # Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
 # Secrets file: nix/secrets/ansible-network.yaml (shared with other network gear)
 #
-# Create secrets first: sops {{flake_dir}}/secrets/ansible-network.yaml
+# Create secrets first: sops {{scripts_dir}}/secrets/ansible-network.yaml
 #   Required keys:
-#     ansible_private_key: |          # SSH private key for ansible-local user
+#     ansible_private_key: |          # ECDSA P-256 private key for ansible-brocade user
 #       -----BEGIN OPENSSH PRIVATE KEY-----
 #       ...
-#     ansible_public_key: "ssh-ed25519 AAAA..."  # uploaded to switch
+#     ansible_public_key: "ecdsa-sha2-nistp256 AAAA..."  # public key uploaded to switch pub-key-chain
 #     ansible_become_password: "<enable/super-user password>"
 #     vault_snmp_community: "<SNMP RO community string>"
 #     vault_user_super_password: "<super user password>"
-#     vault_user_ansible_password: "<ansible-local switch account password>"
+#     vault_user_ansible_password: "<ansible-brocade switch account password>"
 #     vault_user_thomas_password: "<thomas-local password>"
 #     vault_user_dog_password: "<dog user password>"
 configure-xswcore:
     #!/usr/bin/env fish
-    set -l flake "{{flake_dir}}"
-    set -l secrets "$flake/secrets/ansible-network.yaml"
-    set -l inventory "$flake/nix/hosts/nixable/xswcore/inventory.yml"
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
     set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
     set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
     chmod 600 $tmp_key
@@ -383,7 +428,7 @@ configure-xswcore:
         --extra-vars "@$tmp_vars" \
         --extra-vars "ansible_private_key_file=$tmp_key" \
         $argv \
-        "$flake/nix/hosts/nixable/xswcore/playbook.yml"
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
 
     rm -f $tmp_vars $tmp_key
     echo "xswcore configuration complete"

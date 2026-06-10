@@ -1,13 +1,11 @@
 # Nixible configuration for xswcore (Brocade ICX-7250 2-unit stack)
 # Manages core switching: LAGs, VLANs, interfaces, routing, and services
 # Requires: community.network collection (icx_* modules)
-# Auth: SSH key-based for ansible-local; enable password for privilege escalation
+# Auth: ECDSA P-256 key-based for ansible-brocade; enable password for privilege escalation
 # Secrets: nix/secrets/ansible-network.yaml (sops/age encrypted)
-{pkgs, ...}: let
-  common = import ../common/default.nix {inherit pkgs;};
+{...}: let
+  common = import ../common/default.nix {};
 in {
-  # community.network collection required for ICX switch management
-  # Update version/hash after: ansible-galaxy collection download community.network
   collections = common.collections // {
     "community-network" = {
       version = "5.0.3";
@@ -24,7 +22,7 @@ in {
           ansible_host = "172.18.4.100";
           ansible_connection = "network_cli";
           ansible_network_os = "community.network.icx";
-          ansible_user = "ansible-local";
+          ansible_user = "ansible-brocade";
           ansible_private_key_file = "{{ ansible_private_key_file }}";
           ansible_become = true;
           ansible_become_method = "enable";
@@ -39,8 +37,6 @@ in {
       name = "Configure xswcore ICX-7250 Stack";
       hosts = "xswcore";
       gather_facts = false;
-      # Secrets injected at runtime via sops: nix/secrets/ansible-network.yaml
-      # See justfile configure-xswcore recipe for decryption flow
 
       tasks = [
 
@@ -67,11 +63,12 @@ in {
               "hitless-failover enable"
               "cdp run"
               "optical-monitor"
+              "optical-monitor down-port-enable"
               "optical-monitor non-ruckus-optic-enable"
               "enable aaa console"
               "clock timezone us Arizona"
               "lldp tagged-packets process"
-              "ip ssh key-authentication"
+              "ip ssh scp disable"
               "ip ssh encryption disable-aes-cbc"
               "manager disable"
               "manager port-list 987"
@@ -80,12 +77,12 @@ in {
         }
 
         {
-          name = "Configure ansible-local SSH authorized key";
-          # FastIron 08.0.x pub-key-chain; ansible_public_key = full key string
-          # e.g. "ssh-ed25519 AAAA... ansible@xrs444.net"
+          name = "Configure ansible-brocade SSH authorized key";
+          # ECDSA P-256 key — FastIron 09.x supports ecdsa-sha2-nistp256 in pub-key-chain
+          # ansible_public_key injected from ansible-network.yaml
           "community.network.icx_config" = {
             lines = [ "key-string {{ ansible_public_key }}" ];
-            parents = [ "ip ssh pub-key-chain" "user-key ansible-local" ];
+            parents = [ "ip ssh pub-key-chain" "user-key ansible-brocade" ];
           };
         }
 
@@ -133,10 +130,10 @@ in {
           };
           no_log = true;
           loop = [
-            { name = "super";         password = "{{ vault_user_super_password }}"; }
-            { name = "ansible-local"; password = "{{ vault_user_ansible_password }}"; }
-            { name = "thomas-local";  password = "{{ vault_user_thomas_password }}"; }
-            { name = "dog";           password = "{{ vault_user_dog_password }}"; }
+            { name = "super";           password = "{{ vault_user_super_password }}"; }
+            { name = "ansible-brocade"; password = "{{ vault_user_ansible_password }}"; }
+            { name = "thomas-local";    password = "{{ vault_user_thomas_password }}"; }
+            { name = "dog";             password = "{{ vault_user_dog_password }}"; }
           ];
         }
 
@@ -285,7 +282,7 @@ in {
           name = "Configure VLAN 10 (FW - firewall transit)";
           "community.network.icx_config" = {
             lines = [
-              "tagged lag 10"
+              "tagged lag 1 to 2 lag 10"
               "untagged ethe 1/1/37 ethe 1/1/45 ethe 2/1/45"
               "spanning-tree 802-1w"
             ];
@@ -304,8 +301,8 @@ in {
           name = "Configure VLAN 14 (management)";
           "community.network.icx_config" = {
             lines = [
-              "tagged ethe 1/1/44 lag 6 lag 10 lag 11 lag 12"
-              "untagged ethe 1/1/2 ethe 1/1/4 ethe 1/1/13 ethe 1/1/14 ethe 2/1/1 ethe 2/1/2 ethe 2/1/13"
+              "tagged ethe 1/1/5 ethe 1/1/44 lag 6 lag 10 to 12"
+              "untagged ethe 1/1/2 ethe 1/1/4 ethe 1/1/13 to 1/1/14 ethe 2/1/1 to 2/1/2 ethe 2/1/13"
               "router-interface ve 14"
               "spanning-tree 802-1w"
             ];
@@ -317,7 +314,7 @@ in {
           name = "Configure VLAN 15 (Printers)";
           "community.network.icx_config" = {
             lines = [
-              "tagged ethe 1/1/44 lag 10 lag 11"
+              "tagged ethe 1/1/44 lag 10 to 11"
               "spanning-tree"
             ];
             parents = "vlan 15 name Printers by port";
@@ -328,8 +325,8 @@ in {
           name = "Configure VLAN 16 (telephony)";
           "community.network.icx_config" = {
             lines = [
-              "tagged ethe 1/1/44 lag 1 lag 2 lag 3 lag 4 lag 10 lag 11 lag 14"
-              "untagged ethe 1/1/35 ethe 1/1/40"
+              "tagged ethe 1/1/44 lag 1 to 4 lag 10 to 12 lag 14"
+              "untagged ethe 1/1/35 ethe 1/1/40 ethe 2/1/3 ethe 2/1/20 to 2/1/25"
               "spanning-tree 802-1w"
             ];
             parents = "vlan 16 name telephony by port";
@@ -340,7 +337,7 @@ in {
           name = "Configure VLAN 17 (HomeAutomation)";
           "community.network.icx_config" = {
             lines = [
-              "tagged lag 1 lag 2 lag 3 lag 4 lag 6 lag 10 lag 12 lag 14"
+              "tagged lag 1 to 4 lag 6 lag 10 lag 12 lag 14"
               "spanning-tree 802-1w"
             ];
             parents = "vlan 17 name HomeAutomation by port";
@@ -363,7 +360,7 @@ in {
           "community.network.icx_config" = {
             lines = [
               "tagged lag 10"
-              "untagged ethe 1/1/44 lag 6 lag 11 lag 12"
+              "untagged ethe 1/1/5 ethe 1/1/44 lag 6 lag 11 to 12"
               "spanning-tree"
             ];
             parents = "vlan 19 name provisioning by port";
@@ -375,7 +372,7 @@ in {
           "community.network.icx_config" = {
             lines = [
               "tagged lag 10"
-              "untagged lag 1 lag 2 lag 3 lag 4"
+              "untagged lag 1 to 4"
             ];
             parents = "vlan 20 by port";
           };
@@ -385,7 +382,7 @@ in {
           name = "Configure VLAN 21 (HomeVMs)";
           "community.network.icx_config" = {
             lines = [
-              "tagged lag 1 lag 2 lag 3 lag 4 lag 10 lag 14"
+              "tagged lag 1 to 4 lag 10 lag 14"
               "spanning-tree 802-1w"
             ];
             parents = "vlan 21 name HomeVMs by port";
@@ -396,7 +393,7 @@ in {
           name = "Configure VLAN 22 (k8s)";
           "community.network.icx_config" = {
             lines = [
-              "tagged lag 1 lag 2 lag 3 lag 10"
+              "tagged lag 1 to 3 lag 10"
               "untagged ethe 2/1/36"
               "spanning-tree 802-1w"
             ];
@@ -408,7 +405,7 @@ in {
           name = "Configure VLAN 100 (WiredClients)";
           "community.network.icx_config" = {
             lines = [
-              "tagged ethe 1/1/44 lag 10 lag 11"
+              "tagged ethe 1/1/44 lag 10 to 11"
               "spanning-tree 802-1w"
             ];
             parents = "vlan 100 name WiredClients by port";
@@ -416,7 +413,7 @@ in {
         }
 
         {
-          name = "Configure WiFi VLANs (111-115) - all tagged to rfcab, xfw, RFCab-Temp";
+          name = "Configure WiFi VLANs (111/112/114/115) - tagged to rfcab, xfw, RFCab-Temp";
           "community.network.icx_config" = {
             lines = [
               "tagged lag 6 lag 10 lag 12"
@@ -427,7 +424,6 @@ in {
           loop = [
             { id = 111; name = "notthewifiyouarelookingfor"; }
             { id = 112; name = "WanIPlayWithMadness"; }
-            { id = 113; name = "WiFiToTheDangerZone"; }
             { id = 114; name = "TotalEclipseOfTheUART"; }
             { id = 115; name = "HelloIsItWiFiYoureLookingFor"; }
           ];
@@ -516,6 +512,15 @@ in {
             parents = "interface ethernet {{ item }}";
           };
           loop = [ "1/1/35" "1/1/45" ];
+        }
+
+        {
+          name = "Disable inline power on individual ports";
+          "community.network.icx_config" = {
+            lines = [ "no inline power" ];
+            parents = "interface ethernet {{ item }}";
+          };
+          loop = [ "1/1/40" "2/1/29" ];
         }
 
         {

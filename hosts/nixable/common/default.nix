@@ -1,5 +1,5 @@
 # Summary: Common nixible configuration for Bazzite hosts, shared collections and settings
-{pkgs, ...}: {
+{...}: {
   # Common Ansible collections used across all Bazzite hosts
   # Add frequently used collections here with their versions and hashes
   collections = {
@@ -17,6 +17,9 @@
   vars = {
     # Ansible user for automation
     ansible_user = "ansible";
+
+    # Private key deployed by: just extract-thomas-local-key
+    ansible_private_key_file = "~/.ssh/thomas-local_key";
 
     # Become settings for privilege escalation
     ansible_become = true;
