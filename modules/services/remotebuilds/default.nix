@@ -11,6 +11,7 @@ let
     { name = "xsvr1"; maxJobs = 8; speedFactor = 4; } # Ryzen 7 7700 — primary builder
     { name = "xsvr2"; maxJobs = 6; speedFactor = 1; } # Atom C3758 — leave 2 cores for ZFS/k8s
     { name = "xsvr3"; maxJobs = 4; speedFactor = 2; } # i5-8500 — leave 2 cores for VMs/Samba
+    { name = "xdt1-t"; maxJobs = 12; speedFactor = 4; } # Ryzen 7 9700X — gaming workstation, 8c/16t
   ];
   isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
 
@@ -205,6 +206,10 @@ in
     "xsvr3.lan" = {
       hostNames = [ "xsvr3.lan" "xsvr3" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE3iLniG9niDNFxK3Z3INcwqc6N6R1+2v/PfD88klFAX";
+    };
+    "xdt1-t.lan" = {
+      hostNames = [ "xdt1-t.lan" "xdt1-t" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
     };
   };
 }

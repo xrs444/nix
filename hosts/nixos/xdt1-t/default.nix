@@ -18,9 +18,10 @@
   nixpkgs.config.allowUnfree = true;
 
   # Determinate Nix ignores nix.conf for trusted-users — must be in nix.custom.conf.
-  # types.lines merges with the remotebuilds module's text; no conflict.
+  # Use extra-trusted-users so this appends to (rather than overrides) the
+  # remotebuilds module's "trusted-users = root builder" line.
   environment.etc."nix/nix.custom.conf".text = ''
-    trusted-users = root @wheel
+    extra-trusted-users = @wheel
   '';
 
   # Wired NIC is enp8s0 (confirmed from installer). Open monitoring exporter ports.
