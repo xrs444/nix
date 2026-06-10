@@ -843,6 +843,22 @@ in
             }
           ];
         }
+
+        # Kubernetes - PowerDNS Authoritative (lab DNS) metrics (via NodePort 30121)
+        {
+          job_name = "powerdns";
+          metrics_path = "/metrics";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30121" ];
+              labels = {
+                cluster = "home-k8s";
+                component = "powerdns";
+                namespace = "xlab-mgmt";
+              };
+            }
+          ];
+        }
       ];
 
       # Alert rules
