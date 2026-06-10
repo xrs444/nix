@@ -12,16 +12,6 @@
   home.username = username;
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
 
-  # django test suite fails in Nix sandbox (network access); skip checks so
-  # the debugpy → ms-python.python VSCode extension chain can build.
-  nixpkgs.overlays = [
-    (_: prev: {
-      python313Packages = prev.python313Packages // {
-        django = prev.python313Packages.django.overrideAttrs (_: { doCheck = false; });
-      };
-    })
-  ];
-
   programs = {
     wezterm = {
       enable = true;

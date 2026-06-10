@@ -11,4 +11,5 @@
   (import ./unstable.nix { inherit inputs; })
   (import ./unfree.nix { inherit inputs; })
   (import ./gjs-fix.nix { inherit inputs; })
+  (import ./python-no-tests.nix)
 ]
