@@ -56,8 +56,8 @@
   # BCM2835 hardware watchdog — auto-reboots if the kernel locks up (e.g. SD card I/O hang).
   # Without this, any freeze requires a manual power cycle.
   boot.kernelModules = [ "bcm2835_wdt" ];
-  systemd.watchdog.runtimeTime = "30s";
-  systemd.watchdog.rebootTime = "120s";
+  systemd.settings.Manager.RuntimeWatchdogSec = "30s";
+  systemd.settings.Manager.RebootWatchdogSec = "120s";
 
   # Keep /tmp in RAM to reduce SD card write cycles.
   boot.tmp.useTmpfs = true;
