@@ -3,23 +3,29 @@
   imports = [ ./modes ];
 
   xdg.configFile = {
-    "niri/config.kdl".text = ''
-      input {
-          keyboard {
-              xkb {
-                  layout "gb"
-              }
-          }
-          touchpad {
-              tap
-              natural-scroll
-          }
-      }
+    "niri/config.kdl" = {
+      force = true;
+      text = ''
+        input {
+            keyboard {
+                xkb {
+                    layout "gb"
+                }
+            }
+            touchpad {
+                tap
+                natural-scroll
+            }
+        }
 
-      spawn-at-startup "noctalia-shell"
+        environment {
+            QT_QPA_PLATFORM "wayland"
+        }
 
-      // Per-mode overrides (keybinds, outputs, spawn-at-startup)
-      include "~/.config/niri/active-mode.kdl"
+        spawn-at-startup "noctalia-shell"
+
+        // Per-mode overrides (keybinds, outputs, spawn-at-startup)
+        include "~/.config/niri/active-mode.kdl"
 
       binds {
           // Applications
@@ -65,16 +71,23 @@
           Mod+Shift+Slash { show-hotkey-overlay; }
       }
     '';
+    };
 
     # Mode fragment files — session wrappers symlink active-mode.kdl to one of these.
-    "niri/modes/base.kdl".text = "// base mode — no overrides\n";
-    "niri/modes/obs.kdl".text = ''
-      // OBS mode — add Niri overrides here (spawn-at-startup, output config, keybinds)
-      // Example: spawn-at-startup "obs"
-    '';
-    "niri/modes/llm.kdl".text = ''
-      // LLM mode — add Niri overrides here
-    '';
+    "niri/modes/base.kdl" = { force = true; text = "// base mode — no overrides\n"; };
+    "niri/modes/obs.kdl" = {
+      force = true;
+      text = ''
+        // OBS mode — add Niri overrides here (spawn-at-startup, output config, keybinds)
+        // Example: spawn-at-startup "obs"
+      '';
+    };
+    "niri/modes/llm.kdl" = {
+      force = true;
+      text = ''
+        // LLM mode — add Niri overrides here
+      '';
+    };
   };
 
   # Ensure active-mode.kdl exists on first HM activation so niri's include directive
