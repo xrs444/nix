@@ -22,7 +22,7 @@ jobs:
           git checkout -B docs-clippy/update-readmes
 
       - name: Set up Nix
-        uses: cachix/install-nix-action@v25
+        uses: cachix/install-nix-action@v31
 
       - name: Read Docs-Clippy prompt
         id: get_prompt
