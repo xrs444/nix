@@ -368,6 +368,7 @@ bootstrap-xswcore:
         (string replace --all "'" "''" $enable_pass) > $tmp_conn
 
     echo "Bootstrapping xswcore (password auth as ansible-local)..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
     ansible-playbook \
         -i $inventory \
         --extra-vars "@$tmp_vars" \
@@ -423,6 +424,7 @@ configure-xswcore:
     end
 
     echo "Configuring xswcore..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
     ansible-playbook \
         -i $inventory \
         --extra-vars "@$tmp_vars" \

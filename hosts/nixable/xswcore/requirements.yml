@@ -2,5 +2,5 @@
 # Ansible collections required for xswcore (Brocade ICX-7250) management
 # Install with: just install-collections
 collections:
-  - name: community.network
-    version: ">=5.1.0"
+  - name: ansible.netcommon
+    version: ">=5.0.0"
