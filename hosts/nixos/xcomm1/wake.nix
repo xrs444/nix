@@ -1,6 +1,40 @@
-# Summary: RTC wake alarm service for xcomm1 — wakes the machine 10 minutes before the nightly auto-upgrade timer (04:30) and re-arms after each upgrade run.
-{ pkgs, lib, ... }:
+# Summary: RTC wake alarm + WoWLAN (Wake-on-Wireless-LAN) services for xcomm1.
+{ pkgs, ... }:
 {
+  # Arm the Intel WiFi NIC (wlp6s0) to wake on magic packet.
+  # Two services: one at boot so the flag survives resume, one pre-sleep so it
+  # is always re-armed just before the NIC enters low-power state.
+  systemd.services.wowlan-enable = {
+    description = "Enable Wake-on-Wireless-LAN on wlp6s0";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt";
+    };
+  };
+
+  systemd.services.wowlan-pre-sleep = {
+    description = "Re-arm Wake-on-Wireless-LAN before suspend";
+    before = [
+      "systemd-suspend.service"
+      "systemd-hibernate.service"
+      "systemd-hybrid-sleep.service"
+      "systemd-suspend-then-hibernate.service"
+    ];
+    wantedBy = [
+      "systemd-suspend.service"
+      "systemd-hibernate.service"
+      "systemd-hybrid-sleep.service"
+      "systemd-suspend-then-hibernate.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt";
+    };
+  };
+
   systemd.services.set-rtc-wake = {
     description = "Arm RTC wake alarm for nightly upgrade window";
     # Run at every boot so the alarm is always set, and again after each

@@ -173,6 +173,27 @@ jobs:
               continue
             fi
 
+            # xcomm1 is normally suspended; send a WoWLAN magic packet so the Intel
+            # WiFi NIC wakes it, then wait up to 90s for SSH to become available.
+            if [[ "$host" == "xcomm1" ]]; then
+              echo "Sending WoWLAN magic packet to xcomm1 (D4:D2:52:A9:5B:4B)..."
+              python3 -c 'import socket; mac=bytes.fromhex("D4D252A95B4B"); pkt=b"\xff"*6+mac*16; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1); s.sendto(pkt,("172.19.112.255",9)); print("Magic packet sent")' || true
+              echo "Waiting up to 90s for xcomm1 to come online..."
+              for i in $(seq 1 18); do
+                if ssh -4 \
+                     -i /run/secrets/deploy_private_key \
+                     -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null \
+                     -o ConnectTimeout=5 \
+                     -o BatchMode=yes \
+                     deploy@xcomm1.lan "true" 2>/dev/null; then
+                  echo "xcomm1 is online after ~$((i * 5))s"
+                  break
+                fi
+                sleep 5
+              done
+            fi
+
             # Hostname pre-flight: SSH to the target and verify it reports the expected
             # hostname before deploying. Guards against two failure modes:
             #   1. Host is offline (SSH times out → skip safely)
