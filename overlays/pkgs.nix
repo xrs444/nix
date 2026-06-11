@@ -42,21 +42,6 @@
       final.python3.pkgs.setuptools
       final.python3.pkgs.distutils
     ];
-    # g-ir-scanner uses ctypes.util.find_library which calls ldconfig, but the
-    # Nix sandbox has no ldconfig cache. g-ir-scanner also reads GIR_EXTRA_LIBS_PATH
-    # directly in its library resolution code. Set it to glib's lib dir so the
-    # scanner can find libgobject-2.0.so when generating GLib-2.0.gir.
-    # This fixes aarch64-linux builds where the package is not in binary cache.
-    preBuild = (oldAttrs.preBuild or "") + ''
-      # Help g-ir-scanner find libgobject-2.0.so in the Nix sandbox.
-      # ctypes.util.find_library calls ldconfig which has no Nix store cache.
-      # Use pkg-config at build time to get the actual glib lib dir and set
-      # GIR_EXTRA_LIBS_PATH so the scanner finds the library without ldconfig.
-      _girLibPath=$(pkg-config --variable=libdir glib-2.0 2>/dev/null || true)
-      if [ -n "$_girLibPath" ]; then
-        export GIR_EXTRA_LIBS_PATH="$_girLibPath''${GIR_EXTRA_LIBS_PATH:+:$GIR_EXTRA_LIBS_PATH}"
-      fi
-    '';
     postPatch = (oldAttrs.postPatch or "") + ''
       # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
       # module level. setuptools' distutils shim omits cygwinccompiler on
@@ -73,6 +58,48 @@ stub = 'try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    imp
 t = t.replace('import distutils.cygwinccompiler\n', stub)
 p.write_text(t)
 "
+
+      # giscanner/shlibs.py: add pkg-config fallback for resolve_from_ldd_output.
+      # When gobject-introspection scans GLib (--external-library), the dump binary
+      # is compiled without -Wl,-rpath, so ldd can't find libgobject-2.0.so in the
+      # Nix sandbox (no ldconfig cache, no LD_LIBRARY_PATH). Patch the function to
+      # try pkg-config --variable=libdir as a fallback before raising the error.
+      # This fixes aarch64-linux builds where the package is not in binary cache.
+      python3 << 'PYEOF'
+import pathlib
+p = pathlib.Path('giscanner/shlibs.py')
+t = p.read_text()
+old = (
+    '    if len(patterns) > 0:\n'
+    '        raise SystemExit(\n'
+    '            "ERROR: can\'t resolve libraries to shared libraries: " +\n'
+    '            ", ".join(patterns.keys()))\n'
+)
+new = (
+    '    if len(patterns) > 0:\n'
+    '        import subprocess as _subp, os as _os\n'
+    '        for lib in list(patterns.keys()):\n'
+    '            try:\n'
+    '                libdir = _subp.check_output(\n'
+    '                    ["pkg-config", "--variable=libdir", lib],\n'
+    '                    stderr=_subp.DEVNULL).decode().strip()\n'
+    '                if libdir:\n'
+    '                    for fname in _os.listdir(libdir):\n'
+    '                        m = patterns[lib].match(fname)\n'
+    '                        if m:\n'
+    '                            del patterns[lib]\n'
+    '                            shlibs.append(m.group())\n'
+    '                            break\n'
+    '            except Exception:\n'
+    '                pass\n'
+    '    if len(patterns) > 0:\n'
+    '        raise SystemExit(\n'
+    '            "ERROR: can\'t resolve libraries to shared libraries: " +\n'
+    '            ", ".join(patterns.keys()))\n'
+)
+t2 = t.replace(old, new)
+p.write_text(t2)
+PYEOF
     '';
     postFixup = (oldAttrs.postFixup or "") + ''
       # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
