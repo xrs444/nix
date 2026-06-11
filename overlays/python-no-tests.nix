@@ -21,7 +21,13 @@
 final: prev: {
   python313 = prev.python313.override {
     packageOverrides = pyfinal: pyprev: {
-      debugpy = pyprev.debugpy.overrideAttrs (_: { doCheck = false; });
+      # Only override django — do NOT also override debugpy here.
+      # Python package sets use lib.makeExtensible: packages not listed in
+      # packageOverrides are re-evaluated in the new fixed-point where
+      # self.django = pyfinal.django (our new one). If we also override
+      # debugpy = pyprev.debugpy.overrideAttrs(...), we start from pyprev.debugpy
+      # whose nativeBuildInputs already contains the original django (old hash).
+      # That hardcodes the old reference back in and the fix has no effect.
       django = pyprev.django.overrideAttrs (_: { doCheck = false; });
     };
   };
