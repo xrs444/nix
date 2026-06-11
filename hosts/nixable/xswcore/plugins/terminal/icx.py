@@ -36,10 +36,12 @@ class TerminalModule(TerminalBase):
         if prompt and prompt.strip().endswith(b"#"):
             return
         if passwd:
-            self._exec_cli_command(
+            # _exec_cli_command does not forward prompt/answer; call send directly
+            passwd_bytes = passwd.encode() if isinstance(passwd, str) else passwd
+            self._connection.send(
                 b"enable",
-                prompt=r"(?i)[\r\n]?password:\s*$",
-                answer=passwd,
+                prompt=rb"(?i)[\r\n]?password:\s*$",
+                answer=passwd_bytes,
             )
         else:
             self._exec_cli_command(b"enable")
