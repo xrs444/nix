@@ -197,15 +197,15 @@ PYEOF
       # Tests run via doInstallCheck (not doCheck) in this package
       pipx = pprev.pipx.overrideAttrs (_: { doInstallCheck = false; });
       # Fix django test failures in sandboxed builds.
-      # Only override django — do NOT also override debugpy here.
-      # Python package sets use lib.makeExtensible: debugpy is not listed in
-      # packageOverrides, so it is re-evaluated in the new fixed-point where
-      # self.django = pfinal.django (our patched version). That gives debugpy a
-      # new hash and ensures it depends on the no-test django. If we also do
-      # debugpy = pprev.debugpy.overrideAttrs(...), we start from pprev.debugpy
-      # whose nativeBuildInputs already contains the original django (old hash),
-      # hardcoding that reference back in and making the django fix invisible.
-      django = pprev.django.overrideAttrs (_: { doCheck = false; });
+      # Use checkPhase = ":" (not doCheck = false): overrideAttrs (_: { doCheck =
+      # false; }) changes the env var but NOT the baked-in phases string, which
+      # still lists "checkPhase". nixpkgs setup.sh runs eval "${!checkPhase}";
+      # setting checkPhase = ":" replaces the function with a shell no-op.
+      # Only override django — do NOT also override debugpy: Python sets use
+      # lib.makeExtensible, so debugpy is re-evaluated in the fixed-point with
+      # self.django = pfinal.django (new hash). Overriding debugpy via
+      # pprev.debugpy.overrideAttrs would hardcode the old django reference back.
+      django = pprev.django.overrideAttrs (_: { checkPhase = ":"; });
     };
   };
   python3Packages = final.python3.pkgs;
