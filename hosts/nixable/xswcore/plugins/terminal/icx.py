@@ -38,7 +38,6 @@ class TerminalModule(TerminalBase):
         if passwd:
             self._exec_cli_command(
                 b"enable",
-                check_all=True,
                 prompt=r"(?i)[\r\n]?password:\s*$",
                 answer=passwd,
             )
