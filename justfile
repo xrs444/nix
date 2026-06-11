@@ -336,6 +336,7 @@ run-nixable host:
 # Run this once on any machine before using configure-xswcore or bootstrap-xswcore
 install-collections:
     ansible-galaxy collection install -r "{{scripts_dir}}/hosts/nixable/xswcore/requirements.yml"
+    ansible-galaxy collection uninstall community.network 2>/dev/null || true
 
 # Bootstrap xswcore: connect as ansible-local with password to create ansible-brocade + push RSA key.
 # Run this ONCE before configure-xswcore. Uses vault_user_ansible_password from ansible-network.yaml.
