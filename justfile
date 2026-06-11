@@ -369,10 +369,12 @@ bootstrap-xswcore:
 
     echo "Bootstrapping xswcore (password auth as ansible-local)..."
     set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    # Skip ssh_keys: ip ssh pub-key-chain requires FastIron 09.x; push key after upgrade
     ansible-playbook \
         -i $inventory \
         --extra-vars "@$tmp_vars" \
         --extra-vars "@$tmp_conn" \
+        --skip-tags ssh_keys \
         $argv \
         "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
 

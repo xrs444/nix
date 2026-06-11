@@ -40,11 +40,13 @@
     - name: Configure ansible-brocade SSH authorized key
       # ECDSA P-256 key — FastIron 09.x supports ecdsa-sha2-nistp256 in pub-key-chain
       # ansible_public_key injected from ansible-network.yaml
+      # Skipped during bootstrap (--skip-tags ssh_keys): requires FastIron 09.x
       ansible.netcommon.cli_config:
         config: |
           ip ssh pub-key-chain
            user-key ansible-brocade
             key-string {{ ansible_public_key }}
+      tags: [ssh_keys]
 
     - name: Configure AAA authentication
       ansible.netcommon.cli_config:
