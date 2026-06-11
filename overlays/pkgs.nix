@@ -170,14 +170,15 @@ p.write_text(t)
       # Tests run via doInstallCheck (not doCheck) in this package
       pipx = pprev.pipx.overrideAttrs (_: { doInstallCheck = false; });
       # Fix django/debugpy test failures in sandboxed builds.
-      # Use .override (not overrideAttrs) so buildPythonPackage is re-run with
-      # doCheck=false — this prevents nativeCheckInputs from being merged into
-      # nativeBuildInputs, changing the derivation hash and skipping the tests.
-      # overrideAttrs only patches mkDerivation attrs after the fact; doCheck
-      # set that way is not a recognised env var in Python packages and has no
-      # effect on the hash or the nativeBuildInputs that were already computed.
-      django = pprev.django.override { doCheck = false; };
-      debugpy = pprev.debugpy.override { doCheck = false; };
+      # Use .overrideAttrs (NOT .override): Python package functions have the
+      # form `{ lib, buildPythonPackage, ... }:` — the trailing `...` silently
+      # absorbs unknown args, so `.override { doCheck = false; }` is a no-op
+      # (same hash, tests still run). `.overrideAttrs (_: { doCheck = false; })`
+      # modifies the mkDerivation attrs directly, changing the hash and skipping
+      # the checkPhase. Python sets use self-references so the django override
+      # propagates to debugpy's nativeCheckInputs via the fixed-point.
+      django = pprev.django.overrideAttrs (_: { doCheck = false; });
+      debugpy = pprev.debugpy.overrideAttrs (_: { doCheck = false; });
     };
   };
   python3Packages = final.python3.pkgs;

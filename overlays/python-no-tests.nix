@@ -1,15 +1,19 @@
 # Skip test phases for Python packages that fail in the Nix sandbox.
 #
 # MUST come before nix-vscode-extensions in the overlay list so that
-# prev.python3 seen by that overlay already has the patched debugpy.
+# prev.python3 seen by that overlay already has the patched debugpy/django.
 #
-# Use `.override { doCheck = false; }` (not overrideAttrs) so that
-# buildPythonPackage is re-run with doCheck=false from the start.
-# overrideAttrs only patches the final mkDerivation attrs — it leaves
-# nativeCheckInputs already merged into nativeBuildInputs, so django
-# (a debugpy nativeCheckInput) is still built and its tests fail.
-# With .override, nativeCheckInputs are not added to nativeBuildInputs
-# at all, so django is never pulled in and the hash actually changes.
+# Use .overrideAttrs (NOT .override) to skip tests. Python package functions
+# have the form `{ lib, buildPythonPackage, ... }:` — the trailing `...`
+# silently absorbs any extra args, so `.override { doCheck = false; }` is a
+# complete no-op: the derivation hash is unchanged and tests still run.
+# `.overrideAttrs (_: { doCheck = false; })` modifies the mkDerivation attrs
+# directly, which changes the hash and causes the checkPhase to be skipped.
+#
+# Python package sets use lib.makeExtensible with self-references, so
+# overriding django here propagates through the fixed-point: debugpy's
+# nativeCheckInputs reference self.django, which resolves to our patched
+# version, giving debugpy a new hash without manually filtering its inputs.
 #
 # Re-export python3 and python3Packages so nix-vscode-extensions (overlay #2)
 # sees the patched packages in its `prev` — without this, python3 in prev
@@ -17,7 +21,8 @@
 final: prev: {
   python313 = prev.python313.override {
     packageOverrides = pyfinal: pyprev: {
-      debugpy = pyprev.debugpy.override { doCheck = false; };
+      debugpy = pyprev.debugpy.overrideAttrs (_: { doCheck = false; });
+      django = pyprev.django.overrideAttrs (_: { doCheck = false; });
     };
   };
   python3 = final.python313;
