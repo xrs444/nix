@@ -61,6 +61,7 @@
       /export/zfs/media/audiobooks/non-fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/system/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/system/loki 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/systembackups/crafty 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/books/fiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
       /export/zfs/media/books/nonfiction 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
@@ -180,6 +181,15 @@
     {
       what = "/zfs/system/crafty";
       where = "/export/zfs/system/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
+    }
+    {
+      what = "/zfs/system/loki";
+      where = "/export/zfs/system/loki";
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
@@ -350,6 +360,10 @@
       mkdir -p /export/zfs/media/audiobooks/adult
       mkdir -p /export/zfs/media/games
       mkdir -p /export/zfs/system/crafty
+      mkdir -p /export/zfs/system/loki
+      mkdir -p /zfs/system/loki
+      chown 10001:10001 /zfs/system/loki
+      chmod 755 /zfs/system/loki
       mkdir -p /export/zfs/systembackups/crafty
       mkdir -p /export/zfs/media/books/fiction
       mkdir -p /export/zfs/media/books/nonfiction
