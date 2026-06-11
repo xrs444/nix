@@ -200,8 +200,15 @@
           vlan 14 name management by port
            tagged ethe 1/1/5 ethe 1/1/44 lag 6 lag 10 to 12
            untagged ethe 1/1/2 ethe 1/1/4 ethe 1/1/13 to 1/1/14 ethe 2/1/1 to 2/1/2 ethe 2/1/13
-           router-interface ve 14
            spanning-tree 802-1w
+
+    - name: Attach VE 14 to VLAN 14 (management SVI)
+      # FastIron returns "Invalid input" when the VE is already attached — safe to ignore
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 14 by port
+           router-interface ve 14
+      ignore_errors: true
 
     - name: Configure VLAN 15 (Printers)
       ansible.netcommon.cli_config:
