@@ -169,11 +169,15 @@ p.write_text(t)
       # but the code now produces PEP 440-compliant `black @ https://` (with space)
       # Tests run via doInstallCheck (not doCheck) in this package
       pipx = pprev.pipx.overrideAttrs (_: { doInstallCheck = false; });
-      # Fix django test_crafted_xml_performance timing failure in sandboxed builds
-      # test asserts XML parse time ≤2s but sandbox overhead pushes it to ~5.8s
-      django = pprev.django.overrideAttrs (_: { doInstallCheck = false; });
-      # Fix debugpy install-check failures in sandboxed builds
-      debugpy = pprev.debugpy.overrideAttrs (_: { doInstallCheck = false; });
+      # Fix django/debugpy test failures in sandboxed builds.
+      # Use .override (not overrideAttrs) so buildPythonPackage is re-run with
+      # doCheck=false — this prevents nativeCheckInputs from being merged into
+      # nativeBuildInputs, changing the derivation hash and skipping the tests.
+      # overrideAttrs only patches mkDerivation attrs after the fact; doCheck
+      # set that way is not a recognised env var in Python packages and has no
+      # effect on the hash or the nativeBuildInputs that were already computed.
+      django = pprev.django.override { doCheck = false; };
+      debugpy = pprev.debugpy.override { doCheck = false; };
     };
   };
   python3Packages = final.python3.pkgs;
