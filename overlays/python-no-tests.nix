@@ -29,6 +29,10 @@ final: prev: {
       # whose nativeBuildInputs already contains the original django (old hash).
       # That hardcodes the old reference back in and the fix has no effect.
       django = pyprev.django.overrideAttrs (_: { doCheck = false; });
+      # Mirror the pkgs.nix python3 override: some packages (e.g. remarshal) use
+      # python313/python313Packages directly rather than the python3 alias, so
+      # this must be patched here as well as in pkgs.nix's python3 override.
+      rich = pyprev.rich.overrideAttrs (_: { doCheck = false; doInstallCheck = false; });
     };
   };
   python3 = final.python313;
