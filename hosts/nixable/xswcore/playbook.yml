@@ -34,18 +34,17 @@
           lldp tagged-packets process
           ip ssh scp disable
           ip ssh encryption disable-aes-cbc
+          ip ssh key-authentication yes
           manager disable
           manager port-list 987
 
-    - name: Configure ansible-brocade SSH authorized key
-      # ECDSA P-256 key — FastIron 09.x supports ecdsa-sha2-nistp256 in pub-key-chain
-      # ansible_public_key injected from ansible-network.yaml
-      # Skipped during bootstrap (--skip-tags ssh_keys): requires FastIron 09.x
-      ansible.netcommon.cli_config:
-        config: |
-          ip ssh pub-key-chain
-           user-key ansible-brocade
-            key-string {{ ansible_public_key }}
+    - name: Import ansible-brocade SSH public key
+      # FastIron 09.x: ip ssh pub-key-file removed; use copy tftp flash (privileged EXEC).
+      # Key file must be in SSH2/RFC4716 format (ssh-keygen -e). RSA keys only (DSA/RSA supported).
+      # ansible_tftp_ip injected by push-ansible-key justfile recipe.
+      # Run with: just push-ansible-key (password auth, one-time per key rotation)
+      ansible.netcommon.cli_command:
+        command: "copy tftp flash {{ ansible_tftp_ip }} ansible-brocade.pub ssh-pub-key-file"
       tags: [ssh_keys]
 
     - name: Configure AAA authentication

@@ -382,16 +382,112 @@ bootstrap-xswcore:
     rm -f $tmp_vars $tmp_conn
     echo "Bootstrap complete — run 'just configure-xswcore' for all subsequent runs"
 
+# Import ansible-brocade SSH RSA public key to xswcore via TFTP (one-time setup).
+# FastIron uses 'copy tftp flash <ip> <file> ssh-pub-key-file' to import SSH2/RFC4716 keys.
+# Prerequisites:
+#   1. Generate RSA key: ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C "ansible-brocade@xswcore" -N ""
+#   2. Store private key in sops: sops {{scripts_dir}}/secrets/ansible-network.yaml
+#      Set ansible_private_key to the contents of ~/.ssh/ansible-brocade_key
+#   3. Ensure atftpd is available: nix-shell -p atftp
+#   4. Run: just push-ansible-key
+push-ansible-key:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
+    set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
+    set -l tmp_pub  (mktemp /tmp/net-pub-XXXXXX.pub)
+    set -l tftp_dir (mktemp -d /tmp/tftp-XXXXXX)
+    chmod 600 $tmp_vars $tmp_conn $tmp_key
+    chmod 755 $tftp_dir
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        exit 1
+    end
+
+    if not command -q atftpd
+        echo "ERROR: atftpd not found"
+        echo "Install with: nix-shell -p atftp   (or add atftp to system packages)"
+        exit 1
+    end
+
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub; rm -rf $tftp_dir
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    set -l boot_pass   (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
+    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
+
+    # Extract RSA private key and derive SSH2/RFC4716 public key (required by FastIron)
+    if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub; rm -rf $tftp_dir
+        echo "ERROR: Failed to extract ansible_private_key — add it to sops first"
+        exit 1
+    end
+    if not ssh-keygen -y -f $tmp_key > $tmp_pub
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub; rm -rf $tftp_dir
+        echo "ERROR: Invalid private key — regenerate with:"
+        echo "  ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C 'ansible-brocade@xswcore' -N ''"
+        exit 1
+    end
+    # Convert OpenSSH format to SSH2/RFC4716 format
+    ssh-keygen -e -f $tmp_pub > $tftp_dir/ansible-brocade.pub
+    rm -f $tmp_pub $tmp_key
+
+    # Find management network IP (172.18.4.x)
+    set -l mgmt_ip (ip -4 addr | grep -oP '172\.18\.4\.\d+(?=/)' | head -1)
+    if test -z "$mgmt_ip"
+        rm -f $tmp_vars $tmp_conn; rm -rf $tftp_dir
+        echo "ERROR: No 172.18.4.x address found — connect to management network first"
+        exit 1
+    end
+    echo "Control host management IP: $mgmt_ip"
+
+    printf "ansible_user: ansible-local\nansible_password: '%s'\nansible_become_password: '%s'\nansible_tftp_ip: %s\n" \
+        (string replace --all "'" "''" $boot_pass) \
+        (string replace --all "'" "''" $enable_pass) \
+        $mgmt_ip > $tmp_conn
+
+    # Start TFTP server (port 69 requires sudo)
+    echo "Starting TFTP server on $mgmt_ip:69..."
+    sudo atftpd --port 69 --pidfile /tmp/atftpd-xswcore.pid $tftp_dir
+    sleep 1
+
+    echo "Importing SSH public key to xswcore..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "@$tmp_conn" \
+        --tags ssh_keys \
+        $argv \
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
+    set -l rc $status
+
+    sudo kill (cat /tmp/atftpd-xswcore.pid 2>/dev/null) 2>/dev/null; rm -f /tmp/atftpd-xswcore.pid
+    rm -f $tmp_vars $tmp_conn; rm -rf $tftp_dir
+
+    if test $rc -eq 0
+        echo "SSH key imported — subsequent runs use: just configure-xswcore"
+    else
+        exit $rc
+    end
+
 # Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
+# Authenticates as ansible-brocade using RSA key auth (requires just push-ansible-key first).
 # Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
 # Secrets file: nix/secrets/ansible-network.yaml (shared with other network gear)
 #
 # Create secrets first: sops {{scripts_dir}}/secrets/ansible-network.yaml
 #   Required keys:
-#     ansible_private_key: |          # ECDSA P-256 private key for ansible-brocade user
+#     ansible_private_key: |          # RSA 4096-bit private key for ansible-brocade user
 #       -----BEGIN OPENSSH PRIVATE KEY-----
 #       ...
-#     ansible_public_key: "ecdsa-sha2-nistp256 AAAA..."  # public key uploaded to switch pub-key-chain
 #     ansible_become_password: "<enable/super-user password>"
 #     vault_snmp_community: "<SNMP RO community string>"
 #     vault_user_super_password: "<super user password>"
@@ -404,7 +500,7 @@ configure-xswcore:
     set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
     set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
     set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
-    chmod 600 $tmp_key
+    chmod 600 $tmp_vars $tmp_key
 
     if not test -f $secrets
         echo "ERROR: Secrets file not found: $secrets"
@@ -419,7 +515,6 @@ configure-xswcore:
         exit 1
     end
 
-    # Extract private key to its own chmod-600 temp file
     if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
         rm -f $tmp_vars $tmp_key
         echo "ERROR: Failed to extract ansible_private_key from $secrets"
