@@ -146,10 +146,10 @@ let
                 return data.get("results", [])
         except urllib.error.HTTPError as e:
             print(f"ERROR fetching devices from NetBox: HTTP {e.code} {e.reason}", flush=True)
-            sys.exit(1)
+            return None
         except Exception as e:
             print(f"ERROR fetching devices from NetBox: {e}", flush=True)
-            sys.exit(1)
+            return None
 
     def build_targets(devices, community):
         targets = []
@@ -188,6 +188,9 @@ let
         token     = read_file(TOKEN_FILE, "NetBox API token")
         community = read_file(COMMUNITY_FILE, "SNMP community")
         devices   = fetch_devices(token)
+        if devices is None:
+            print("Skipping update — keeping existing file", flush=True)
+            sys.exit(0)
         sd        = build_targets(devices, community)
         payload   = json.dumps(sd, indent=2)
         tmp       = OUTPUT_FILE + ".tmp"

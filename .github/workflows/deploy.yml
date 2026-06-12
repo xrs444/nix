@@ -175,6 +175,7 @@ jobs:
 
       - name: Deploy remote hosts
         run: |
+          ts() { date '+[%H:%M:%S]'; }
           REVISION=$(git rev-parse HEAD)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
