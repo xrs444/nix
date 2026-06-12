@@ -430,7 +430,8 @@ push-ansible-key:
         echo "  ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C 'ansible-brocade@xswcore' -N ''"
         exit 1
     end
-    ssh-keygen -e -f $tmp_pub > $tmp_ssh2
+    # Subject header in RFC4716 format assigns the key to the ansible-brocade user on FastIron
+    ssh-keygen -e -f $tmp_pub | sed '/^---- BEGIN SSH2 PUBLIC KEY ----$/a Subject: ansible-brocade' > $tmp_ssh2
     rm -f $tmp_pub $tmp_key
 
     # Upload key to xsvr1 TFTP root (/zfs/tftp, writable by wheel group)
