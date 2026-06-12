@@ -281,6 +281,11 @@ PYEOF
     hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
   });
 
+  # Fix flac test_streams.sh hang in sandboxed builds
+  # test_streams.sh runs multi-hour compression tests that stall in the Nix
+  # sandbox. flac is a build-time dep of libsndfile — skipping tests is safe.
+  flac = prev.flac.overrideAttrs (_: { doCheck = false; });
+
   # Fix gtkmm3/gtkmm4 test failures in sandboxed builds
   # Tests call Gdk::Display::get_default() which requires a live display
   # server (X11/Wayland). The Nix sandbox has none, causing "failed to get

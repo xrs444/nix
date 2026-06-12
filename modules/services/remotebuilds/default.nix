@@ -199,15 +199,17 @@ in
     })
   ];
 
-  # Deploy builder SSH key on all non-builder hosts
-  sops.secrets.builder_private_key = lib.mkIf (!isBuilder) {
+  # Deploy builder SSH key on all non-builder hosts AND on xsvr1.
+  # xsvr1 is a builder itself but also acts as the CI runner; it needs
+  # id_builder to SSH to xsvr2/xsvr3/xdt1-t for distributed builds.
+  sops.secrets.builder_private_key = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") {
     sopsFile = ../../../secrets/builder-ssh-key.yaml;
     path = "/root/.ssh/id_builder";
     mode = "0600";
   };
 
   # SSH config so nixos-rebuild --build-host and nix distributed builds find the right key
-  programs.ssh.extraConfig = lib.mkIf (!isBuilder) ''
+  programs.ssh.extraConfig = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") ''
     Host ${lib.concatStringsSep " " (map (b: "${b.name}.lan") buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
@@ -215,7 +217,7 @@ in
 
   # Known host keys for the build machines — prevents host key verification failures
   # after a client host is rebuilt fresh. Refresh with: ssh-keyscan -t ed25519 xsvr1 xsvr2 xsvr3
-  programs.ssh.knownHosts = lib.mkIf (!isBuilder) {
+  programs.ssh.knownHosts = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") {
     "xsvr1.lan" = {
       hostNames = [ "xsvr1.lan" "xsvr1" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPi6pOq7wjkPhbRs19XO1g9oud5JTq6O46KuEqVnKp09";
