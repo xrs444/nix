@@ -28,6 +28,7 @@
     ./socat
     ./tailscale
     ./talos
+    ./tftpd
     ./vsftpd
     ./zfs
   ];
