@@ -42,6 +42,15 @@
       final.python3.pkgs.setuptools
       final.python3.pkgs.distutils
     ];
+    # Under QEMU aarch64, ldd may not resolve libgobject-2.0.so from the dump
+    # binary's dynamic section alone. Pre-populate LD_LIBRARY_PATH so ldd can
+    # find it directly. Use pkg-config at build time (no Nix store reference)
+    # to avoid circular dep: gobject-introspection → glib → gobject-introspection.
+    preBuild = (oldAttrs.preBuild or "") + ''
+      if _glib_libdir=$(pkg-config --variable=libdir glib-2.0 2>/dev/null) && [ -n "$_glib_libdir" ]; then
+        export LD_LIBRARY_PATH="$_glib_libdir''${LD_LIBRARY_PATH:+:}''${LD_LIBRARY_PATH:-}"
+      fi
+    '';
     postPatch = (oldAttrs.postPatch or "") + ''
       # giscanner/utils.py does a bare `import distutils.cygwinccompiler` at
       # module level. setuptools' distutils shim omits cygwinccompiler on
@@ -59,12 +68,12 @@ t = t.replace('import distutils.cygwinccompiler\n', stub)
 p.write_text(t)
 "
 
-      # giscanner/shlibs.py: add pkg-config fallback for resolve_from_ldd_output.
-      # When gobject-introspection scans GLib (--external-library), the dump binary
-      # is compiled without -Wl,-rpath, so ldd can't find libgobject-2.0.so in the
-      # Nix sandbox (no ldconfig cache, no LD_LIBRARY_PATH). Patch the function to
-      # try pkg-config --variable=libdir as a fallback before raising the error.
-      # This fixes aarch64-linux builds where the package is not in binary cache.
+      # giscanner/shlibs.py: add fallback for resolve_from_ldd_output.
+      # When ldd fails under QEMU (or doesn't report gobject-2.0 in output),
+      # the fallback tries pkg-config, NIX_LDFLAGS, and LIBRARY_PATH.
+      # NOTE: nixpkgs' absolute_shlib_path.patch changes patterns[lib] from a
+      # plain regex to a (pattern, nix_pattern) tuple. We use a fresh _lib_re
+      # instead of patterns[lib].match() to avoid AttributeError on the tuple.
       python3 << 'PYEOF'
 import pathlib
 p = pathlib.Path('giscanner/shlibs.py')
@@ -80,33 +89,24 @@ new = (
     '        import subprocess as _subp, os as _os, re as _re\n'
     '        for lib in list(patterns.keys()):\n'
     '            _found = False\n'
+    '            _lib_re = _re.compile(r\'lib\' + _re.escape(lib) + r\'[^A-Za-z0-9_-]\')\n'
+    '            _search_dirs = []\n'
     '            try:\n'
-    '                libdir = _subp.check_output(\n'
+    '                _d = _subp.check_output(\n'
     '                    ["pkg-config", "--variable=libdir", lib],\n'
     '                    stderr=_subp.DEVNULL).decode().strip()\n'
-    '                if libdir:\n'
-    '                    for fname in _os.listdir(libdir):\n'
-    '                        m = patterns[lib].match(fname)\n'
-    '                        if m:\n'
-    '                            del patterns[lib]\n'
-    '                            shlibs.append(m.group())\n'
-    '                            _found = True\n'
-    '                            break\n'
+    '                if _d: _search_dirs.append(_d)\n'
     '            except Exception:\n'
     '                pass\n'
-    '            if _found:\n'
-    '                continue\n'
-    '            _nix_ldflags = _os.environ.get("NIX_LDFLAGS", "")\n'
-    '            _lib_path = _os.environ.get("LIBRARY_PATH", "")\n'
-    '            _dirs = _re.findall(r"-L\\s*(\\S+)", _nix_ldflags)\n'
-    '            _dirs += [_p for _p in _lib_path.split(":") if _p]\n'
-    '            for d in _dirs:\n'
+    '            for _lf in _os.environ.get("NIX_LDFLAGS", "").split():\n'
+    '                if _lf.startswith("-L"): _search_dirs.append(_lf[2:])\n'
+    '            _search_dirs += [p for p in _os.environ.get("LIBRARY_PATH", "").split(":") if p]\n'
+    '            for _d in _search_dirs:\n'
     '                try:\n'
-    '                    for fname in _os.listdir(d):\n'
-    '                        m = patterns[lib].match(fname)\n'
-    '                        if m:\n'
+    '                    for _f in _os.listdir(_d):\n'
+    '                        if _lib_re.match(_f):\n'
     '                            del patterns[lib]\n'
-    '                            shlibs.append(m.group())\n'
+    '                            shlibs.append(_os.path.join(_d, _f))\n'
     '                            _found = True\n'
     '                            break\n'
     '                except Exception:\n'
