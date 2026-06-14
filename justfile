@@ -337,60 +337,21 @@ run-nixable host:
 install-collections:
     ansible-galaxy collection install -r "{{scripts_dir}}/hosts/nixable/xswcore/requirements.yml"
 
-# Bootstrap xswcore: connect as ansible-local with password to create ansible-brocade + push RSA key.
-# Run this ONCE before configure-xswcore. Uses vault_user_ansible_password from ansible-network.yaml.
-bootstrap-xswcore:
-    #!/usr/bin/env fish
-    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
-    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
-    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
-    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
-    chmod 600 $tmp_vars $tmp_conn
-
-    if not test -f $secrets
-        echo "ERROR: Secrets file not found: $secrets"
-        exit 1
-    end
-
-    if not sops -d $secrets > $tmp_vars
-        rm -f $tmp_vars $tmp_conn
-        echo "ERROR: Failed to decrypt $secrets"
-        exit 1
-    end
-
-    # Extract bootstrap credentials (ansible-local password == ansible-brocade password)
-    set -l boot_pass (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
-    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
-
-    # Write connection overrides to a separate vars file to avoid just variable interpolation
-    printf "ansible_user: ansible-local\nansible_password: '%s'\nansible_become_password: '%s'\n" \
-        (string replace --all "'" "''" $boot_pass) \
-        (string replace --all "'" "''" $enable_pass) > $tmp_conn
-
-    echo "Bootstrapping xswcore (password auth as ansible-local)..."
-    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
-    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
-    # Skip ssh_keys: key import requires TFTP server; run 'just push-ansible-key' separately
-    ansible-playbook \
-        -i $inventory \
-        --extra-vars "@$tmp_vars" \
-        --extra-vars "@$tmp_conn" \
-        --skip-tags ssh_keys \
-        $argv \
-        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
-
-    rm -f $tmp_vars $tmp_conn
-    echo "Bootstrap complete — run 'just configure-xswcore' for all subsequent runs"
+# (bootstrap-xswcore removed — ansible-local was a manually-created legacy user, no longer present.
+#  Use reconfigure-xswcore for password-auth configuration instead.)
 
 # Import ansible-brocade SSH RSA public key to xswcore via TFTP (one-time setup).
 # FastIron 09.x uses 'copy tftp flash <ip> <file> ssh-pub-key-file'; key must be SSH2/RFC4716 format.
 # TFTP server: xsvr1 (172.20.1.10), serving /zfs/tftp — see modules/services/tftpd/default.nix
+# IMPORTANT: Authenticates as ansible-brocade (not ansible-local) — FastIron stores the imported key
+# for the currently-logged-in user. Must run after bootstrap-xswcore creates the ansible-brocade user.
 # Prerequisites:
-#   1. Generate RSA key: ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C "ansible-brocade@xswcore" -N ""
-#   2. Store private key in sops: sops {{scripts_dir}}/secrets/ansible-network.yaml
+#   1. Run: just bootstrap-xswcore (creates ansible-brocade user with vault_user_ansible_password)
+#   2. Generate RSA key: ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C "ansible-brocade@xswcore" -N ""
+#   3. Store private key in sops: sops {{scripts_dir}}/secrets/ansible-network.yaml
 #      Set ansible_private_key to the contents of ~/.ssh/ansible-brocade_key
-#   3. Deploy xsvr1 to activate the TFTP service
-#   4. Run: just push-ansible-key
+#   4. Deploy xsvr1 to activate the TFTP service
+#   5. Run: just push-ansible-key
 push-ansible-key:
     #!/usr/bin/env fish
     set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
@@ -443,7 +404,7 @@ push-ansible-key:
     end
     rm -f $tmp_ssh2
 
-    printf "ansible_user: ansible-local\nansible_password: '%s'\nansible_become_password: '%s'\nansible_tftp_ip: %s\n" \
+    printf "ansible_user: ansible-brocade\nansible_password: '%s'\nansible_become_password: '%s'\nansible_tftp_ip: %s\n" \
         (string replace --all "'" "''" $boot_pass) \
         (string replace --all "'" "''" $enable_pass) \
         $tftp_ip > $tmp_conn
@@ -466,6 +427,54 @@ push-ansible-key:
 
     if test $rc -eq 0
         echo "SSH key imported — subsequent runs use: just configure-xswcore"
+    else
+        exit $rc
+    end
+
+# Configure xswcore using ansible-brocade PASSWORD auth (fallback when key auth is broken).
+# Same as configure-xswcore but uses password instead of RSA key. Use after bootstrap or when
+# key auth is unavailable (e.g. before push-ansible-key has successfully run).
+reconfigure-xswcore:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
+    chmod 600 $tmp_vars $tmp_conn
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        exit 1
+    end
+
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_conn
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    set -l boot_pass   (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
+    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
+
+    printf "ansible_user: ansible-brocade\nansible_password: '%s'\nansible_become_password: '%s'\n" \
+        (string replace --all "'" "''" $boot_pass) \
+        (string replace --all "'" "''" $enable_pass) > $tmp_conn
+
+    echo "Configuring xswcore (password auth as ansible-brocade)..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "@$tmp_conn" \
+        --skip-tags ssh_keys \
+        $argv \
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
+    set -l rc $status
+
+    rm -f $tmp_vars $tmp_conn
+    if test $rc -eq 0
+        echo "Done — run 'just push-ansible-key' then 'just configure-xswcore' for key-auth runs"
     else
         exit $rc
     end

@@ -2,7 +2,7 @@
 # Manages xswcore Brocade ICX-7250 stack via ansible.netcommon.cli_config.
 # Terminal plugin: plugins/terminal/icx.py (local, no community.network dependency).
 # Run with: just configure-xswcore
-# Bootstrap (first run, password auth): just bootstrap-xswcore
+# First run (password auth, no key): just reconfigure-xswcore
 - name: Configure xswcore ICX-7250 Stack
   hosts: xswcore
   gather_facts: false
@@ -35,16 +35,34 @@
           ip ssh scp disable
           ip ssh encryption disable-aes-cbc
           ip ssh key-authentication yes
+          ip tftp blocksize 8192
           manager disable
           manager port-list 987
 
     - name: Import ansible-brocade SSH public key
       # FastIron 09.x: ip ssh pub-key-file removed; use copy tftp flash (privileged EXEC).
-      # Key file must be in SSH2/RFC4716 format (ssh-keygen -e). RSA keys only (DSA/RSA supported).
+      # Key file must be in SSH2/RFC4716 format (ssh-keygen -e). RSA keys only.
       # ansible_tftp_ip injected by push-ansible-key justfile recipe.
       # Run with: just push-ansible-key (password auth, one-time per key rotation)
       ansible.netcommon.cli_command:
         command: "copy tftp flash {{ ansible_tftp_ip }} ansible-brocade.pub ssh-pub-key-file"
+      register: key_import_result
+      tags: [ssh_keys]
+
+    - name: Show key import output
+      ansible.builtin.debug:
+        var: key_import_result.stdout
+      tags: [ssh_keys]
+
+    - name: Show client pub key on switch
+      ansible.netcommon.cli_command:
+        command: "show ip client-pub-key"
+      register: client_pub_key
+      tags: [ssh_keys]
+
+    - name: Print client pub key
+      ansible.builtin.debug:
+        var: client_pub_key.stdout
       tags: [ssh_keys]
 
     - name: Configure AAA authentication
@@ -114,20 +132,13 @@
            port-name xsvr3-b ethernet 1/2/3
            port-name xsvr3-b ethernet 2/2/3
 
-    - name: Configure LAG xsvr-temp (id 4) - temporary server SFP+
+    - name: Configure LAG xswrf (id 6) - RF cabinet uplink SFP+
       ansible.netcommon.cli_config:
         config: |
-          lag xsvr-temp dynamic id 4
-           lacp-timeout short
-           ports ethe 1/2/4 ethe 2/2/4
-           force-up ethernet 1/2/4
-
-    - name: Configure LAG rfcab (id 6) - RF cabinet uplink SFP+
-      ansible.netcommon.cli_config:
-        config: |
-          lag rfcab dynamic id 6
+          lag xswrf dynamic id 6
            lacp-timeout short
            ports ethe 1/2/5 ethe 2/2/5
+           force-up ethernet 1/2/5
            port-name rfcab-uplink-a ethernet 1/2/5
            port-name rfcab-uplink-b ethernet 2/2/5
 
@@ -137,26 +148,9 @@
           lag xfw dynamic id 10
            lacp-timeout short
            ports ethe 1/2/6 ethe 2/2/6
+           force-up ethernet 2/2/6
            port-name xfw-a ethernet 1/2/6
            port-name xfw-b ethernet 2/2/6
-
-    - name: Configure LAG xswoffice (id 11) - office switch uplink
-      ansible.netcommon.cli_config:
-        config: |
-          lag xswoffice dynamic id 11
-           lacp-timeout short
-           ports ethe 1/1/47 ethe 2/1/47
-           port-name xswoffice-a ethernet 1/1/47
-           port-name xswoffice-b ethernet 2/1/47
-
-    - name: Configure LAG RFCab-Temp (id 12) - temporary RF cab uplink
-      ansible.netcommon.cli_config:
-        config: |
-          lag RFCab-Temp dynamic id 12
-           lacp-timeout long
-           ports ethe 1/1/48 ethe 2/1/48
-           port-name RFCab-Temp-a ethernet 1/1/48
-           port-name RFCab-Temp-b ethernet 2/1/48
 
     - name: Configure LAG xswlab (id 13) - lab switch (static, no LACP)
       ansible.netcommon.cli_config:
@@ -176,6 +170,29 @@
            force-up ethernet 1/1/7
            port-name xsvr1-vm-a ethernet 1/1/7
            port-name xsvr1-vm-b ethernet 2/1/7
+
+    - name: Configure LAG xswoffce (id 15) - office switch uplink SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xswoffce dynamic id 15
+           lacp-timeout short
+           ports ethe 1/2/4 ethe 2/2/4
+           force-up ethernet 1/2/4
+           port-name xswoffice1 ethernet 1/2/4
+           port-name xswoffice2 ethernet 2/2/4
+
+    - name: Disable optical-monitor on uplink LAGs
+      ansible.netcommon.cli_config:
+        config: |
+          interface lag {{ item }}
+           no optical-monitor
+      loop:
+        - "1"
+        - "2"
+        - "3"
+        - "6"
+        - "10"
+        - "15"
 
     # =========================================================
     # VLANs
@@ -197,30 +214,22 @@
       ansible.netcommon.cli_config:
         config: |
           vlan 14 name management by port
-           tagged ethe 1/1/5 ethe 1/1/44 lag 6 lag 10 to 12
+           tagged ethe 1/1/5 ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 6 lag 10 lag 15
            untagged ethe 1/1/2 ethe 1/1/4 ethe 1/1/13 to 1/1/14 ethe 2/1/1 to 2/1/2 ethe 2/1/13
            spanning-tree 802-1w
-
-    - name: Attach VE 14 to VLAN 14 (management SVI)
-      # FastIron returns "Invalid input" when the VE is already attached — safe to ignore
-      ansible.netcommon.cli_config:
-        config: |
-          vlan 14 by port
-           router-interface ve 14
-      ignore_errors: true
 
     - name: Configure VLAN 15 (Printers)
       ansible.netcommon.cli_config:
         config: |
           vlan 15 name Printers by port
-           tagged ethe 1/1/44 lag 10 to 11
+           tagged ethe 1/1/44 ethe 1/1/47 ethe 2/1/47 lag 10 lag 15
            spanning-tree
 
     - name: Configure VLAN 16 (telephony)
       ansible.netcommon.cli_config:
         config: |
           vlan 16 name telephony by port
-           tagged ethe 1/1/44 lag 1 to 4 lag 10 to 12 lag 14
+           tagged ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 1 to 3 lag 10 lag 14 to 15
            untagged ethe 1/1/35 ethe 1/1/40 ethe 2/1/3 ethe 2/1/20 to 2/1/25
            spanning-tree 802-1w
 
@@ -228,7 +237,7 @@
       ansible.netcommon.cli_config:
         config: |
           vlan 17 name HomeAutomation by port
-           tagged lag 1 to 4 lag 6 lag 10 lag 12 lag 14
+           tagged ethe 1/1/48 ethe 2/1/48 lag 1 to 3 lag 6 lag 10 lag 14 to 15
            spanning-tree 802-1w
 
     - name: Configure VLAN 18
@@ -243,7 +252,7 @@
         config: |
           vlan 19 name provisioning by port
            tagged lag 10
-           untagged ethe 1/1/5 ethe 1/1/44 lag 6 lag 11 to 12
+           untagged ethe 1/1/5 ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 6 lag 15
            spanning-tree
 
     - name: Configure VLAN 20
@@ -251,13 +260,13 @@
         config: |
           vlan 20 by port
            tagged lag 10
-           untagged lag 1 to 4
+           untagged lag 1 to 3
 
     - name: Configure VLAN 21 (HomeVMs)
       ansible.netcommon.cli_config:
         config: |
           vlan 21 name HomeVMs by port
-           tagged lag 1 to 4 lag 10 lag 14
+           tagged lag 1 to 3 lag 10 lag 14 to 15
            spanning-tree 802-1w
 
     - name: Configure VLAN 22 (k8s)
@@ -272,14 +281,14 @@
       ansible.netcommon.cli_config:
         config: |
           vlan 100 name WiredClients by port
-           tagged ethe 1/1/44 lag 10 to 11
+           tagged ethe 1/1/44 ethe 1/1/47 ethe 2/1/47 lag 10 lag 15
            spanning-tree 802-1w
 
-    - name: Configure WiFi VLANs (111/112/114/115) - tagged to rfcab, xfw, RFCab-Temp
+    - name: Configure WiFi VLANs (111/112/114/115) - tagged to rfcab, xfw, RFCab-Temp ports
       ansible.netcommon.cli_config:
         config: |
           vlan {{ item.id }} name {{ item.name }} by port
-           tagged lag 6 lag 10 lag 12
+           tagged ethe 1/1/48 ethe 2/1/48 lag 6 lag 10
            spanning-tree 802-1w
       loop:
         - { id: 111, name: notthewifiyouarelookingfor }
@@ -338,9 +347,13 @@
         - { intf: "1/1/27", name: xsvr3_ipmi }
         - { intf: "1/1/43", name: xfw-temp-a }
         - { intf: "1/1/44", name: UplinkToOfficeSwitch }
+        - { intf: "1/1/47", name: xswoffice-a }
+        - { intf: "1/1/48", name: RFCab-Temp-a }
         - { intf: "2/1/1",  name: RackUPS }
         - { intf: "2/1/2",  name: JetKVM }
         - { intf: "2/1/13", name: xsvr2-mgmt }
+        - { intf: "2/1/47", name: xswoffice-b }
+        - { intf: "2/1/48", name: RFCab-Temp-b }
 
     - name: Disable unused/reserved interfaces
       ansible.netcommon.cli_config:
@@ -351,8 +364,11 @@
         - "1/1/8"
         - "1/1/9"
         - "1/1/43"
+        - "1/1/47"
+        - "1/1/48"
         - "2/1/8"
         - "2/1/9"
+        - "2/1/48"
 
     - name: Configure legacy PoE interfaces (pre-802.3af devices)
       ansible.netcommon.cli_config:
@@ -385,6 +401,12 @@
         config: |
           interface ve 14
            ip address 172.18.4.100 255.255.255.0
+
+    - name: Configure VE 20 IP address (server subnet — enables direct TFTP to xsvr1)
+      ansible.netcommon.cli_config:
+        config: |
+          interface ve 20
+           ip address 172.20.1.200 255.255.255.0
 
     - name: Configure default route via xfw
       ansible.netcommon.cli_config:
