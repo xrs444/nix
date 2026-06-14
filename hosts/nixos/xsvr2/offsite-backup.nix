@@ -28,7 +28,7 @@ let
   # Update this to the Synology's actual hostname or IP
   synologyHost = "cmrnas.xrs444.net";
   synologyUser = "restic";
-  repoPath = "/volume1/restic-xsvr2";
+  repoPath = "/home/restic-xsvr2";
 in
 lib.mkIf enabled {
   # SSH config for root so restic's sftp transport picks up the identity key without

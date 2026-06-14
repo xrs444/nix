@@ -145,6 +145,12 @@ lib.mkIf pkgs.stdenv.isLinux {
 
         [Panels]
         CookieId=DD38C8C7393B3F56
+
+        [OBSWebSocket]
+        ServerEnabled=true
+        ServerPort=4455
+        AuthRequired=false
+        AlertsEnabled=false
       '';
 
       serviceJson = pkgs.writeText "obs-service.json" ''
@@ -178,6 +184,12 @@ lib.mkIf pkgs.stdenv.isLinux {
 
         $DRY_RUN_CMD cp ${scenesJson} "$obs_dir/basic/scenes/default.json"
         $DRY_RUN_CMD chmod 644 "$obs_dir/basic/scenes/default.json"
+      fi
+
+      # Ensure WebSocket section exists in global.ini (idempotent — runs every activation)
+      if [ -f "$obs_dir/global.ini" ] && ! grep -q "\[OBSWebSocket\]" "$obs_dir/global.ini"; then
+        printf '\n[OBSWebSocket]\nServerEnabled=true\nServerPort=4455\nAuthRequired=false\nAlertsEnabled=false\n' \
+          | $DRY_RUN_CMD tee -a "$obs_dir/global.ini" > /dev/null
       fi
     ''
   );

@@ -74,18 +74,35 @@
     };
 
     # Mode fragment files — session wrappers symlink active-mode.kdl to one of these.
-    "niri/modes/base.kdl" = { force = true; text = "// base mode — no overrides\n"; };
+    "niri/modes/base.kdl" = {
+      force = true;
+      text = ''
+        // base mode
+        output "HDMI-A-2" {
+            off
+        }
+      '';
+    };
     "niri/modes/obs.kdl" = {
       force = true;
       text = ''
-        // OBS mode — add Niri overrides here (spawn-at-startup, output config, keybinds)
-        // Example: spawn-at-startup "obs"
+        // OBS mode — HDMI-A-2 reserved for OBS Fullscreen Projector (Preview)
+        window-rule {
+            match app-id="com.obsproject.Studio"
+            match title="Fullscreen Projector"
+            open-on-output "HDMI-A-2"
+            open-fullscreen true
+            open-focused false
+        }
       '';
     };
     "niri/modes/llm.kdl" = {
       force = true;
       text = ''
-        // LLM mode — add Niri overrides here
+        // LLM mode
+        output "HDMI-A-2" {
+            off
+        }
       '';
     };
   };
