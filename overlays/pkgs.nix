@@ -69,11 +69,25 @@ p.write_text(t)
 "
 
       # giscanner/shlibs.py: add fallback for resolve_from_ldd_output.
-      # When ldd fails under QEMU (or doesn't report gobject-2.0 in output),
-      # the fallback tries pkg-config, NIX_LDFLAGS, and LIBRARY_PATH.
-      # NOTE: nixpkgs' absolute_shlib_path.patch changes patterns[lib] from a
-      # plain regex to a (pattern, nix_pattern) tuple. We use a fresh _lib_re
-      # instead of patterns[lib].match() to avoid AttributeError on the tuple.
+      #
+      # Two bugs prevent library resolution under QEMU aarch64:
+      #
+      # Bug 1 (nixpkgs patch API change): absolute_shlib_path.patch changes
+      # patterns[lib] from a plain regex to a (pattern, nix_pattern) tuple.
+      # Any code calling patterns[lib].match() throws AttributeError on the tuple.
+      # Fix: use a fresh _lib_re built from re.escape(lib) instead.
+      #
+      # Bug 2 (pattern character class): nixpkgs' _ldd_library_pattern uses
+      # [^A-Za-z0-9_.] (excludes dot) which cannot match "libgirepository-1.0.so.0"
+      # because the character after the matched "1.0" is "." (start of ".so").
+      # This only affects non-nix-store paths (build-dir libraries like girepository).
+      # The nix_pattern (used for /nix/store lines) correctly allows "." via
+      # [^A-Za-z0-9_-]. Our _lib_re uses the same permissive set.
+      #
+      # Fix for Bug 2: re-parse the ldd output variable (in-scope) to extract
+      # absolute non-nix paths and match basenames with our corrected regex.
+      # This handles libraries in the build directory (e.g. libgirepository-1.0.so.0)
+      # that ldd resolves via RPATH but the main loop can't match due to Bug 2.
       python3 << 'PYEOF'
 import pathlib
 p = pathlib.Path('giscanner/shlibs.py')
@@ -90,29 +104,46 @@ new = (
     '        for lib in list(patterns.keys()):\n'
     '            _found = False\n'
     '            _lib_re = _re.compile(r\'lib\' + _re.escape(lib) + r\'[^A-Za-z0-9_-]\')\n'
-    '            _search_dirs = []\n'
-    '            try:\n'
-    '                _d = _subp.check_output(\n'
-    '                    ["pkg-config", "--variable=libdir", lib],\n'
-    '                    stderr=_subp.DEVNULL).decode().strip()\n'
-    '                if _d: _search_dirs.append(_d)\n'
-    '            except Exception:\n'
-    '                pass\n'
-    '            for _lf in _os.environ.get("NIX_LDFLAGS", "").split():\n'
-    '                if _lf.startswith("-L"): _search_dirs.append(_lf[2:])\n'
-    '            _search_dirs += [p for p in _os.environ.get("LIBRARY_PATH", "").split(":") if p]\n'
-    '            for _d in _search_dirs:\n'
-    '                try:\n'
-    '                    for _f in _os.listdir(_d):\n'
-    '                        if _lib_re.match(_f):\n'
+    '            # Pass 1: re-scan ldd output for non-nix absolute paths.\n'
+    '            # _ldd_library_pattern uses [^A-Za-z0-9_.] which excludes "." and\n'
+    '            # cannot match filenames like libgirepository-1.0.so.0 (dot after\n'
+    '            # version). Our _lib_re uses [^A-Za-z0-9_-] which allows ".".\n'
+    '            for _line in output.split("\\n"):\n'
+    '                for _word in _line.split():\n'
+    '                    if _word.startswith("/") and not _word.startswith("/nix/store"):\n'
+    '                        _bn = _os.path.basename(_word)\n'
+    '                        if _lib_re.match(_bn) and _os.path.isfile(_word):\n'
     '                            del patterns[lib]\n'
-    '                            shlibs.append(_os.path.join(_d, _f))\n'
+    '                            shlibs.append(_word)\n'
     '                            _found = True\n'
     '                            break\n'
-    '                except Exception:\n'
-    '                    pass\n'
     '                if _found:\n'
     '                    break\n'
+    '            if not _found:\n'
+    '                # Pass 2: search pkg-config, NIX_LDFLAGS, LIBRARY_PATH.\n'
+    '                _search_dirs = []\n'
+    '                try:\n'
+    '                    _d = _subp.check_output(\n'
+    '                        ["pkg-config", "--variable=libdir", lib],\n'
+    '                        stderr=_subp.DEVNULL).decode().strip()\n'
+    '                    if _d: _search_dirs.append(_d)\n'
+    '                except Exception:\n'
+    '                    pass\n'
+    '                for _lf in _os.environ.get("NIX_LDFLAGS", "").split():\n'
+    '                    if _lf.startswith("-L"): _search_dirs.append(_lf[2:])\n'
+    '                _search_dirs += [p for p in _os.environ.get("LIBRARY_PATH", "").split(":") if p]\n'
+    '                for _d in _search_dirs:\n'
+    '                    try:\n'
+    '                        for _f in _os.listdir(_d):\n'
+    '                            if _lib_re.match(_f):\n'
+    '                                del patterns[lib]\n'
+    '                                shlibs.append(_os.path.join(_d, _f))\n'
+    '                                _found = True\n'
+    '                                break\n'
+    '                    except Exception:\n'
+    '                        pass\n'
+    '                    if _found:\n'
+    '                        break\n'
     '    if len(patterns) > 0:\n'
     '        raise SystemExit(\n'
     '            "ERROR: can\'t resolve libraries to shared libraries: " +\n'
@@ -141,6 +172,13 @@ PYEOF
 
   # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
   # have been moved to xdash1-specific config since other hosts need GIR files
+
+  # Fix gupnp context-manager test failure in sandboxed builds
+  # test-context-manager tries to bind 127.0.0.1:port but the port is already
+  # in use in the CI runner's network namespace. Disable tests to skip.
+  gupnp = prev.gupnp.overrideAttrs (_: {
+    doCheck = false;
+  });
 
   # Fix dconf test failure in sandboxed builds
   # test dconf:dconf runs `dconf write` which requires a real D-Bus session bus
