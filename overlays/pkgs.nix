@@ -246,45 +246,18 @@ PYEOF
     doCheck = false;
   });
 
-  # Fix python3.13-distutils test_concurrent_safe failure in sandboxed builds
-  # test_msvccompiler::TestSpawn::test_concurrent_safe fails with "can't start new thread"
-  python3 = prev.python3.override {
-    packageOverrides = pfinal: pprev: {
-      distutils = pprev.distutils.overrideAttrs (oldAttrs: {
-        doCheck = false;
-        doInstallCheck = false;
-      });
-      # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
-      # network access unavailable in the nix sandbox. Strip it from yt-dlp's
-      # dependencies so it is never built.
-      yt-dlp = pprev.yt-dlp.overrideAttrs (old: {
-        propagatedBuildInputs = builtins.filter
-          (x: (x.pname or "") != "yt-dlp-ejs")
-          (old.propagatedBuildInputs or [ ]);
-      });
-      # Fix rich subprocess test failures in sandboxed builds
-      # test suite spawns subprocesses (process error, retcode != 0) which
-      # fail in the Nix sandbox where subprocess spawning is restricted
-      rich = pprev.rich.overrideAttrs (_: { doCheck = false; doInstallCheck = false; });
-      # Fix tqdm test INTERNALERROR: pytest-timeout SIGALRM fires during terminal flush
-      tqdm = pprev.tqdm.overrideAttrs (_: { doCheck = false; });
-      # Fix pipx 1.8.0 test failures — tests expect `black@ https://` (no space)
-      # but the code now produces PEP 440-compliant `black @ https://` (with space)
-      # Tests run via doInstallCheck (not doCheck) in this package
-      pipx = pprev.pipx.overrideAttrs (_: { doInstallCheck = false; });
-      # Fix django test failures in sandboxed builds.
-      # Use checkPhase = ":" (not doCheck = false): overrideAttrs (_: { doCheck =
-      # false; }) changes the env var but NOT the baked-in phases string, which
-      # still lists "checkPhase". nixpkgs setup.sh runs eval "${!checkPhase}";
-      # setting checkPhase = ":" replaces the function with a shell no-op.
-      # Only override django — do NOT also override debugpy: Python sets use
-      # lib.makeExtensible, so debugpy is re-evaluated in the fixed-point with
-      # self.django = pfinal.django (new hash). Overriding debugpy via
-      # pprev.debugpy.overrideAttrs would hardcode the old django reference back.
-      django = pprev.django.overrideAttrs (_: { checkPhase = ":"; });
-    };
-  };
-  python3Packages = final.python3.pkgs;
+  # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
+  # network access unavailable in the nix sandbox. Strip it from yt-dlp's
+  # dependencies so it is never built.
+  # Overridden at the top level (not via python3.packageOverrides) so that
+  # python3's derivation hash stays identical to upstream nixpkgs — allowing
+  # all 200+ python packages to be fetched from cache.nixos.org rather than
+  # rebuilt locally. Only yt-dlp's own hash changes; cascade impact is zero.
+  yt-dlp = prev.yt-dlp.overrideAttrs (old: {
+    propagatedBuildInputs = builtins.filter
+      (x: (x.pname or "") != "yt-dlp-ejs")
+      (old.propagatedBuildInputs or [ ]);
+  });
 
   # Fix pipewire test-support timeout in sandboxed builds
   # logger_debug_env_invalid test hangs in sandbox environment
