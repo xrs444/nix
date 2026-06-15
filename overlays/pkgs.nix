@@ -70,6 +70,21 @@
   # swtpm: requires softhsm2 not available in nix sandbox
   swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
 
+  # sdl3: testrwlock (test #11) times out in any VM environment — the test has a
+  # hardcoded deadline calibrated for physical hardware; VM thread scheduling
+  # (whether QEMU-emulated or native aarch64 VM) adds enough overhead to miss it.
+  # Hydra's aarch64 builders are also VM-based, so sdl3 is never cached at our
+  # nixpkgs pin. doCheck=false alone doesn't work because sdl3 uses CMake and
+  # test targets are compiled unconditionally; -DSDL_TESTS=OFF prevents them from
+  # being compiled at all. xlt1-t-vnixos (native aarch64 VM) builds this once and
+  # pushes to nixcache.xrs444.net so no other host ever needs to rebuild it.
+  sdl3 = prev.sdl3.overrideAttrs (old: {
+    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DSDL_TESTS=OFF" ];
+    postInstall = (old.postInstall or "") + ''
+      mkdir -p $installedTests
+    '';
+  });
+
   # Fix inetutils format-security compilation errors on macOS
   # https://github.com/NixOS/nixpkgs/issues/XXXXX
   inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
