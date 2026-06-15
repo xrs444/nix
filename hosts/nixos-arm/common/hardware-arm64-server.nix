@@ -1,7 +1,6 @@
 # ARM64 server/workstation hardware configuration
 # Suitable for ARM64 servers and high-end SBCs with UEFI support
 {
-  config,
   lib,
   pkgs,
   ...
@@ -28,6 +27,9 @@
       "sdhci"
       "sdhci_pci"
       "mmc_block"
+      # virtio-gpu-pci: load driver in initrd so display stays active after
+      # bootloader handoff. Required for console output and later for Wayland/KMS.
+      "virtio_gpu"
     ];
     
     # Kernel parameters for ARM64 servers
@@ -37,6 +39,11 @@
     ];
   };
   
+  # Ensure a login prompt appears on the serial console (ttyAMA0).
+  # systemd-getty-generator picks up consoles from kernel cmdline, but
+  # explicit enablement survives any getty.target ordering edge cases.
+  systemd.services."serial-getty@ttyAMA0".wantedBy = [ "getty.target" ];
+
   # Enable hardware features common to ARM64 servers
   hardware = {
     enableRedistributableFirmware = lib.mkDefault true;
