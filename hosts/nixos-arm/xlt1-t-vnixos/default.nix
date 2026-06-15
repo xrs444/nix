@@ -9,11 +9,7 @@
     ../../base-nixos.nix
     ../common/hardware-arm64-server.nix
     ./disks.nix
-    # desktop.nix omitted for initial install: desktop pulls in sdl3/ffmpeg which
-    # time out building under QEMU. Auto-upgrade will deploy full config once this
-    # host is running as a native aarch64 builder.
-    #    ./desktop.nix
-    #    ./network.nix
+    ./desktop.nix
     ../../common
   ];
 

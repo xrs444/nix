@@ -8,12 +8,17 @@
 }:
 let
   buildHosts = [
-    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; aarch64 = true; }  # Ryzen 7 7700 — primary builder, binfmt confirmed working
-    { name = "xsvr2"; maxJobs = 6; speedFactor = 1; aarch64 = false; } # Atom C3758 — binfmt unreliable under QEMU aarch64
-    { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
-    { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
+    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; aarch64 = true;  native = false; } # Ryzen 7 7700 — primary builder, binfmt confirmed working
+    { name = "xsvr2"; maxJobs = 6; speedFactor = 1; aarch64 = false; native = false; } # Atom C3758 — binfmt unreliable under QEMU aarch64
+    { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
+    { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
+    { name = "xlt1-t-vnixos"; maxJobs = 4; speedFactor = 8; aarch64 = true; native = true; } # Native aarch64 VM — builds aarch64 without QEMU
   ];
   isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
+  thisHost = lib.findFirst (b: b.name == config.networking.hostName) { native = false; } buildHosts;
+  # Native builders (real aarch64 hardware/VMs) don't need binfmt/QEMU setup.
+  isQemuBuilder = isBuilder && !thisHost.native;
+  isNativeBuilder = isBuilder && thisHost.native;
 
   mkBuildMachine = b: {
     hostName = "${b.name}.lan";
@@ -36,7 +41,11 @@ in
   ## Server configuration
   # Use emulatedSystems to get the base binfmt registration (magic bytes, etc),
   # then override specific settings below for sandbox compatibility.
-  boot.binfmt.emulatedSystems = lib.mkIf isBuilder [
+  # binfmt/QEMU: only for x86 hosts that emulate aarch64 via QEMU.
+  # Native aarch64 builders (xlt1-t-vnixos) must NOT register a binfmt handler
+  # for aarch64-linux — the kernel already executes it natively, and registering
+  # a QEMU binfmt entry would intercept native binaries and run them under QEMU.
+  boot.binfmt.emulatedSystems = lib.mkIf isQemuBuilder [
     "aarch64-linux"
   ];
 
@@ -47,7 +56,7 @@ in
   # Explicitly set the interpreter to the unwrapped QEMU binary to avoid the binfmt-P wrapper.
   # Wrap the whole attrset in mkIf so the submodule is not instantiated on non-builder hosts
   # (instantiating it without magicOrExtension causes a flake check evaluation error).
-  boot.binfmt.registrations = lib.mkIf isBuilder {
+  boot.binfmt.registrations = lib.mkIf isQemuBuilder {
     "aarch64-linux" = {
       fixBinary = lib.mkForce true;
       preserveArgvZero = lib.mkForce false;
@@ -94,7 +103,7 @@ in
 
   ## Combined nix configuration for both server and client
   nix = lib.mkMerge [
-    # Server-specific settings
+    # Settings common to all builder hosts (QEMU and native)
     (lib.mkIf isBuilder {
       settings = {
         system-features = [
@@ -107,11 +116,13 @@ in
         # sent by remote clients (nix-store --serve --write requires this privilege).
         trusted-users = [ "root" "builder" ];
         trusted-substituters = [ "file:///zfs/nixcache/cache" ];
-        # QEMU user-mode emulation (used for aarch64 cross-builds via binfmt) requires
-        # syscalls that Nix's default seccomp filter blocks (e.g. clone3, personality).
-        # Disable filter-syscalls so sandboxed aarch64 builds can succeed on this builder.
-        filter-syscalls = false;
       };
+    })
+
+    # QEMU builder: disable seccomp filter so sandboxed aarch64 builds can use
+    # the syscalls (clone3, personality) that QEMU user-mode emulation requires.
+    (lib.mkIf isQemuBuilder {
+      settings.filter-syscalls = false;
     })
 
     # Client configuration: deploy builder SSH key and SSH config for all non-builder hosts
@@ -157,32 +168,28 @@ in
   # these settings. Both builder and client hosts need this file — without it, Determinate
   # Nix daemons have no xsvr1.lan-1 key trusted and reject signed paths from the binary cache.
   environment.etc."nix/nix.custom.conf" = lib.mkMerge [
-    (lib.mkIf isBuilder {
+    (lib.mkIf isQemuBuilder {
       text = ''
-        # Custom Nix configuration for builder
+        # Custom Nix configuration for QEMU (x86) builder
         extra-platforms = aarch64-linux i686-linux
         extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
         extra-trusted-substituters = file:///zfs/nixcache/cache
-        # Duplicated from nix.settings because Determinate Nix reads nix.custom.conf
-        # instead of nix.conf for runtime settings (trusted-public-keys, require-sigs,
-        # filter-syscalls are all ignored from nix.conf under Determinate Nix).
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-        # Accept paths signed by xsvr1.lan-1 (CI builds) without requiring they also
-        # appear in cache.nixos.org. Same setting xsvr1 uses; necessary for deploy-rs
-        # push-mode to work when nix.custom.conf is the only config Determinate reads.
         require-sigs = false
-        # Auto-sign all paths built by the daemon so deploy-rs push-mode works for first-time
-        # deploys. Without this, paths built at deploy-time (e.g. activate-path derivations)
-        # are unsigned and remote daemons with require-sigs=true reject them on push.
         secret-key-files = /run/secrets/nixcache_signing_key
-        # QEMU user-mode emulation requires syscalls (clone3, personality) that Nix's
-        # default seccomp filter blocks. Disable the filter so sandboxed aarch64 builds
-        # can succeed.
         filter-syscalls = false
         system-features = nixos-test benchmark big-parallel kvm
-        # Determinate Nix ignores nix.conf trusted-users — must be set here so the
-        # builder daemon allows 'builder' to build input-addressed derivations sent
-        # by remote clients via nix-store --serve.
+        trusted-users = root builder
+      '';
+    })
+    (lib.mkIf isNativeBuilder {
+      text = ''
+        # Custom Nix configuration for native aarch64 builder
+        extra-trusted-substituters = file:///zfs/nixcache/cache
+        extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        require-sigs = false
+        secret-key-files = /run/secrets/nixcache_signing_key
+        system-features = nixos-test benchmark big-parallel
         trusted-users = root builder
       '';
     })
@@ -198,7 +205,7 @@ in
 
   # Deploy builder SSH key on all non-builder hosts AND on xsvr1.
   # xsvr1 is a builder itself but also acts as the CI runner; it needs
-  # id_builder to SSH to xsvr2/xsvr3/xdt1-t for distributed builds.
+  # id_builder to SSH to xsvr2/xsvr3/xdt1-t/xlt1-t-vnixos for distributed builds.
   sops.secrets.builder_private_key = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") {
     sopsFile = ../../../secrets/builder-ssh-key.yaml;
     path = "/root/.ssh/id_builder";
@@ -230,6 +237,10 @@ in
     "xdt1-t.lan" = {
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
+    };
+    "xlt1-t-vnixos.lan" = {
+      hostNames = [ "xlt1-t-vnixos.lan" "xlt1-t-vnixos" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINgq1ohC5VWqt4ojONjTR7aAWUeMHNdhBLMl270P5XU5";
     };
   };
 }
