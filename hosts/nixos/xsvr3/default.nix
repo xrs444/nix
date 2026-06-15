@@ -1,5 +1,6 @@
 # Summary: NixOS host configuration for xsvr3, imports hardware, boot, desktop, and VM modules.
 {
+  lib,
   hostname,
   ...
 }:
@@ -36,8 +37,8 @@
   # Builder-specific GC: daily schedule + automatic free-space trigger.
   nix.gc = {
     automatic = true;
-    dates = "daily";
-    options = "--delete-older-than 7d";
+    dates = lib.mkForce "daily";
+    options = lib.mkForce "--delete-older-than 7d";
   };
   nix.settings = {
     min-free = 10737418240;  # 10 GiB
