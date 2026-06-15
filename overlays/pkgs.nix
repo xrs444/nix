@@ -37,19 +37,6 @@
     enableParallelBuilding = false;
   });
 
-  # Fix sdl3 testrwlock timeout in sandboxed / QEMU builds.
-  # Tests run via CMake (not checkPhase), so doCheck=false alone doesn't help.
-  # -DSDL_TESTS=OFF prevents tests from being compiled at all. The postInstall
-  # creates the empty installedTests output path that the derivation declares.
-  sdl3 = prev.sdl3.overrideAttrs (oldAttrs: {
-    cmakeFlags = (oldAttrs.cmakeFlags or [ ]) ++ [
-      "-DSDL_TESTS=OFF"
-    ];
-    postInstall = (oldAttrs.postInstall or "") + ''
-      mkdir -p $installedTests
-    '';
-  });
-
   # The following packages are NOT available in cache.nixos.org for aarch64 at
   # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
   # during nixos-install). When built from source, their tests fail in the Nix
