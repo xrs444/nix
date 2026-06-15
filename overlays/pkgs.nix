@@ -37,6 +37,39 @@
     enableParallelBuilding = false;
   });
 
+  # The following packages are NOT available in cache.nixos.org for aarch64 at
+  # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
+  # during nixos-install). When built from source, their tests fail in the Nix
+  # sandbox. doCheck=false restores upstream drv hash equivalence once Hydra
+  # catches up, but avoids build failures until then.
+  # Packages confirmed FROM cache (don't need doCheck=false): dconf, gupnp, flac.
+
+  # libsecret: test-collection SIGABRT — requires D-Bus session bus
+  # https://github.com/NixOS/nixpkgs/issues/370724
+  libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
+
+  # upower: self-test SIGABRT — requires D-Bus system bus + hardware access
+  upower = prev.upower.overrideAttrs (_: { doCheck = false; });
+
+  # xdg-desktop-portal: USB test failure — requires D-Bus USB device session
+  xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (_: { doCheck = false; });
+
+  # tinysparql: test_notifier SIGABRT — requires D-Bus notification infrastructure
+  tinysparql = prev.tinysparql.overrideAttrs (_: { doCheck = false; });
+
+  # gtkmm3/gtkmm4: tests require live display server (X11/Wayland)
+  gtkmm3 = prev.gtkmm3.overrideAttrs (_: { doCheck = false; });
+  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
+
+  # nbd: TLS test timeouts — real TLS socket timing doesn't work in sandbox
+  nbd = prev.nbd.overrideAttrs (_: { doCheck = false; });
+
+  # openvswitch: requires real network interfaces / kernel modules
+  openvswitch = prev.openvswitch.overrideAttrs (_: { doCheck = false; });
+
+  # swtpm: requires softhsm2 not available in nix sandbox
+  swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
+
   # Fix inetutils format-security compilation errors on macOS
   # https://github.com/NixOS/nixpkgs/issues/XXXXX
   inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
