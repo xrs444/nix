@@ -403,6 +403,8 @@ push-ansible-key:
         exit 1
     end
     rm -f $tmp_ssh2
+    # tftp-hpa runs as nobody; scp preserves mktemp's 600 perms, making the file unreadable.
+    ssh $tftp_host "chmod 644 /zfs/tftp/ansible-brocade.pub"
 
     printf "ansible_user: ansible-brocade\nansible_password: '%s'\nansible_become_password: '%s'\nansible_tftp_ip: %s\n" \
         (string replace --all "'" "''" $boot_pass) \
