@@ -68,7 +68,7 @@
     # Alternative: lxqt.pcmanfm-qt for GUI
 
     # System utilities
-    lxqt.pavucontrol-qt # Qt-based audio control (lighter than GTK pavucontrol)
+    pavucontrol
     # Network manager - use nmtui/nmcli (already included with networkmanager)
 
     # Polkit agent
