@@ -50,6 +50,13 @@
     enableAllFirmware = lib.mkDefault true;
   };
   
+  # Compressed swap — important for VMs and SBCs where RAM is limited.
+  # rustc and other heavy compilers can use 3-4GB per job; zram prevents OOM kills.
+  zramSwap = {
+    enable = lib.mkDefault true;
+    algorithm = lib.mkDefault "zstd";
+  };
+
   # Performance settings for server workloads
   powerManagement.cpuFreqGovernor = lib.mkDefault "performance";
   
