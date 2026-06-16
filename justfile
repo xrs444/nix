@@ -531,6 +531,7 @@ configure-xswcore:
         -i $inventory \
         --extra-vars "@$tmp_vars" \
         --extra-vars "ansible_private_key_file=$tmp_key" \
+        --skip-tags ssh_keys \
         $argv \
         "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
 
