@@ -14,7 +14,7 @@ lib.mkIf isServer {
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.tftp-hpa}/sbin/in.tftpd --listen --user nobody --address 0.0.0.0:69 --secure /zfs/tftp";
+      ExecStart = "${pkgs.tftp-hpa}/sbin/in.tftpd --listen --foreground --user nobody --address 0.0.0.0:69 --secure /zfs/tftp";
       Restart = "on-failure";
       RestartSec = "5s";
     };
