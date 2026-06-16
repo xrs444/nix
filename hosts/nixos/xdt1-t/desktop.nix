@@ -120,9 +120,8 @@ in
       # Polkit agent
       polkit_gnome
 
-      # Image viewer / remote desktop
+      # Image viewer
       imv
-      rustdesk-flutter
 
       # Gaming utilities
       mangohud
