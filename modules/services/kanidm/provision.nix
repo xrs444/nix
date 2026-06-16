@@ -412,6 +412,7 @@
           displayName = "Windmill";
           originUrl = "https://windmill.xrs444.net";
           originLanding = "https://windmill.xrs444.net";
+          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_windmill_secret";
           scopeMaps = {
