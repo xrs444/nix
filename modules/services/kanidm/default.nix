@@ -160,6 +160,20 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_hermes_t_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_hermes_t_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_hermes_s_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_hermes_s_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -312,6 +326,8 @@ in
           add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
           add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
           add_redirect oauth2_windmill  "https://windmill.xrs444.net/user/login_callback/kanidm"
+          add_redirect oauth2_hermes_t  "https://hermes-t.xrs444.net/callback"
+          add_redirect oauth2_hermes_s  "https://hermes-s.xrs444.net/callback"
         '';
       };
 

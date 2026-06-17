@@ -99,6 +99,18 @@
       "windmill-admin" = {
         members = [ "admins" ];
       };
+      "hermes-t" = {
+        members = [ "xrs444" ];
+      };
+      "hermes-t-admin" = {
+        members = [ "admins" ];
+      };
+      "hermes-s" = {
+        members = [ "samantha" ];
+      };
+      "hermes-s-admin" = {
+        members = [ "admins" ];
+      };
       # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
       # xsvr1's pam_allowed_login_groups references this group.
       "posix_users" = {
@@ -422,6 +434,46 @@
               "email"
             ];
             "windmill-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_hermes_t" = {
+          displayName = "Hermes Agent (Thomas)";
+          originUrl = "https://hermes-t.xrs444.net";
+          originLanding = "https://hermes-t.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_hermes_t_secret";
+          scopeMaps = {
+            "hermes-t" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "hermes-t-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_hermes_s" = {
+          displayName = "Hermes Agent (Samantha)";
+          originUrl = "https://hermes-s.xrs444.net";
+          originLanding = "https://hermes-s.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_hermes_s_secret";
+          scopeMaps = {
+            "hermes-s" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "hermes-s-admin" = [
               "openid"
               "profile"
               "email"
