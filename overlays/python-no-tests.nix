@@ -29,6 +29,10 @@ final: prev: {
       # python313/python313Packages directly rather than the python3 alias, so
       # this must be patched here as well as in pkgs.nix's python3 override.
       rich = pyprev.rich.overrideAttrs (_: { doCheck = false; doInstallCheck = false; });
+      # pipx 1.8.0 tests assert old spacing (no space before @) but Python
+      # 3.13's packaging library normalizes to PEP 508 spacing (space before @).
+      # Runtime behavior is correct; tests are stale upstream.
+      pipx = pyprev.pipx.overrideAttrs (_: { checkPhase = ":"; });
     };
   };
   python3 = final.python313;
