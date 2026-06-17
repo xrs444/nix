@@ -136,6 +136,41 @@
     fi
   '';
 
+  # xsvr1 ingest drop folders via NFS autofs.
+  # /etc/auto_master is replaced declaratively (force = true overwrites the macOS default).
+  # /etc/auto_xsvr1_ingest is the map file read by automountd.
+  # On first access of /mnt/xsvr1/<folder>, automountd mounts on demand.
+  environment.etc."auto_master" = {
+    force = true;
+    text = ''
+      #
+      # Automounter master map
+      #
+      +auto_master		# Use directory service
+      /net			-hosts		-nobrowse,hidefromfinder,nosuid
+      /home			auto_home	-nobrowse,hidefromfinder
+      /Network/Servers	-fstab
+      /-			-static
+      /mnt/xsvr1		/etc/auto_xsvr1_ingest	-nobrowse,rw
+    '';
+  };
+
+  environment.etc."auto_xsvr1_ingest".text = ''
+    ingest/documents  -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/documents
+    ingest/ebooks     -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/ebooks
+    ingest/3dmodels   -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/3dmodels
+    ingest/games      -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/games
+    ingest/movies     -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/movies
+    ingest/tvshows    -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/tvshows
+    ingest/music      -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/music
+    scans             -rw,resvport,nfsvers=4  172.20.3.201:/zfs/scan/scans
+  '';
+
+  system.activationScripts.xsvr1-automount.text = ''
+    mkdir -p /mnt/xsvr1
+    /sbin/automount -vc 2>/dev/null || true
+  '';
+
   # Start atuin daemon as a LaunchAgent for the user
   launchd.user.agents.atuin-daemon = {
     serviceConfig = {
