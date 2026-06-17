@@ -217,6 +217,12 @@ in
     Host ${lib.concatStringsSep " " (map (b: "${b.name}.lan") buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
+
+    # VM host — skip strict key checking since it's rebuilt frequently and its
+    # host key changes after each nixos-install.
+    Host xlt1-t-vnixos.lan xlt1-t-vnixos
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
   '';
 
   # Known host keys for the build machines — prevents host key verification failures
@@ -237,10 +243,6 @@ in
     "xdt1-t.lan" = {
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
-    };
-    "xlt1-t-vnixos.lan" = {
-      hostNames = [ "xlt1-t-vnixos.lan" "xlt1-t-vnixos" ];
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINgq1ohC5VWqt4ojONjTR7aAWUeMHNdhBLMl270P5XU5";
     };
   };
 }
