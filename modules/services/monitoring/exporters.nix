@@ -24,10 +24,7 @@ let
     "xsvr3"
   ];
 
-  # Detect if host runs BIND DNS
-  hasBIND = builtins.elem hostname [
-    "v-xlabmgmt"
-  ];
+  hasBIND = false;
 
   # snmp.yml template — community string is substituted at service start from
   # the sops secret at /run/secrets/snmp-community (key: snmp in netbox-prometheus.yaml).

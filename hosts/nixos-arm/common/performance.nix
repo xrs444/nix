@@ -40,8 +40,9 @@
     memoryPercent = lib.mkDefault 25;
   };
 
-  # Disable automatic sleep/suspend
-  systemd.sleep.extraConfig = ''
+  # Disable automatic sleep/suspend (systemd.sleep.extraConfig removed in 26.05)
+  environment.etc."systemd/sleep.conf.d/no-sleep.conf".text = ''
+    [Sleep]
     AllowSuspend=no
     AllowHibernation=no
     AllowSuspendThenHibernate=no

@@ -1,100 +1,100 @@
 { inputs, ... }:
 (final: prev: {
-  # Fix gobject-introspection distutils import error with Python 3.13+
-  # Python 3.13 removed distutils from stdlib entirely. g-ir-scanner's
-  # giscanner/utils.py does `import distutils.cygwinccompiler`. setuptools
-  # provides the distutils shim, but it must be on PYTHONPATH at runtime.
-  #
-  # Key architecture insight: `gobject-introspection` (nixpkgs) is actually
-  # `gobject-introspection-wrapped`, built by wrapper.nix. Its buildCommand
-  # does `eval fixupPhase` BEFORE `lndir`, so any postFixup on the wrapper
-  # package runs on empty directories — completely ineffective.
-  #
-  # The scanner binary lives in `gobject-introspection-unwrapped`. Fixing
-  # postFixup there ensures the scanner is wrapped before lndir symlinks it
-  # into gobject-introspection-wrapped.
-  #
-  # We write the wrapper manually (no makeWrapper/wrapProgram) to avoid adding
-  # to nativeBuildInputs, which caused meson configure to fail with
-  # "python3 is missing modules: setuptools" during the gobject-introspection
-  # build itself. postFixup runs after install and does not affect meson.
-  #
-  # Nix string escaping note: in '' strings, \${...} is NOT a Nix escape —
-  # only ''${...} produces a literal ${...}. printf is used instead of echo so
-  # that ${PYTHONPATH} is not expanded by bash at postFixup time.
-  "gobject-introspection-unwrapped" = prev."gobject-introspection-unwrapped".overrideAttrs (oldAttrs: {
-    # gobject-introspection's meson.build:29 calls
-    # find_installation('python3', modules: ['setuptools']). Our python3
-    # overlay changes the python3 hash, causing a fresh rebuild. The fresh
-    # build environment doesn't have setuptools accessible to python3 (the
-    # nixpkgs 25.11 package doesn't add it). Add it explicitly.
-    nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
-    postFixup = (oldAttrs.postFixup or "") + ''
-      # g-ir-scanner is installed to $dev/bin (outputBin = "dev"). Wrap it to
-      # put setuptools on PYTHONPATH so `import distutils` works on Python 3.13+.
-      if [ -f "$dev/bin/g-ir-scanner" ]; then
-        mv "$dev/bin/g-ir-scanner" "$dev/bin/.g-ir-scanner-wrapped"
-        printf '#!/bin/sh\n' > "$dev/bin/g-ir-scanner"
-        printf 'export PYTHONPATH=%s''${PYTHONPATH:+:}''${PYTHONPATH}\n' \
-          "${final.python3.pkgs.setuptools}/${final.python3.sitePackages}" \
-          >> "$dev/bin/g-ir-scanner"
-        printf 'exec %s "$@"\n' \
-          "$dev/bin/.g-ir-scanner-wrapped" \
-          >> "$dev/bin/g-ir-scanner"
-        chmod +x "$dev/bin/g-ir-scanner"
-      fi
-    '';
+  # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
+  # network access unavailable in the nix sandbox. Strip it from yt-dlp's
+  # dependencies so it is never built.
+  # Overridden at the top level (not via python3.packageOverrides) so that
+  # python3's derivation hash stays identical to upstream nixpkgs — allowing
+  # all 200+ python packages to be fetched from cache.nixos.org rather than
+  # rebuilt locally. Only yt-dlp's own hash changes; cascade impact is zero.
+  yt-dlp = prev.yt-dlp.overrideAttrs (old: {
+    propagatedBuildInputs = builtins.filter
+      (x: (x.pname or "") != "yt-dlp-ejs")
+      (old.propagatedBuildInputs or [ ]);
   });
 
-  # NOTE: gtk4, libadwaita, gst-plugins-bad, and gjs introspection overrides
-  # have been moved to xdash1-specific config since other hosts need GIR files
+  # Fix ibus parallel install race in sandboxed builds
+  # bindings/pygobject installs IBus.py twice in parallel: second install fails
+  # with "File exists". Disabling parallel build/install serialises the make.
+  ibus = prev.ibus.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
 
-  # Fix libsecret test failures in sandboxed builds
+  # Fix libcanberra parallel install race in sandboxed builds
+  # make install runs plugin relink steps in parallel: libcanberra-multi.la tries
+  # to relink against -lcanberra before libcanberra.so has been installed to its
+  # output path, causing ld to fail with "cannot find -lcanberra". Serialising
+  # the install ensures libcanberra.so is present before plugins try to link it.
+  libcanberra = prev.libcanberra.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
+
+  # Fix edk2 BaseTools parallel build race
+  # VfrCompile runs ANTLR to generate VfrLexer.h, but parallel make starts
+  # compiling VfrSyntax.o before VfrLexer.h exists. Single-threaded build
+  # serialises the ANTLR step before the compilation that depends on it.
+  edk2 = prev.edk2.overrideAttrs (_: {
+    enableParallelBuilding = false;
+  });
+
+  # The following packages are NOT available in cache.nixos.org for aarch64 at
+  # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
+  # during nixos-install). When built from source, their tests fail in the Nix
+  # sandbox. doCheck=false restores upstream drv hash equivalence once Hydra
+  # catches up, but avoids build failures until then.
+  # Packages confirmed FROM cache (don't need doCheck=false): dconf, gupnp, flac.
+
+  # libsecret: test-collection SIGABRT — requires D-Bus session bus
   # https://github.com/NixOS/nixpkgs/issues/370724
-  libsecret = prev.libsecret.overrideAttrs (oldAttrs: {
-    doCheck = false;
-  });
+  libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
 
-  # Fix python3.13-distutils test_concurrent_safe failure in sandboxed builds
-  # test_msvccompiler::TestSpawn::test_concurrent_safe fails with "can't start new thread"
-  python3 = prev.python3.override {
-    packageOverrides = pfinal: pprev: {
-      distutils = pprev.distutils.overrideAttrs (oldAttrs: {
-        doCheck = false;
-        doInstallCheck = false;
-      });
-    };
-  };
-  python3Packages = final.python3.pkgs;
+  # upower: self-test SIGABRT — requires D-Bus system bus + hardware access
+  upower = prev.upower.overrideAttrs (_: { doCheck = false; });
 
-  # Fix pipewire test-support timeout in sandboxed builds
-  # logger_debug_env_invalid test hangs in sandbox environment
-  # Also disable roc-toolkit and ffado support which require i686-linux
-  pipewire = (prev.pipewire.override {
-    rocSupport = false;   # Disable roc-toolkit (requires i686-linux via scons)
-    ffadoSupport = false; # Disable ffado (requires i686-linux via scons)
-  }).overrideAttrs (oldAttrs: {
-    doCheck = false;
-  });
+  # xdg-desktop-portal: USB test failure — requires D-Bus USB device session
+  xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (_: { doCheck = false; });
 
-  # Override wireplumber to disable docs (requires Python sphinx modules)
-  # Use override instead of overrideAttrs to set feature flags properly
-  wireplumber = prev.wireplumber.override {
-    pipewire = final.pipewire;
-    # Meson feature options need to be set via override, not mesonFlags
-    enableDocs = false;
-  };
+  # tinysparql: test_notifier SIGABRT — requires D-Bus notification infrastructure
+  tinysparql = prev.tinysparql.overrideAttrs (_: { doCheck = false; });
 
-  # Fix sdl3 test timeouts (testthread, testsem, testtimer, testprocess) in sandboxed builds
-  # Tests run via CMake build target, not checkPhase, so doCheck doesn't help
-  # Keep tests off but create empty installedTests output to satisfy the derivation
-  sdl3 = prev.sdl3.overrideAttrs (oldAttrs: {
-    cmakeFlags = (oldAttrs.cmakeFlags or [ ]) ++ [
-      "-DSDL_TESTS=OFF"
-    ];
-    postInstall = (oldAttrs.postInstall or "") + ''
+  # gtkmm3/gtkmm4: tests require live display server (X11/Wayland)
+  gtkmm3 = prev.gtkmm3.overrideAttrs (_: { doCheck = false; });
+  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
+
+  # nbd: TLS test timeouts — real TLS socket timing doesn't work in sandbox
+  nbd = prev.nbd.overrideAttrs (_: { doCheck = false; });
+
+  # openvswitch: requires real network interfaces / kernel modules
+  openvswitch = prev.openvswitch.overrideAttrs (_: { doCheck = false; });
+
+  # swtpm: requires softhsm2 not available in nix sandbox
+  swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
+
+  # sdl3: testrwlock (test #11) times out in any VM environment — the test has a
+  # hardcoded deadline calibrated for physical hardware; VM thread scheduling
+  # (whether QEMU-emulated or native aarch64 VM) adds enough overhead to miss it.
+  # Hydra's aarch64 builders are also VM-based, so sdl3 is never cached at our
+  # nixpkgs pin. doCheck=false alone doesn't work because sdl3 uses CMake and
+  # test targets are compiled unconditionally; -DSDL_TESTS=OFF prevents them from
+  # being compiled at all. xlt1-t-vnixos (native aarch64 VM) builds this once and
+  # pushes to nixcache.xrs444.net so no other host ever needs to rebuild it.
+  sdl3 = prev.sdl3.overrideAttrs (old: {
+    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DSDL_TESTS=OFF" ];
+    postInstall = (old.postInstall or "") + ''
       mkdir -p $installedTests
     '';
+  });
+
+  # pipx 1.8.0: test_package_specifier assertions expect old PEP 508 format
+  # (no space before @, e.g. "black@ https://...") but Python 3.13's specifier
+  # normalizer emits the canonical form "black @ https://...". 7 tests fail.
+  # Not a sandbox or functional issue — pure test expectation drift.
+  pipx = prev.pipx.overrideAttrs (_: { doCheck = false; });
+
+  # Fix inetutils format-security compilation errors on macOS
+  # https://github.com/NixOS/nixpkgs/issues/XXXXX
+  inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
+    hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
   });
 
   # Use unstable version of claude-code to avoid npm lock file issues
@@ -105,29 +105,4 @@
       config.allowUnfree = true;
     }
   ).claude-code;
-
-  # Fix nbd TLS test timeouts (tlshuge, tlswrongcert) in sandboxed builds
-  # Tests require real TLS socket timing that doesn't work in the sandbox
-  nbd = prev.nbd.overrideAttrs (oldAttrs: {
-    doCheck = false;
-  });
-
-  # Fix openvswitch test failures in sandboxed builds
-  # Tests require real network interfaces / kernel modules not available in sandbox
-  openvswitch = prev.openvswitch.overrideAttrs (oldAttrs: {
-    doCheck = false;
-  });
-
-  # Fix swtpm test failures in sandboxed builds
-  # test_tpm2_swtpm_setup_create_cert and pkcs11-related tests require softhsm2
-  # which is not available in the nix sandbox environment
-  swtpm = prev.swtpm.overrideAttrs (oldAttrs: {
-    doCheck = false;
-  });
-
-  # Fix inetutils format-security compilation errors on macOS
-  # https://github.com/NixOS/nixpkgs/issues/XXXXX
-  inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
-    hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
-  });
 })

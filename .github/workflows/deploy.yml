@@ -6,74 +6,138 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  actions: read
+
 env:
   PUSHGATEWAY: http://localhost:9091
   APPRISE_URL: https://apprise.xrs444.net/notify/apprise
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NIX_CONFIG: "accept-flake-config = true"
 
 jobs:
+  check-queue:
+    name: Skip if newer run queued
+    runs-on: [self-hosted, nixos, builder]
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        run: |
+          NEWER=$(curl -sf \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?branch=${{ github.ref_name }}&status=queued&per_page=20" \
+            | jq "[.workflow_runs[] | select(.id > ${{ github.run_id }})] | length")
+          if [ "${NEWER:-0}" -gt 0 ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping — ${NEWER} newer run(s) already queued for this branch."
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
     name: Build, Cache, and Deploy All Hosts
+    needs: check-queue
+    if: needs.check-queue.outputs.should_run == 'true'
     runs-on: [self-hosted, nixos, builder]
-    timeout-minutes: 360
+    timeout-minutes: 480
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Create post-build cache hook
+      - name: Prepare post-build cache hook
         run: |
           echo "=== Signing diagnostics ==="
           echo "Running as: $(id)"
           echo "Key permissions: $(ls -la /run/secrets/nixcache_signing_key 2>&1 || echo 'KEY NOT FOUND')"
           echo "==========================="
-
-          # The post-build hook is invoked by the Nix daemon after each individual
-          # derivation is built. $OUT_PATHS contains the space-separated output paths
-          # just realised. We sign and push each package immediately so that a later
-          # build failure does not discard already-built packages from the cache.
-          #
-          # Stale narinfo note: nix copy --to file:// skips paths whose narinfo already
-          # exists in the file cache, even if that narinfo lacks a trusted signature.
-          # We purge such narinfos before copying so they are regenerated with the sig.
-          cat > /tmp/nix-post-build-hook.sh << 'HOOK'
-          #!/bin/bash
-          set -euf
-          nix store sign --key-file /run/secrets/nixcache_signing_key $OUT_PATHS
-          for path in $OUT_PATHS; do
-            hash=$(basename "$path" | cut -d- -f1)
-            narinfo="/zfs/nixcache/cache/${hash}.narinfo"
-            if [[ -f "$narinfo" ]] && \
-               ! grep -q "Sig: xsvr1.lan-1:" "$narinfo" && \
-               ! grep -q "Sig: cache.nixos.org-1:" "$narinfo"; then
-              rm -f "$narinfo"
-            fi
-          done
-          nix copy --to "file:///zfs/nixcache/cache" $OUT_PATHS
-          HOOK
-          chmod +x /tmp/nix-post-build-hook.sh
+          chmod +x .github/scripts/nix-post-build-hook.sh
 
       - name: Build and cache all hosts
         run: |
-          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          ts() { date '+[%H:%M:%S]'; }
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           FAILED=()
+          FAILED_DRVS=()
+
+          # Pre-evaluate all host derivation paths in parallel (evaluation only — no building).
+          # Stored so we can quickly check each host's transitive drv closure later
+          # without re-evaluating the flake inside the build loop.
+          declare -A HOST_DRV
+          EVAL_TMPDIR=$(mktemp -d)
+          echo "$(ts) === Pre-evaluating host derivation paths (parallel) ==="
+          for host in "${HOSTS[@]}"; do
+            (
+              drv=$(nix eval --raw \
+                ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath" 2>/dev/null || true)
+              echo "${drv}" > "$EVAL_TMPDIR/$host"
+              [ -n "$drv" ] \
+                && echo "$(ts)   $host: $(basename "$drv")" \
+                || echo "$(ts)   $host: eval failed (will attempt build anyway)"
+            ) &
+          done
+          wait
+          for host in "${HOSTS[@]}"; do
+            HOST_DRV[$host]=$(cat "$EVAL_TMPDIR/$host" 2>/dev/null || true)
+          done
+          rm -rf "$EVAL_TMPDIR"
+          echo "$(ts) ============================================"
 
           for host in "${HOSTS[@]}"; do
-            echo "Building $host..."
-            if ! nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
-              --post-build-hook /tmp/nix-post-build-hook.sh; then
+            echo "$(ts) Building $host..."
+
+            # Short-circuit: if a prior build failed, check whether this host's closure
+            # contains the same failing derivation before wasting a full build attempt.
+            # nix-store --query --requisites lists all transitive drv inputs of a .drv,
+            # so a hash match means this host would hit the identical build failure.
+            if [ ${#FAILED_DRVS[@]} -gt 0 ] && [ -n "${HOST_DRV[$host]:-}" ]; then
+              HOST_DEPS=$(nix-store --query --requisites "${HOST_DRV[$host]}" 2>/dev/null || true)
+              for failed_drv in "${FAILED_DRVS[@]}"; do
+                if echo "$HOST_DEPS" | grep -qxF "$failed_drv"; then
+                  echo "$(ts) $host: SKIPPED — closure shares previously failed derivation: $(basename "$failed_drv")"
+                  FAILED+=("$host")
+                  continue 2
+                fi
+              done
+            fi
+
+            BUILD_LOG=$(mktemp)
+            nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
+              --log-format bar-with-logs \
+              --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+              2>&1 | tee "$BUILD_LOG"
+            BUILD_RC=${PIPESTATUS[0]}
+
+            if [ $BUILD_RC -ne 0 ]; then
+              # Extract leaf-failing drv paths from Nix's error output and propagate
+              # them forward so subsequent hosts that share the same drv can be skipped.
+              mapfile -t NEW_FAILED_DRVS < <(
+                grep -oP "(?<=error: builder for ')(/nix/store/[^']+\.drv)(?=' failed)" "$BUILD_LOG" || true
+              )
+              if [ ${#NEW_FAILED_DRVS[@]} -gt 0 ]; then
+                FAILED_DRVS+=("${NEW_FAILED_DRVS[@]}")
+                printf "$(ts)   Tracking failed drv: %s\n" "${NEW_FAILED_DRVS[@]}"
+              fi
               FAILED+=("$host")
-              echo "$host: BUILD FAILED"
+              echo "$(ts) $host: BUILD FAILED"
+              rm -f "$BUILD_LOG"
               continue
             fi
-            echo "$host: BUILD OK"
+
+            rm -f "$BUILD_LOG"
+            echo "$(ts) $host: BUILD OK"
 
             # For remote hosts, also build and cache the deploy-rs activatable path.
             # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
             # toplevel. Evaluate via the same flake attribute deploy-rs uses so the
             # signed hash matches exactly what gets pushed to the remote.
             if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
+              echo "$(ts) $host: building deploy-rs activatable path..."
               nix build --no-link \
-                --post-build-hook /tmp/nix-post-build-hook.sh \
-                ".#deploy.nodes.$host.profiles.system.path" 2>/dev/null || true
+                --log-format bar-with-logs \
+                --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+                ".#deploy.nodes.$host.profiles.system.path" 2>&1 || true
             fi
           done
 
@@ -81,6 +145,20 @@ jobs:
             echo "BUILD_FAILED_HOSTS=${FAILED[*]}" >> "$GITHUB_ENV"
             echo "Build failures: ${FAILED[*]} — continuing to deploy successful hosts"
           fi
+
+      - name: Cache paths built by remote builders
+        run: |
+          # The --post-build-hook in the build step fires only for locally-built
+          # derivations. Paths built on xsvr2/xsvr3/xdt1-t and copied back to
+          # xsvr1's store are not covered. Sign and cache their closures here.
+          HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
+          for host in "${HOSTS[@]}"; do
+            toplevel=$(nix path-info \
+              ".#nixosConfigurations.$host.config.system.build.toplevel" 2>/dev/null) || continue
+            nix-store --query --requisites "$toplevel" 2>/dev/null \
+              | xargs -r nix store sign --key-file /run/secrets/nixcache_signing_key || true
+            nix copy --to "file:///zfs/nixcache/cache" "$toplevel" 2>/dev/null || true
+          done
 
       - name: Cache deploy-rs binary
         run: |
@@ -90,15 +168,16 @@ jobs:
           # never covers them. Without a signed narinfo in the file cache, the remote
           # daemon rejects them (require-sigs=true, no trusted-user bypass in modern Nix).
           nix build --no-link \
-            --post-build-hook /tmp/nix-post-build-hook.sh \
+            --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
             "deploy-rs#deploy-rs" 2>/dev/null \
             && echo "deploy-rs binary signed and cached" \
             || echo "WARNING: could not build deploy-rs binary — deploy may fail"
 
       - name: Deploy remote hosts
         run: |
+          ts() { date '+[%H:%M:%S]'; }
           REVISION=$(git rev-parse HEAD)
-          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 v-xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos)
+          REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           DEPLOY_FAILED=()
 
@@ -106,6 +185,27 @@ jobs:
             if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
               echo "$host: skipping deploy (build failed)"
               continue
+            fi
+
+            # xcomm1 is normally suspended; send a WoWLAN magic packet so the Intel
+            # WiFi NIC wakes it, then wait up to 90s for SSH to become available.
+            if [[ "$host" == "xcomm1" ]]; then
+              echo "Sending WoWLAN magic packet to xcomm1 (D4:D2:52:A9:5B:4B)..."
+              python3 -c 'import socket; mac=bytes.fromhex("D4D252A95B4B"); pkt=b"\xff"*6+mac*16; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1); s.sendto(pkt,("172.19.112.255",9)); print("Magic packet sent")' || true
+              echo "Waiting up to 90s for xcomm1 to come online..."
+              for i in $(seq 1 18); do
+                if ssh -4 \
+                     -i /run/secrets/deploy_private_key \
+                     -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null \
+                     -o ConnectTimeout=5 \
+                     -o BatchMode=yes \
+                     deploy@xcomm1.lan "true" 2>/dev/null; then
+                  echo "xcomm1 is online after ~$((i * 5))s"
+                  break
+                fi
+                sleep 5
+              done
             fi
 
             # Hostname pre-flight: SSH to the target and verify it reports the expected
@@ -130,7 +230,7 @@ jobs:
               continue
             fi
 
-            echo "Deploying $host..."
+            echo "$(ts) Deploying $host..."
             START=$(date +%s)
             if nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
               DURATION=$(( $(date +%s) - START ))
@@ -140,12 +240,12 @@ jobs:
                 "$host" "$REVISION" \
                 "$host" \
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
-              echo "$host: DEPLOY OK (${DURATION}s)"
+              echo "$(ts) $host: DEPLOY OK (${DURATION}s)"
             else
               DEPLOY_FAILED+=("$host")
               printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
-              echo "$host: DEPLOY FAILED"
+              echo "$(ts) $host: DEPLOY FAILED"
             fi
           done
 

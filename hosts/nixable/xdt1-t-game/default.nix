@@ -1,4 +1,4 @@
-# Nixible configuration for xdt1-t (Bazzite host)
+# Nixible configuration for xdt1-t-game (Bazzite host)
 {pkgs, ...}: let
   common = import ../common/default.nix {inherit pkgs;};
 in {
@@ -9,8 +9,8 @@ in {
   inventory = {
     all = {
       hosts = {
-        xdt1-t = {
-          ansible_host = "xdt1-t";
+        xdt1-t-game = {
+          ansible_host = "xdt1-t-game";
           ansible_connection = "ssh";
           ansible_user = "ansible";
         };
@@ -22,8 +22,8 @@ in {
   # Host-specific playbook
   playbook = [
     {
-      name = "Basic configuration for xdt1-t";
-      hosts = "xdt1-t";
+      name = "Basic configuration for xdt1-t-game";
+      hosts = "xdt1-t-game";
       gather_facts = true;
       become = true;
 

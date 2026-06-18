@@ -12,6 +12,7 @@ in
   imports = [
     ../../modules/packages-common
     ../../modules/services
+    ../../modules/users/automation.nix
     # Add other truly universal imports here
   ];
 

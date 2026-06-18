@@ -1,9 +1,11 @@
 # Summary: NixOS module for workstation-specific packages, adds custom system packages for desktop environments.
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
-  # Workstation-specific packages
-  environment.systemPackages = with pkgs; [
-    # Add workstation packages here
-  ];
+  environment.systemPackages =
+    with pkgs;
+    lib.optionals stdenv.isLinux [
+      obs-studio
+      google-chrome
+    ];
 }

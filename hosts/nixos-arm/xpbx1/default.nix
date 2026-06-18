@@ -53,12 +53,26 @@
     thomas-local ALL=(root) NOPASSWD: /nix/store/*/bin/switch-to-configuration *
   '';
 
-  # Open monitoring exporter ports on the LAN interface (xpbx1 uses enu1u1u1, not bond0)
-  # The common exporters.nix only opens on bond0 which doesn't exist here.
+  # BCM2835 hardware watchdog — auto-reboots if the kernel locks up (e.g. SD card I/O hang).
+  # Without this, any freeze requires a manual power cycle.
+  boot.kernelModules = [ "bcm2835_wdt" ];
+  systemd.settings.Manager.RuntimeWatchdogSec = "30s";
+  systemd.settings.Manager.RebootWatchdogSec = "120s";
+
+  # Keep /tmp in RAM to reduce SD card write cycles.
+  boot.tmp.useTmpfs = true;
+
+  # SD cards have no SMART data; the exporter finds no devices and either crashes or
+  # produces nothing useful. Override the monitoring-client default (set in exporters.nix).
+  services.prometheus.exporters.smartctl.enable = lib.mkForce false;
+
+  # Open monitoring exporter and Asterisk HTTP ports on the LAN interface.
+  # exporters.nix opens on bond0 which doesn't exist here; asterisk module opens 8088
+  # globally but the global rule doesn't fire on this host — add it explicitly.
   networking.firewall.interfaces.enu1u1u1.allowedTCPPorts = [
-    9080 # promtail
+    9080 # alloy (metrics)
     9100 # node_exporter
-    9633 # smartctl_exporter
+    8088 # Asterisk HTTP / Prometheus metrics
   ];
 
   environment.systemPackages = with pkgs; [

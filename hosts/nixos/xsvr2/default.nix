@@ -1,5 +1,6 @@
 # Summary: NixOS host configuration for xsvr2, imports hardware, boot, VM, and disk modules.
 {
+  lib,
   hostname,
   ...
 }:
@@ -54,4 +55,20 @@
     };
   };
   nixpkgs.config.allowUnfree = true;
+
+  # Builder-specific GC: daily schedule + automatic free-space trigger.
+  # Weekly GC (base-nixos.nix) is too infrequent for a remote builder —
+  # failed builds accumulate quickly and exhaust disk, causing spurious
+  # ENOSPC failures on legitimate subsequent builds.
+  nix.gc = {
+    automatic = true;
+    dates = lib.mkForce "daily";
+    options = lib.mkForce "--delete-older-than 7d";
+  };
+  nix.settings = {
+    # Trigger GC automatically if store drops below 10 GiB free,
+    # stopping once 50 GiB is reclaimed. Fires mid-build if needed.
+    min-free = 10737418240;  # 10 GiB
+    max-free = 53687091200;  # 50 GiB
+  };
 }

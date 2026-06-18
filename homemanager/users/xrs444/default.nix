@@ -1,6 +1,7 @@
 # Summary: Home Manager configuration for user 'xrs444', setting up shell, git, and common development tools for Darwin and Linux systems.
 {
   pkgs,
+  lib,
   stateVersion,
   username,
   ...
@@ -10,6 +11,7 @@
   home.stateVersion = stateVersion;
   home.username = username;
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
+
   programs = {
     wezterm = {
       enable = true;
@@ -45,15 +47,15 @@
     ssh = {
       enable = true;
       enableDefaultConfig = false;
-      matchBlocks = {
+      settings = {
         # Explicit default configuration to replace removed defaults
         "*" = {
-          serverAliveInterval = 60;
-          serverAliveCountMax = 3;
+          ServerAliveInterval = 60;
+          ServerAliveCountMax = 3;
         };
         "*.lan thomas-local@*" = {
-          user = "thomas-local";
-          identityFile =
+          User = "thomas-local";
+          IdentityFile =
             if pkgs.stdenv.isDarwin then "~/.ssh/thomas-local_key" else "/run/secrets/thomas-local-ssh-key";
         };
       };
@@ -64,6 +66,7 @@
   imports = [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
+    ./apps/obs.nix
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
@@ -83,7 +86,7 @@
     (direnv.overrideAttrs (_: {
       doCheck = false;
     }))
-    teams
+
     kustomize
     kubeconform
     pre-commit
@@ -99,7 +102,6 @@
     kubeseal
     talosctl
     arping
-    baobab
     nmap
     sops
     sshpass
@@ -115,7 +117,6 @@
     wimlib
     xz
     zstd
-    iterm2
     wireshark
     openscad
     powershell
@@ -123,16 +124,51 @@
     virtualenv
     just
     claude-code
+  ] ++ lib.optionals pkgs.stdenv.isLinux [
+    baobab
   ];
 
   # Claude Code CLI settings
-  home.file.".claude/settings.json".text = builtins.toJSON {
-    model = "opusplan";
-    permissions.allow = [
-      "WebFetch"
-      "WebSearch"
-    ];
-  };
+  # PATH must be explicit — VSCode's extension host launches with a bare PATH
+  # that excludes /usr/local/bin (docker/OrbStack) and nix profile paths (sops).
+  home.file.".claude/settings.json".text =
+    let
+      mcpPath = "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+    in
+    builtins.toJSON {
+      model = "opusplan";
+      permissions.allow = [
+        "WebFetch"
+        "WebSearch"
+      ];
+      mcpServers = {
+        homeassistant = {
+          command = "/Users/xrs444/.claude/scripts/run-ha-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        firewalla = {
+          command = "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        arr = {
+          command = "/Users/xrs444/.claude/scripts/run-arr-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        omada = {
+          command = "/Users/xrs444/.claude/scripts/run-omada-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+        jellyfin = {
+          command = "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh";
+          args = [];
+          env = { PATH = mcpPath; };
+        };
+      };
+    };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
   home.file.".claude/.sops.yaml".text = ''
@@ -142,6 +178,23 @@
   '';
 
   # MCP server wrapper scripts — decrypt SOPS credentials and launch containers
+  home.file.".claude/scripts/run-omada-mcp.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      docker rm -f mcp-omada 2>/dev/null || true
+      exec docker run --rm -i --name "mcp-omada" \
+        -e OMADA_BASE_URL=https://omada.xrs444.net \
+        -e OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99 \
+        -e OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f \
+        -e OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f \
+        -e OMADA_SITE_ID=697265cd09f80c5efb95b309 \
+        -e OMADA_STRICT_SSL=false \
+        jmtvms/tplink-omada-mcp:latest
+    '';
+  };
+
   home.file.".claude/scripts/run-ha-mcp.sh" = {
     executable = true;
     text = ''
@@ -152,9 +205,11 @@
       HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-homeassistant 2>/dev/null || true
       exec docker run --rm -i --name "mcp-homeassistant" \
-        -e HOMEASSISTANT_URL="$HA_URL" \
-        -e HOMEASSISTANT_TOKEN="$HA_TOKEN" \
-        ghcr.io/homeassistant-ai/ha-mcp:stable
+        -v mcp-ha-npm-cache:/root/.npm \
+        -e HOME_ASSISTANT_URL="$HA_URL" \
+        -e HOME_ASSISTANT_TOKEN="$HA_TOKEN" \
+        node:20-alpine \
+        npx --yes home-assistant-mcp
     '';
   };
 
@@ -167,7 +222,7 @@
       FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-firewalla 2>/dev/null || true
       exec docker run --rm -i --name "mcp-firewalla" \
-        -e FIREWALLA_MSP_ID=dn-j3almw \
+        -e FIREWALLA_MSP_ID=dn-j3almw.firewalla.net \
         -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
         amittell/firewalla-mcp-server:latest
     '';
@@ -205,10 +260,11 @@
       JF_TOKEN=$(echo "$SECRETS" | awk '/^jellyfin:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-jellyfin 2>/dev/null || true
       exec docker run --rm -i --name "mcp-jellyfin" \
-        -e TRANSPORT=stdio \
-        -e JELLYFIN_BASE_URL="https://jellyfin.xrs444.net" \
-        -e JELLYFIN_TOKEN="$JF_TOKEN" \
-        knucklessg1/jellyfin-mcp:latest
+        -v mcp-jellyfin-npm-cache:/root/.npm \
+        -e JELLYFIN_URL="https://jellyfin.xrs444.net" \
+        -e JELLYFIN_API_KEY="$JF_TOKEN" \
+        node:20-alpine \
+        npx --yes jellyfin-mcp
     '';
   };
 
@@ -236,10 +292,48 @@
 
   catppuccin = {
     enable = true;
+    autoEnable = true;
     flavor = "mocha";
     # VSCode extensions and theme are managed manually in common/apps/vscode
     # to use up-to-date marketplace versions; catppuccin module adds older pins
     vscode.profiles.default.enable = false;
+    # catppuccin-nix reads the starship theme TOML via IFD at eval time.
+    # On aarch64-darwin evaluating x86_64-linux targets the derivation isn't in
+    # the local store, breaking nix flake check. Disable on Linux until the
+    # catppuccin-starship x86_64-linux binary lands in a reachable cache.
+    starship.enable = pkgs.stdenv.isDarwin;
   };
+
+  # VSCode reads .extensions-immutable.json using a single readlink() call, not realpath().
+  # home-manager creates two-level symlinks (ext → home-manager-files → nix-store), so the
+  # single readlink doesn't match the fsPath in immutable.json. VSCode then skips the
+  # immutable protection and marks every nix-managed extension as obsolete at startup,
+  # preventing them from loading. This activation script collapses each symlink to a direct
+  # pointer so readlink() and realpath() agree.
+  home.activation.openrgbVirtualControllers = lib.mkIf pkgs.stdenv.isLinux (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      dest="$HOME/.config/OpenRGB/plugins/settings/virtual-controllers"
+      $DRY_RUN_CMD mkdir -p "$dest"
+      $DRY_RUN_CMD cp -f ${./openrgb/visual-map-xrs444.json} "$dest/xrs444"
+      $DRY_RUN_CMD chmod 644 "$dest/xrs444"
+    ''
+  );
+
+  home.activation.fixVscodeExtensionSymlinks = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    ext_dir="$HOME/.vscode/extensions"
+    if [ -d "$ext_dir" ]; then
+      for link in "$ext_dir"/*/; do
+        link="''${link%/}"
+        if [ -L "$link" ]; then
+          real=$(${pkgs.coreutils}/bin/realpath "$link" 2>/dev/null) || continue
+          current=$(readlink "$link")
+          if [ "$real" != "$current" ]; then
+            ln -sfn "$real" "$link"
+          fi
+        fi
+      done
+      rm -f "$ext_dir/.obsolete"
+    fi
+  '';
 
 }

@@ -29,7 +29,6 @@
     file-roller # Archive manager
     # Remote desktop
     xrdp
-    rustdesk-flutter # Cross-platform remote desktop client
   ];
 
   # Enable xrdp for remote desktop access

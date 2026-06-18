@@ -1,106 +1,72 @@
-# Summary: Promtail configuration for shipping systemd journal logs to Loki
+# Log forwarding to Loki via Grafana Alloy (replaces promtail, removed in 26.05)
 {
   hostname,
   hostRoles ? [ ],
   lib,
   pkgs,
-  config,
   ...
 }:
 let
   isMonitoringServer = lib.elem "monitoring-server" hostRoles;
   isMonitoringClient = lib.elem "monitoring-client" hostRoles;
-  enablePromtail = isMonitoringServer || isMonitoringClient;
+  enableAlloy = isMonitoringServer || isMonitoringClient;
 
-  lokiFallbackUrl = "https://loki.xrs444.net/loki/api/v1/push";
+  lokiUrl = "https://loki.xrs444.net/loki/api/v1/push";
+
+  alloyConfig = pkgs.writeText "alloy-config.alloy" ''
+    loki.source.journal "journal" {
+      forward_to = [loki.relabel.journal.receiver]
+      max_age    = "12h"
+      labels     = {
+        host = "${hostname}",
+        job  = "systemd-journal",
+      }
+    }
+
+    loki.relabel "journal" {
+      forward_to = [loki.write.default.receiver]
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+      rule {
+        source_labels = ["__journal__systemd_slice"]
+        target_label  = "slice"
+      }
+      rule {
+        source_labels = ["__journal__transport"]
+        target_label  = "transport"
+      }
+      rule {
+        source_labels = ["__journal_priority"]
+        target_label  = "priority"
+      }
+      rule {
+        source_labels = ["__journal_syslog_identifier"]
+        target_label  = "syslog_identifier"
+      }
+    }
+
+    loki.write "default" {
+      endpoint {
+        url = "${lokiUrl}"
+      }
+    }
+  '';
 in
 {
-  config = lib.mkIf enablePromtail {
-    services.promtail = {
+  config = lib.mkIf enableAlloy {
+    services.alloy = {
       enable = true;
-      configuration = {
-        server = {
-          http_listen_port = 9080;
-          grpc_listen_port = 0;
-        };
-
-        positions = {
-          filename = "/var/lib/promtail/positions.yaml";
-        };
-
-        clients = [
-          {
-            url = lokiFallbackUrl;
-          }
-        ];
-
-        scrape_configs = [
-          # Systemd journal scraping
-          {
-            job_name = "journal";
-            journal = {
-              max_age = "12h";
-              labels = {
-                job = "systemd-journal";
-                host = hostname;
-              };
-            };
-            relabel_configs = [
-              # Extract systemd unit name
-              {
-                source_labels = [ "__journal__systemd_unit" ];
-                target_label = "unit";
-              }
-              # Extract systemd slice
-              {
-                source_labels = [ "__journal__systemd_slice" ];
-                target_label = "slice";
-              }
-              # Extract transport (stdout, stderr, syslog, etc.)
-              {
-                source_labels = [ "__journal__transport" ];
-                target_label = "transport";
-              }
-              # Extract priority/severity
-              {
-                source_labels = [ "__journal_priority" ];
-                target_label = "priority";
-              }
-              # Extract syslog identifier
-              {
-                source_labels = [ "__journal_syslog_identifier" ];
-                target_label = "syslog_identifier";
-              }
-            ];
-          }
-
-          # Additional scrape for important log files not in journal
-          {
-            job_name = "system-logs";
-            static_configs = [
-              {
-                targets = [ "localhost" ];
-                labels = {
-                  job = "system-logs";
-                  host = hostname;
-                  __path__ = "/var/log/*.log";
-                };
-              }
-            ];
-          }
-        ];
-      };
+      configPath = alloyConfig;
     };
 
-    # Ensure promtail has permissions to read journal and state dir exists
-    systemd.services.promtail.serviceConfig = {
-      SupplementaryGroups = [ "systemd-journal" ];
-      StateDirectory = "promtail";
-    };
+    # Add journal access via service config (services.alloy creates the user/group)
+    systemd.services.alloy.serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
 
-    # Open firewall for promtail metrics endpoint on Tailscale
+    # Keep port 9080 for Prometheus scraping (matches old promtail scrape target)
     networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-      9080 # promtail metrics
+      9080 # alloy HTTP metrics
     ];
   };
 }

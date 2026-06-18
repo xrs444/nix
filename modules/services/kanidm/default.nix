@@ -153,16 +153,37 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_windmill_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_windmill_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_hermes_t_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_hermes_t_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_hermes_s_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_hermes_s_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
-        enableServer = true;
-        enablePam = lib.mkForce true;
-        enableClient = true;
-        unixSettings = {
+        server.enable = true;
+        unix.enable = lib.mkForce true;
+        client.enable = true;
+        unix.settings.kanidm = {
           pam_allowed_login_groups = [ "posix_users" ];
         };
-        serverSettings = {
+        server.settings = {
           bindaddress = "0.0.0.0:443";
           ldapbindaddress = "0.0.0.0:3636";
           origin = kanidmServerUri;
@@ -186,7 +207,7 @@ in
             };
           };
         };
-        clientSettings = {
+        client.settings = {
           uri = kanidmServerUri;
         };
       };
@@ -304,6 +325,9 @@ in
           add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
           add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
           add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
+          add_redirect oauth2_windmill  "https://windmill.xrs444.net/user/login_callback/kanidm"
+          add_redirect oauth2_hermes_t  "https://hermes-t.xrs444.net/callback"
+          add_redirect oauth2_hermes_s  "https://hermes-s.xrs444.net/callback"
         '';
       };
 
@@ -339,9 +363,9 @@ in
       };
 
       services.kanidm = {
-        enableServer = true;
-        enablePam = false;
-        serverSettings = {
+        server.enable = true;
+        unix.enable = false;
+        server.settings = {
           bindaddress = "0.0.0.0:443";
           ldapbindaddress = "0.0.0.0:3636";
           origin = kanidmServerUri;

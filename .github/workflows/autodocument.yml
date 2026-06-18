@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: main
@@ -22,7 +22,7 @@ jobs:
           git checkout -B docs-clippy/update-readmes
 
       - name: Set up Nix
-        uses: cachix/install-nix-action@v25
+        uses: cachix/install-nix-action@v31
 
       - name: Read Docs-Clippy prompt
         id: get_prompt
@@ -48,7 +48,7 @@ jobs:
           git diff
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.AUTODOC }}
           commit-message: "docs: auto-generate readme-doc.md files"

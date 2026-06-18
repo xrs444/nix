@@ -36,7 +36,6 @@
 
     # System utilities
     arping
-    baobab
     home-manager
     nmap
     sops

@@ -3,7 +3,6 @@
   lib,
   pkgs,
   hostRoles ? [ ],
-  hostname,
   ...
 }:
 let
@@ -13,23 +12,6 @@ in
   imports = [ ./extensions.nix ./pjsip.nix ];
 
   config = lib.mkIf isAsteriskHost {
-    # Ensure Asterisk logs are captured by Promtail
-    # Asterisk logs to /var/log/asterisk/ by default
-    services.promtail.configuration.scrape_configs = lib.mkAfter [
-      {
-        job_name = "asterisk-logs";
-        static_configs = [
-          {
-            targets = [ "localhost" ];
-            labels = {
-              job = "asterisk";
-              host = hostname;
-              __path__ = "/var/log/asterisk/*.log";
-            };
-          }
-        ];
-      }
-    ];
     environment.systemPackages = with pkgs; [
       asterisk
     ];

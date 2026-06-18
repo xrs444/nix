@@ -55,7 +55,7 @@
     foot              # Lightweight Wayland terminal
 
     # File manager
-    xfce.thunar       # Simple GUI file manager
+    thunar            # Simple GUI file manager
 
     # System utilities
     pavucontrol       # Audio control
@@ -67,8 +67,6 @@
     # Image viewer
     imv               # Wayland image viewer
 
-    # Remote desktop
-    rustdesk-flutter  # Cross-platform remote desktop client
   ];
 
   # Enable polkit for authentication

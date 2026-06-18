@@ -46,5 +46,5 @@
   system.stateVersion = stateVersion;
   nixpkgs.config.allowUnfree = true;
 
-  documentation.man.generateCaches = generateManCache;
+  documentation.man.cache.enable = generateManCache;
 }

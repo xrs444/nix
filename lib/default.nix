@@ -39,6 +39,7 @@ rec {
         };
         modules = [
           inputs.catppuccin.homeModules.catppuccin
+          { catppuccin.autoEnable = inputs.nixpkgs.lib.mkDefault false; catppuccin.enable = inputs.nixpkgs.lib.mkDefault true; }
           (
             { config, specialArgs, ... }:
             {
@@ -133,7 +134,10 @@ rec {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "backup";
-                sharedModules = [ inputs.catppuccin.homeModules.catppuccin ];
+                sharedModules = [
+                  inputs.catppuccin.homeModules.catppuccin
+                  { catppuccin.autoEnable = inputs.nixpkgs.lib.mkDefault false; catppuccin.enable = inputs.nixpkgs.lib.mkDefault true; }
+                ];
                 extraSpecialArgs = {
                   inherit inputs outputs stateVersion;
                   username = hostConfig.user;
@@ -164,22 +168,10 @@ rec {
     hostName: hostConfig:
     let
       isArm = hostConfig.platform == "aarch64-linux";
-      # ARM hosts that use disko for disk configuration
-      armHostsWithDisko = [
-        "xts2"
-        "xlt1-t-vnixos"
-      ];
       modulesList = [
         { nixpkgs.overlays = overlays; }
+        inputs.disko.nixosModules.disko
       ]
-      ++ (
-        if isArm && builtins.elem hostName armHostsWithDisko then
-          [
-            inputs.disko.nixosModules.disko
-          ]
-        else
-          [ ]
-      )
       ++ [
         (import
           (
@@ -232,10 +224,12 @@ rec {
           networking.wireless.enable = hostConfig.enableWifi or false;
         }
       ]
+      ++ [
+        inputs.disko.nixosModules.disko
+      ]
       ++ (
         if isArm then
           [
-            inputs.disko.nixosModules.disko
             (import (inputs.nixpkgs + "/nixos/modules/installer/sd-card/sd-image.nix"))
             ../modules/sdImage/base.nix
           ]

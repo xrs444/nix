@@ -7,7 +7,6 @@
     ./auto-upgrade
     ./asterisk
     ./phone-config-nginx
-    ./bind
     ./borgbackup
     ./determinate-nix
     ./bird-bgp
@@ -29,6 +28,7 @@
     ./socat
     ./tailscale
     ./talos
+    ./tftpd
     ./vsftpd
     ./zfs
   ];

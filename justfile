@@ -28,7 +28,7 @@ build host:
 # Build and cache all hosts (run on xsvr1 where the nix store is local)
 build-and-cache-all:
     #!/usr/bin/env fish
-    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 v-xlabmgmt xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
+    set -l hosts xsvr1 xsvr2 xsvr3 xcomm1 xlt1-t-vnixos xts1 xts2 cmrpi1 xpbx1
     set -l cache_url "file:///zfs/nixcache/cache"
 
     echo "Building all hosts in parallel..."
@@ -221,7 +221,7 @@ deep-clean: clean gc optimize
 extract-thomas-local-key:
     #!/usr/bin/env fish
     set -l key_path "$HOME/.ssh/thomas-local_key"
-    set -l secrets_file "{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+    set -l secrets_file "{{scripts_dir}}/secrets/deploy-ssh-key.yaml"
 
     if not test -f "$secrets_file"
         echo "ERROR: Secrets file not found at $secrets_file"
@@ -248,7 +248,7 @@ deploy-ssh-key hostname user="$USER":
 
     HOSTNAME="{{hostname}}"
     INITIAL_USER="{{user}}"
-    SECRETS_FILE="{{scripts_dir}}/secrets/thomas-local-ssh-key.yaml"
+    SECRETS_FILE="{{scripts_dir}}/secrets/deploy-ssh-key.yaml"
 
     # Extract public key from SOPS-encrypted private key
     echo "Extracting public key from SOPS..."
@@ -332,30 +332,178 @@ run-nixable host:
     @echo "This will be available after nixible is added to flake inputs"
     @echo "For now, use: nix run .#{{host}}"
 
+# Install Ansible collections required for network gear management
+# Run this once on any machine before using configure-xswcore or bootstrap-xswcore
+install-collections:
+    ansible-galaxy collection install -r "{{scripts_dir}}/hosts/nixable/xswcore/requirements.yml"
+
+# (bootstrap-xswcore removed — ansible-local was a manually-created legacy user, no longer present.
+#  Use reconfigure-xswcore for password-auth configuration instead.)
+
+# Import ansible-brocade SSH RSA public key to xswcore via TFTP (one-time setup).
+# FastIron 09.x uses 'copy tftp flash <ip> <file> ssh-pub-key-file'; key must be SSH2/RFC4716 format.
+# TFTP server: xsvr1 (172.20.1.10), serving /zfs/tftp — see modules/services/tftpd/default.nix
+# IMPORTANT: Authenticates as ansible-brocade (not ansible-local) — FastIron stores the imported key
+# for the currently-logged-in user. Must run after bootstrap-xswcore creates the ansible-brocade user.
+# Prerequisites:
+#   1. Run: just bootstrap-xswcore (creates ansible-brocade user with vault_user_ansible_password)
+#   2. Generate RSA key: ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C "ansible-brocade@xswcore" -N ""
+#   3. Store private key in sops: sops {{scripts_dir}}/secrets/ansible-network.yaml
+#      Set ansible_private_key to the contents of ~/.ssh/ansible-brocade_key
+#   4. Deploy xsvr1 to activate the TFTP service
+#   5. Run: just push-ansible-key
+push-ansible-key:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
+    set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
+    set -l tmp_pub  (mktemp /tmp/net-pub-XXXXXX.pub)
+    set -l tmp_ssh2 (mktemp /tmp/net-ssh2-XXXXXX.pub)
+    set -l tftp_ip  "172.20.1.10"
+    set -l tftp_host "thomas-local@$tftp_ip"
+    chmod 600 $tmp_vars $tmp_conn $tmp_key
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        exit 1
+    end
+
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub $tmp_ssh2
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    set -l boot_pass   (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
+    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
+
+    # Extract RSA private key and derive SSH2/RFC4716 public key (required by FastIron 09.x)
+    if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub $tmp_ssh2
+        echo "ERROR: Failed to extract ansible_private_key — add it to sops first"
+        exit 1
+    end
+    if not ssh-keygen -y -f $tmp_key > $tmp_pub
+        rm -f $tmp_vars $tmp_conn $tmp_key $tmp_pub $tmp_ssh2
+        echo "ERROR: Invalid private key — regenerate with:"
+        echo "  ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible-brocade_key -C 'ansible-brocade@xswcore' -N ''"
+        exit 1
+    end
+    # Subject header in RFC4716 format assigns the key to the ansible-brocade user on FastIron
+    ssh-keygen -e -f $tmp_pub | sed '/^---- BEGIN SSH2 PUBLIC KEY ----$/a Subject: ansible-brocade' > $tmp_ssh2
+    rm -f $tmp_pub $tmp_key
+
+    # Upload key to xsvr1 TFTP root (/zfs/tftp, writable by wheel group)
+    echo "Uploading SSH2 public key to $tftp_host:/zfs/tftp/ansible-brocade.pub..."
+    if not scp $tmp_ssh2 "$tftp_host:/zfs/tftp/ansible-brocade.pub"
+        rm -f $tmp_vars $tmp_conn $tmp_ssh2
+        echo "ERROR: Failed to copy key to $tftp_host — ensure xsvr1 TFTP service is deployed"
+        exit 1
+    end
+    rm -f $tmp_ssh2
+    # tftp-hpa runs as nobody; scp preserves mktemp's 600 perms, making the file unreadable.
+    ssh $tftp_host "chmod 644 /zfs/tftp/ansible-brocade.pub"
+
+    printf "ansible_user: ansible-brocade\nansible_password: '%s'\nansible_become_password: '%s'\nansible_tftp_ip: %s\n" \
+        (string replace --all "'" "''" $boot_pass) \
+        (string replace --all "'" "''" $enable_pass) \
+        $tftp_ip > $tmp_conn
+
+    echo "Importing SSH public key to xswcore via TFTP from $tftp_ip..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "@$tmp_conn" \
+        --tags ssh_keys \
+        $argv \
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
+    set -l rc $status
+
+    # Clean up key from TFTP root after import
+    ssh $tftp_host "rm -f /zfs/tftp/ansible-brocade.pub" 2>/dev/null
+    rm -f $tmp_vars $tmp_conn
+
+    if test $rc -eq 0
+        echo "SSH key imported — subsequent runs use: just configure-xswcore"
+    else
+        exit $rc
+    end
+
+# Configure xswcore using ansible-brocade PASSWORD auth (fallback when key auth is broken).
+# Same as configure-xswcore but uses password instead of RSA key. Use after bootstrap or when
+# key auth is unavailable (e.g. before push-ansible-key has successfully run).
+reconfigure-xswcore:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_conn (mktemp /tmp/net-conn-XXXXXX.yml)
+    chmod 600 $tmp_vars $tmp_conn
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        exit 1
+    end
+
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_conn
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    set -l boot_pass   (sops -d --extract '["vault_user_ansible_password"]' $secrets | string trim)
+    set -l enable_pass (sops -d --extract '["ansible_become_password"]' $secrets | string trim)
+
+    printf "ansible_user: ansible-brocade\nansible_password: '%s'\nansible_become_password: '%s'\n" \
+        (string replace --all "'" "''" $boot_pass) \
+        (string replace --all "'" "''" $enable_pass) > $tmp_conn
+
+    echo "Configuring xswcore (password auth as ansible-brocade)..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
+    ansible-playbook \
+        -i $inventory \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "@$tmp_conn" \
+        --skip-tags ssh_keys \
+        $argv \
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
+    set -l rc $status
+
+    rm -f $tmp_vars $tmp_conn
+    if test $rc -eq 0
+        echo "Done — run 'just push-ansible-key' then 'just configure-xswcore' for key-auth runs"
+    else
+        exit $rc
+    end
+
 # Configure xswcore Brocade ICX-7250 switch via Ansible + sops secrets
+# Authenticates as ansible-brocade using RSA key auth (requires just push-ansible-key first).
 # Playbook definition (Nix source of truth): nix/hosts/nixable/xswcore/default.nix
 # Secrets file: nix/secrets/ansible-network.yaml (shared with other network gear)
 #
-# Create secrets first: sops {{flake_dir}}/secrets/ansible-network.yaml
+# Create secrets first: sops {{scripts_dir}}/secrets/ansible-network.yaml
 #   Required keys:
-#     ansible_private_key: |          # SSH private key for ansible-local user
+#     ansible_private_key: |          # RSA 4096-bit private key for ansible-brocade user
 #       -----BEGIN OPENSSH PRIVATE KEY-----
 #       ...
-#     ansible_public_key: "ssh-ed25519 AAAA..."  # uploaded to switch
 #     ansible_become_password: "<enable/super-user password>"
 #     vault_snmp_community: "<SNMP RO community string>"
 #     vault_user_super_password: "<super user password>"
-#     vault_user_ansible_password: "<ansible-local switch account password>"
+#     vault_user_ansible_password: "<ansible-brocade switch account password>"
 #     vault_user_thomas_password: "<thomas-local password>"
 #     vault_user_dog_password: "<dog user password>"
 configure-xswcore:
     #!/usr/bin/env fish
-    set -l flake "{{flake_dir}}"
-    set -l secrets "$flake/secrets/ansible-network.yaml"
-    set -l inventory "$flake/nix/hosts/nixable/xswcore/inventory.yml"
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l inventory "{{scripts_dir}}/hosts/nixable/xswcore/inventory.yml"
     set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
     set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
-    chmod 600 $tmp_key
+    chmod 600 $tmp_vars $tmp_key
 
     if not test -f $secrets
         echo "ERROR: Secrets file not found: $secrets"
@@ -370,7 +518,6 @@ configure-xswcore:
         exit 1
     end
 
-    # Extract private key to its own chmod-600 temp file
     if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
         rm -f $tmp_vars $tmp_key
         echo "ERROR: Failed to extract ansible_private_key from $secrets"
@@ -378,12 +525,15 @@ configure-xswcore:
     end
 
     echo "Configuring xswcore..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
     ansible-playbook \
         -i $inventory \
         --extra-vars "@$tmp_vars" \
         --extra-vars "ansible_private_key_file=$tmp_key" \
+        --skip-tags ssh_keys \
         $argv \
-        "$flake/nix/hosts/nixable/xswcore/playbook.yml"
+        "{{scripts_dir}}/hosts/nixable/xswcore/playbook.yml"
 
     rm -f $tmp_vars $tmp_key
     echo "xswcore configuration complete"

@@ -16,7 +16,6 @@ let
     "172.20.1.10" # xsvr1
     "172.20.1.20" # xsvr2
     "172.20.1.30" # xsvr3
-    "v-xlabmgmt.lan"
     "172.18.10.1" # xts1 — static IP avoids VIP/keepalived routing issues
     "172.18.10.2" # xts2 — static IP avoids VIP/keepalived routing issues
     "xcomm1.lan"
@@ -50,11 +49,6 @@ let
     "172.20.1.30" # xsvr3
   ];
 
-  # Hosts with BIND DNS
-  bindHosts = [
-    "v-xlabmgmt.lan"
-  ];
-
   # Talos VMs (Kubernetes nodes)
   talosVMs = [
     "172.20.3.10"
@@ -77,9 +71,6 @@ let
 
   # Generate scrape targets for smartctl_exporter (all hosts)
   smartctlTargets = map (host: "${host}:9633") allHosts;
-
-  # Generate scrape targets for bind_exporter
-  bindTargets = map (host: "${host}:9119") bindHosts;
 
   # Generate scrape targets for Talos node_exporter (port 9100)
   talosNodeTargets = map (ip: "${ip}:9100") talosVMs;
@@ -155,10 +146,10 @@ let
                 return data.get("results", [])
         except urllib.error.HTTPError as e:
             print(f"ERROR fetching devices from NetBox: HTTP {e.code} {e.reason}", flush=True)
-            sys.exit(1)
+            return None
         except Exception as e:
             print(f"ERROR fetching devices from NetBox: {e}", flush=True)
-            sys.exit(1)
+            return None
 
     def build_targets(devices, community):
         targets = []
@@ -197,6 +188,9 @@ let
         token     = read_file(TOKEN_FILE, "NetBox API token")
         community = read_file(COMMUNITY_FILE, "SNMP community")
         devices   = fetch_devices(token)
+        if devices is None:
+            print("Skipping update — keeping existing file", flush=True)
+            sys.exit(0)
         sd        = build_targets(devices, community)
         payload   = json.dumps(sd, indent=2)
         tmp       = OUTPUT_FILE + ".tmp"
@@ -538,16 +532,6 @@ in
           ];
         }
 
-        # BIND DNS exporter
-        {
-          job_name = "bind";
-          static_configs = [
-            {
-              targets = bindTargets;
-            }
-          ];
-        }
-
         # Blackbox exporter - SSL certificate and endpoint monitoring
         {
           job_name = "blackbox-ssl";
@@ -843,6 +827,21 @@ in
               labels = {
                 cluster = "home-k8s";
                 component = "lidarr";
+              };
+            }
+          ];
+        }
+
+        # Kubernetes - Windmill automation engine metrics (CE: /metrics on port 8000, via NodePort)
+        {
+          job_name = "windmill";
+          metrics_path = "/metrics";
+          static_configs = [
+            {
+              targets = [ "172.20.3.10:30120" ];
+              labels = {
+                cluster = "home-k8s";
+                component = "windmill";
               };
             }
           ];

@@ -1,0 +1,421 @@
+---
+# Manages xswcore Brocade ICX-7250 stack via ansible.netcommon.cli_config.
+# Terminal plugin: plugins/terminal/icx.py (local, no community.network dependency).
+# Run with: just configure-xswcore
+# First run (password auth, no key): just reconfigure-xswcore
+- name: Configure xswcore ICX-7250 Stack
+  hosts: xswcore
+  gather_facts: false
+
+  tasks:
+
+    # =========================================================
+    # SYSTEM
+    # =========================================================
+
+    - name: Set hostname
+      ansible.netcommon.cli_config:
+        config: "hostname xswcore"
+
+    - name: Configure global settings
+      ansible.netcommon.cli_config:
+        config: |
+          default-vlan-id 4000
+          global-stp
+          ip dhcp-client disable
+          no telnet server
+          no web-management http
+          hitless-failover enable
+          cdp run
+          optical-monitor
+          optical-monitor down-port-enable
+          optical-monitor non-ruckus-optic-enable
+          clock timezone us Arizona
+          lldp tagged-packets process
+          ip ssh scp disable
+          ip ssh encryption disable-aes-cbc
+          ip ssh key-authentication yes
+          ip tftp blocksize 8192
+          manager disable
+          manager port-list 987
+
+    - name: Import ansible-brocade SSH public key
+      # FastIron 09.x: ip ssh pub-key-file removed; use copy tftp flash (privileged EXEC).
+      # Key file must be in SSH2/RFC4716 format (ssh-keygen -e). RSA keys only.
+      # ansible_tftp_ip injected by push-ansible-key justfile recipe.
+      # Run with: just push-ansible-key (password auth, one-time per key rotation)
+      ansible.netcommon.cli_command:
+        command: "copy tftp flash {{ ansible_tftp_ip }} ansible-brocade.pub ssh-pub-key-file"
+      register: key_import_result
+      tags: [ssh_keys]
+
+    - name: Show key import output
+      ansible.builtin.debug:
+        var: key_import_result.stdout
+      tags: [ssh_keys]
+
+    - name: Show client pub key on switch
+      ansible.netcommon.cli_command:
+        command: "show ip client-pub-key"
+      register: client_pub_key
+      tags: [ssh_keys]
+
+    - name: Print client pub key
+      ansible.builtin.debug:
+        var: client_pub_key.stdout
+      tags: [ssh_keys]
+
+    - name: Configure AAA authentication
+      ansible.netcommon.cli_config:
+        config: |
+          aaa authentication web-server default local
+          aaa authentication login default local
+
+    - name: Configure SNMP
+      ansible.netcommon.cli_config:
+        config: |
+          snmp-server community {{ vault_snmp_community }} ro
+          snmp-server contact xrs444@xrs444.net
+
+    - name: Configure NTP
+      ansible.netcommon.cli_config:
+        config: |
+          ntp
+           disable serve
+           server time.xrs444.net
+
+    # =========================================================
+    # USER MANAGEMENT
+    # =========================================================
+
+    - name: Configure local users
+      ansible.netcommon.cli_config:
+        config: "username {{ item.name }} privilege 0 password {{ item.password }}"
+      no_log: true
+      loop:
+        - { name: super,           password: "{{ vault_user_super_password }}" }
+        - { name: ansible-brocade, password: "{{ vault_user_ansible_password }}" }
+        - { name: thomas-local,    password: "{{ vault_user_thomas_password }}" }
+        - { name: dog,             password: "{{ vault_user_dog_password }}" }
+
+    # =========================================================
+    # LINK AGGREGATION
+    # =========================================================
+
+    - name: Configure LAG xsvr1 (id 1) - LACP to xsvr1 SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xsvr1 dynamic id 1
+           lacp-timeout short
+           ports ethe 1/2/1 ethe 2/2/1
+           force-up ethernet 1/2/1
+           port-name xsvr-a ethernet 1/2/1
+           port-name xsvr-b ethernet 2/2/1
+
+    - name: Configure LAG xsvr2 (id 2) - LACP to xsvr2 SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xsvr2 dynamic id 2
+           lacp-timeout short
+           ports ethe 1/2/2 ethe 2/2/2
+           force-up ethernet 1/2/2
+           port-name xsvr2-b ethernet 1/2/2
+           port-name xsvr2-b ethernet 2/2/2
+
+    - name: Configure LAG xsvr3 (id 3) - LACP to xsvr3 SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xsvr3 dynamic id 3
+           lacp-timeout short
+           ports ethe 1/2/3 ethe 2/2/3
+           force-up ethernet 1/2/3
+           port-name xsvr3-b ethernet 1/2/3
+           port-name xsvr3-b ethernet 2/2/3
+
+    - name: Configure LAG xswrf (id 6) - RF cabinet uplink SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xswrf dynamic id 6
+           lacp-timeout short
+           ports ethe 1/2/5 ethe 2/2/5
+           force-up ethernet 1/2/5
+           port-name rfcab-uplink-a ethernet 1/2/5
+           port-name rfcab-uplink-b ethernet 2/2/5
+
+    - name: Configure LAG xfw (id 10) - firewall SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xfw dynamic id 10
+           lacp-timeout short
+           ports ethe 1/2/6 ethe 2/2/6
+           force-up ethernet 2/2/6
+           port-name xfw-a ethernet 1/2/6
+           port-name xfw-b ethernet 2/2/6
+
+    - name: Configure LAG xswlab (id 13) - lab switch (static, no LACP)
+      ansible.netcommon.cli_config:
+        config: |
+          lag xswlab dynamic id 13
+           ports ethe 1/1/46 ethe 2/1/46
+           force-up ethernet 1/1/46
+           port-name xswlab-a ethernet 1/1/46
+           port-name xswlab-b ethernet 2/1/46
+
+    - name: Configure LAG xsvr1-vm (id 14) - xsvr1 VM traffic
+      ansible.netcommon.cli_config:
+        config: |
+          lag xsvr1-vm dynamic id 14
+           lacp-timeout short
+           ports ethe 1/1/7 ethe 2/1/7
+           force-up ethernet 1/1/7
+           port-name xsvr1-vm-a ethernet 1/1/7
+           port-name xsvr1-vm-b ethernet 2/1/7
+
+    - name: Configure LAG xswoffce (id 15) - office switch uplink SFP+
+      ansible.netcommon.cli_config:
+        config: |
+          lag xswoffce dynamic id 15
+           lacp-timeout short
+           ports ethe 1/2/4 ethe 2/2/4
+           force-up ethernet 1/2/4
+           port-name xswoffice1 ethernet 1/2/4
+           port-name xswoffice2 ethernet 2/2/4
+
+    - name: Disable optical-monitor on uplink LAGs
+      ansible.netcommon.cli_config:
+        config: |
+          interface lag {{ item }}
+           no optical-monitor
+      loop:
+        - "1"
+        - "2"
+        - "3"
+        - "6"
+        - "10"
+        - "15"
+
+    # =========================================================
+    # VLANs
+    # =========================================================
+
+    - name: Configure VLAN 10 (FW - firewall transit)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 10 name FW by port
+           tagged lag 1 to 2 lag 10
+           untagged ethe 1/1/37 ethe 1/1/45 ethe 2/1/45
+           spanning-tree 802-1w
+
+    - name: Create VLAN 11 (unconfigured placeholder)
+      ansible.netcommon.cli_config:
+        config: "vlan 11 by port"
+
+    - name: Configure VLAN 14 (management)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 14 name management by port
+           tagged ethe 1/1/5 ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 6 lag 10 lag 15
+           untagged ethe 1/1/2 ethe 1/1/4 ethe 1/1/13 to 1/1/14 ethe 2/1/1 to 2/1/2 ethe 2/1/13
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 15 (Printers)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 15 name Printers by port
+           tagged ethe 1/1/44 ethe 1/1/47 ethe 2/1/47 lag 10 lag 15
+           spanning-tree
+
+    - name: Configure VLAN 16 (telephony)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 16 name telephony by port
+           tagged ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 1 to 3 lag 10 lag 14 to 15
+           untagged ethe 1/1/35 ethe 1/1/40 ethe 2/1/3 ethe 2/1/20 to 2/1/25
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 17 (HomeAutomation)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 17 name HomeAutomation by port
+           tagged ethe 1/1/48 ethe 2/1/48 lag 1 to 3 lag 6 lag 10 lag 14 to 15
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 18
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 18 by port
+           tagged lag 10
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 19 (provisioning)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 19 name provisioning by port
+           tagged lag 10
+           untagged ethe 1/1/5 ethe 1/1/44 ethe 1/1/47 to 1/1/48 ethe 2/1/47 to 2/1/48 lag 6 lag 15
+           spanning-tree
+
+    - name: Configure VLAN 20
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 20 by port
+           tagged lag 10
+           untagged lag 1 to 3
+
+    - name: Configure VLAN 21 (HomeVMs)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 21 name HomeVMs by port
+           tagged lag 1 to 3 lag 10 lag 14 to 15
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 22 (k8s)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 22 name k8s by port
+           tagged lag 1 to 3 lag 10
+           untagged ethe 2/1/36
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 100 (WiredClients)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 100 name WiredClients by port
+           tagged ethe 1/1/44 ethe 1/1/47 ethe 2/1/47 lag 10 lag 15
+           spanning-tree 802-1w
+
+    - name: Configure WiFi VLANs (111/112/114/115) - tagged to rfcab, xfw, RFCab-Temp ports
+      ansible.netcommon.cli_config:
+        config: |
+          vlan {{ item.id }} name {{ item.name }} by port
+           tagged ethe 1/1/48 ethe 2/1/48 lag 6 lag 10
+           spanning-tree 802-1w
+      loop:
+        - { id: 111, name: notthewifiyouarelookingfor }
+        - { id: 112, name: WanIPlayWithMadness }
+        - { id: 114, name: TotalEclipseOfTheUART }
+        - { id: 115, name: HelloIsItWiFiYoureLookingFor }
+
+    - name: Configure VLAN 1000 (Atlas)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 1000 name Atlas by port
+           tagged ethe 1/1/11 ethe 2/1/44 lag 10
+           untagged ethe 1/1/1
+           spanning-tree 802-1w
+
+    - name: Configure VLAN 2000 (xswlab untagged trunk)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 2000 by port
+           tagged lag 10
+           untagged lag 13
+
+    - name: Configure VLANs 2001/2002/2004 (lab VLANs via xswlab)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan {{ item }} by port
+           tagged ethe 1/1/24 lag 10 lag 13
+      loop:
+        - "2001"
+        - "2002"
+        - "2004"
+
+    - name: Configure VLAN 4000 (DEFAULT-VLAN)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 4000 name DEFAULT-VLAN by port
+           spanning-tree
+
+    # =========================================================
+    # INTERFACES
+    # =========================================================
+
+    - name: Configure interface port-names
+      ansible.netcommon.cli_config:
+        config: |
+          interface ethernet {{ item.intf }}
+           port-name {{ item.name }}
+      loop:
+        - { intf: "1/1/1",  name: atlas }
+        - { intf: "1/1/2",  name: KVM }
+        - { intf: "1/1/4",  name: xswlab }
+        - { intf: "1/1/13", name: xsvr1-mgmt }
+        - { intf: "1/1/14", name: xsvr3-mgmt }
+        - { intf: "1/1/25", name: xsvr1_impi }
+        - { intf: "1/1/26", name: xsvr2_impi }
+        - { intf: "1/1/27", name: xsvr3_ipmi }
+        - { intf: "1/1/43", name: xfw-temp-a }
+        - { intf: "1/1/44", name: UplinkToOfficeSwitch }
+        - { intf: "1/1/47", name: xswoffice-a }
+        - { intf: "1/1/48", name: RFCab-Temp-a }
+        - { intf: "2/1/1",  name: RackUPS }
+        - { intf: "2/1/2",  name: JetKVM }
+        - { intf: "2/1/13", name: xsvr2-mgmt }
+        - { intf: "2/1/47", name: xswoffice-b }
+        - { intf: "2/1/48", name: RFCab-Temp-b }
+
+    - name: Disable unused/reserved interfaces
+      ansible.netcommon.cli_config:
+        config: |
+          interface ethernet {{ item }}
+           disable
+      loop:
+        - "1/1/8"
+        - "1/1/9"
+        - "1/1/43"
+        - "1/1/47"
+        - "1/1/48"
+        - "2/1/8"
+        - "2/1/9"
+        - "2/1/48"
+
+    - name: Configure legacy PoE interfaces (pre-802.3af devices)
+      ansible.netcommon.cli_config:
+        config: |
+          interface ethernet {{ item }}
+           legacy-inline-power
+      loop:
+        - "1/1/35"
+        - "1/1/45"
+
+    - name: Disable inline power on individual ports
+      ansible.netcommon.cli_config:
+        config: |
+          interface ethernet {{ item }}
+           no inline power
+      loop:
+        - "1/1/40"
+        - "2/1/29"
+
+    - name: Disable inline power on xswlab LAG members (1/1/46, 2/1/46)
+      ansible.netcommon.cli_config:
+        config: "no inline power ethernet 1/1/46 ethernet 2/1/46"
+
+    # =========================================================
+    # LAYER 3
+    # =========================================================
+
+    - name: Configure management VE 14 IP address
+      ansible.netcommon.cli_config:
+        config: |
+          interface ve 14
+           ip address 172.18.4.100 255.255.255.0
+
+    - name: Configure VE 20 IP address (server subnet — enables direct TFTP to xsvr1)
+      ansible.netcommon.cli_config:
+        config: |
+          interface ve 20
+           ip address 172.20.1.200 255.255.255.0
+
+    - name: Configure default route via xfw
+      ansible.netcommon.cli_config:
+        config: "ip route 0.0.0.0/0 172.18.4.250"
+
+    # =========================================================
+    # SAVE
+    # =========================================================
+
+    - name: Save running configuration to startup-config
+      ansible.netcommon.cli_command:
+        command: write memory

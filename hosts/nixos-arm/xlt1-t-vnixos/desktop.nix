@@ -68,31 +68,28 @@
     # Alternative: lxqt.pcmanfm-qt for GUI
 
     # System utilities
-    lxqt.pavucontrol-qt # Qt-based audio control (lighter than GTK pavucontrol)
+    pavucontrol
     # Network manager - use nmtui/nmcli (already included with networkmanager)
 
-    # Polkit agent (KDE/Qt-based - recommended by niri wiki)
-    kdePackages.polkit-kde-agent-1
+    # Polkit agent
+    polkit_gnome
 
     # Image viewer
     imv # Wayland image viewer
-
-    # Remote desktop
-    rustdesk-flutter # Cross-platform remote desktop client
   ];
 
   # Enable polkit for authentication
   security.polkit.enable = true;
 
-  # Auto-start polkit agent (KDE polkit-kde-agent recommended by niri wiki)
-  systemd.user.services.polkit-kde-agent = {
-    description = "KDE Polkit Authentication Agent";
+  # Auto-start polkit agent
+  systemd.user.services.polkit-gnome-authentication-agent-1 = {
+    description = "polkit-gnome-authentication-agent-1";
     wantedBy = [ "graphical-session.target" ];
     wants = [ "graphical-session.target" ];
     after = [ "graphical-session.target" ];
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.kdePackages.polkit-kde-agent-1}/libexec/polkit-kde-authentication-agent-1";
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
       Restart = "on-failure";
       RestartSec = 1;
       TimeoutStopSec = 10;
@@ -103,7 +100,6 @@
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
-      pinentryPackage = pkgs.pinentry-qt;
     };
   };
 

@@ -15,6 +15,7 @@ in
 
   config = lib.mkIf hasRole {
     boot.supportedFilesystems = [ "zfs" ];
+    boot.zfs.forceImportRoot = false;
     environment = {
       systemPackages = with pkgs; [ zfs ];
       etc = {
@@ -27,14 +28,6 @@ in
     };
     services.sanoid = {
       enable = true;
-      datasets = {
-        "zroot/persist" = {
-          hourly = 50;
-          daily = 15;
-          weekly = 3;
-          monthly = 1;
-        };
-      };
     };
   };
 }

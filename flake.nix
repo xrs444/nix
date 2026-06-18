@@ -12,17 +12,17 @@
   inputs = {
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
-    catppuccin.url = "github:catppuccin/nix/63c423c"; # pin: last commit before opencode support (incompatible with home-manager 25.11)
+    catppuccin.url = "github:catppuccin/nix";
     deploy-rs.url = "github:serokell/deploy-rs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     # Use main branch which has fix for nix-dev path issue
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-25.11";
+    nix-darwin.url = "github:LnL7/nix-darwin/nix-darwin-26.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -72,7 +72,6 @@
             "tailscale-package"
             "monitoring-server"
             "github-runner"
-            "bind"
             "auto-upgrade"
           ];
         };
@@ -92,7 +91,6 @@
             "letsencrypt-host"
             "tailscale-package"
             "monitoring-client"
-            "bind"
             "auto-upgrade"
           ];
         };
@@ -109,18 +107,6 @@
             "talos"
             "letsencrypt-host"
             "tailscale-package"
-            "monitoring-client"
-            "auto-upgrade"
-          ];
-        };
-        v-xlabmgmt = {
-          user = "thomas-local";
-          platform = "x86_64-linux";
-          type = "nixos";
-          desktop = "niri";
-          enableHomeManager = false;
-          roles = [
-            "bind"
             "monitoring-client"
             "auto-upgrade"
           ];
@@ -155,6 +141,17 @@
           platform = "x86_64-linux";
           type = "nixos";
           desktop = "gnome";
+          roles = [
+            "letsencrypt-host"
+            "monitoring-client"
+            "auto-upgrade"
+          ];
+        };
+        xdt1-t = {
+          user = "xrs444";
+          platform = "x86_64-linux";
+          type = "nixos";
+          desktop = "niri";
           roles = [
             "letsencrypt-host"
             "monitoring-client"
@@ -248,7 +245,22 @@
           fastConnection = false;
           profiles.system = {
             user = "root";
-            path = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system}.activate.nixos cfg;
+            # Hosts using generic-extlinux-compatible need NIXOS_INSTALL_BOOTLOADER=1 set so
+            # the bootloader installer updates /boot/extlinux/extlinux.conf on each deploy.
+            # deploy-rs activate.nixos omits this env var, causing reboots to load the old
+            # generation. Use activate.custom to inject it for extlinux hosts.
+            path =
+              let
+                deployLib = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system};
+              in
+              if cfg.config.boot.loader.generic-extlinux-compatible.enable or false
+              then
+                deployLib.activate.custom cfg.config.system.build.toplevel ''
+                  nix-env --profile /nix/var/nix/profiles/system --set "$PROFILE_PATH"
+                  NIXOS_INSTALL_BOOTLOADER=1 "$PROFILE_PATH"/bin/switch-to-configuration switch
+                ''
+              else
+                deployLib.activate.nixos cfg;
             magicRollback = true;
             confirmTimeout = 60;
           };
@@ -258,7 +270,7 @@
       devShells = lib.forAllSystems (system: {
         default = inputs.nixpkgs.legacyPackages.${system}.mkShell {
           buildInputs = with inputs.nixpkgs.legacyPackages.${system}; [
-            nixfmt-rfc-style
+            nixfmt
             sops
             age
             git
@@ -294,7 +306,6 @@
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;
         Samba = import ./modules/services/Samba;
-        bind = import ./modules/services/bind;
         bird-bgp = import ./modules/services/bird-bgp;
         iprouting = import ./modules/services/iprouting;
         keepalived = import ./modules/services/keepalived;
@@ -307,7 +318,7 @@
         tailscale = import ./modules/services/tailscale;
         github-runner = import ./modules/services/github-runner;
       };
-      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+      formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt);
       overlays = {
         kanidm = import ./overlays/kanidm.nix { inherit inputs; };
         pkgs = import ./overlays/pkgs.nix { inherit inputs; };

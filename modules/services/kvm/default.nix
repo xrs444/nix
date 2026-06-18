@@ -14,7 +14,7 @@ lib.mkIf hasRole {
   environment.systemPackages =
     with pkgs;
     [
-      qemu
+      (if isWorkstation then qemu else qemu.override { gtkSupport = false; })
       OVMF
     ]
     ++ lib.optionals isWorkstation [
@@ -31,7 +31,16 @@ lib.mkIf hasRole {
       onBoot = "start";
       onShutdown = "shutdown";
       qemu = {
-        package = pkgs.qemu_kvm;
+        package =
+          if isWorkstation then
+            pkgs.qemu_kvm
+          else
+            pkgs.qemu_kvm.override {
+              gtkSupport = false;
+              sdlSupport = false;
+              openGLSupport = false;
+              virglSupport = false;
+            };
         runAsRoot = true;
       };
       allowedBridges = [

@@ -29,7 +29,7 @@
   users.groups.thomas-local = { };
 
   # Disable Kanidm PAM completely when using local authentication
-  services.kanidm.enablePam = false;
+  services.kanidm.unix.enable = false;
 
   # Ensure standard PAM configuration for local authentication
   security.pam.services.sshd.unixAuth = true;

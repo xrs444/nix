@@ -2,26 +2,26 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/vda"; # virtio disk in KVM VM
+        device = "/dev/disk/by-id/nvme-CT4000P3PSSD8_2509E9ABDC9A";
         type = "disk";
         content = {
           type = "gpt";
           partitions = {
             ESP = {
               type = "EF00";
-              size = "1000M";
+              size = "2000M";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "umask=0077" ];
+                mountOptions = [ "umask=0077" "noauto" "x-systemd.automount" ];
               };
             };
             root = {
               size = "100%";
               content = {
                 type = "filesystem";
-                format = "xfs";
+                format = "ext4";
                 mountpoint = "/";
               };
             };

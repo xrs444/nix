@@ -182,8 +182,9 @@ let
             # Check if VM exists and get autostart status
             if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
-              # Try to undefine if not running
-              if ! virsh domstate "${vm.name}" | grep -q "running"; then
+              # Try to undefine only when fully stopped
+              state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
+              if [ "$state" = "shut off" ] || [ "$state" = "undefined" ]; then
                 ${
                   if vm.firmware == "efi" then
                     "virsh undefine \"${vm.name}\" --nvram || true"
