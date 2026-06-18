@@ -323,8 +323,10 @@ in
       };
     };
 
-    # Open firewall for exporters on bond0 (LAN interface) for server-to-server monitoring
-    networking.firewall.interfaces.bond0.allowedTCPPorts = [
+    # Open firewall for exporters on all interfaces.
+    # bond0-scoped rules don't work for: (a) ARM hosts (end0/enu1u1u1), (b) k8s
+    # pod traffic which arrives on bridge22 not bond0 on the xsvr1-3 KVM hosts.
+    networking.firewall.allowedTCPPorts = [
       9080 # promtail
       9100 # node_exporter
       9633 # smartctl_exporter

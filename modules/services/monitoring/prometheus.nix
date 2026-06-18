@@ -21,6 +21,9 @@ let
     "xcomm1.lan"
     "xpbx1.lan"
     # cmrpi1 removed — host decommissioned, DNS NXDOMAIN
+    # vocibuild — Oracle Cloud A1 ARM builder, reachable via Tailscale MagicDNS.
+    # Replace with static Tailscale IP (100.x.x.x) once the host is up and registered.
+    # "vocibuild"
   ];
 
   # Hosts with ZFS

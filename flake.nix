@@ -190,6 +190,19 @@
           desktop = "gnome";
           roles = [ "auto-upgrade" ];
         };
+        vocibuild = {
+          user = "thomas-local";
+          platform = "aarch64-linux";
+          type = "nixos";
+          enableHomeManager = false;
+          # Not on .lan — reachable via Tailscale MagicDNS after bootstrap
+          deployHostname = "vocibuild";
+          roles = [
+            "tailscale-client"
+            "monitoring-client"
+            "auto-upgrade"
+          ];
+        };
         xlt1-t = {
           user = "xrs444";
           platform = "aarch64-darwin";
@@ -237,7 +250,8 @@
           "ConnectTimeout=30"
         ];
         nodes = builtins.mapAttrs (hostname: cfg: {
-          hostname = "${hostname}.lan";
+          # Cloud/remote hosts define deployHostname (e.g. Tailscale MagicDNS); LAN hosts default to .lan
+          hostname = hosts.${hostname}.deployHostname or "${hostname}.lan";
           # fastConnection = false so deploy-rs passes --substitute-on-destination to nix copy.
           # Remote hosts fetch paths from http://xsvr1.lan (nixcache) where paths are signed
           # via nix.settings.secret-key-files, rather than receiving unsigned paths pushed

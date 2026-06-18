@@ -32,7 +32,9 @@ final: prev: {
       # pipx 1.8.0 tests assert old spacing (no space before @) but Python
       # 3.13's packaging library normalizes to PEP 508 spacing (space before @).
       # Runtime behavior is correct; tests are stale upstream.
-      pipx = pyprev.pipx.overrideAttrs (_: { checkPhase = ":"; });
+      # Tests run in installCheckPhase (via pytest-check-hook), not checkPhase,
+      # so doInstallCheck = false is required in addition to checkPhase = ":".
+      pipx = pyprev.pipx.overrideAttrs (_: { checkPhase = ":"; doInstallCheck = false; });
     };
   };
   python3 = final.python313;

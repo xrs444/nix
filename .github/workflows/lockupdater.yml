@@ -208,7 +208,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos]
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos, vocibuild]
       fail-fast: false
       max-parallel: 3
     steps:

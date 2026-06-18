@@ -34,7 +34,8 @@ keys:
   - &host_xcomm1 age1m8kfc70kkj24r95vvj3k0u58gur3jhtm0tu3t9a4t4fvqch3zd5splmnrg
   - &host_xpbx1 age10j504z6n4rg4u24rzpcljur7laul24vx6snknnduxsslfp9953yq4ytss8
   - &host_xdt1-t age1nzgt96zv98ngge7yua6a9ep2c8xcl7ft6e5g0f278svq6kj7dqtss5seaq
-  
+  - &host_vocibuild age1t0ss40muxrzjhqh024zyn8w40w7j0e3qlcaf55e9u0h0v4ayreeqwkxxhf
+
 creation_rules:
   - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -55,4 +56,4 @@ creation_rules:
       - *host_xcomm1
       - *host_xpbx1
       - *host_xdt1-t
-
+      - *host_vocibuild

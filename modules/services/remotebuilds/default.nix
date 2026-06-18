@@ -13,6 +13,7 @@ let
     { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
     { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
     { name = "xlt1-t-vnixos"; maxJobs = 4; speedFactor = 8; aarch64 = true; native = true; } # Native aarch64 VM — builds aarch64 without QEMU
+    { name = "vocibuild"; maxJobs = 4; speedFactor = 6; aarch64 = true; native = true; } # Oracle Cloud A1 Flex (4 OCPUs, Neoverse N1) — native aarch64, no QEMU
   ];
   isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
   thisHost = lib.findFirst (b: b.name == config.networking.hostName) { native = false; } buildHosts;
@@ -20,8 +21,11 @@ let
   isQemuBuilder = isBuilder && !thisHost.native;
   isNativeBuilder = isBuilder && thisHost.native;
 
+  # vocibuild is on Oracle Cloud and reachable only via Tailscale MagicDNS (not .lan)
+  buildHostname = b: if b.name == "vocibuild" then b.name else "${b.name}.lan";
+
   mkBuildMachine = b: {
-    hostName = "${b.name}.lan";
+    hostName = buildHostname b;
     sshUser = "builder";
     sshKey = "/root/.ssh/id_builder";
     systems = [ "x86_64-linux" ] ++ lib.optionals b.aarch64 [ "aarch64-linux" ];
@@ -214,7 +218,7 @@ in
 
   # SSH config so nixos-rebuild --build-host and nix distributed builds find the right key
   programs.ssh.extraConfig = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") ''
-    Host ${lib.concatStringsSep " " (map (b: "${b.name}.lan") buildHosts)}
+    Host ${lib.concatStringsSep " " (map buildHostname buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
 
@@ -244,5 +248,11 @@ in
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
     };
+    # vocibuild is on Oracle Cloud, reachable via Tailscale MagicDNS.
+    # After first boot: ssh-keyscan -t ed25519 vocibuild  →  paste result here.
+    # "vocibuild" = {
+    #   hostNames = [ "vocibuild" ];
+    #   publicKey = "ssh-ed25519 AAAA...";
+    # };
   };
 }
