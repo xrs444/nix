@@ -58,6 +58,13 @@
   # After Tailscale is up, consider tightening to tailscale0 only.
   networking.firewall.allowedTCPPorts = [ 22 ];
 
+  services.fail2ban = {
+    enable = true;
+    maxretry = 5;
+    bantime = "10m";
+    bantime-increment.enable = true;
+  };
+
   # Open monitoring exporter ports on the Tailscale interface only.
   # node_exporter (9100) and alloy (9080) scraped by Prometheus on xsvr1 via Tailscale.
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
