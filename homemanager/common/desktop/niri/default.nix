@@ -37,8 +37,8 @@
             transform "270"
         }
         output "DP-6" {
-            // Far right — 4K landscape; x = 1600 + DP-5 rotated width (2160) = 3760
-            position x=3760 y=0
+            // Far right — 4K landscape; x = 1600 + DP-5 logical width (2160px / scale 1.5 = 1440) = 3040
+            position x=3040 y=0
             transform "normal"
         }
         output "HDMI-A-2" {
