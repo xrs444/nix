@@ -24,6 +24,30 @@
 
         spawn-at-startup "noctalia-shell"
 
+        // Monitor layout (xdt1-t). Positions are in logical pixels.
+        // DP-1: 1600x1200 | DP-5: 4K portrait (3840x2160 → rotated: 2160w×3840h) | DP-6: 4K landscape
+        output "DP-1" {
+            // Far left — 1600x1200 landscape
+            position x=0 y=0
+            transform "normal"
+        }
+        output "DP-5" {
+            // Centre — 4K portrait, 90° anticlockwise; x = DP-1 width (1600)
+            position x=1600 y=0
+            transform "270"
+        }
+        output "DP-6" {
+            // Far right — 4K landscape; x = 1600 + DP-5 rotated width (2160) = 3760
+            position x=3760 y=0
+            transform "normal"
+        }
+        output "HDMI-A-2" {
+            // OBS output — below DP-1; on/off state managed per mode via active-mode.kdl
+            // y = DP-1 height (1200)
+            position x=0 y=1200
+            transform "normal"
+        }
+
         // Per-mode overrides (keybinds, outputs, spawn-at-startup)
         include "~/.config/niri/active-mode.kdl"
 
