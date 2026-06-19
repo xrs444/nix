@@ -28,7 +28,11 @@ let
     hostName = buildHostname b;
     sshUser = "builder";
     sshKey = "/root/.ssh/id_builder";
-    systems = [ "x86_64-linux" ] ++ lib.optionals b.aarch64 [ "aarch64-linux" ];
+    # Native aarch64 builders (native=true) cannot build x86_64-linux — they have no binfmt
+    # for the reverse direction. Only x86_64 hosts (native=false) get x86_64-linux in systems.
+    # Adding x86_64-linux to a native aarch64 builder causes Nix to delegate x86_64 builds there,
+    # which the remote correctly rejects, and Nix gives up without falling back to local.
+    systems = lib.optionals (!b.native) [ "x86_64-linux" ] ++ lib.optionals b.aarch64 [ "aarch64-linux" ];
     maxJobs = b.maxJobs;
     speedFactor = b.speedFactor;
     supportedFeatures = [
