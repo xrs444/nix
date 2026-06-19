@@ -137,11 +137,10 @@
   '';
 
   # xsvr1 ingest drop folders via NFS autofs.
-  # /etc/auto_master is replaced declaratively (force = true overwrites the macOS default).
+  # /etc/auto_master is replaced declaratively (overwrites the macOS default).
   # /etc/auto_xsvr1_ingest is the map file read by automountd.
   # On first access of /mnt/xsvr1/<folder>, automountd mounts on demand.
   environment.etc."auto_master" = {
-    force = true;
     text = ''
       #
       # Automounter master map

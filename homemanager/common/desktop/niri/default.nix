@@ -9,7 +9,7 @@
         input {
             keyboard {
                 xkb {
-                    layout "gb"
+                    layout "us"
                 }
             }
             touchpad {

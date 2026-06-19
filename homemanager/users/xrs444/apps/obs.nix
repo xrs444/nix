@@ -4,7 +4,30 @@ lib.mkIf pkgs.stdenv.isLinux {
     enable = true;
     plugins = with pkgs.obs-studio-plugins; [
       obs-pipewire-audio-capture
+      advanced-scene-switcher
+      obs-vkcapture
+      obs-backgroundremoval
+      obs-composite-blur
+      obs-gstreamer
+      obs-retro-effects
+      obs-vaapi
+      obs-transition-table
+      waveform
     ];
+  };
+
+  # Theme files are read-only; OBS never writes to them — symlinks from store are safe.
+  xdg.configFile = {
+    "obs-studio/themes/Catppuccin.obt".source =
+      ../../../../configimports/obs/obs-studio/themes/Catppuccin.obt;
+    "obs-studio/themes/Catppuccin_Frappe.ovt".source =
+      ../../../../configimports/obs/obs-studio/themes/Catppuccin_Frappe.ovt;
+    "obs-studio/themes/Catppuccin_Latte.ovt".source =
+      ../../../../configimports/obs/obs-studio/themes/Catppuccin_Latte.ovt;
+    "obs-studio/themes/Catppuccin_Macchiato.ovt".source =
+      ../../../../configimports/obs/obs-studio/themes/Catppuccin_Macchiato.ovt;
+    "obs-studio/themes/Catppuccin_Mocha.ovt".source =
+      ../../../../configimports/obs/obs-studio/themes/Catppuccin_Mocha.ovt;
   };
 
   # OBS writes to its config files at runtime (scenes, prefs), so these are
@@ -149,7 +172,7 @@ lib.mkIf pkgs.stdenv.isLinux {
         [OBSWebSocket]
         ServerEnabled=true
         ServerPort=4455
-        AuthRequired=false
+        AuthRequired=true
         AlertsEnabled=false
       '';
 
@@ -159,9 +182,9 @@ lib.mkIf pkgs.stdenv.isLinux {
 
       streamEncoderJson = pkgs.writeText "obs-streamEncoder.json" "{}";
 
-      # Scene collection from the flatpak import — copied as-is.
-      # Audio/video device names may need reconfiguring in OBS if they differ
-      # from the Bazzite flatpak device paths.
+      userIni = ../../../../configimports/obs/obs-studio/user.ini;
+
+      # Scene collection from the flatpak import — paths are patched after copy.
       scenesJson = ../../../../configimports/obs/obs-studio/basic/scenes/default.json;
     in
     ''
@@ -182,14 +205,89 @@ lib.mkIf pkgs.stdenv.isLinux {
         $DRY_RUN_CMD cp ${streamEncoderJson} "$obs_dir/basic/profiles/Webcam_On/streamEncoder.json"
         $DRY_RUN_CMD chmod 644 "$obs_dir/basic/profiles/Webcam_On/streamEncoder.json"
 
+        $DRY_RUN_CMD cp ${userIni} "$obs_dir/user.ini"
+        $DRY_RUN_CMD chmod 644 "$obs_dir/user.ini"
+
         $DRY_RUN_CMD cp ${scenesJson} "$obs_dir/basic/scenes/default.json"
         $DRY_RUN_CMD chmod 644 "$obs_dir/basic/scenes/default.json"
+
+        # Patch Flatpak paths to xdt1-t paths in the seeded scene collection.
+        $DRY_RUN_CMD ${pkgs.gnused}/bin/sed -i \
+          -e 's|/var/home/xrs444/Documents/OBS/|/home/xrs444/OBS/images/|g' \
+          -e 's|/var/home/xrs444/Videos/|/home/xrs444/OBS/Video/|g' \
+          -e 's|/var/home/xrs444/OBS/Audio/|/home/xrs444/OBS/Audio/|g' \
+          "$obs_dir/basic/scenes/default.json"
       fi
 
       # Ensure WebSocket section exists in global.ini (idempotent — runs every activation)
       if [ -f "$obs_dir/global.ini" ] && ! grep -q "\[OBSWebSocket\]" "$obs_dir/global.ini"; then
-        printf '\n[OBSWebSocket]\nServerEnabled=true\nServerPort=4455\nAuthRequired=false\nAlertsEnabled=false\n' \
+        printf '\n[OBSWebSocket]\nServerEnabled=true\nServerPort=4455\nAuthRequired=true\nAlertsEnabled=false\n' \
           | $DRY_RUN_CMD tee -a "$obs_dir/global.ini" > /dev/null
+      fi
+    ''
+  );
+
+  # Plugin configs seeded separately so they can be applied even on existing installs.
+  home.activation.obsPluginConfigs = lib.hm.dag.entryAfter [ "obsConfig" ] (
+    let
+      audioMonitorJson = pkgs.writeText "obs-audio-monitor.json" (builtins.toJSON {
+        reset_hotkey = [ ];
+        showOutputMeter = true;
+        showOutputSlider = false;
+        showOnlyActive = true;
+        showSliderNames = true;
+        outputs = [
+          {
+            devices = [
+              {
+                id = "alsa_output.pci-0000_0e_00.1.hdmi-stereo";
+                locked = false;
+                muted = false;
+                volume = 100.0;
+                name = "Radeon High Definition Audio Controller [Rembrandt/Strix] Digital Stereo (HDMI)";
+              }
+              {
+                id = "alsa_output.pci-0000_10_00.6.iec958-stereo";
+                locked = false;
+                muted = false;
+                volume = 100.0;
+                name = "Ryzen HD Audio Controller Digital Stereo (IEC958)";
+              }
+              {
+                id = "alsa_output.pci-0000_01_00.1.hdmi-stereo";
+                locked = false;
+                muted = false;
+                volume = 100.0;
+                name = "GB203 High Definition Audio Controller Digital Stereo (HDMI)";
+              }
+            ];
+            enabled = true;
+          }
+          { enabled = false; }
+          { enabled = false; }
+          { enabled = false; }
+          { enabled = false; }
+          { enabled = false; }
+        ];
+      });
+
+      obsWebsocketJson = ../../../../configimports/obs/obs-studio/plugin_config/obs-websocket/config.json;
+    in
+    ''
+      obs_dir="$HOME/.config/obs-studio"
+
+      obs_audio_cfg="$obs_dir/plugin_config/audio-monitor/config.json"
+      if [ ! -f "$obs_audio_cfg" ]; then
+        $DRY_RUN_CMD mkdir -p "$(dirname "$obs_audio_cfg")"
+        $DRY_RUN_CMD cp ${audioMonitorJson} "$obs_audio_cfg"
+        $DRY_RUN_CMD chmod 644 "$obs_audio_cfg"
+      fi
+
+      obs_ws_cfg="$obs_dir/plugin_config/obs-websocket/config.json"
+      if [ ! -f "$obs_ws_cfg" ]; then
+        $DRY_RUN_CMD mkdir -p "$(dirname "$obs_ws_cfg")"
+        $DRY_RUN_CMD cp ${obsWebsocketJson} "$obs_ws_cfg"
+        $DRY_RUN_CMD chmod 644 "$obs_ws_cfg"
       fi
     ''
   );

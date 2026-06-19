@@ -136,6 +136,9 @@ in
   # Enable polkit for privilege escalation prompts
   security.polkit.enable = true;
 
+  # GVfs enables thunar to automount USB drives and removable media
+  services.gvfs.enable = true;
+
   # GameMode daemon — lets games request performance governor
   programs.gamemode.enable = true;
 

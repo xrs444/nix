@@ -72,6 +72,9 @@
   # Enable polkit for authentication
   security.polkit.enable = true;
 
+  # GVfs enables thunar to automount USB drives and removable media
+  services.gvfs.enable = true;
+
   # Auto-start polkit agent
   systemd.user.services.polkit-gnome-authentication-agent-1 = {
     description = "polkit-gnome-authentication-agent-1";

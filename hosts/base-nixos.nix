@@ -24,6 +24,9 @@
   ];
 
   time.timeZone = "America/Phoenix";
+  console.keyMap = "us";
+  services.udisks2.enable = true;
+
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"

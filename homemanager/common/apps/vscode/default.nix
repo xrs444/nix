@@ -362,6 +362,29 @@ in
     rm -f "${vscodeUserDir}/settings.json.backup"
   '';
 
+  # fixVscodeExtensionSymlinks (below) rewrites extension symlinks from the two-level
+  # "ext → home-manager-files → nix-store" chain into direct "ext → nix-store" symlinks.
+  # check-link-targets.sh only recognises *-home-manager-files/* paths as HM-owned, so on
+  # the next generation these direct-store symlinks look unowned. Symlinks are not eligible
+  # for the backupFileExtension path (guarded by [[ ! -L ]]), causing an unconditional
+  # "would be clobbered" error. Fix: remove these rewritten symlinks before checkLinkTargets
+  # so linkGeneration can recreate them cleanly (pointing through home-manager-files).
+  home.activation.cleanRewrittenVSCodeExtensions = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+    ext_dir="$HOME/.vscode/extensions"
+    if [ -d "$ext_dir" ]; then
+      for link in "$ext_dir"/*/; do
+        link="''${link%/}"
+        if [ -L "$link" ]; then
+          target=$(readlink "$link")
+          case "$target" in
+            /nix/store/*-home-manager-files/*) ;;
+            /nix/store/*) $DRY_RUN_CMD rm -f "$link" ;;
+          esac
+        fi
+      done
+    fi
+  '';
+
   # Make settings.json writable by replacing symlink with a copy
   home.activation.makeVSCodeSettingsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     SETTINGS_FILE="${vscodeUserDir}/settings.json"
