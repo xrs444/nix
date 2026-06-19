@@ -9,6 +9,7 @@ let
       XDG_CURRENT_DESKTOP \
       XDG_SESSION_TYPE \
       NIXOS_OZONE_WL \
+      USER \
       WOLF_MODE
 
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
@@ -17,6 +18,7 @@ let
       XDG_CURRENT_DESKTOP \
       XDG_SESSION_TYPE \
       NIXOS_OZONE_WL \
+      USER \
       WOLF_MODE
 
     exec ${pkgs.niri}/bin/niri-session

@@ -20,6 +20,10 @@
 
         environment {
             QT_QPA_PLATFORM "wayland"
+            // Tell noctalia-shell to use the swaylock PAM service for the lock screen.
+            // Without this it auto-detects "login", which works but "swaylock" is the
+            // purpose-built Wayland locker service and avoids subtle pam_unix differences.
+            NOCTALIA_PAM_SERVICE "swaylock"
         }
 
         spawn-at-startup "noctalia-shell"
