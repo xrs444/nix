@@ -196,7 +196,7 @@
           type = "nixos";
           enableHomeManager = false;
           # Not on .lan — reachable via Tailscale MagicDNS after bootstrap
-          deployHostname = "vocibuild";
+          deployHostname = "vocibuild.corgi-squeaker.ts.net";
           roles = [
             "tailscale-client"
             "monitoring-client"

@@ -22,7 +22,7 @@ let
   isNativeBuilder = isBuilder && thisHost.native;
 
   # vocibuild is on Oracle Cloud and reachable only via Tailscale MagicDNS (not .lan)
-  buildHostname = b: if b.name == "vocibuild" then b.name else "${b.name}.lan";
+  buildHostname = b: if b.name == "vocibuild" then "vocibuild.corgi-squeaker.ts.net" else "${b.name}.lan";
 
   mkBuildMachine = b: {
     hostName = buildHostname b;
