@@ -4,6 +4,7 @@
   lib,
   stateVersion,
   username,
+  desktop ? null,
   ...
 }:
 {
@@ -62,7 +63,7 @@
     };
   };
 
-  # Apps
+  # Apps + desktop (niri/gnome/etc.) when this host has a desktop environment
   imports = [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
@@ -70,8 +71,7 @@
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
-
-  ];
+  ] ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
   # Install non-standard fonts
   home.packages = with pkgs; [
