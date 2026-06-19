@@ -54,6 +54,20 @@
   hardware.raspberry-pi."4".poe-plus-hat.enable = true;
   nixpkgs.config.allowUnfree = true;
 
+  # Proxy .ts.net DNS to Tailscale magic DNS (100.100.100.100 is only reachable
+  # on Tailscale nodes like xts1/xts2). Firewalla forwards .ts.net here instead
+  # of directly to 100.100.100.100, which is unreachable from non-Tailscale hosts.
+  services.dnsmasq = {
+    enable = true;
+    settings = {
+      server = [ "/ts.net/100.100.100.100" ];
+      listen-address = [ "127.0.0.1" "172.18.10.1" ];
+      bind-interfaces = true;
+    };
+  };
+  networking.firewall.allowedUDPPorts = [ 53 ];
+  networking.firewall.allowedTCPPorts = [ 53 ];
+
   # SD card filesystem layout (NixOS SD image convention)
   fileSystems."/" = {
     device = "/dev/disk/by-label/NIXOS_SD";
