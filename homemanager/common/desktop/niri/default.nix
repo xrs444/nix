@@ -51,6 +51,13 @@
         // Per-mode overrides (keybinds, outputs, spawn-at-startup)
         include "~/.config/niri/active-mode.kdl"
 
+        // Dual-GPU: NVIDIA is primary. Force rendering on NVIDIA so outputs on
+        // renderD129 get direct local rendering instead of a cross-GPU copy that
+        // lacks implicit sync, which causes corruption on NVIDIA screens.
+        debug {
+            render-drm-device "/dev/dri/renderD129"
+        }
+
       binds {
           // Applications
           Mod+T { spawn "foot"; }
