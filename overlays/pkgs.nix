@@ -70,6 +70,12 @@
   # swtpm: requires softhsm2 not available in nix sandbox
   swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
 
+  # zram-generator: test_cases calls unshare(NEWUSER) which returns EINVAL under
+  # QEMU aarch64 cross-compilation. The process aborts with SIGABRT. The binary
+  # itself is fine; the test exercises kernel namespace APIs that QEMU user-mode
+  # does not implement.
+  zram-generator = prev.zram-generator.overrideAttrs (_: { doCheck = false; });
+
   # sdl3: testrwlock (test #11) times out in any VM environment — the test has a
   # hardcoded deadline calibrated for physical hardware; VM thread scheduling
   # (whether QEMU-emulated or native aarch64 VM) adds enough overhead to miss it.
@@ -108,4 +114,26 @@
       config.allowUnfree = true;
     }
   ).claude-code;
+
+  # Bypass the lib.warnOnInstantiate wrapper added to linux-rpi kernels in nixpkgs 26.05.
+  # nixpkgs wraps linux_rpi4 (and linux_rpi{1,2,3}) with a deprecation warning that fires
+  # whenever any attribute of the derivation is accessed. Our RPi4/5 hardware modules and
+  # nixos-hardware's own RPi4 module both reference pkgs.linuxKernel.packages.linux_rpi4,
+  # which triggers the warning transitively via linuxKernel.kernels.linux_rpi4.
+  # Rebuilding via callPackage here produces the same derivation (same hash, same cache hits)
+  # but without the evaluation-time warning. The override also fixes pkgs.linux_rpi4.override
+  # used by our RPi5 module.
+  linux_rpi4 = final.callPackage "${inputs.nixpkgs}/pkgs/os-specific/linux/kernel/linux-rpi.nix" {
+    kernelPatches = with final.kernelPatches; [
+      bridge_stp_helper
+      request_key_helper
+    ];
+    rpiVersion = 4;
+  };
+  linuxKernel = prev.linuxKernel // {
+    kernels = prev.linuxKernel.kernels // { linux_rpi4 = final.linux_rpi4; };
+    packages = prev.linuxKernel.packages // {
+      linux_rpi4 = final.linuxPackagesFor final.linux_rpi4;
+    };
+  };
 })
