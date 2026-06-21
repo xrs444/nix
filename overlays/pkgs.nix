@@ -76,6 +76,23 @@
   # does not implement.
   zram-generator = prev.zram-generator.overrideAttrs (_: { doCheck = false; });
 
+  # grafana-alloy: otel_engine test binary is too large to link on the CI
+  # builder's tmpfs — Go linker fails with "no space left on device" during
+  # checkPhase. The binary builds and runs correctly; only the test link fails.
+  grafana-alloy = prev.grafana-alloy.overrideAttrs (_: { doCheck = false; });
+
+  # gobject-introspection-unwrapped: giscanner/utils.py imports
+  # distutils.cygwinccompiler at module level (line 380). setuptools' distutils
+  # shim omits this Windows-only module on Linux, causing g-ir-scanner to crash
+  # with ModuleNotFoundError before it can scan any library. Patch the import to
+  # be a no-op on non-Windows so downstream packages (gnome-desktop, etc.) can
+  # generate their GIR introspection data.
+  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
+    '';
+  });
+
   # sdl3: testrwlock (test #11) times out in any VM environment — the test has a
   # hardcoded deadline calibrated for physical hardware; VM thread scheduling
   # (whether QEMU-emulated or native aarch64 VM) adds enough overhead to miss it.
