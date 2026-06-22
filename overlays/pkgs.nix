@@ -13,6 +13,26 @@
       (old.propagatedBuildInputs or [ ]);
   });
 
+  # gobject-introspection-unwrapped: giscanner/utils.py imports
+  # distutils.cygwinccompiler at module level (and uses it on two further lines).
+  # setuptools' distutils shim omits this Windows-only module on Linux;
+  # Python 3.12+ removed distutils from stdlib entirely. The stable nixpkgs
+  # gobject-introspection binary was built with setuptools available so the
+  # crash never occurred — but any package that triggers a source rebuild of
+  # gobject-introspection (or builds a GIR-generating package like appstream
+  # that invokes g-ir-scanner against the cached unpatched binary) will hit
+  # this. Patch all three distutils references to be no-ops on non-Windows.
+  # The stable 26.05 nixpkgs already provides setuptools via
+  # buildPackages.python3.withPackages in nativeBuildInputs so the rebuild
+  # itself succeeds without any additional nativeBuildInputs changes.
+  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
+      sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
+      sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+    '';
+  });
+
   # The following packages are NOT available in cache.nixos.org for aarch64 at
   # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
   # during nixos-install). When built from source, their tests fail in the Nix
