@@ -89,6 +89,13 @@
   # guarded: the first with ImportError, the second with NameError (because
   # distutils is not in scope when the import failed).
   gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+    # meson.build:29 requires setuptools; Python 3.12+ no longer ships it in
+    # stdlib so it must be in nativeBuildInputs when building from source.
+    nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.python3.pkgs.setuptools ];
+    # giscanner/utils.py has three module-level references to the Windows-only
+    # distutils.cygwinccompiler that crash with ImportError/NameError on Linux
+    # (setuptools shim omits cygwinccompiler; Python 3.12+ removed distutils).
+    # Guard all three so g-ir-scanner can start on non-Windows hosts.
     postPatch = (old.postPatch or "") + ''
       sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
       sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
