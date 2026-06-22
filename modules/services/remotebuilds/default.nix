@@ -8,7 +8,7 @@
 }:
 let
   buildHosts = [
-    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; aarch64 = true;  native = false; } # Ryzen 7 7700 — primary builder, binfmt confirmed working
+    { name = "xsvr1"; maxJobs = 8; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 7700 — x86_64 only; aarch64 delegated to native builders
     { name = "xsvr2"; maxJobs = 6; speedFactor = 1; aarch64 = false; native = false; } # Atom C3758 — binfmt unreliable under QEMU aarch64
     { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
     { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
@@ -226,9 +226,9 @@ in
       User builder
       IdentityFile /root/.ssh/id_builder
 
-    # VM host — skip strict key checking since it's rebuilt frequently and its
-    # host key changes after each nixos-install.
-    Host xlt1-t-vnixos.lan xlt1-t-vnixos
+    # VM/cloud hosts — skip strict key checking since they're rebuilt frequently
+    # or (vocibuild) the key hasn't been captured yet into knownHosts.
+    Host xlt1-t-vnixos.lan xlt1-t-vnixos vocibuild.corgi-squeaker.ts.net vocibuild
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
   '';
