@@ -13,30 +13,6 @@
       (old.propagatedBuildInputs or [ ]);
   });
 
-  # Fix ibus parallel install race in sandboxed builds
-  # bindings/pygobject installs IBus.py twice in parallel: second install fails
-  # with "File exists". Disabling parallel build/install serialises the make.
-  ibus = prev.ibus.overrideAttrs (_: {
-    enableParallelBuilding = false;
-  });
-
-  # Fix libcanberra parallel install race in sandboxed builds
-  # make install runs plugin relink steps in parallel: libcanberra-multi.la tries
-  # to relink against -lcanberra before libcanberra.so has been installed to its
-  # output path, causing ld to fail with "cannot find -lcanberra". Serialising
-  # the install ensures libcanberra.so is present before plugins try to link it.
-  libcanberra = prev.libcanberra.overrideAttrs (_: {
-    enableParallelBuilding = false;
-  });
-
-  # Fix edk2 BaseTools parallel build race
-  # VfrCompile runs ANTLR to generate VfrLexer.h, but parallel make starts
-  # compiling VfrSyntax.o before VfrLexer.h exists. Single-threaded build
-  # serialises the ANTLR step before the compilation that depends on it.
-  edk2 = prev.edk2.overrideAttrs (_: {
-    enableParallelBuilding = false;
-  });
-
   # The following packages are NOT available in cache.nixos.org for aarch64 at
   # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
   # during nixos-install). When built from source, their tests fail in the Nix
