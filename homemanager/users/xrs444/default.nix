@@ -297,6 +297,9 @@
     # VSCode extensions and theme are managed manually in common/apps/vscode
     # to use up-to-date marketplace versions; catppuccin module adds older pins
     vscode.profiles.default.enable = false;
+    # OBS themes are managed manually in apps/obs.nix; catppuccin module now
+    # also provides OBS support via autoEnable causing a conflicting definition.
+    obs.enable = false;
     # catppuccin-nix reads the starship theme TOML via IFD at eval time.
     # On aarch64-darwin evaluating x86_64-linux targets the derivation isn't in
     # the local store, breaking nix flake check. Disable on Linux until the
