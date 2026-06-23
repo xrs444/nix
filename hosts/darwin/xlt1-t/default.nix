@@ -136,39 +136,31 @@
     fi
   '';
 
-  # xsvr1 ingest drop folders via NFS autofs.
-  # /etc/auto_master is replaced declaratively (overwrites the macOS default).
-  # /etc/auto_xsvr1_ingest is the map file read by automountd.
-  # On first access of /mnt/xsvr1/<folder>, automountd mounts on demand.
-  environment.etc."auto_master" = {
-    text = ''
-      #
-      # Automounter master map
-      #
-      +auto_master		# Use directory service
-      /net			-hosts		-nobrowse,hidefromfinder,nosuid
-      /home			auto_home	-nobrowse,hidefromfinder
-      /Network/Servers	-fstab
-      /-			-static
-      /mnt/xsvr1		/etc/auto_xsvr1_ingest	-nobrowse,rw
-    '';
+  # xsvr1 ingest drop folders as SMB network volumes.
+  # Finder mounts these under /Volumes/ at login so they appear in the GUI sidebar
+  # and are accessible as /Volumes/<share-name> in Terminal.
+  # Credentials are read from Keychain — one-time manual prerequisite:
+  #   Finder → Go → Connect to Server → smb://xsvr1.lan/ingest-documents
+  #   Authenticate as xrs444, check "Remember this password in my keychain"
+  # macOS stores the credential per-server, so all subsequent shares auth silently.
+  launchd.user.agents."xsvr1-smb-mounts" = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/bin/bash"
+        "-c"
+        ''
+          sleep 5
+          for share in ingest-documents ingest-ebooks ingest-3dmodels ingest-games ingest-movies ingest-tvshows ingest-music scans; do
+            /usr/bin/osascript -e 'tell application "Finder" to mount volume "smb://xrs444@xsvr1.lan/'"$share"'"' 2>/dev/null || true
+          done
+        ''
+      ];
+      RunAtLoad = true;
+      KeepAlive = false;
+      StandardErrorPath = "/tmp/xsvr1-smb-mounts.stderr";
+      StandardOutPath = "/tmp/xsvr1-smb-mounts.stdout";
+    };
   };
-
-  environment.etc."auto_xsvr1_ingest".text = ''
-    ingest/documents  -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/documents
-    ingest/ebooks     -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/ebooks
-    ingest/3dmodels   -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/3dmodels
-    ingest/games      -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/games
-    ingest/movies     -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/movies
-    ingest/tvshows    -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/tvshows
-    ingest/music      -rw,resvport,nfsvers=4  172.20.3.201:/zfs/ingest/music
-    scans             -rw,resvport,nfsvers=4  172.20.3.201:/zfs/scan/scans
-  '';
-
-  system.activationScripts.xsvr1-automount.text = ''
-    mkdir -p /mnt/xsvr1
-    /sbin/automount -vc 2>/dev/null || true
-  '';
 
   # Start atuin daemon as a LaunchAgent for the user
   launchd.user.agents.atuin-daemon = {
