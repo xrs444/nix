@@ -23,13 +23,22 @@
   # distutils references to be no-ops on non-Windows. The stable 26.05
   # nixpkgs already provides setuptools via buildPackages.python3.withPackages
   # in nativeBuildInputs so the rebuild itself succeeds without changes there.
-  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
-    postPatch = (old.postPatch or "") + ''
-      sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
-      sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
-      sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-    '';
-  });
+  # Scope to aarch64 only: x86_64 gobject-introspection is cached by Hydra
+  # unchanged, so no cascade to json-glib → swtpm → qemu on x86_64.
+  # On aarch64 the cached binary has an unpatched giscanner/utils.py that
+  # imports distutils.cygwinccompiler at module level — a Windows-only module
+  # omitted by setuptools' shim and removed from Python 3.12+ stdlib. Any
+  # package that invokes g-ir-scanner during a source build crashes. Patching
+  # only the aarch64 derivation keeps the x86_64 hash identical to Hydra.
+  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old:
+    prev.lib.optionalAttrs prev.stdenv.hostPlatform.isAarch64 {
+      postPatch = (old.postPatch or "") + ''
+        sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
+        sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
+        sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+      '';
+    }
+  );
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
