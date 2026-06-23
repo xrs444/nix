@@ -18,82 +18,16 @@
   # setuptools' distutils shim omits this Windows-only module on Linux;
   # Python 3.12+ removed distutils from stdlib entirely. The stable nixpkgs
   # gobject-introspection binary was built with setuptools available so the
-  # crash never occurred — but any package that triggers a source rebuild of
-  # gobject-introspection (or builds a GIR-generating package like appstream
-  # that invokes g-ir-scanner against the cached unpatched binary) will hit
-  # this. Patch all three distutils references to be no-ops on non-Windows.
-  # The stable 26.05 nixpkgs already provides setuptools via
-  # buildPackages.python3.withPackages in nativeBuildInputs so the rebuild
-  # itself succeeds without any additional nativeBuildInputs changes.
+  # crash never occurred — but any package that invokes g-ir-scanner during a
+  # source build (appstream, harfbuzz, etc.) will crash. Patch all three
+  # distutils references to be no-ops on non-Windows. The stable 26.05
+  # nixpkgs already provides setuptools via buildPackages.python3.withPackages
+  # in nativeBuildInputs so the rebuild itself succeeds without changes there.
   gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
     postPatch = (old.postPatch or "") + ''
       sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
       sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
       sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-    '';
-  });
-
-  # The following packages are NOT available in cache.nixos.org for aarch64 at
-  # our nixpkgs pin (verified: they appear in "will be built" not "will be fetched"
-  # during nixos-install). When built from source, their tests fail in the Nix
-  # sandbox. doCheck=false restores upstream drv hash equivalence once Hydra
-  # catches up, but avoids build failures until then.
-  # Packages confirmed FROM cache (don't need doCheck=false): dconf, gupnp, flac.
-
-  # libsecret: test-collection SIGABRT — requires D-Bus session bus
-  # https://github.com/NixOS/nixpkgs/issues/370724
-  libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
-
-  # upower: self-test SIGABRT — requires D-Bus system bus + hardware access
-  upower = prev.upower.overrideAttrs (_: { doCheck = false; });
-
-  # xdg-desktop-portal: USB test failure — requires D-Bus USB device session
-  xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (_: { doCheck = false; });
-
-  # tinysparql: test_notifier SIGABRT — requires D-Bus notification infrastructure
-  tinysparql = prev.tinysparql.overrideAttrs (_: { doCheck = false; });
-
-  # gtkmm3/gtkmm4: tests require live display server (X11/Wayland)
-  gtkmm3 = prev.gtkmm3.overrideAttrs (_: { doCheck = false; });
-  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
-
-  # nbd: TLS test timeouts — real TLS socket timing doesn't work in sandbox
-  nbd = prev.nbd.overrideAttrs (_: { doCheck = false; });
-
-  # openvswitch: requires real network interfaces / kernel modules
-  openvswitch = prev.openvswitch.overrideAttrs (_: { doCheck = false; });
-
-  # swtpm: requires softhsm2 not available in nix sandbox
-  swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
-
-  # zram-generator: test_cases calls unshare(NEWUSER) which returns EINVAL under
-  # QEMU aarch64 cross-compilation. The process aborts with SIGABRT. The binary
-  # itself is fine; the test exercises kernel namespace APIs that QEMU user-mode
-  # does not implement.
-  zram-generator = prev.zram-generator.overrideAttrs (_: { doCheck = false; });
-
-  # grafana-alloy: otel_engine test binary is too large to link on the CI
-  # builder's tmpfs — Go linker fails with "no space left on device" during
-  # checkPhase. The binary builds and runs correctly; only the test link fails.
-  grafana-alloy = prev.grafana-alloy.overrideAttrs (_: { doCheck = false; });
-
-  # umockdev: t_system_script_log_chatter timing test asserts elapsed <= 800ms;
-  # the sandbox build environment misses by a few ms (e.g. 804ms) due to load
-  # variance. This is a flaky wall-clock assertion, not a functional failure.
-  umockdev = prev.umockdev.overrideAttrs (_: { doCheck = false; });
-
-  # sdl3: testrwlock (test #11) times out in any VM environment — the test has a
-  # hardcoded deadline calibrated for physical hardware; VM thread scheduling
-  # (whether QEMU-emulated or native aarch64 VM) adds enough overhead to miss it.
-  # Hydra's aarch64 builders are also VM-based, so sdl3 is never cached at our
-  # nixpkgs pin. doCheck=false alone doesn't work because sdl3 uses CMake and
-  # test targets are compiled unconditionally; -DSDL_TESTS=OFF prevents them from
-  # being compiled at all. xlt1-t-vnixos (native aarch64 VM) builds this once and
-  # pushes to nixcache.xrs444.net so no other host ever needs to rebuild it.
-  sdl3 = prev.sdl3.overrideAttrs (old: {
-    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DSDL_TESTS=OFF" ];
-    postInstall = (old.postInstall or "") + ''
-      mkdir -p $installedTests
     '';
   });
 
@@ -117,7 +51,6 @@
   pipx = prev.pipx.overrideAttrs (_: { checkPhase = ":"; doInstallCheck = false; });
 
   # Fix inetutils format-security compilation errors on macOS
-  # https://github.com/NixOS/nixpkgs/issues/XXXXX
   inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
     hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
   });
