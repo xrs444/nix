@@ -40,6 +40,16 @@
     }
   );
 
+  # umockdev: t_system_script_log_chatter timing test asserts elapsed <= 800ms;
+  # misses by a few ms under VM scheduling (e.g. 804ms). Flaky wall-clock
+  # assertion, not a functional failure. Scoped to aarch64 to avoid changing
+  # the x86_64 hash (which would cascade into libgudev → udev → many packages).
+  umockdev = prev.umockdev.overrideAttrs (_:
+    prev.lib.optionalAttrs prev.stdenv.hostPlatform.isAarch64 {
+      doCheck = false;
+    }
+  );
+
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
   # of ['--list']. 1 test out of 18154 fails; package itself is fine.
@@ -73,25 +83,4 @@
     }
   ).claude-code;
 
-  # Bypass the lib.warnOnInstantiate wrapper added to linux-rpi kernels in nixpkgs 26.05.
-  # nixpkgs wraps linux_rpi4 (and linux_rpi{1,2,3}) with a deprecation warning that fires
-  # whenever any attribute of the derivation is accessed. Our RPi4/5 hardware modules and
-  # nixos-hardware's own RPi4 module both reference pkgs.linuxKernel.packages.linux_rpi4,
-  # which triggers the warning transitively via linuxKernel.kernels.linux_rpi4.
-  # Rebuilding via callPackage here produces the same derivation (same hash, same cache hits)
-  # but without the evaluation-time warning. The override also fixes pkgs.linux_rpi4.override
-  # used by our RPi5 module.
-  linux_rpi4 = final.callPackage "${inputs.nixpkgs}/pkgs/os-specific/linux/kernel/linux-rpi.nix" {
-    kernelPatches = with final.kernelPatches; [
-      bridge_stp_helper
-      request_key_helper
-    ];
-    rpiVersion = 4;
-  };
-  linuxKernel = prev.linuxKernel // {
-    kernels = prev.linuxKernel.kernels // { linux_rpi4 = final.linux_rpi4; };
-    packages = prev.linuxKernel.packages // {
-      linux_rpi4 = final.linuxPackagesFor final.linux_rpi4;
-    };
-  };
 })
