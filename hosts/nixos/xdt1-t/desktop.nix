@@ -68,6 +68,9 @@ in
   # Niri - Scrollable-tiling Wayland compositor
   programs.niri.enable = true;
 
+  # Make .desktop files from systemPackages visible at the sessions path tuigreet reads
+  environment.pathsToLink = [ "/share/wayland-sessions" ];
+
   # Display manager — session picker shows all registered wayland-sessions .desktop files
   services.greetd = {
     enable = true;

@@ -28,7 +28,7 @@
   ];
 
   boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxKernel.packages.linux_rpi4;
+    kernelPackages = lib.mkDefault pkgs.linuxKernel.packages.linux_6_12;
     initrd.availableKernelModules = [
       "usbhid"
       "usb-storage"
