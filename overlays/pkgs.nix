@@ -30,11 +30,16 @@
       sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
       sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
       sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-      # ccompiler.py: import setuptools first so its distutils shim is active
-      # before the bare "import distutils" that otherwise fails on Python 3.12+
-      sed -i 's/^import distutils$/try:\n    import setuptools  # activate distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
+      # ccompiler.py: set SETUPTOOLS_USE_DISTUTILS=local so setuptools serves
+      # its bundled distutils shim when "import distutils" is reached. Importing
+      # setuptools alone is not sufficient on Python 3.12+ — the env var must be
+      # set before the import so the shim is registered as the distutils provider.
+      sed -i 's/^import distutils$/import os\nos.environ.setdefault("SETUPTOOLS_USE_DISTUTILS", "local")\ntry:\n    import setuptools  # noqa: F401 — registers distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
     '';
   });
+
+  # swtpm: test suite requires softhsm2 which is unavailable in the Nix sandbox.
+  swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
 
   # umockdev: t_system_script_log_chatter timing test asserts elapsed <= 800ms;
   # misses by a few ms under VM/sandbox scheduling. Flaky wall-clock assertion,
