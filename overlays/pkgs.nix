@@ -30,8 +30,11 @@
   # omitted by setuptools' shim and removed from Python 3.12+ stdlib. Any
   # package that invokes g-ir-scanner during a source build crashes. Patching
   # only the aarch64 derivation keeps the x86_64 hash identical to Hydra.
+  # Use final (not prev) for the platform check: prev.stdenv resolves during
+  # the overlay fixed-point and may see an intermediate state; final.stdenv
+  # is the fully-resolved package set where hostPlatform is stable.
   gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old:
-    prev.lib.optionalAttrs prev.stdenv.hostPlatform.isAarch64 {
+    final.lib.optionalAttrs final.stdenv.hostPlatform.isAarch64 {
       postPatch = (old.postPatch or "") + ''
         # utils.py: guard three Windows-only distutils.cygwinccompiler references
         sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
@@ -49,7 +52,7 @@
   # assertion, not a functional failure. Scoped to aarch64 to avoid changing
   # the x86_64 hash (which would cascade into libgudev → udev → many packages).
   umockdev = prev.umockdev.overrideAttrs (_:
-    prev.lib.optionalAttrs prev.stdenv.hostPlatform.isAarch64 {
+    final.lib.optionalAttrs final.stdenv.hostPlatform.isAarch64 {
       doCheck = false;
     }
   );
