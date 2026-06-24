@@ -33,9 +33,13 @@
   gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old:
     prev.lib.optionalAttrs prev.stdenv.hostPlatform.isAarch64 {
       postPatch = (old.postPatch or "") + ''
+        # utils.py: guard three Windows-only distutils.cygwinccompiler references
         sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
         sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
         sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+        # ccompiler.py: import setuptools first so its distutils shim is active
+        # before the bare "import distutils" that otherwise fails on Python 3.12+
+        sed -i 's/^import distutils$/try:\n    import setuptools  # activate distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
       '';
     }
   );
