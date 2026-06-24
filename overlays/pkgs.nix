@@ -13,49 +13,34 @@
       (old.propagatedBuildInputs or [ ]);
   });
 
-  # gobject-introspection-unwrapped: giscanner/utils.py imports
-  # distutils.cygwinccompiler at module level (and uses it on two further lines).
-  # setuptools' distutils shim omits this Windows-only module on Linux;
-  # Python 3.12+ removed distutils from stdlib entirely. The stable nixpkgs
-  # gobject-introspection binary was built with setuptools available so the
-  # crash never occurred — but any package that invokes g-ir-scanner during a
-  # source build (appstream, harfbuzz, etc.) will crash. Patch all three
-  # distutils references to be no-ops on non-Windows. The stable 26.05
-  # nixpkgs already provides setuptools via buildPackages.python3.withPackages
-  # in nativeBuildInputs so the rebuild itself succeeds without changes there.
-  # Scope to aarch64 only: x86_64 gobject-introspection is cached by Hydra
-  # unchanged, so no cascade to json-glib → swtpm → qemu on x86_64.
-  # On aarch64 the cached binary has an unpatched giscanner/utils.py that
-  # imports distutils.cygwinccompiler at module level — a Windows-only module
-  # omitted by setuptools' shim and removed from Python 3.12+ stdlib. Any
-  # package that invokes g-ir-scanner during a source build crashes. Patching
-  # only the aarch64 derivation keeps the x86_64 hash identical to Hydra.
-  # Use final (not prev) for the platform check: prev.stdenv resolves during
-  # the overlay fixed-point and may see an intermediate state; final.stdenv
-  # is the fully-resolved package set where hostPlatform is stable.
-  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old:
-    final.lib.optionalAttrs final.stdenv.hostPlatform.isAarch64 {
-      postPatch = (old.postPatch or "") + ''
-        # utils.py: guard three Windows-only distutils.cygwinccompiler references
-        sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
-        sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
-        sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-        # ccompiler.py: import setuptools first so its distutils shim is active
-        # before the bare "import distutils" that otherwise fails on Python 3.12+
-        sed -i 's/^import distutils$/try:\n    import setuptools  # activate distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
-      '';
-    }
-  );
+  # gobject-introspection-unwrapped: giscanner/{utils,ccompiler}.py import
+  # distutils at module level. Python 3.12+ removed distutils from stdlib;
+  # setuptools' shim provides it but only if setuptools is imported first.
+  # Any package that invokes g-ir-scanner during a source build (harfbuzz,
+  # pygobject, appstream, etc.) crashes on aarch64 where the binary is not
+  # cached by Hydra and must be built from source with Python 3.13.
+  # Applied unconditionally: platform-conditional overrides via
+  # lib.optionalAttrs stdenv.hostPlatform.isAarch64 silently evaluate to {}
+  # in this nixpkgs evaluation context (both prev and final), so the hash
+  # never changes and the patch never lands. The x86_64 cascade (json-glib
+  # → swtpm → qemu) rebuilds once and is cached locally thereafter.
+  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      # utils.py: guard three Windows-only distutils.cygwinccompiler references
+      sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
+      sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
+      sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+      # ccompiler.py: import setuptools first so its distutils shim is active
+      # before the bare "import distutils" that otherwise fails on Python 3.12+
+      sed -i 's/^import distutils$/try:\n    import setuptools  # activate distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
+    '';
+  });
 
   # umockdev: t_system_script_log_chatter timing test asserts elapsed <= 800ms;
-  # misses by a few ms under VM scheduling (e.g. 804ms). Flaky wall-clock
-  # assertion, not a functional failure. Scoped to aarch64 to avoid changing
-  # the x86_64 hash (which would cascade into libgudev → udev → many packages).
-  umockdev = prev.umockdev.overrideAttrs (_:
-    final.lib.optionalAttrs final.stdenv.hostPlatform.isAarch64 {
-      doCheck = false;
-    }
-  );
+  # misses by a few ms under VM/sandbox scheduling. Flaky wall-clock assertion,
+  # not a functional failure. Applied unconditionally for the same reason as
+  # gobject-introspection above — platform conditionals don't fire here.
+  umockdev = prev.umockdev.overrideAttrs (_: { doCheck = false; });
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
