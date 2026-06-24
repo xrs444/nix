@@ -184,10 +184,10 @@
           ];
         };
         xlt1-t-vnixos = {
-          user = "thomas-local";
+          user = "xrs444";
           platform = "aarch64-linux";
           type = "nixos";
-          desktop = "gnome";
+          desktop = "niri-minimal";
           roles = [ "auto-upgrade" ];
         };
         vocibuild = {

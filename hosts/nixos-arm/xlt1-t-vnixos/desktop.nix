@@ -76,6 +76,9 @@
 
     # Image viewer
     imv # Wayland image viewer
+
+    # Desktop shell (not yet in nixos-25.11 — pull from unstable)
+    pkgs.unstable.noctalia-shell
   ];
 
   # Enable polkit for authentication

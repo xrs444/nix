@@ -33,6 +33,7 @@ rec {
         };
         extraSpecialArgs = {
           inherit inputs outputs stateVersion;
+          hostName = hostName;
           username = hostConfig.user;
           desktop = hostConfig.desktop or null;
           platform = hostConfig.platform;
@@ -140,6 +141,7 @@ rec {
                 ];
                 extraSpecialArgs = {
                   inherit inputs outputs stateVersion;
+                  hostName = hostName;
                   username = hostConfig.user;
                   desktop = hostConfig.desktop or null;
                   platform = hostConfig.platform;

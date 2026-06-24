@@ -4,6 +4,7 @@
   lib,
   stateVersion,
   username,
+  hostName ? null,
   desktop ? null,
   ...
 }:
@@ -67,11 +68,11 @@
   imports = [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
-    ./apps/obs.nix
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
-  ] ++ lib.optional (builtins.isString desktop) ../../common/desktop;
+  ] ++ lib.optional (hostName == "xdt1-t") ./apps/obs.nix
+    ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
   # Install non-standard fonts
   home.packages = with pkgs; [
