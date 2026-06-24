@@ -14,29 +14,33 @@
   });
 
   # gobject-introspection-unwrapped: giscanner/{utils,ccompiler}.py import
-  # distutils at module level. Python 3.12+ removed distutils from stdlib;
-  # setuptools' shim provides it but only if setuptools is imported first.
+  # distutils at module level. Python 3.12+ removed distutils from stdlib.
   # Any package that invokes g-ir-scanner during a source build (harfbuzz,
-  # pygobject, appstream, etc.) crashes on aarch64 where the binary is not
-  # cached by Hydra and must be built from source with Python 3.13.
-  # Applied unconditionally: platform-conditional overrides via
-  # lib.optionalAttrs stdenv.hostPlatform.isAarch64 silently evaluate to {}
-  # in this nixpkgs evaluation context (both prev and final), so the hash
-  # never changes and the patch never lands. The x86_64 cascade (json-glib
-  # → swtpm → qemu) rebuilds once and is cached locally thereafter.
-  gobject-introspection-unwrapped = prev.gobject-introspection-unwrapped.overrideAttrs (old: {
-    postPatch = (old.postPatch or "") + ''
-      # utils.py: guard three Windows-only distutils.cygwinccompiler references
-      sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
-      sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
-      sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-      # ccompiler.py: set SETUPTOOLS_USE_DISTUTILS=local so setuptools serves
-      # its bundled distutils shim when "import distutils" is reached. Importing
-      # setuptools alone is not sufficient on Python 3.12+ — the env var must be
-      # set before the import so the shim is registered as the distutils provider.
-      sed -i 's/^import distutils$/import os\nos.environ.setdefault("SETUPTOOLS_USE_DISTUTILS", "local")\ntry:\n    import setuptools  # noqa: F401 — registers distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
-    '';
-  });
+  # pygobject, playerctl, etc.) crashes on aarch64 where the binary is not
+  # cached by Hydra and must be rebuilt with Python 3.13.
+  #
+  # Scoped to aarch64 using if/then/else (not lib.optionalAttrs): the
+  # optionalAttrs form still calls overrideAttrs on x86_64 with an empty
+  # attrset which can shift the derivation hash. The if/then/else form
+  # returns the unmodified prev package object for non-aarch64, guaranteeing
+  # the x86_64 hash is byte-for-byte identical to upstream Hydra and avoiding
+  # the cascade through json-glib → gtk → xen → qemu.
+  gobject-introspection-unwrapped =
+    if final.stdenv.hostPlatform.isAarch64
+    then prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        # utils.py: guard three Windows-only distutils.cygwinccompiler references
+        sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
+        sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
+        sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+        # ccompiler.py: set SETUPTOOLS_USE_DISTUTILS=local before importing
+        # setuptools so its bundled distutils shim is registered as the
+        # provider, then import distutils via the shim. The env var is
+        # required on Python 3.12+ — importing setuptools alone is not enough.
+        sed -i 's/^import distutils$/import os\nos.environ.setdefault("SETUPTOOLS_USE_DISTUTILS", "local")\ntry:\n    import setuptools  # noqa: F401 — registers distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
+      '';
+    })
+    else prev.gobject-introspection-unwrapped;
 
   # swtpm: test suite requires softhsm2 which is unavailable in the Nix sandbox.
   swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
