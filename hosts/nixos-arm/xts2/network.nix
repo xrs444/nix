@@ -22,6 +22,10 @@
 
   networking.nameservers = [ "172.18.10.250" ];
 
+  # accept_ra=2: accept RAs even when all.forwarding=1 (set by tailscale exit-node role).
+  # Without this, forwarding=1 causes the kernel to silently ignore RAs despite accept_ra=1.
+  boot.kernel.sysctl."net.ipv6.conf.eth0.accept_ra" = 2;
+
   # keepalived VRRP interface — eth0 for Sweet Potato (Amlogic DWMAC)
   # Update to match actual interface name if it differs on first boot
   services.keepalived.vrrpInstances.ts-vip.interface = lib.mkForce "eth0";

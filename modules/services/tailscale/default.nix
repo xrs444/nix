@@ -65,7 +65,7 @@ in
         extraUpFlags = [
           "--advertise-exit-node"
           "--accept-routes"
-          "--advertise-routes=172.16.0.0/12"
+          "--advertise-routes=172.16.0.0/12,2600:8800:218d:9a00::/56"
           "--snat-subnet-routes=false"
           "--operator=${username}"
         ];
@@ -222,8 +222,10 @@ in
             state = if hostname == "xts1" then "MASTER" else "BACKUP";
             virtualIps = [
               { addr = "172.18.10.100/24"; }
+              { addr = "2600:8800:218d:9a16::100/64"; }
             ];
             extraConfig = ''
+              version 3
               # use_vmac creates a macvlan interface (vrrp.51) with the VRRP virtual MAC
               # (00:00:5e:00:01:33 for VRID 51). The VIP is assigned to this macvlan so
               # all traffic to/from .100 uses the virtual MAC — no split routing, and

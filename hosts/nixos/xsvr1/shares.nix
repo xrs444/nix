@@ -524,7 +524,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -535,7 +535,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -546,7 +546,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -557,7 +557,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -568,7 +568,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -579,7 +579,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -590,7 +590,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users";
+        "valid users" = "xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
         "oplocks" = "no";
@@ -602,7 +602,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "@posix_users scanner";
+        "valid users" = "xrs444 samantha rowan greyson scanner";
         "create mask" = "0664";
         "directory mask" = "0775";
       };
@@ -613,7 +613,7 @@
         "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
-        "valid users" = "scanner @posix_users";
+        "valid users" = "scanner xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
       };

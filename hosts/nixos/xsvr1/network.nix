@@ -117,6 +117,11 @@
         networkConfig = {
           DHCP = "no";
           IPv6AcceptRA = true;
+          # iprouting sets all.forwarding=1 which propagates to bond0.forwarding=1,
+          # causing the kernel to silently set accept_ra=0 on bond0. Setting
+          # IPv6Forwarding=false here scopes forwarding off for this uplink interface
+          # so the kernel permits RA acceptance and SLAAC from the Firewalla.
+          IPv6Forwarding = false;
         };
         vlan = [
           "bond0.21"

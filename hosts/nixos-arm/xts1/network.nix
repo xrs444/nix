@@ -22,4 +22,8 @@
   };
 
   networking.nameservers = [ "172.18.10.250" ];
+
+  # accept_ra=2: accept RAs even when all.forwarding=1 (set by tailscale exit-node role).
+  # Without this, forwarding=1 causes the kernel to silently ignore RAs despite accept_ra=1.
+  boot.kernel.sysctl."net.ipv6.conf.end0.accept_ra" = 2;
 }
