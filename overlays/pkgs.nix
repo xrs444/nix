@@ -50,7 +50,8 @@
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ prev.buildPackages.makeWrapper ];
       postInstall = (old.postInstall or "") + ''
         wrapProgram "$dev/bin/g-ir-scanner" \
-          --set SETUPTOOLS_USE_DISTUTILS local
+          --set SETUPTOOLS_USE_DISTUTILS local \
+          --prefix PYTHONPATH : "${final.buildPackages.python3.pkgs.setuptools}/${final.buildPackages.python3.sitePackages}"
         patchShebangs "$dev/bin/.g-ir-scanner-wrapped"
       '';
     })
