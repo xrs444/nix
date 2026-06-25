@@ -39,10 +39,19 @@
       # distutils-precedence.pth (processed at interpreter startup) activates
       # setuptools' bundled distutils shim. Setting it inside the script is
       # too late — .pth files run before any user code executes.
+      #
+      # wrapProgram renames g-ir-scanner → .g-ir-scanner-wrapped and creates
+      # a new shell wrapper. patchShebangs in fixupPhase skips dot-prefixed
+      # files, so .g-ir-scanner-wrapped keeps "#!/usr/bin/env python3" and
+      # picks up whatever python3 is in the CALLER's PATH (harfbuzz, playerctl
+      # etc.) — which does not have setuptools. Fix: explicitly call
+      # patchShebangs on the dot-file inside postInstall while gobject-
+      # introspection's own nativeBuild Python (with setuptools) is in PATH.
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ prev.buildPackages.makeWrapper ];
       postInstall = (old.postInstall or "") + ''
         wrapProgram "$dev/bin/g-ir-scanner" \
           --set SETUPTOOLS_USE_DISTUTILS local
+        patchShebangs "$dev/bin/.g-ir-scanner-wrapped"
       '';
     })
     else prev.gobject-introspection-unwrapped;
