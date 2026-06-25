@@ -30,14 +30,19 @@
     then prev.gobject-introspection-unwrapped.overrideAttrs (old: {
       postPatch = (old.postPatch or "") + ''
         # utils.py: guard three Windows-only distutils.cygwinccompiler references
+        # (distutils.cygwinccompiler is omitted by setuptools' shim on Linux)
         sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
         sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
         sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
-        # ccompiler.py: set SETUPTOOLS_USE_DISTUTILS=local before importing
-        # setuptools so its bundled distutils shim is registered as the
-        # provider, then import distutils via the shim. The env var is
-        # required on Python 3.12+ — importing setuptools alone is not enough.
-        sed -i 's/^import distutils$/import os\nos.environ.setdefault("SETUPTOOLS_USE_DISTUTILS", "local")\ntry:\n    import setuptools  # noqa: F401 — registers distutils shim for Python 3.12+\nexcept ImportError:\n    pass\nimport distutils/' giscanner/ccompiler.py
+      '';
+      # SETUPTOOLS_USE_DISTUTILS must be set BEFORE Python starts so that
+      # distutils-precedence.pth (processed at interpreter startup) activates
+      # setuptools' bundled distutils shim. Setting it inside the script is
+      # too late — .pth files run before any user code executes.
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ prev.buildPackages.makeWrapper ];
+      postInstall = (old.postInstall or "") + ''
+        wrapProgram "$dev/bin/g-ir-scanner" \
+          --set SETUPTOOLS_USE_DISTUTILS local
       '';
     })
     else prev.gobject-introspection-unwrapped;
