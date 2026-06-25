@@ -42,14 +42,6 @@
     })
     else prev.gobject-introspection-unwrapped;
 
-  # swtpm: test suite requires softhsm2 which is unavailable in the Nix sandbox.
-  swtpm = prev.swtpm.overrideAttrs (_: { doCheck = false; });
-
-  # umockdev: t_system_script_log_chatter timing test asserts elapsed <= 800ms;
-  # misses by a few ms under VM/sandbox scheduling. Flaky wall-clock assertion,
-  # not a functional failure. Applied unconditionally for the same reason as
-  # gobject-introspection above — platform conditionals don't fire here.
-  umockdev = prev.umockdev.overrideAttrs (_: { doCheck = false; });
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
