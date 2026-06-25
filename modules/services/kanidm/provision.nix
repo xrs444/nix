@@ -111,6 +111,12 @@
       "hermes-s-admin" = {
         members = [ "admins" ];
       };
+      "grafana" = {
+        members = [ "users" ];
+      };
+      "grafana-admin" = {
+        members = [ "admins" ];
+      };
       # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
       # xsvr1's pam_allowed_login_groups references this group.
       "posix_users" = {
@@ -477,6 +483,27 @@
               "openid"
               "profile"
               "email"
+            ];
+          };
+        };
+        "oauth2_grafana" = {
+          displayName = "Grafana";
+          originUrl = "https://grafana.xrs444.net";
+          originLanding = "https://grafana.xrs444.net";
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_grafana_secret";
+          scopeMaps = {
+            "grafana" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            "grafana-admin" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
             ];
           };
         };
