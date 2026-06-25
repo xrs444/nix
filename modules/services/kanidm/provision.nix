@@ -519,6 +519,22 @@
           "posix_users"
         ];
       };
+      # Synthetic monitoring account — used by Windmill to perform OIDC authorize
+      # round-trips against every app's Kanidm client. Password is set manually
+      # after the first nixos-rebuild (kanidm-provision cannot set person passwords).
+      # Member of `users` (covers all apps whose per-app group includes `users`),
+      # plus explicit membership in admin-only app groups where needed.
+      "monitoring" = {
+        displayName = "Synthetic Monitoring";
+        legalName = "Synthetic Monitoring";
+        mailAddresses = [ "monitoring@xrs444.net" ];
+        groups = [
+          "users"          # covers paperless, mealie, netbox, immich, romm, audiobookshelf,
+                           # booklore, manyfold, matrix, termix, warpgate, windmill, linkwarden
+          "seatable-admin" # seatable only has seatable-admin in its scopeMap
+          "longhorn-admin" # longhorn only has longhorn-admin in its scopeMap
+        ];
+      };
     };
   };
 }
