@@ -48,6 +48,13 @@
       # patchShebangs on the dot-file inside postInstall while gobject-
       # introspection's own nativeBuild Python (with setuptools) is in PATH.
       nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ prev.buildPackages.makeWrapper ];
+      # Propagate setuptools so downstream packages (pygobject, harfbuzz) have it in
+      # their nativeBuildInputs and hence in their Nix sandbox. The wrapper below adds
+      # setuptools to PYTHONPATH, but that path is inaccessible unless it is in the
+      # sandbox — propagation ensures it is.
+      propagatedNativeBuildInputs = (old.propagatedNativeBuildInputs or []) ++ [
+        final.buildPackages.python3.pkgs.setuptools
+      ];
       postInstall = (old.postInstall or "") + ''
         wrapProgram "$dev/bin/g-ir-scanner" \
           --set SETUPTOOLS_USE_DISTUTILS local \
