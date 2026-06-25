@@ -2,6 +2,25 @@
 {
   imports = [ ./modes ];
 
+  home.packages = [ pkgs.swww ];
+
+  # Wallpaper daemon — runs for the lifetime of the graphical session.
+  # Mode-specific wallpaper services (in modes/) depend on this and call `swww img`.
+  systemd.user.services.swww-daemon = {
+    Unit = {
+      Description = "swww wallpaper daemon";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.swww}/bin/swww-daemon";
+      Restart = "on-failure";
+      RestartSec = 1;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
   xdg.configFile = {
     "niri/config.kdl" = {
       force = true;

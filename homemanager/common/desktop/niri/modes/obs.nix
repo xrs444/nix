@@ -1,5 +1,15 @@
 { pkgs, ... }:
 let
+  setWallpaper = pkgs.writeShellScript "wallpaper-obs" ''
+    for ext in jpg jpeg png; do
+      img="$HOME/.config/niri/wallpapers/obs.$ext"
+      if [ -f "$img" ]; then
+        ${pkgs.swww}/bin/swww img "$img" --transition-type grow --transition-pos 0.5,0.5
+        exit 0
+      fi
+    done
+  '';
+
   hdmiGuard = pkgs.writeShellScript "obs-hdmi-guard" ''
     TARGET_OUTPUT="HDMI-A-2"
     OBS_APP_ID="com.obsproject.Studio"
@@ -61,6 +71,22 @@ in
       Restart = "on-failure";
       RestartSec = 2;
       Environment = [ "NIRI_SOCKET=/run/user/%U/niri/socket" ];
+    };
+    Install.WantedBy = [ "mode-obs.target" ];
+  };
+
+  # Place ~/.config/niri/wallpapers/obs.{jpg,jpeg,png} for this to take effect.
+  systemd.user.services.wallpaper-obs = {
+    Unit = {
+      Description = "Set wallpaper for OBS mode";
+      After = [ "graphical-session.target" "swww-daemon.service" ];
+      Requires = [ "swww-daemon.service" ];
+      PartOf = [ "mode-obs.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${setWallpaper}";
     };
     Install.WantedBy = [ "mode-obs.target" ];
   };
