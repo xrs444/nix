@@ -50,7 +50,7 @@ let
           [Desktop Entry]
           Name=${label}
           Comment=Niri scrollable-tiling compositor — ${label}
-          Exec=${script}/bin/niri-session-${name}
+          Exec=niri-session-${name}
           Type=Application
         '';
       };
@@ -63,20 +63,29 @@ let
       ];
     };
 
+  niriBase = mkModeSession { name = "base"; label = "Niri"; wolfMode = ""; };
+  niriObs  = mkModeSession { name = "obs";  label = "Niri (OBS)"; wolfMode = "obs"; };
+  niriLlm  = mkModeSession { name = "llm";  label = "Niri (LLM)"; wolfMode = "llm"; };
+
 in
 {
   # Niri - Scrollable-tiling Wayland compositor
   programs.niri.enable = true;
 
-  # Make .desktop files from systemPackages visible at the sessions path tuigreet reads
-  environment.pathsToLink = [ "/share/wayland-sessions" ];
+  # Install session .desktop files via environment.etc so they land at a stable path
+  # regardless of pathsToLink behaviour in the current nixpkgs niri module.
+  environment.etc = {
+    "greetd/sessions/niri-base.desktop".source = "${niriBase}/share/wayland-sessions/niri-base.desktop";
+    "greetd/sessions/niri-obs.desktop".source  = "${niriObs}/share/wayland-sessions/niri-obs.desktop";
+    "greetd/sessions/niri-llm.desktop".source  = "${niriLlm}/share/wayland-sessions/niri-llm.desktop";
+  };
 
-  # Display manager — session picker shows all registered wayland-sessions .desktop files
+  # Display manager — session picker reads /etc/greetd/sessions/ (managed above)
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /run/current-system/sw/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /etc/greetd/sessions";
         user = "greeter";
       };
     };
@@ -86,21 +95,9 @@ in
     with pkgs;
     [
       niriSessionFixed
-      (mkModeSession {
-        name = "base";
-        label = "Niri";
-        wolfMode = "";
-      })
-      (mkModeSession {
-        name = "obs";
-        label = "Niri (OBS)";
-        wolfMode = "obs";
-      })
-      (mkModeSession {
-        name = "llm";
-        label = "Niri (LLM)";
-        wolfMode = "llm";
-      })
+      niriBase
+      niriObs
+      niriLlm
 
       # Desktop shell (not yet in nixos-25.11 — pull from unstable)
       pkgs.unstable.noctalia-shell
