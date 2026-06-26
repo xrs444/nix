@@ -1,5 +1,7 @@
 { lib, pkgs, ... }:
 lib.mkIf pkgs.stdenv.isLinux {
+  home.packages = [ pkgs.obs-cmd ];
+
   programs.obs-studio = {
     enable = true;
     plugins = with pkgs.obs-studio-plugins; [
