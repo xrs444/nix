@@ -8,7 +8,7 @@ lib.mkIf pkgs.stdenv.isLinux {
       obs-pipewire-audio-capture
       advanced-scene-switcher
       obs-vkcapture
-      obs-backgroundremoval
+      (obs-backgroundremoval.override { cudaSupport = true; })
       obs-composite-blur
       obs-gstreamer
       obs-retro-effects
@@ -93,15 +93,15 @@ lib.mkIf pkgs.stdenv.isLinux {
         StreamAudioEncoder=aac
         RecAudioEncoder=aac
         RecTracks=1
-        StreamEncoder=x264
-        RecEncoder=x264
+        StreamEncoder=nvenc
+        RecEncoder=nvenc
 
         [AdvOut]
         ApplyServiceSettings=true
         UseRescale=false
         TrackIndex=1
         VodTrackIndex=2
-        Encoder=obs_x264
+        Encoder=jim_nvenc
         RecType=Standard
         RecFilePath=/home/xrs444
         RecFormat2=mkv
@@ -290,6 +290,21 @@ lib.mkIf pkgs.stdenv.isLinux {
         $DRY_RUN_CMD mkdir -p "$(dirname "$obs_ws_cfg")"
         $DRY_RUN_CMD cp ${obsWebsocketJson} "$obs_ws_cfg"
         $DRY_RUN_CMD chmod 644 "$obs_ws_cfg"
+      fi
+    ''
+  );
+
+  # Always switch to NVENC, even if the profile was seeded before this change.
+  # jim_nvenc = OBS NVENC H.264 encoder (works in OBS 30+, recognised as obs_nvenc_h264_tex alias).
+  home.activation.obsNvencEncoder = lib.mkIf pkgs.stdenv.isLinux (
+    lib.hm.dag.entryAfter [ "obsConfig" ] ''
+      obs_ini="$HOME/.config/obs-studio/basic/profiles/Webcam_On/basic.ini"
+      if [ -f "$obs_ini" ]; then
+        $DRY_RUN_CMD ${pkgs.gnused}/bin/sed -i \
+          -e 's|^StreamEncoder=.*|StreamEncoder=nvenc|' \
+          -e 's|^RecEncoder=x264$|RecEncoder=nvenc|' \
+          -e 's|^Encoder=obs_x264$|Encoder=jim_nvenc|' \
+          "$obs_ini"
       fi
     ''
   );
