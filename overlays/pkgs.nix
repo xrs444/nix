@@ -34,6 +34,21 @@
         sed -i 's/^import distutils\.cygwinccompiler$/try:\n    import distutils.cygwinccompiler\nexcept ImportError:\n    pass/' giscanner/utils.py
         sed -i 's/^orig_get_msvcr = distutils\.cygwinccompiler\.get_msvcr.*$/try:\n    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore\nexcept NameError:\n    orig_get_msvcr = lambda: []  # type: ignore/' giscanner/utils.py
         sed -i 's/^distutils\.cygwinccompiler\.get_msvcr = get_msvcr_overwrite.*$/try:\n    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore\nexcept NameError:\n    pass/' giscanner/utils.py
+
+        # ccompiler.py:27 — bare 'import distutils' fails on Python 3.13 (removed
+        # from stdlib). ccompiler.py also does from-imports of distutils.unixccompiler,
+        # distutils.cygwinccompiler, distutils.sysconfig, distutils.ccompiler.
+        # Bootstrap setuptools._distutils into sys.modules["distutils"] before any of
+        # those run; Python then resolves the submodule from-imports via __path__.
+        substituteInPlace giscanner/ccompiler.py \
+          --replace-warn 'import distutils' \
+          'try:
+    import distutils
+except ImportError:
+    import sys as _s, importlib as _il
+    _s.modules["distutils"] = _il.import_module("setuptools._distutils")
+    import distutils
+    del _s, _il'
       '';
       # SETUPTOOLS_USE_DISTUTILS must be set BEFORE Python starts so that
       # distutils-precedence.pth (processed at interpreter startup) activates
