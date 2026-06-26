@@ -129,16 +129,6 @@ PYEOF
     })
     else prev.gobject-introspection;
 
-  # playerctl: GIR generation was failing on aarch64 before the
-  # gobject-introspection shlibs.py fix above. Keep gtk-doc disabled as a
-  # belt-and-suspenders measure — playerctl's GIR output is not consumed by
-  # anything in the xlt1-t-vnixos closure.
-  playerctl = if final.stdenv.hostPlatform.isAarch64
-    then prev.playerctl.overrideAttrs (old: {
-      mesonFlags = (builtins.filter (f: f != "-Dgtk-doc=true") (old.mesonFlags or []))
-                ++ [ "-Dgtk-doc=false" ];
-    })
-    else prev.playerctl;
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
