@@ -1,6 +1,9 @@
 { pkgs, ... }:
 
 {
+  # Re-enable udisks2 for the desktop environment (disabled globally for headless ARM hosts).
+  services.udisks2.enable = true;
+
   # Niri - Scrollable-tiling Wayland compositor
   programs.niri.enable = true;
 
