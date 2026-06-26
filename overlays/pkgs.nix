@@ -101,6 +101,45 @@ PYEOF
     else prev.gobject-introspection-unwrapped;
 
 
+  # playerctl: gnome.generate_gir() runs unconditionally (not gated by
+  # gtk-doc). g-ir-scanner resolves libplayerctl.so via ldd, but in the Nix
+  # aarch64 sandbox the patched dynamic linker doesn't honour LD_LIBRARY_PATH
+  # for the dump binary, so ldd returns "not found". Remove the generate_gir
+  # block from meson.build — playerctl works without the GIR typelib.
+  playerctl = if final.stdenv.hostPlatform.isAarch64
+    then prev.playerctl.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+import pathlib, re
+meson = pathlib.Path("playerctl/meson.build")
+text = meson.read_text()
+marker = "playerctl_gir = gnome.generate_gir("
+out = []
+i = 0
+while i < len(text):
+    if text[i:i+len(marker)] == marker:
+        depth = 1
+        i += len(marker)
+        while i < len(text) and depth > 0:
+            if text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+            i += 1
+        if i < len(text) and text[i] == "\n":
+            i += 1
+    else:
+        out.append(text[i])
+        i += 1
+result = "".join(out)
+result = re.sub("[^\n]*playerctl_gir[^\n]*\n", "", result)
+meson.write_text(result)
+print("playerctl/meson.build: generate_gir removed")
+PYEOF
+      '';
+    })
+    else prev.playerctl;
+
   # gobject-introspection: most packages use gobject-introspection (not
   # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
   # derivations even though they share the same source — overlaying one does
