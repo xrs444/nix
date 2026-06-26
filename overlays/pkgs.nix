@@ -49,6 +49,27 @@ except ImportError:
     _s.modules["distutils"] = _il.import_module("setuptools._distutils")
     import distutils
     del _s, _il'
+
+        # shlibs.py: _resolve_non_libtool runs ldd on a dump binary to find shared
+        # library paths. Build-dir libraries (e.g. gobject-introspection test libs
+        # like libutility.so) have no RPATH, so ldd returns "not found", leaving
+        # patterns unmatched and triggering SystemExit. Fix: pass options.library_paths
+        # (the -L flags) as LD_LIBRARY_PATH to the ldd subprocess so ldd can find them.
+        python3 -u << PYEOF
+with open('giscanner/shlibs.py') as f:
+    content = f.read()
+old = "        output = subprocess.check_output(args)\n"
+new = (
+    "        ldd_env = os.environ.copy()\n"
+    "        _lp = ':'.join(p for p in getattr(options, 'library_paths', []) if p)\n"
+    "        if _lp:\n"
+    "            ldd_env['LD_LIBRARY_PATH'] = _lp + ':' + ldd_env.get('LD_LIBRARY_PATH', _lp)\n"
+    "        output = subprocess.check_output(args, env=ldd_env)\n"
+)
+assert old in content, "shlibs.py patch target not found"
+with open('giscanner/shlibs.py', 'w') as f:
+    f.write(content.replace(old, new, 1))
+PYEOF
       '';
       # SETUPTOOLS_USE_DISTUTILS must be set BEFORE Python starts so that
       # distutils-precedence.pth (processed at interpreter startup) activates
