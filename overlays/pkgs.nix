@@ -101,6 +101,16 @@ PYEOF
     else prev.gobject-introspection-unwrapped;
 
 
+  # playerctl: GIR generation fails on aarch64 — g-ir-scanner can't resolve
+  # libplayerctl.so at build time. Disable gtk-doc (which triggers g-ir-scanner)
+  # on aarch64 only; the binary and libplayerctl.so are unaffected.
+  playerctl = if final.stdenv.hostPlatform.isAarch64
+    then prev.playerctl.overrideAttrs (old: {
+      mesonFlags = (builtins.filter (f: f != "-Dgtk-doc=true") (old.mesonFlags or []))
+                ++ [ "-Dgtk-doc=false" ];
+    })
+    else prev.playerctl;
+
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
   # of ['--list']. 1 test out of 18154 fails; package itself is fine.
