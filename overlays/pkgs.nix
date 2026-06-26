@@ -101,24 +101,44 @@ PYEOF
     else prev.gobject-introspection-unwrapped;
 
 
-  # playerctl / libcloudproviders: GIR generation fails on aarch64 — the
-  # unpatched g-ir-scanner (from gobject-introspection, not
-  # gobject-introspection-unwrapped) can't resolve build-dir shared libs via
-  # ldd. Disable the doc/GIR phase on aarch64 only; binaries and .so files are
-  # unaffected.
+  # gobject-introspection: most packages use gobject-introspection (not
+  # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
+  # derivations even though they share the same source — overlaying one does
+  # not propagate to the other. Apply the same shlibs.py LD_LIBRARY_PATH fix
+  # here so that packages like libcloudproviders, accountsservice, and malcontent
+  # can resolve build-dir .so files during GIR generation on aarch64.
+  gobject-introspection = if final.stdenv.hostPlatform.isAarch64
+    then prev.gobject-introspection.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+with open('giscanner/shlibs.py') as f:
+    content = f.read()
+old = "        output = subprocess.check_output(args)\n"
+new = (
+    "        ldd_env = os.environ.copy()\n"
+    "        _lp = ':'.join(p for p in getattr(options, 'library_paths', []) if p)\n"
+    "        if _lp:\n"
+    "            ldd_env['LD_LIBRARY_PATH'] = _lp + ':' + ldd_env.get('LD_LIBRARY_PATH', _lp)\n"
+    "        output = subprocess.check_output(args, env=ldd_env)\n"
+)
+assert old in content, "shlibs.py patch target not found in gobject-introspection"
+with open('giscanner/shlibs.py', 'w') as f:
+    f.write(content.replace(old, new, 1))
+PYEOF
+      '';
+    })
+    else prev.gobject-introspection;
+
+  # playerctl: GIR generation was failing on aarch64 before the
+  # gobject-introspection shlibs.py fix above. Keep gtk-doc disabled as a
+  # belt-and-suspenders measure — playerctl's GIR output is not consumed by
+  # anything in the xlt1-t-vnixos closure.
   playerctl = if final.stdenv.hostPlatform.isAarch64
     then prev.playerctl.overrideAttrs (old: {
       mesonFlags = (builtins.filter (f: f != "-Dgtk-doc=true") (old.mesonFlags or []))
                 ++ [ "-Dgtk-doc=false" ];
     })
     else prev.playerctl;
-
-  libcloudproviders = if final.stdenv.hostPlatform.isAarch64
-    then prev.libcloudproviders.overrideAttrs (old: {
-      mesonFlags = (builtins.filter (f: f != "-Ddocumentation=true") (old.mesonFlags or []))
-                ++ [ "-Ddocumentation=false" ];
-    })
-    else prev.libcloudproviders;
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
