@@ -8,7 +8,7 @@ lib.mkIf pkgs.stdenv.isLinux {
       obs-pipewire-audio-capture
       advanced-scene-switcher
       obs-vkcapture
-      (obs-backgroundremoval.override { cudaSupport = true; })
+      obs-backgroundremoval
       obs-composite-blur
       obs-gstreamer
       obs-retro-effects
