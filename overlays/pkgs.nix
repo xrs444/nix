@@ -169,6 +169,13 @@ PYEOF
     else prev.gobject-introspection;
 
 
+  # libical: GLib-based tests import the 'gi' Python module (pygobject3), but
+  # pygobject3 is not available in the test sandbox on aarch64. The library
+  # itself builds correctly; only the meson test suite fails.
+  libical = if final.stdenv.hostPlatform.isAarch64
+    then prev.libical.overrideAttrs (_: { doCheck = false; })
+    else prev.libical;
+
   # libsecret: test-collection SIGABRTs on aarch64 (exit 134). The library
   # and its GIR output build correctly; only the meson test suite crashes.
   libsecret = if final.stdenv.hostPlatform.isAarch64
