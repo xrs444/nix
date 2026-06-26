@@ -147,6 +147,15 @@ PYEOF
   pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
     (_: pyprev: {
       django = pyprev.django.overridePythonAttrs (_: { doInstallCheck = false; });
+
+      # pygobject3: builds gobject-introspection test subprojects (libutility,
+      # libwarnlib) and generates GIR for them during the build phase. The GIR
+      # generation fails on aarch64 because the test .so files have no RPATH
+      # and ldd can't resolve them. nixpkgs wires doCheck → meson -Dtests=
+      # which gates the test subproject build entirely.
+      pygobject3 = if final.stdenv.hostPlatform.isAarch64
+        then pyprev.pygobject3.overridePythonAttrs (_: { doCheck = false; })
+        else pyprev.pygobject3;
     })
   ];
 
