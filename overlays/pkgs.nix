@@ -214,6 +214,12 @@ PYEOF
     else prev.gobject-introspection;
 
 
+  # zram-generator: Rust test binary SIGABRTs under QEMU aarch64 emulation
+  # when the native ARM builders are unavailable. The generator itself is fine.
+  zram-generator = if final.stdenv.hostPlatform.isAarch64
+    then prev.zram-generator.overrideAttrs (_: { doCheck = false; })
+    else prev.zram-generator;
+
   # libical: GLib-based tests import the 'gi' Python module (pygobject3), but
   # pygobject3 is not available in the test sandbox on aarch64. The library
   # itself builds correctly; only the meson test suite fails.
@@ -236,12 +242,14 @@ PYEOF
       django = pyprev.django.overridePythonAttrs (_: { doInstallCheck = false; });
 
       # pygobject3: builds gobject-introspection test subprojects (libutility,
-      # libwarnlib) and generates GIR for them during the build phase. The GIR
-      # generation fails on aarch64 because the test .so files have no RPATH
-      # and ldd can't resolve them. nixpkgs wires doCheck → meson -Dtests=
-      # which gates the test subproject build entirely.
+      # libwarnlib) and generates GIR for them during the BUILD phase. doCheck
+      # alone only skips meson test; the subprojects are compiled in buildPhase.
+      # Explicitly pass -Dtests=false so meson skips the subproject entirely.
       pygobject3 = if final.stdenv.hostPlatform.isAarch64
-        then pyprev.pygobject3.overridePythonAttrs (_: { doCheck = false; })
+        then pyprev.pygobject3.overridePythonAttrs (old: {
+          doCheck = false;
+          mesonFlags = (old.mesonFlags or []) ++ [ "-Dtests=false" ];
+        })
         else pyprev.pygobject3;
     })
   ];
