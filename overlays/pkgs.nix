@@ -61,7 +61,8 @@ with open('giscanner/shlibs.py') as f:
 old = "        output = subprocess.check_output(args)\n"
 new = (
     "        ldd_env = os.environ.copy()\n"
-    "        _lp = ':'.join(p for p in getattr(options, 'library_paths', []) if p)\n"
+    "        import sys as _sys\n"
+    "        _lp = ':'.join(a[2:] for a in _sys.argv if a.startswith('-L') and len(a) > 2)\n"
     "        if _lp:\n"
     "            ldd_env['LD_LIBRARY_PATH'] = _lp + ':' + ldd_env.get('LD_LIBRARY_PATH', _lp)\n"
     "        output = subprocess.check_output(args, env=ldd_env)\n"
@@ -140,6 +141,49 @@ PYEOF
     })
     else prev.playerctl;
 
+  # libnotify: same GIR resolution failure as playerctl — ldd can't find
+  # libnotify.so in the build sandbox even with LD_LIBRARY_PATH. Remove the
+  # generate_gir call; the Notify GIR typelib is documentation, not required
+  # for the notify-send binary or libnotify.so to function.
+  libnotify = if final.stdenv.hostPlatform.isAarch64
+    then prev.libnotify.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+import pathlib, re
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    if "generate_gir" not in text:
+        continue
+    marker = "gnome.generate_gir("
+    out = []
+    i = 0
+    while i < len(text):
+        if text[i:i+len(marker)] == marker:
+            start = i
+            while start > 0 and text[start-1] != "\n":
+                start -= 1
+            depth = 1
+            i += len(marker)
+            while i < len(text) and depth > 0:
+                if text[i] == "(":
+                    depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                i += 1
+            if i < len(text) and text[i] == "\n":
+                i += 1
+        else:
+            out.append(text[i])
+            i += 1
+    result = "".join(out)
+    result = re.sub("[^\n]*_gir\[?[^\n]*\n", "", result)
+    meson_file.write_text(result)
+    print("Patched: " + str(meson_file))
+PYEOF
+      '';
+    })
+    else prev.libnotify;
+
   # gobject-introspection: most packages use gobject-introspection (not
   # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
   # derivations even though they share the same source — overlaying one does
@@ -155,7 +199,8 @@ with open('giscanner/shlibs.py') as f:
 old = "        output = subprocess.check_output(args)\n"
 new = (
     "        ldd_env = os.environ.copy()\n"
-    "        _lp = ':'.join(p for p in getattr(options, 'library_paths', []) if p)\n"
+    "        import sys as _sys\n"
+    "        _lp = ':'.join(a[2:] for a in _sys.argv if a.startswith('-L') and len(a) > 2)\n"
     "        if _lp:\n"
     "            ldd_env['LD_LIBRARY_PATH'] = _lp + ':' + ldd_env.get('LD_LIBRARY_PATH', _lp)\n"
     "        output = subprocess.check_output(args, env=ldd_env)\n"
