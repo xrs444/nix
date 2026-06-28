@@ -11,7 +11,9 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt";
+      ExecStart = pkgs.writeShellScript "wowlan-enable" ''
+        ${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt || true
+      '';
     };
   };
 
@@ -31,7 +33,9 @@
     ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt";
+      ExecStart = pkgs.writeShellScript "wowlan-pre-sleep" ''
+        ${pkgs.iw}/bin/iw dev wlp6s0 set wowlan enable magic-pkt || true
+      '';
     };
   };
 
