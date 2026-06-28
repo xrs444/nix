@@ -112,30 +112,30 @@ PYEOF
       postPatch = (old.postPatch or "") + ''
         python3 -u << PYEOF
 import pathlib, re
-meson = pathlib.Path("playerctl/meson.build")
-text = meson.read_text()
-marker = "playerctl_gir = gnome.generate_gir("
-out = []
-i = 0
-while i < len(text):
-    if text[i:i+len(marker)] == marker:
-        depth = 1
-        i += len(marker)
-        while i < len(text) and depth > 0:
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    if "generate_gir" not in text:
+        continue
+    while "gnome.generate_gir(" in text:
+        pos = text.find("gnome.generate_gir(")
+        line_start = text.rfind("\n", 0, pos) + 1
+        depth = 0
+        i = pos
+        while i < len(text):
             if text[i] == "(":
                 depth += 1
             elif text[i] == ")":
                 depth -= 1
+                if depth == 0:
+                    i += 1
+                    break
             i += 1
         if i < len(text) and text[i] == "\n":
             i += 1
-    else:
-        out.append(text[i])
-        i += 1
-result = "".join(out)
-result = re.sub("[^\n]*playerctl_gir[^\n]*\n", "", result)
-meson.write_text(result)
-print("playerctl/meson.build: generate_gir removed")
+        text = text[:line_start] + text[i:]
+    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    meson_file.write_text(text)
+    print("Removed generate_gir from: " + str(meson_file))
 PYEOF
       '';
     })
@@ -154,31 +154,26 @@ for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
     if "generate_gir" not in text:
         continue
-    marker = "gnome.generate_gir("
-    out = []
-    i = 0
-    while i < len(text):
-        if text[i:i+len(marker)] == marker:
-            start = i
-            while start > 0 and text[start-1] != "\n":
-                start -= 1
-            depth = 1
-            i += len(marker)
-            while i < len(text) and depth > 0:
-                if text[i] == "(":
-                    depth += 1
-                elif text[i] == ")":
-                    depth -= 1
-                i += 1
-            if i < len(text) and text[i] == "\n":
-                i += 1
-        else:
-            out.append(text[i])
+    while "gnome.generate_gir(" in text:
+        pos = text.find("gnome.generate_gir(")
+        line_start = text.rfind("\n", 0, pos) + 1
+        depth = 0
+        i = pos
+        while i < len(text):
+            if text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    i += 1
+                    break
             i += 1
-    result = "".join(out)
-    result = re.sub("[^\n]*_gir\[?[^\n]*\n", "", result)
-    meson_file.write_text(result)
-    print("Patched: " + str(meson_file))
+        if i < len(text) and text[i] == "\n":
+            i += 1
+        text = text[:line_start] + text[i:]
+    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    meson_file.write_text(text)
+    print("Removed generate_gir from: " + str(meson_file))
 PYEOF
       '';
     })
