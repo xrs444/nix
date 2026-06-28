@@ -114,28 +114,30 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text:
+    if "generate_gir" not in text and "generate_vapi" not in text:
         continue
-    while "gnome.generate_gir(" in text:
-        pos = text.find("gnome.generate_gir(")
-        line_start = text.rfind("\n", 0, pos) + 1
-        depth = 0
-        i = pos
-        while i < len(text):
-            if text[i] == "(":
-                depth += 1
-            elif text[i] == ")":
-                depth -= 1
-                if depth == 0:
-                    i += 1
-                    break
-            i += 1
-        if i < len(text) and text[i] == "\n":
-            i += 1
-        text = text[:line_start] + text[i:]
+    for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        while call in text:
+            pos = text.find(call)
+            line_start = text.rfind("\n", 0, pos) + 1
+            depth = 0
+            i = pos
+            while i < len(text):
+                if text[i] == "(":
+                    depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        i += 1
+                        break
+                i += 1
+            if i < len(text) and text[i] == "\n":
+                i += 1
+            text = text[:line_start] + text[i:]
     text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
     meson_file.write_text(text)
-    print("Removed generate_gir from: " + str(meson_file))
+    print("Removed generate_gir/vapi from: " + str(meson_file))
 PYEOF
       '';
     })
@@ -152,28 +154,30 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text:
+    if "generate_gir" not in text and "generate_vapi" not in text:
         continue
-    while "gnome.generate_gir(" in text:
-        pos = text.find("gnome.generate_gir(")
-        line_start = text.rfind("\n", 0, pos) + 1
-        depth = 0
-        i = pos
-        while i < len(text):
-            if text[i] == "(":
-                depth += 1
-            elif text[i] == ")":
-                depth -= 1
-                if depth == 0:
-                    i += 1
-                    break
-            i += 1
-        if i < len(text) and text[i] == "\n":
-            i += 1
-        text = text[:line_start] + text[i:]
+    for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        while call in text:
+            pos = text.find(call)
+            line_start = text.rfind("\n", 0, pos) + 1
+            depth = 0
+            i = pos
+            while i < len(text):
+                if text[i] == "(":
+                    depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        i += 1
+                        break
+                i += 1
+            if i < len(text) and text[i] == "\n":
+                i += 1
+            text = text[:line_start] + text[i:]
     text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
     meson_file.write_text(text)
-    print("Removed generate_gir from: " + str(meson_file))
+    print("Removed generate_gir/vapi from: " + str(meson_file))
 PYEOF
       '';
     })
@@ -189,28 +193,30 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text:
+    if "generate_gir" not in text and "generate_vapi" not in text:
         continue
-    while "gnome.generate_gir(" in text:
-        pos = text.find("gnome.generate_gir(")
-        line_start = text.rfind("\n", 0, pos) + 1
-        depth = 0
-        i = pos
-        while i < len(text):
-            if text[i] == "(":
-                depth += 1
-            elif text[i] == ")":
-                depth -= 1
-                if depth == 0:
-                    i += 1
-                    break
-            i += 1
-        if i < len(text) and text[i] == "\n":
-            i += 1
-        text = text[:line_start] + text[i:]
+    for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        while call in text:
+            pos = text.find(call)
+            line_start = text.rfind("\n", 0, pos) + 1
+            depth = 0
+            i = pos
+            while i < len(text):
+                if text[i] == "(":
+                    depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        i += 1
+                        break
+                i += 1
+            if i < len(text) and text[i] == "\n":
+                i += 1
+            text = text[:line_start] + text[i:]
     text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
     meson_file.write_text(text)
-    print("Removed generate_gir from: " + str(meson_file))
+    print("Removed generate_gir/vapi from: " + str(meson_file))
 PYEOF
       '';
     })
