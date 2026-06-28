@@ -179,6 +179,43 @@ PYEOF
     })
     else prev.libnotify;
 
+  # libcloudproviders: same GIR resolution failure — ldd can't find
+  # libcloudproviders.so in the build sandbox. Remove generate_gir from
+  # src/meson.build; the library itself is unaffected.
+  libcloudproviders = if final.stdenv.hostPlatform.isAarch64
+    then prev.libcloudproviders.overrideAttrs (old: {
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+import pathlib, re
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    if "generate_gir" not in text:
+        continue
+    while "gnome.generate_gir(" in text:
+        pos = text.find("gnome.generate_gir(")
+        line_start = text.rfind("\n", 0, pos) + 1
+        depth = 0
+        i = pos
+        while i < len(text):
+            if text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    i += 1
+                    break
+            i += 1
+        if i < len(text) and text[i] == "\n":
+            i += 1
+        text = text[:line_start] + text[i:]
+    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
+    meson_file.write_text(text)
+    print("Removed generate_gir from: " + str(meson_file))
+PYEOF
+      '';
+    })
+    else prev.libcloudproviders;
+
   # gobject-introspection: most packages use gobject-introspection (not
   # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
   # derivations even though they share the same source — overlaying one does
