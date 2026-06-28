@@ -48,26 +48,33 @@
         spawn-at-startup "noctalia-shell"
 
         // Monitor layout (xdt1-t). Positions are in logical pixels.
-        // DP-1: 1600x1200 | DP-5: 4K portrait (3840x2160 → rotated: 2160w×3840h) | DP-6: 4K landscape
+        // DP-1: 1600x1200 scale 1.0 → logical 1600×1200
+        // DP-5: 4K portrait (2160×3840 after 270° rotation) scale 1.5 → logical 1440×2560
+        // DP-6: 4K landscape scale 1.5 → logical 2560×1440
+        // HDMI-A-2: 1920×1080 scale 1.0 → logical 1920×1080
         output "DP-1" {
-            // Far left — 1600x1200 landscape
+            // Far left — 1600×1200, top edge aligns with DP-5
             position x=0 y=0
             transform "normal"
         }
         output "DP-5" {
-            // Centre — 4K portrait, 90° anticlockwise; x = DP-1 width (1600)
+            // Centre — 4K portrait; x = DP-1 logical width (1600)
             position x=1600 y=0
             transform "270"
+            scale 1.5
         }
         output "DP-6" {
-            // Far right — 4K landscape; x = 1600 + DP-5 logical width (2160px / scale 1.5 = 1440) = 3040
-            position x=3040 y=0
+            // Far right — 4K landscape, centred on DP-5
+            // x = 1600 + DP-5 logical width (2160/1.5 = 1440) = 3040
+            // y = (DP-5 logical height − DP-6 logical height) / 2 = (2560 − 1440) / 2 = 560
+            position x=3040 y=560
             transform "normal"
+            scale 1.5
         }
         output "HDMI-A-2" {
-            // OBS output — below DP-1; on/off state managed per mode via active-mode.kdl
-            // y = DP-1 height (1200)
-            position x=0 y=1200
+            // OBS output — below DP-1, bottom edge aligns with DP-5
+            // y = DP-5 logical height − HDMI-A-2 logical height = 2560 − 1080 = 1480
+            position x=0 y=1480
             transform "normal"
         }
 
