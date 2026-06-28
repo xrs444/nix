@@ -259,22 +259,15 @@
           fastConnection = false;
           profiles.system = {
             user = "root";
-            # Hosts using generic-extlinux-compatible need NIXOS_INSTALL_BOOTLOADER=1 set so
-            # the bootloader installer updates /boot/extlinux/extlinux.conf on each deploy.
-            # deploy-rs activate.nixos omits this env var, causing reboots to load the old
-            # generation. Use activate.custom to inject it for extlinux hosts.
+            # activate.nixos calls switch-to-configuration switch which handles
+            # bootloader updates (including extlinux) in NixOS 25.05+. The old
+            # activate.custom path required PROFILE_PATH to be injected by the
+            # deploy runner, which broke aarch64 deployments.
             path =
               let
                 deployLib = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system};
               in
-              if cfg.config.boot.loader.generic-extlinux-compatible.enable or false
-              then
-                deployLib.activate.custom cfg.config.system.build.toplevel ''
-                  nix-env --profile /nix/var/nix/profiles/system --set "$PROFILE_PATH"
-                  NIXOS_INSTALL_BOOTLOADER=1 "$PROFILE_PATH"/bin/switch-to-configuration switch
-                ''
-              else
-                deployLib.activate.nixos cfg;
+              deployLib.activate.nixos cfg;
             magicRollback = true;
             confirmTimeout = 60;
           };
