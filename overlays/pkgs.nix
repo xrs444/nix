@@ -215,11 +215,16 @@ PYEOF
     then prev.zram-generator.overrideAttrs (_: { doCheck = false; })
     else prev.zram-generator;
 
-  # libical: GLib-based tests import the 'gi' Python module (pygobject3), but
-  # pygobject3 is not available in the test sandbox on aarch64. The library
-  # itself builds correctly; only the meson test suite fails.
+  # libical: GLib-based Python tests import 'gi' (pygobject3), which is not
+  # available in the cmake test sandbox on aarch64. The tests run in the
+  # install phase via cmake, bypassing doCheck=false. Disable GObject
+  # introspection on aarch64 to skip the GLib binding tests entirely; the
+  # core libical C library is unaffected.
   libical = if final.stdenv.hostPlatform.isAarch64
-    then prev.libical.overrideAttrs (_: { doCheck = false; })
+    then prev.libical.overrideAttrs (old: {
+      doCheck = false;
+      cmakeFlags = (old.cmakeFlags or []) ++ [ "-DGOBJECT_INTROSPECTION=False" "-DICAL_GLIB_VAPI=False" ];
+    })
     else prev.libical;
 
   # libsecret: test-collection SIGABRTs on aarch64 (exit 134). The library
