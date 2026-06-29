@@ -1,11 +1,12 @@
 # Summary: NixOS ARM host configuration for vocibuild — Oracle Cloud A1 Flex (aarch64) native Nix builder.
 # Reachable via Tailscale MagicDNS as 'vocibuild'. No .lan DNS; all management via Tailscale.
-# Bootstrapping sequence:
+# Bootstrapping sequence (one-time, only after disk wipe / nixos-anywhere reinstall):
 #   1. nixos-anywhere --flake .#vocibuild --target-host opc@<oracle-public-ip> --sudo
+#      NOTE: Oracle Security List must allow TCP 22 from your IP for this step.
 #   2. SSH in via public IP, run: tailscale up --authkey=<one-time-key>
+#      After this step, manage exclusively via Tailscale. Firewall blocks public SSH.
 #   3. Get age key: nix-shell -p ssh-to-age --run 'cat /etc/ssh/ssh_host_ed25519_key.pub | ssh-to-age'
-#   4. Add age key to .sops.yaml, rekey secrets, create secrets/vocibuild-tailscale.yaml
-#   5. Redeploy via CI to pick up SOPS Tailscale auth key
+#   4. Add age key to .sops.yaml, rekey secrets, commit+push — CI deploys the rest.
 {
   hostname,
   lib,
@@ -43,31 +44,19 @@
   # Passwordless sudo — remote management without interactive password prompt.
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  # SOPS Tailscale pre-auth key — populated post-bootstrap (see bootstrapping sequence above).
-  # Uncomment after adding vocibuild age key to .sops.yaml and creating the secret file.
-  # sops.secrets.tailscale_authkey = {
-  #   sopsFile = ../../../secrets/vocibuild-tailscale.yaml;
-  # };
-  # services.tailscale.authKeyFile = "/run/secrets/tailscale_authkey";
-
-  # Tailscale enabled without authKeyFile for initial install.
-  # First-boot connection is manual: ssh in via Oracle public IP, run tailscale up --authkey=...
+  # Tailscale: no authKeyFile — pre-auth keys have a 90-day max lifetime, making rotation painful.
+  # Already-enrolled nodes reconnect automatically via persistent state in /var/lib/tailscale.
+  # First-boot only: ssh in via Oracle public IP, run: tailscale up --authkey=<one-time-key>
   services.tailscale.enable = true;
 
-  # Oracle Cloud Security Lists + firewall: allow SSH from everywhere during bootstrap.
-  # After Tailscale is up, consider tightening to tailscale0 only.
-  networking.firewall.allowedTCPPorts = [ 22 ];
-
-  services.fail2ban = {
-    enable = true;
-    maxretry = 5;
-    bantime = "10m";
-    bantime-increment.enable = true;
-  };
-
-  # Open monitoring exporter ports on the Tailscale interface only.
-  # node_exporter (9100) and alloy (9080) scraped by Prometheus on xsvr1 via Tailscale.
+  # SSH + monitoring only via Tailscale.
+  # Oracle serial console (accessible from Oracle Cloud web UI) handles emergency access
+  # if Tailscale is unreachable. No public SSH — bootstrap is the only exception and is
+  # done via Oracle public IP before Tailscale is enrolled.
+  # Override the shared openssh module which unconditionally sets openFirewall = true.
+  services.openssh.openFirewall = lib.mkForce false;
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    22   # SSH
     9080 # alloy
     9100 # node_exporter
   ];

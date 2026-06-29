@@ -226,9 +226,8 @@ in
       User builder
       IdentityFile /root/.ssh/id_builder
 
-    # VM/cloud hosts — skip strict key checking since they're rebuilt frequently
-    # or (vocibuild) the key hasn't been captured yet into knownHosts.
-    Host xlt1-t-vnixos.lan xlt1-t-vnixos vocibuild.corgi-squeaker.ts.net vocibuild
+    # VM hosts — skip strict key checking since they're rebuilt frequently.
+    Host xlt1-t-vnixos.lan xlt1-t-vnixos
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
   '';
@@ -252,11 +251,9 @@ in
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
     };
-    # vocibuild is on Oracle Cloud, reachable via Tailscale MagicDNS.
-    # After first boot: ssh-keyscan -t ed25519 vocibuild  →  paste result here.
-    # "vocibuild" = {
-    #   hostNames = [ "vocibuild" ];
-    #   publicKey = "ssh-ed25519 AAAA...";
-    # };
+    "vocibuild.corgi-squeaker.ts.net" = {
+      hostNames = [ "vocibuild.corgi-squeaker.ts.net" "vocibuild" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMIFFm/zZIwJTu0f8Eny30jKsp93S6nngemziFi0mOsR";
+    };
   };
 }
