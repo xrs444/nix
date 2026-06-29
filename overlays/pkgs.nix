@@ -114,9 +114,9 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text and "generate_vapi" not in text:
-        continue
     for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        if call not in text:
+            continue
         while call in text:
             pos = text.find(call)
             line_start = text.rfind("\n", 0, pos) + 1
@@ -134,10 +134,20 @@ for meson_file in pathlib.Path(".").rglob("meson.build"):
             if i < len(text) and text[i] == "\n":
                 i += 1
             text = text[:line_start] + text[i:]
-    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
-    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
-    meson_file.write_text(text)
-    print("Removed generate_gir/vapi from: " + str(meson_file))
+        meson_file.write_text(text)
+        print("Removed " + call.rstrip("(") + " from: " + str(meson_file))
+# Second pass: remove any remaining _gir/_vapi variable references from ALL meson files
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    changed = False
+    for pat in ["_gir", "_vapi"]:
+        new = re.sub("[^\n]*" + pat + "[^\n]*\n", "", text)
+        if new != text:
+            text = new
+            changed = True
+    if changed:
+        meson_file.write_text(text)
+        print("Cleaned " + pat + " refs from: " + str(meson_file))
 PYEOF
       '';
     })
@@ -154,9 +164,9 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text and "generate_vapi" not in text:
-        continue
     for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        if call not in text:
+            continue
         while call in text:
             pos = text.find(call)
             line_start = text.rfind("\n", 0, pos) + 1
@@ -174,10 +184,20 @@ for meson_file in pathlib.Path(".").rglob("meson.build"):
             if i < len(text) and text[i] == "\n":
                 i += 1
             text = text[:line_start] + text[i:]
-    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
-    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
-    meson_file.write_text(text)
-    print("Removed generate_gir/vapi from: " + str(meson_file))
+        meson_file.write_text(text)
+        print("Removed " + call.rstrip("(") + " from: " + str(meson_file))
+# Second pass: remove any remaining _gir/_vapi variable references from ALL meson files
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    changed = False
+    for pat in ["_gir", "_vapi"]:
+        new = re.sub("[^\n]*" + pat + "[^\n]*\n", "", text)
+        if new != text:
+            text = new
+            changed = True
+    if changed:
+        meson_file.write_text(text)
+        print("Cleaned " + pat + " refs from: " + str(meson_file))
 PYEOF
       '';
     })
@@ -193,9 +213,9 @@ PYEOF
 import pathlib, re
 for meson_file in pathlib.Path(".").rglob("meson.build"):
     text = meson_file.read_text()
-    if "generate_gir" not in text and "generate_vapi" not in text:
-        continue
     for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        if call not in text:
+            continue
         while call in text:
             pos = text.find(call)
             line_start = text.rfind("\n", 0, pos) + 1
@@ -213,10 +233,20 @@ for meson_file in pathlib.Path(".").rglob("meson.build"):
             if i < len(text) and text[i] == "\n":
                 i += 1
             text = text[:line_start] + text[i:]
-    text = re.sub("[^\n]*_gir[^\n]*\n", "", text)
-    text = re.sub("[^\n]*_vapi[^\n]*\n", "", text)
-    meson_file.write_text(text)
-    print("Removed generate_gir/vapi from: " + str(meson_file))
+        meson_file.write_text(text)
+        print("Removed " + call.rstrip("(") + " from: " + str(meson_file))
+# Second pass: remove any remaining _gir/_vapi variable references from ALL meson files
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    changed = False
+    for pat in ["_gir", "_vapi"]:
+        new = re.sub("[^\n]*" + pat + "[^\n]*\n", "", text)
+        if new != text:
+            text = new
+            changed = True
+    if changed:
+        meson_file.write_text(text)
+        print("Cleaned " + pat + " refs from: " + str(meson_file))
 PYEOF
       '';
     })
