@@ -64,5 +64,8 @@
     # Other utilities
     pipx
     virtualenv
+
+    # Active Directory management (Samba AD / Windows AD)
+    openrsat
   ];
 }

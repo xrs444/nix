@@ -131,6 +131,9 @@ in
 
       # RGB lighting control
       openrgb
+
+      # Active Directory management (Samba AD / Windows AD)
+      openrsat
     ];
 
   # Enable polkit for privilege escalation prompts

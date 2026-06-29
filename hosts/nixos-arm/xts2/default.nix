@@ -25,5 +25,8 @@
     };
   };
   networking.firewall.allowedUDPPorts = [ 53 ];
-  networking.firewall.allowedTCPPorts = [ 53 ];
+  networking.firewall.allowedTCPPorts = [
+    22  # SSH — local LAN access
+    53  # DNS
+  ];
 }

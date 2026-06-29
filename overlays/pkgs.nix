@@ -353,4 +353,76 @@ PYEOF
     }
   ).claude-code;
 
+  # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
+  # Not in nixpkgs; packaged from GitHub pre-built release binaries.
+  # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.
+  # Linux: bare x86_64 ELF; GTK2 GUI via autoPatchelfHook.
+  openrsat =
+    if final.stdenv.isDarwin then
+      prev.stdenv.mkDerivation rec {
+        pname = "openrsat";
+        version = "0.4.386";
+        src = prev.fetchurl {
+          url = "https://github.com/tranquilit/OpenRSAT/releases/download/v${version}/OpenRSAT-darwin-arm.dmg";
+          sha256 = "1xsdlc5vscsphmhw8nf2i391s939c9hk9s5bwalksck05sa92q6h";
+        };
+        sourceRoot = ".";
+        unpackPhase = ''
+          MNTDIR=$(mktemp -d /tmp/openrsat-XXXXXXXX)
+          /usr/bin/hdiutil attach -quiet -nobrowse -mountpoint "$MNTDIR" "$src"
+          cp -r "$MNTDIR/OpenRSAT.app" .
+          /usr/bin/hdiutil detach -quiet "$MNTDIR"
+          rmdir "$MNTDIR"
+        '';
+        installPhase = ''
+          mkdir -p $out/Applications $out/bin
+          cp -r OpenRSAT.app $out/Applications/
+          ln -s $out/Applications/OpenRSAT.app/Contents/MacOS/OpenRSAT $out/bin/openrsat
+        '';
+        meta = {
+          description = "Open source RSAT alternative for managing Active Directory";
+          homepage = "https://github.com/tranquilit/OpenRSAT";
+          platforms = prev.lib.platforms.darwin;
+        };
+      }
+    else
+      prev.stdenv.mkDerivation rec {
+        pname = "openrsat";
+        version = "0.4.386";
+        src = prev.fetchurl {
+          url = "https://github.com/tranquilit/OpenRSAT/releases/download/v${version}/OpenRSAT-linux-x64";
+          sha256 = "03qhl82yqddm9bbkbn2gf8ygz9fkqh6gnq8qmbhq0w15siz19v95";
+        };
+        nativeBuildInputs = [ prev.autoPatchelfHook ];
+        buildInputs = with prev; [
+          gtk2
+          glib
+          pango
+          cairo
+          atk
+          gdk-pixbuf
+          libX11
+          zlib
+        ];
+        dontUnpack = true;
+        installPhase = ''
+          install -Dm755 $src $out/bin/openrsat
+          install -dm755 $out/share/applications
+          cat > $out/share/applications/openrsat.desktop << DESKTOP
+[Desktop Entry]
+Name=OpenRSAT
+Comment=Open source RSAT alternative for managing Active Directory
+Exec=openrsat
+Icon=openrsat
+Type=Application
+Categories=Network;System;Administration;
+DESKTOP
+        '';
+        meta = {
+          description = "Open source RSAT alternative for managing Active Directory";
+          homepage = "https://github.com/tranquilit/OpenRSAT";
+          platforms = prev.lib.platforms.linux;
+        };
+      };
+
 })
