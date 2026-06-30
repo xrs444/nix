@@ -268,14 +268,14 @@ PYEOF
     })
     else prev.json-glib;
 
-  # geocode-glib: GIR generation fails on aarch64 because it includes Json-1.0.gir
+  # geocode-glib_2: GIR generation fails on aarch64 because it includes Json-1.0.gir
   # (from json-glib), which isn't generated when json-glib has introspection disabled.
-  # The geocode-glib C library is fully functional without the typelib.
-  geocode-glib = if final.stdenv.hostPlatform.isAarch64
-    then prev.geocode-glib.overrideAttrs (old: {
+  # nixpkgs attribute is geocode-glib_2 (underscore-2), not geocode-glib.
+  geocode-glib_2 = if final.stdenv.hostPlatform.isAarch64
+    then prev.geocode-glib_2.overrideAttrs (old: {
       mesonFlags = (old.mesonFlags or []) ++ [ "-Denable-introspection=false" "-Denable-gtk-doc=false" ];
     })
-    else prev.geocode-glib;
+    else prev.geocode-glib_2;
 
   # libgweather: GIR generation includes GWeather-4.0.gir which in turn needs
   # GeocodeGlib-2.0.gir and Json-1.0.gir — both disabled above. Skip GIR to
