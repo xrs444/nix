@@ -276,6 +276,8 @@ PYEOF
   # nixpkgs attribute is geocode-glib_2 (underscore-2), not geocode-glib.
   geocode-glib_2 = if final.stdenv.hostPlatform.isAarch64
     then prev.geocode-glib_2.overrideAttrs (old: {
+      # Remove devdoc from outputs: with gtk-doc disabled nothing installs there.
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
       mesonFlags = (old.mesonFlags or []) ++ [ "-Denable-introspection=false" "-Denable-gtk-doc=false" ];
     })
     else prev.geocode-glib_2;

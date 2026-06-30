@@ -144,7 +144,6 @@
           roles = [
             "letsencrypt-host"
             "monitoring-client"
-            "auto-upgrade"
           ];
         };
         xdt1-t = {
