@@ -268,6 +268,20 @@ PYEOF
     })
     else prev.json-glib;
 
+  # gweather-locations: meson configure checks `python3 is missing modules: gi`
+  # at line 12 of its meson.build. On aarch64, our gobject-introspection overlay
+  # changes the store hash — pygobject3's C extension (_gi.so) has an RPATH that
+  # dlopen can't satisfy because the unpatched library hash isn't in the store.
+  # Fix: add gobject-introspection to nativeBuildInputs so its lib/ lands in
+  # LD_LIBRARY_PATH during configure, making libgirepository-1.0.so.1 findable.
+  gweather-locations = if final.stdenv.hostPlatform.isAarch64
+    then prev.gweather-locations.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
+        final.buildPackages.gobject-introspection
+      ];
+    })
+    else prev.gweather-locations;
+
   # gobject-introspection: most packages use gobject-introspection (not
   # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
   # derivations even though they share the same source — overlaying one does
