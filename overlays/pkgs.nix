@@ -210,6 +210,9 @@ PYEOF
     then prev.libcloudproviders.overrideAttrs (old: {
       # -Ddocumentation=false prevents docs/meson.build from running, which
       # references the removed GIR file via @INPUT0@ in a custom_target.
+      # Remove devdoc from outputs: with docs disabled nothing installs there
+      # and Nix fails "failed to produce output path for output 'devdoc'".
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
       mesonFlags = (old.mesonFlags or []) ++ [ "-Ddocumentation=false" ];
       postPatch = (old.postPatch or "") + ''
         python3 -u << PYEOF
