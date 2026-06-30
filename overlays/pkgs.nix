@@ -268,6 +268,24 @@ PYEOF
     })
     else prev.json-glib;
 
+  # geocode-glib: GIR generation fails on aarch64 because it includes Json-1.0.gir
+  # (from json-glib), which isn't generated when json-glib has introspection disabled.
+  # The geocode-glib C library is fully functional without the typelib.
+  geocode-glib = if final.stdenv.hostPlatform.isAarch64
+    then prev.geocode-glib.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Denable-introspection=false" "-Denable-gtk-doc=false" ];
+    })
+    else prev.geocode-glib;
+
+  # libgweather: GIR generation includes GWeather-4.0.gir which in turn needs
+  # GeocodeGlib-2.0.gir and Json-1.0.gir — both disabled above. Skip GIR to
+  # break the cascade. The runtime C library is unaffected.
+  libgweather = if final.stdenv.hostPlatform.isAarch64
+    then prev.libgweather.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=false" ];
+    })
+    else prev.libgweather;
+
   # gweather-locations: meson configure checks `python3 is missing modules: gi`
   # at line 12 of its meson.build. On aarch64, our gobject-introspection overlay
   # changes the store hash — pygobject3's C extension (_gi.so) has an RPATH that
