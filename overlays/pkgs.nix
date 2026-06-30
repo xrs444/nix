@@ -255,6 +255,16 @@ PYEOF
     })
     else prev.libcloudproviders;
 
+  # json-glib: GIR generation fails on aarch64 with "can't resolve libraries:
+  # json-glib-1.0" — same shlibs.py resolution failure as playerctl/libnotify/
+  # libcloudproviders. The JSON library itself is fully functional without the
+  # typelib. Documentation is disabled because it depends on the GIR output.
+  json-glib = if final.stdenv.hostPlatform.isAarch64
+    then prev.json-glib.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=disabled" "-Ddocumentation=disabled" ];
+    })
+    else prev.json-glib;
+
   # gobject-introspection: most packages use gobject-introspection (not
   # gobject-introspection-unwrapped) for g-ir-scanner. These are separate
   # derivations even though they share the same source — overlaying one does
