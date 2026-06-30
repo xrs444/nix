@@ -259,8 +259,11 @@ PYEOF
   # json-glib-1.0" — same shlibs.py resolution failure as playerctl/libnotify/
   # libcloudproviders. The JSON library itself is fully functional without the
   # typelib. Documentation is disabled because it depends on the GIR output.
+  # devdoc must also be removed from outputs — Nix fails if a declared output
+  # directory is never created, even when the build itself succeeds.
   json-glib = if final.stdenv.hostPlatform.isAarch64
     then prev.json-glib.overrideAttrs (old: {
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
       mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=disabled" "-Ddocumentation=disabled" ];
     })
     else prev.json-glib;
