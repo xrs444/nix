@@ -278,6 +278,17 @@ PYEOF
     })
     else prev.json-glib;
 
+  # networkmanager: GIR generation (NM-1.0.gir) fails with "can't resolve
+  # libraries: nm" because ldd can't find libnm.so in the build directory.
+  # Same root cause as json-glib — export LD_LIBRARY_PATH before ninja runs.
+  networkmanager = if final.stdenv.hostPlatform.isAarch64
+    then prev.networkmanager.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/src/libnm-client-impl''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.networkmanager;
+
   # gusb: GIR generation includes Json-1.0.gir (from json-glib) and can also
   # fail with its own shlibs.py library resolution issue. Disable GIR; the C
   # library is fully functional without the typelib. devdoc is conditional on
