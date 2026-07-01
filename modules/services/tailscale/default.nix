@@ -189,8 +189,14 @@ in
       environment.etc."check-bgp-session.sh" = {
         text = ''
           #!/bin/sh
-          ${pkgs.iproute2}/bin/ip route show 100.64.0.0/10 2>/dev/null \
-            | grep -q 'proto bird'
+          # Check that THIS node's tailscale is running and connected.
+          # tailscaled down → tailscale0 absent/DOWN → VIP fails over to peer.
+          # Both nodes pass when healthy (priority 101 vs 100 determines MASTER).
+          if ! systemctl is-active --quiet tailscaled.service; then
+            exit 1
+          fi
+          # TUN interfaces show state UNKNOWN even when healthy — check flags instead
+          ${pkgs.iproute2}/bin/ip link show tailscale0 2>/dev/null | grep -q 'LOWER_UP'
           exit $?
         '';
         mode = "0755";
