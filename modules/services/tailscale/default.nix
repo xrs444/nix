@@ -210,21 +210,23 @@ in
         openFirewall = true;
       };
 
-      # Keepalived with BGP health monitoring
+      # Keepalived with Tailscale health monitoring
       services.keepalived = {
         enable = true;
+        # Run scripts as root: NixOS does not create the keepalived_script user
+        # that keepalived expects by default, which causes scripts to be ignored.
+        extraGlobalDefs = "script_user root";
         vrrpScripts = {
           check_bgp = {
             script = "/etc/check-bgp-session.sh";
-            interval = 5; # Check every 5 seconds
-            weight = -50; # Reduce priority by 50 if BGP fails
-            fall = 2; # Require 2 failures before marking down
-            rise = 2; # Require 2 successes before marking up
+            interval = 5;
+            weight = -50; # Reduce priority by 50 if Tailscale is down
+            fall = 2;
+            rise = 2;
           };
         };
         vrrpInstances = {
           ts-vip = {
-            # xts1 = RPi4 (end0), xts2 = Sweet Potato (eth0, confirm on first boot)
             interface = if hostname == "xts1" then "end0" else "eth0";
             virtualRouterId = 51;
             priority =
@@ -237,24 +239,20 @@ in
             state = if hostname == "xts1" then "MASTER" else "BACKUP";
             virtualIps = [
               { addr = "172.18.10.100/24"; }
-              { addr = "2600:8800:218d:9a16::100/64"; }
+              # IPv6 VIP omitted: VRRPv3 instances on IPv4 interfaces reject mixed
+              # address-family virtual IPs ("address family must match" error)
             ];
             extraConfig = ''
               version 3
+              # VRRPv3 (RFC 5798) does not define authentication — removed
               # use_vmac removed: keepalived sets arp_filter=1 on the parent interface
-              # when a macvlan is created. Combined with Tailscale's policy routing table 52
-              # (which routes 172.16.0.0/12 via tailscale0), arp_filter causes the kernel to
-              # silently drop ARP replies on eth0/end0 — the Firewalla can't ARP-resolve the
-              # host and returns Destination Host Unreachable for all inbound traffic.
-              authentication {
-                auth_type PASS
-                auth_pass tsexit
-              }
+              # which silently drops ARP replies when Tailscale's table 52 policy
+              # routing is active, making the host unreachable from the Firewalla
               track_script {
                 check_bgp
               }
-              # Restart bird when becoming MASTER to ensure clean state
-              notify_master "/run/current-system/systemd/bin/systemctl restart bird"
+              # Use direct store path: keepalived rejects symlinks for security
+              notify_master "${pkgs.systemd}/bin/systemctl restart bird"
             '';
           };
         };
