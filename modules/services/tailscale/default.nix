@@ -213,9 +213,15 @@ in
       # Keepalived with Tailscale health monitoring
       services.keepalived = {
         enable = true;
-        # Run scripts as root: NixOS does not create the keepalived_script user
-        # that keepalived expects by default, which causes scripts to be ignored.
-        extraGlobalDefs = "script_user root";
+        # enable_script_security: required for keepalived to execute any scripts.
+        # script_user root: NixOS does not create the keepalived_script user that
+        # keepalived expects by default. The per-script "user keepalived_script"
+        # added by the NixOS module overrides the global, so we also set user="root"
+        # in the vrrpScript itself.
+        extraGlobalDefs = ''
+          enable_script_security
+          script_user root
+        '';
         vrrpScripts = {
           check_bgp = {
             script = "/etc/check-bgp-session.sh";
@@ -223,6 +229,7 @@ in
             weight = -50; # Reduce priority by 50 if Tailscale is down
             fall = 2;
             rise = 2;
+            user = "root";
           };
         };
         vrrpInstances = {
