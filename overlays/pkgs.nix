@@ -289,6 +289,15 @@ PYEOF
     })
     else prev.gtk3;
 
+  # libgnomekbd: Gkbd-3.0.gir fails: "can't resolve: gnomekbd, gnomekbdui".
+  libgnomekbd = if final.stdenv.hostPlatform.isAarch64
+    then prev.libgnomekbd.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/libgnomekbd''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.libgnomekbd;
+
   # gtk-layer-shell: GtkLayerShell-0.1.gir fails: "can't resolve: gtk-layer-shell".
   # Library at build/src.
   gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
