@@ -290,10 +290,35 @@ PYEOF
     else prev.gtk3;
 
   # libgnomekbd: Gkbd-3.0.gir fails: "can't resolve: gnomekbd, gnomekbdui".
+  # preBuild LD_LIBRARY_PATH doesn't reliably propagate here; use the proven
+  # postPatch approach to remove gnome.generate_gir() calls from meson.build.
   libgnomekbd = if final.stdenv.hostPlatform.isAarch64
     then prev.libgnomekbd.overrideAttrs (old: {
-      preBuild = (old.preBuild or "") + ''
-        export LD_LIBRARY_PATH="''${PWD}/build/libgnomekbd''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+import pathlib, re
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    changed = False
+    for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        while call in text:
+            pos = text.find(call)
+            line_start = text.rfind("\n", 0, pos) + 1
+            depth, i = 0, pos
+            while i < len(text):
+                if text[i] == "(": depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                    if depth == 0: i += 1; break
+                i += 1
+            if i < len(text) and text[i] == "\n": i += 1
+            text = text[:line_start] + text[i:]
+            changed = True
+    for pat in ["_gir", "_vapi"]:
+        new = re.sub("[^\n]*" + pat + "[^\n]*\n", "", text)
+        if new != text: text = new; changed = True
+    if changed: meson_file.write_text(text)
+PYEOF
       '';
     })
     else prev.libgnomekbd;
