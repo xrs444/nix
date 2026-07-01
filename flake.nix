@@ -258,15 +258,22 @@
           fastConnection = false;
           profiles.system = {
             user = "root";
-            # activate.nixos calls switch-to-configuration switch which handles
-            # bootloader updates (including extlinux) in NixOS 25.05+. The old
-            # activate.custom path required PROFILE_PATH to be injected by the
-            # deploy runner, which broke aarch64 deployments.
+            # extlinux hosts (RPi, xts1) need NIXOS_INSTALL_BOOTLOADER=1 so
+            # /boot/extlinux/extlinux.conf is written on every deploy — without
+            # it deploy-rs runs switch-to-configuration switch without the flag
+            # and the bootloader is stale after reboot. The previous attempt used
+            # $PROFILE_PATH (wrong); the correct deploy-rs variable is $PROFILE.
             path =
               let
                 deployLib = inputs.deploy-rs.lib.${cfg.pkgs.stdenv.hostPlatform.system};
+                isExtlinux = cfg.config.boot.loader.generic-extlinux-compatible.enable or false;
               in
-              deployLib.activate.nixos cfg;
+              if isExtlinux
+              then deployLib.activate.custom cfg.config.system.build.toplevel ''
+                cd /tmp
+                NIXOS_INSTALL_BOOTLOADER=1 $PROFILE/bin/switch-to-configuration switch
+              ''
+              else deployLib.activate.nixos cfg;
             magicRollback = true;
             confirmTimeout = 60;
           };

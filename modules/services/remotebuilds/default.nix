@@ -207,6 +207,9 @@ in
         # daemon trusts xsvr1.lan-1 signatures and can substitute from the binary cache.
         trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI=
         substituters = http://xsvr1.lan https://cache.nixos.org
+        # Accept unsigned paths from local nixos-rebuild --target-host deploys; locally-built
+        # closures are not signed by the nixcache key.
+        require-sigs = false
       '';
     })
   ];
