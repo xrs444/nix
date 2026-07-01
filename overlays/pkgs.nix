@@ -289,6 +289,16 @@ PYEOF
     })
     else prev.gtk3;
 
+  # colord: GIR generation (Colorhug-1.0.gir, Colord-1.0.gir) fails with
+  # "can't resolve libraries". Same preBuild LD_LIBRARY_PATH pattern.
+  colord = if final.stdenv.hostPlatform.isAarch64
+    then prev.colord.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/lib/colorhug:''${PWD}/build/lib/colord''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.colord;
+
   # libxkbcommon: python-tests:tool-option-parsing fails on aarch64 (exit 1).
   # The library itself builds and functions correctly.
   libxkbcommon = if final.stdenv.hostPlatform.isAarch64
