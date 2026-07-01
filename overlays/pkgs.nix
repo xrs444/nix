@@ -305,6 +305,7 @@ PYEOF
   # break the cascade. The runtime C library is unaffected.
   libgweather = if final.stdenv.hostPlatform.isAarch64
     then prev.libgweather.overrideAttrs (old: {
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
       mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=false" ];
     })
     else prev.libgweather;
