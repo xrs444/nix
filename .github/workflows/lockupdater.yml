@@ -19,7 +19,7 @@ jobs:
     outputs:
       has_pending: ${{ steps.check.outputs.has_pending }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Check if flake-lock-update branch has unmerged content
@@ -62,7 +62,7 @@ jobs:
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: wimpysworld/nothing-but-nix@main
         with:
           hatchet-protocol: 'holster'
@@ -109,7 +109,7 @@ jobs:
     outputs:
       ready: ${{ steps.check.outputs.ready }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: flake-lock-update
       - uses: DeterminateSystems/determinate-nix-action@v3
@@ -212,7 +212,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: flake-lock-update
 
@@ -240,7 +240,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: flake-lock-update
 
