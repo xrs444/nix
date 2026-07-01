@@ -285,7 +285,7 @@ PYEOF
   gusb = if final.stdenv.hostPlatform.isAarch64
     then prev.gusb.overrideAttrs (old: {
       outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
-      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=false" "-Ddocs=false" ];
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=false" "-Dvapi=false" "-Ddocs=false" ];
     })
     else prev.gusb;
 
