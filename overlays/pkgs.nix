@@ -278,6 +278,17 @@ PYEOF
     })
     else prev.json-glib;
 
+  # gtk3: GIR generation (Gdk-3.0.gir, Gtk-3.0.gir) fails with "can't resolve
+  # libraries: gdk-3/gtk-3" because ldd can't find the libraries in build/.
+  # Same preBuild LD_LIBRARY_PATH pattern as json-glib and networkmanager.
+  gtk3 = if final.stdenv.hostPlatform.isAarch64
+    then prev.gtk3.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/gdk:''${PWD}/build/gtk''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.gtk3;
+
   # libxkbcommon: python-tests:tool-option-parsing fails on aarch64 (exit 1).
   # The library itself builds and functions correctly.
   libxkbcommon = if final.stdenv.hostPlatform.isAarch64
