@@ -181,14 +181,16 @@ in
       };
 
       # Keepalived health check: verify tailscaled has injected the Tailscale
-      # CGNAT route into BIRD. This only happens when tailscaled is running and
-      # this node is the active subnet router — it is the correct signal for VIP
-      # ownership, unlike a BGP session check which doesn't reflect Tailscale health.
+      # CGNAT route (100.64.0.0/10) into the kernel routing table via BIRD.
+      # tailscaled only does this when active as a subnet router; the route
+      # appears with "proto bird" (installed by BIRD's kernel protocol export).
+      # Using `ip route` avoids birdc version compatibility issues (running bird3
+      # but pkgs.bird2 birdc can't connect to bird3's socket).
       environment.etc."check-bgp-session.sh" = {
         text = ''
           #!/bin/sh
-          ${pkgs.bird2}/bin/birdc show route 100.64.0.0/10 exact 2>/dev/null \
-            | grep -q 'tailscale'
+          ${pkgs.iproute2}/bin/ip route show 100.64.0.0/10 2>/dev/null \
+            | grep -q 'proto bird'
           exit $?
         '';
         mode = "0755";
