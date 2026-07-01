@@ -289,6 +289,16 @@ PYEOF
     })
     else prev.gtk3;
 
+  # gtk-layer-shell: GtkLayerShell-0.1.gir fails: "can't resolve: gtk-layer-shell".
+  # Library at build/src.
+  gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
+    then prev.gtk-layer-shell.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/src''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.gtk-layer-shell;
+
   # colord: GIR generation (Colorhug-1.0.gir, Colord-1.0.gir) fails with
   # "can't resolve libraries". Same preBuild LD_LIBRARY_PATH pattern.
   colord = if final.stdenv.hostPlatform.isAarch64
