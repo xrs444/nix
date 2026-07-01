@@ -258,18 +258,36 @@ PYEOF
     })
     else prev.libcloudproviders;
 
-  # json-glib: GIR generation fails on aarch64 with "can't resolve libraries:
-  # json-glib-1.0" — same shlibs.py resolution failure as playerctl/libnotify/
-  # libcloudproviders. The JSON library itself is fully functional without the
-  # typelib. Documentation is disabled because it depends on the GIR output.
-  # devdoc must also be removed from outputs — Nix fails if a declared output
-  # directory is never created, even when the build itself succeeds.
+  # json-glib: GIR generation fails on aarch64 because the Nix cc-wrapper does
+  # not set RPATH for /build/ paths, so ldd can't find libjson-glib-1.0.so.0
+  # when g-ir-scanner runs. The shlibs.py LD_LIBRARY_PATH patch exists in
+  # gobject-introspection-unwrapped but relies on the env being inherited.
+  # Exporting LD_LIBRARY_PATH before ninja spawns g-ir-scanner ensures ldd
+  # finds the freshly-built library.
+  # devdoc must still be removed from outputs because with documentation
+  # disabled nothing installs there and Nix would fail.
   json-glib = if final.stdenv.hostPlatform.isAarch64
     then prev.json-glib.overrideAttrs (old: {
       outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
-      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=disabled" "-Ddocumentation=disabled" ];
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Ddocumentation=disabled" ];
+      preBuild = (old.preBuild or "") + ''
+        # Add the meson build output dir to LD_LIBRARY_PATH so ldd (called by
+        # g-ir-scanner's shlibs.py) can find libjson-glib-1.0.so.0 at GIR time.
+        export LD_LIBRARY_PATH="''${PWD}/build/json-glib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
     })
     else prev.json-glib;
+
+  # gusb: GIR generation includes Json-1.0.gir (from json-glib) and can also
+  # fail with its own shlibs.py library resolution issue. Disable GIR; the C
+  # library is fully functional without the typelib. devdoc is conditional on
+  # introspection in nixpkgs, so filter it out to avoid missing-output failure.
+  gusb = if final.stdenv.hostPlatform.isAarch64
+    then prev.gusb.overrideAttrs (old: {
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
+      mesonFlags = (old.mesonFlags or []) ++ [ "-Dintrospection=false" "-Ddocs=false" ];
+    })
+    else prev.gusb;
 
   # geocode-glib_2: GIR generation fails on aarch64 because it includes Json-1.0.gir
   # (from json-glib), which isn't generated when json-glib has introspection disabled.
