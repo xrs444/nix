@@ -16,11 +16,12 @@
 
   nixpkgs.config.allowUnfree = true;
 
+  # Listening on tailscale0 allows DNS to also work when accessed via Tailscale IP.
   services.dnsmasq = {
     enable = true;
     settings = {
       server = [ "/ts.net/100.100.100.100" ];
-      listen-address = [ "127.0.0.1" "172.18.10.2" ];
+      interface = [ "lo" "eth0" "tailscale0" ];
       bind-interfaces = true;
     };
   };

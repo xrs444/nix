@@ -68,7 +68,13 @@ in
           "--advertise-routes=172.16.0.0/12,2600:8800:218d:9a00::/56"
           "--snat-subnet-routes=false"
           "--operator=${username}"
+          # Exit nodes manage DNS via dnsmasq — don't let Tailscale overwrite resolv.conf.
+          "--accept-dns=false"
         ];
+        # Connect tailscaled to BIRD via unix socket so Tailscale can dynamically
+        # inject/withdraw the 100.64.0.0/10 route when this node is the active router.
+        # See https://tailscale.com/kb/1298/subnet-bgp
+        extraDaemonFlags = [ "--bird-socket=/run/bird/bird.ctl" ];
         openFirewall = true;
         useRoutingFeatures = "both";
       };
@@ -90,7 +96,11 @@ in
         };
       };
 
-      # Bird BGP configuration for Tailscale exit node redundancy with direct protocol
+      # Bird BGP configuration per Tailscale's documented HA design:
+      # https://tailscale.com/kb/1298/subnet-bgp
+      # tailscaled (via --bird-socket) dynamically activates/deactivates the
+      # "tailscale" static protocol, injecting 100.64.0.0/10 when this node is
+      # the active subnet router. keepalived watches for this route to decide VIP.
       services.bird = {
         enable = true;
         config = lib.mkMerge [
@@ -98,32 +108,31 @@ in
             log syslog all;
             router id 172.18.10.1;
 
-            # Tailscale integration via direct protocol
-            protocol direct {
+            # tailscaled injects/withdraws this route via --bird-socket
+            protocol static tailscale {
               ipv4;
-              interface "tailscale*";
+              route 100.64.0.0/10 via "tailscale0";
             }
 
-            # Device protocol for interface tracking
             protocol device {
               scan time 10;
             }
 
-            # BGP protocol for peering with xts2
+            # iBGP with xts2: synchronises route state and provides peer detection
             protocol bgp xts2 {
               local 172.18.10.1 as 65002;
               neighbor 172.18.10.2 as 65002;
 
               ipv4 {
                 import all;
-                export where source = RTS_DEVICE;
+                export all;
               };
 
               hold time 90;
               keepalive time 30;
             }
 
-            # Kernel protocol to sync routes
+            # Install BIRD routes (including 100.64.0.0/10) into the kernel table
             protocol kernel {
               ipv4 {
                 export all;
@@ -134,32 +143,31 @@ in
             log syslog all;
             router id 172.18.10.2;
 
-            # Tailscale integration via direct protocol
-            protocol direct {
+            # tailscaled injects/withdraws this route via --bird-socket
+            protocol static tailscale {
               ipv4;
-              interface "tailscale*";
+              route 100.64.0.0/10 via "tailscale0";
             }
 
-            # Device protocol for interface tracking
             protocol device {
               scan time 10;
             }
 
-            # BGP protocol for peering with xts1
+            # iBGP with xts1: synchronises route state and provides peer detection
             protocol bgp xts1 {
               local 172.18.10.2 as 65002;
               neighbor 172.18.10.1 as 65002;
 
               ipv4 {
                 import all;
-                export where source = RTS_DEVICE;
+                export all;
               };
 
               hold time 90;
               keepalive time 30;
             }
 
-            # Kernel protocol to sync routes
+            # Install BIRD routes (including 100.64.0.0/10) into the kernel table
             protocol kernel {
               ipv4 {
                 export all;
@@ -169,19 +177,15 @@ in
         ];
       };
 
-      # BGP health check script for keepalived
+      # Keepalived health check: verify tailscaled has injected the Tailscale
+      # CGNAT route into BIRD. This only happens when tailscaled is running and
+      # this node is the active subnet router — it is the correct signal for VIP
+      # ownership, unlike a BGP session check which doesn't reflect Tailscale health.
       environment.etc."check-bgp-session.sh" = {
         text = ''
           #!/bin/sh
-          # Check if BIRD daemon is running
-          if ! systemctl is-active --quiet bird.service; then
-            exit 1
-          fi
-
-          # Check if BGP session is established
-          # birdc show protocols checks for Established state
-          ${pkgs.bird2}/bin/birdc show protocols | grep -E 'BGP.*Established' > /dev/null
-
+          ${pkgs.bird2}/bin/birdc show route 100.64.0.0/10 exact 2>/dev/null \
+            | grep -q 'tailscale'
           exit $?
         '';
         mode = "0755";
@@ -226,14 +230,11 @@ in
             ];
             extraConfig = ''
               version 3
-              # use_vmac creates a macvlan interface (vrrp.51) with the VRRP virtual MAC
-              # (00:00:5e:00:01:33 for VRID 51). The VIP is assigned to this macvlan so
-              # all traffic to/from .100 uses the virtual MAC — no split routing, and
-              # Firewalla treats the VIP as a separate device from the host's real MAC.
-              # vmac_xmit_base keeps VRRP heartbeat advertisements on the base interface
-              # so peering between xts1 and xts2 continues to work normally.
-              use_vmac
-              vmac_xmit_base
+              # use_vmac removed: keepalived sets arp_filter=1 on the parent interface
+              # when a macvlan is created. Combined with Tailscale's policy routing table 52
+              # (which routes 172.16.0.0/12 via tailscale0), arp_filter causes the kernel to
+              # silently drop ARP replies on eth0/end0 — the Firewalla can't ARP-resolve the
+              # host and returns Destination Host Unreachable for all inbound traffic.
               authentication {
                 auth_type PASS
                 auth_pass tsexit
@@ -248,9 +249,14 @@ in
         };
       };
 
-      # Open firewall for bird exporter on Tailscale interface
+      # Allow SSH, DNS, and monitoring via Tailscale IP on both nodes
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+        22   # SSH via Tailscale
+        53   # DNS via Tailscale (dnsmasq forwards .ts.net)
         9324 # bird_exporter
+      ];
+      networking.firewall.interfaces.tailscale0.allowedUDPPorts = [
+        53 # DNS via Tailscale
       ];
 
       # Allow VRRP multicast for keepalived
