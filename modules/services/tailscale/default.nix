@@ -64,7 +64,10 @@ in
         enable = true;
         extraUpFlags = [
           "--advertise-exit-node"
-          "--accept-routes"
+          # Do NOT add --accept-routes: both xts1 and xts2 advertise 172.16.0.0/12, so
+          # accepting routes from each other installs that subnet in table 52, causing
+          # responses to any 172.16.0.0/12 address (including LAN peers) to be routed
+          # via tailscale0 instead of eth0 — breaking all local SSH/DNS/VRRP.
           "--advertise-routes=172.16.0.0/12,2600:8800:218d:9a00::/56"
           "--snat-subnet-routes=false"
           "--operator=${username}"
