@@ -63,7 +63,9 @@
     settings = {
       server = [ "/ts.net/100.100.100.100" ];
       interface = [ "lo" "end0" "tailscale0" ];
-      bind-interfaces = true;
+      # bind-dynamic: like bind-interfaces but picks up IPs added after startup
+      # (keepalived VIP and tailscale0 both come up after dnsmasq starts)
+      bind-dynamic = true;
     };
   };
   networking.firewall.allowedUDPPorts = [ 53 ];
