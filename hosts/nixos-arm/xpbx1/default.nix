@@ -40,7 +40,7 @@
   ];
 
   # Ensure boot partition is writable during rebuild
-  boot.loader.generic-extlinux-compatible.configurationLimit = 10;
+  boot.loader.generic-extlinux-compatible.configurationLimit = 3;
 
   # Pi3B (39-bit VA) kernel rejects NixOS's hardening default of 33 for vm.mmap_rnd_bits.
   # CONFIG_ARCH_MMAP_RND_BITS_MAX is lower on Pi3 than Pi4 (48-bit VA). Use 18 (kernel default).

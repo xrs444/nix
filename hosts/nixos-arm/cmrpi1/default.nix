@@ -34,7 +34,7 @@
   ];
 
   # Ensure boot partition is writable during rebuild
-  boot.loader.generic-extlinux-compatible.configurationLimit = 10;
+  boot.loader.generic-extlinux-compatible.configurationLimit = 3;
 
   # Force the system to use the correct profile path
   system.activationScripts.fixProfile = lib.stringAfter [ "users" ] ''
