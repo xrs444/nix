@@ -20,7 +20,11 @@
   services.dnsmasq = {
     enable = true;
     settings = {
-      server = [ "/ts.net/100.100.100.100" ];
+      # Forward ts.net via the tailscale0 interface explicitly so dnsmasq uses
+      # xts2's Tailscale IP as source regardless of which interface the client
+      # query arrived on. Without @tailscale0, dnsmasq may use eth0's IP for
+      # cross-VLAN clients, which can fail to reach 100.100.100.100 correctly.
+      server = [ "/ts.net/100.100.100.100@tailscale0" ];
       interface = [ "lo" "eth0" "tailscale0" ];
       # bind-dynamic: like bind-interfaces but picks up IPs added after startup
       # (keepalived VIP and tailscale0 both come up after dnsmasq starts)
