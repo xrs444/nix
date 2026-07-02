@@ -333,12 +333,35 @@ PYEOF
     })
     else prev.gtk-layer-shell;
 
-  # colord: GIR generation (Colorhug-1.0.gir, Colord-1.0.gir) fails with
-  # "can't resolve libraries". Same preBuild LD_LIBRARY_PATH pattern.
+  # colord: Colorhug-1.0.gir / Colord-1.0.gir fail: "can't resolve libraries".
+  # preBuild LD_LIBRARY_PATH is inconsistent; use the proven postPatch approach.
   colord = if final.stdenv.hostPlatform.isAarch64
     then prev.colord.overrideAttrs (old: {
-      preBuild = (old.preBuild or "") + ''
-        export LD_LIBRARY_PATH="''${PWD}/build/lib/colorhug:''${PWD}/build/lib/colord''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      postPatch = (old.postPatch or "") + ''
+        python3 -u << PYEOF
+import pathlib, re
+for meson_file in pathlib.Path(".").rglob("meson.build"):
+    text = meson_file.read_text()
+    changed = False
+    for call in ["gnome.generate_gir(", "gnome.generate_vapi("]:
+        while call in text:
+            pos = text.find(call)
+            line_start = text.rfind("\n", 0, pos) + 1
+            depth, i = 0, pos
+            while i < len(text):
+                if text[i] == "(": depth += 1
+                elif text[i] == ")":
+                    depth -= 1
+                    if depth == 0: i += 1; break
+                i += 1
+            if i < len(text) and text[i] == "\n": i += 1
+            text = text[:line_start] + text[i:]
+            changed = True
+    for pat in ["_gir", "_vapi"]:
+        new = re.sub("[^\n]*" + pat + "[^\n]*\n", "", text)
+        if new != text: text = new; changed = True
+    if changed: meson_file.write_text(text)
+PYEOF
       '';
     })
     else prev.colord;

@@ -194,8 +194,8 @@
           platform = "aarch64-linux";
           type = "nixos";
           enableHomeManager = false;
-          # Not on .lan — reachable via Tailscale MagicDNS after bootstrap
-          deployHostname = "vocibuild.corgi-squeaker.ts.net";
+          # Not on .lan — reachable via vocibuild.xrs444.net (Cloudflare DNS)
+          deployHostname = "vocibuild.xrs444.net";
           roles = [
             "tailscale-client"
             "monitoring-client"

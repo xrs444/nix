@@ -21,8 +21,8 @@ let
   isQemuBuilder = isBuilder && !thisHost.native;
   isNativeBuilder = isBuilder && thisHost.native;
 
-  # vocibuild is on Oracle Cloud and reachable only via Tailscale MagicDNS (not .lan)
-  buildHostname = b: if b.name == "vocibuild" then "vocibuild.corgi-squeaker.ts.net" else "${b.name}.lan";
+  # vocibuild is on Oracle Cloud — reachable via vocibuild.xrs444.net (Cloudflare DNS, not .lan)
+  buildHostname = b: if b.name == "vocibuild" then "vocibuild.xrs444.net" else "${b.name}.lan";
 
   mkBuildMachine = b: {
     hostName = buildHostname b;
@@ -254,8 +254,8 @@ in
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
     };
-    "vocibuild.corgi-squeaker.ts.net" = {
-      hostNames = [ "vocibuild.corgi-squeaker.ts.net" "vocibuild" ];
+    "vocibuild.xrs444.net" = {
+      hostNames = [ "vocibuild.xrs444.net" "vocibuild" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMIFFm/zZIwJTu0f8Eny30jKsp93S6nngemziFi0mOsR";
     };
   };

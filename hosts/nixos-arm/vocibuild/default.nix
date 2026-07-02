@@ -1,5 +1,5 @@
 # Summary: NixOS ARM host configuration for vocibuild — Oracle Cloud A1 Flex (aarch64) native Nix builder.
-# Reachable via Tailscale MagicDNS as 'vocibuild'. No .lan DNS; all management via Tailscale.
+# Reachable via vocibuild.xrs444.net (Cloudflare DNS). No .lan DNS; all management via this record.
 # Bootstrapping sequence (one-time, only after disk wipe / nixos-anywhere reinstall):
 #   1. nixos-anywhere --flake .#vocibuild --target-host opc@<oracle-public-ip> --sudo
 #      NOTE: Oracle Security List must allow TCP 22 from your IP for this step.
