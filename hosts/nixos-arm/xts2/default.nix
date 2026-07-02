@@ -25,8 +25,14 @@
       # bind-dynamic: like bind-interfaces but picks up IPs added after startup
       # (keepalived VIP and tailscale0 both come up after dnsmasq starts)
       bind-dynamic = true;
+      # Disable negative caching: at boot, dnsmasq starts before Bird installs
+      # the 100.64.0.0/10 route via the Tailscale socket, so the first ts.net
+      # forward fails. Without no-negcache, that NXDOMAIN is cached until restart.
+      no-negcache = true;
     };
   };
+  # Start after tailscaled so the 100.64.0.0/10 route is more likely in place.
+  systemd.services.dnsmasq.after = [ "tailscaled.service" ];
   networking.firewall.allowedUDPPorts = [ 53 ];
   networking.firewall.allowedTCPPorts = [
     22  # SSH — local LAN access
