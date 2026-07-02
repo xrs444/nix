@@ -233,6 +233,11 @@ in
     Host xlt1-t-vnixos.lan xlt1-t-vnixos
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
+
+    # vocibuild is on Oracle Cloud — reachable via Tailscale only.
+    # xsvr1 can't route 100.64.0.0/10 directly; proxy through xts1 which can.
+    Host vocibuild.xrs444.net
+      ProxyJump builder@xts1.lan
   '';
 
   # Known host keys for the build machines — prevents host key verification failures
