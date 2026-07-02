@@ -72,8 +72,20 @@
       no-negcache = true;
     };
   };
-  # Start after tailscaled so the 100.64.0.0/10 route is more likely in place.
-  systemd.services.dnsmasq.after = [ "tailscaled.service" ];
+  # Wait for Bird to install the 100.64.0.0/10 route via the Tailscale socket before
+  # dnsmasq starts. Without this, the first ts.net forward to 100.100.100.100 fails
+  # (no route), the Firewalla caches the NXDOMAIN, and all clients get NXDOMAIN until
+  # the Firewalla is restarted.
+  systemd.services.dnsmasq = {
+    after = [ "tailscaled.service" "bird.service" ];
+    preStart = lib.mkBefore ''
+      echo "Waiting for Bird to install 100.64.0.0/10 via tailscale0..."
+      for i in $(seq 30); do
+        ${pkgs.iproute2}/bin/ip route show 100.64.0.0/10 | grep -q tailscale0 && break
+        sleep 1
+      done
+    '';
+  };
   networking.firewall.allowedUDPPorts = [ 53 ];
   networking.firewall.allowedTCPPorts = [ 53 ];
 
