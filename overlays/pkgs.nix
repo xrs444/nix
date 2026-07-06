@@ -599,4 +599,15 @@ DESKTOP
         };
       };
 
+  # ffmpeg-headless in nixos-26.05 enables withPlacebo and withVulkan by
+  # default, pulling vulkan-loader into any closure that uses matplotlib
+  # (via matplotlib → ffmpeg-headless for animation support). Headless servers
+  # and matplotlib animations don't need GPU video rendering; strip it out so
+  # aarch64 servers (xts1/xts2/xpbx1/vocibuild) don't need to build
+  # vulkan-loader from source when it isn't in the binary cache.
+  ffmpeg-headless = prev.ffmpeg-headless.override {
+    withPlacebo = false;
+    withVulkan = false;
+  };
+
 })

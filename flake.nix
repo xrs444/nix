@@ -210,6 +210,14 @@
           enableHomeManager = true;
           roles = [ "tailscale-client" ];
         };
+        xcog1 = {
+          user = "xrs444";
+          platform = "aarch64-darwin";
+          type = "darwin";
+          desktop = "aqua";
+          enableHomeManager = true;
+          roles = [ "tailscale-client" ];
+        };
       };
 
       lib = import ./lib {
