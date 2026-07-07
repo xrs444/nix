@@ -278,6 +278,17 @@ PYEOF
     })
     else prev.json-glib;
 
+  # graphene: Graphene-1.0.gir fails with "can't resolve libraries: graphene-1.0"
+  # because ldd can't find libgraphene-1.0.so in build/src/ at GIR scan time.
+  # Same preBuild LD_LIBRARY_PATH pattern as json-glib and gtk3.
+  graphene = if final.stdenv.hostPlatform.isAarch64
+    then prev.graphene.overrideAttrs (old: {
+      preBuild = (old.preBuild or "") + ''
+        export LD_LIBRARY_PATH="''${PWD}/build/src''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      '';
+    })
+    else prev.graphene;
+
   # gtk3: GIR generation (Gdk-3.0.gir, Gtk-3.0.gir) fails with "can't resolve
   # libraries: gdk-3/gtk-3" because ldd can't find the libraries in build/.
   # Same preBuild LD_LIBRARY_PATH pattern as json-glib and networkmanager.
