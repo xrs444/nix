@@ -278,6 +278,19 @@ PYEOF
     })
     else prev.json-glib;
 
+  # totem-pl-parser: TotemPlParser-1.0.gir fails with "can't resolve libraries:
+  # totem-plparser" — same GIR resolution failure as graphene. Disable
+  # introspection and docs; the library itself is unaffected.
+  totem-pl-parser = if final.stdenv.hostPlatform.isAarch64
+    then prev.totem-pl-parser.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or [ ]) ++ [
+        "-Dintrospection=false"
+        "-Dgtk_doc=false"
+      ];
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
+    })
+    else prev.totem-pl-parser;
+
   # graphene: LD_LIBRARY_PATH preBuild approach does not fix GIR resolution on
   # aarch64 because the build dir layout differs between graphene versions and
   # meson still passes -Dintrospection=enabled -Dgtk_doc=true. Disable both;
