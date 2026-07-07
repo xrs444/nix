@@ -5,7 +5,7 @@
     enable = true;
     openFirewall = true;
     settings = {
-      PasswordAuthentication = true;
+      PasswordAuthentication = false;
       PermitRootLogin = "no";
     };
   };

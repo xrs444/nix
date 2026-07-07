@@ -32,7 +32,7 @@
   services.kanidm.unix.enable = false;
 
   # Ensure standard PAM configuration for local authentication
-  security.pam.services.sshd.unixAuth = true;
+  # (sshd.unixAuth is derived automatically from services.openssh.settings.PasswordAuthentication)
   security.pam.services.login.unixAuth = true;
 
   # Enable lingering for the local user to help with session management
