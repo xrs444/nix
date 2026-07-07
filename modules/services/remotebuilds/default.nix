@@ -235,9 +235,17 @@ in
       UserKnownHostsFile /dev/null
 
     # vocibuild is on Oracle Cloud — reachable via Tailscale only.
-    # xsvr1 can't route 100.64.0.0/10 directly; proxy through xts1 which can.
+    # xsvr1 can't route 100.64.0.0/10 directly; proxy through the xts VIP (172.18.10.100).
+    # xts1/xts2 form an HA pair; the VIP floats between them via VRRP. Using the VIP instead
+    # of xts1.lan directly means vocibuild stays reachable if xts1 is down and xts2 holds the VIP.
+    # StrictHostKeyChecking=no for the VIP because the presented key changes on failover.
     Host vocibuild.xrs444.net
-      ProxyJump builder@xts1.lan
+      ProxyJump builder@172.18.10.100
+    Host 172.18.10.100
+      User builder
+      IdentityFile /root/.ssh/id_builder
+      StrictHostKeyChecking no
+      UserKnownHostsFile /dev/null
   '';
 
   # Known host keys for the build machines — prevents host key verification failures
@@ -262,6 +270,16 @@ in
     "vocibuild.xrs444.net" = {
       hostNames = [ "vocibuild.xrs444.net" "vocibuild" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMIFFm/zZIwJTu0f8Eny30jKsp93S6nngemziFi0mOsR";
+    };
+    # Tailscale exit node pair — ProxyJump hosts for vocibuild.
+    # Refresh with: ssh-keyscan -t ed25519 xts1.lan xts2.lan (from xsvr1)
+    "xts1.lan" = {
+      hostNames = [ "xts1.lan" "xts1" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAJ61+bV3g7btEe0V4O5/a3GScuQYGaeAWHPFM6Yx5Dz";
+    };
+    "xts2.lan" = {
+      hostNames = [ "xts2.lan" "xts2" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM0xL67aVSeg+E+jyzgzz0uMekVBjDAOzR+Z/l2B45RU";
     };
   };
 }
