@@ -114,13 +114,31 @@ lib.mkIf (!minimalImage) {
           }
         ]
       ++
-        # Kanidm shared certificate
+        # Kanidm shared certificate — generated on xsvr1, rsync'd to xsvr2/xsvr3
+        # replicas so kanidm can read it at /var/lib/acme/idm.${domain}/.
+        # dir: 750 (acme group traversable), key.pem: 640 (acme group),
+        # cert.pem / fullchain.pem: 644 (world-readable — kanidm reads this too).
         (lib.optional isKanidmServer {
           "idm.${domain}" = {
             extraDomainNames = [
               "xsvr1.${domain}"
               "xsvr2.${domain}"
             ];
+            postRun = ''
+              SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+              for host in xsvr2.lan xsvr3.lan; do
+                $SSH acme@$host "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/idm.${domain} && chmod 750 /var/lib/acme/idm.${domain}"
+                ${pkgs.rsync}/bin/rsync \
+                  -e "$SSH" \
+                  --perms --chmod=F640 \
+                  /var/lib/acme/idm.${domain}/ \
+                  acme@$host:/var/lib/acme/idm.${domain}/
+                $SSH acme@$host \
+                  "chmod 644 /var/lib/acme/idm.${domain}/cert.pem \
+                              /var/lib/acme/idm.${domain}/fullchain.pem \
+                              /var/lib/acme/idm.${domain}/chain.pem"
+              done
+            '';
           };
         })
       ++

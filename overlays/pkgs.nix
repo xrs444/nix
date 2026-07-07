@@ -278,14 +278,18 @@ PYEOF
     })
     else prev.json-glib;
 
-  # graphene: Graphene-1.0.gir fails with "can't resolve libraries: graphene-1.0"
-  # because ldd can't find libgraphene-1.0.so in build/src/ at GIR scan time.
-  # Same preBuild LD_LIBRARY_PATH pattern as json-glib and gtk3.
+  # graphene: LD_LIBRARY_PATH preBuild approach does not fix GIR resolution on
+  # aarch64 because the build dir layout differs between graphene versions and
+  # meson still passes -Dintrospection=enabled -Dgtk_doc=true. Disable both;
+  # graphene is fully functional without the GIR typelib or hotdoc pages.
+  # Filter devdoc from outputs (belt-and-suspenders in case nixpkgs adds it).
   graphene = if final.stdenv.hostPlatform.isAarch64
     then prev.graphene.overrideAttrs (old: {
-      preBuild = (old.preBuild or "") + ''
-        export LD_LIBRARY_PATH="''${PWD}/build/src''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-      '';
+      mesonFlags = (old.mesonFlags or [ ]) ++ [
+        "-Dintrospection=disabled"
+        "-Dgtk_doc=false"
+      ];
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
     })
     else prev.graphene;
 
