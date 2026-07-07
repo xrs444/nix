@@ -17,6 +17,7 @@
       "lazyssh"
       "ice"
       "mas"
+      "windmill"
       "FelixKratz/formulae/borders"
     ];
 

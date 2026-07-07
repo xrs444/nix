@@ -125,8 +125,10 @@
     virtualenv
     just
     claude-code
+    k9s
   ] ++ lib.optionals pkgs.stdenv.isLinux [
     baobab
+    windmill
   ];
 
   # Claude Code CLI settings
