@@ -1,8 +1,8 @@
 # Summary: Minimal SD card image configuration for xpbx1 initial deployment.
-# Boots with root SSH access; bootstrap with: deploy .#xpbx1 from xsvr1.
+# Bootstrap workflow: flash SD image → boot → deploy .#xpbx1 from xsvr1.
+# SSH access via thomas-local key (sdImage/custom.nix injects authorizedKeys).
 {
   pkgs,
-  lib,
   stateVersion,
   hostname,
   ...
@@ -15,6 +15,7 @@
     ../common/boot.nix
     ./disks.nix
     ./network.nix
+    ../../../modules/sdImage/custom.nix
   ];
 
   system.stateVersion = stateVersion;
@@ -27,16 +28,6 @@
   # Allow missing kernel modules during SD image build
   # The default SD image config includes modules not in the RPi kernel
   boot.initrd.allowMissingModules = true;
-
-  # Enable SSH for initial setup - override base config for root access
-  services.openssh.settings = {
-    PermitRootLogin = lib.mkForce "yes";
-    PasswordAuthentication = lib.mkForce true;
-  };
-
-  # Set a default root password for initial setup
-  # CHANGE THIS AFTER FIRST BOOT
-  users.users.root.initialPassword = "nixos";
 
   # Minimal system packages for initial setup
   environment.systemPackages = with pkgs; [
