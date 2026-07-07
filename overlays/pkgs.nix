@@ -280,12 +280,13 @@ PYEOF
 
   # totem-pl-parser: TotemPlParser-1.0.gir fails with "can't resolve libraries:
   # totem-plparser" — same GIR resolution failure as graphene. Disable
-  # introspection and docs; the library itself is unaffected.
+  # introspection; the library itself is unaffected. Unlike graphene, this
+  # package's meson_options.txt has no "gtk_doc" option — passing
+  # -Dgtk_doc=false errors with "Unknown option: gtk_doc", so don't set it.
   totem-pl-parser = if final.stdenv.hostPlatform.isAarch64
     then prev.totem-pl-parser.overrideAttrs (old: {
       mesonFlags = (old.mesonFlags or [ ]) ++ [
         "-Dintrospection=false"
-        "-Dgtk_doc=false"
       ];
       outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
     })
