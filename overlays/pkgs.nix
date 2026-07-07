@@ -291,6 +291,24 @@ PYEOF
     })
     else prev.totem-pl-parser;
 
+  # localsearch: TrackerMiner-3.0.gir / Tracker-3.0.gir generation fails on aarch64.
+  # localsearch is the indexer daemon (formerly tracker-miners); its GIR typelibs
+  # are only needed for language bindings, not for the daemon itself.
+  localsearch = if final.stdenv.hostPlatform.isAarch64
+    then prev.localsearch.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dintrospection=false" ];
+    })
+    else prev.localsearch;
+
+  # nautilus: Nautilus-4.0.gir generation fails on aarch64. The file manager
+  # is fully functional without the GIR typelib.
+  nautilus = if final.stdenv.hostPlatform.isAarch64
+    then prev.nautilus.overrideAttrs (old: {
+      mesonFlags = (old.mesonFlags or [ ]) ++ [ "-Dintrospection=false" ];
+      outputs = builtins.filter (o: o != "devdoc") (old.outputs or [ "out" ]);
+    })
+    else prev.nautilus;
+
   # graphene: LD_LIBRARY_PATH preBuild approach does not fix GIR resolution on
   # aarch64 because the build dir layout differs between graphene versions and
   # meson still passes -Dintrospection=enabled -Dgtk_doc=true. Disable both;
