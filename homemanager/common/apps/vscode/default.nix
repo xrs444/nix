@@ -334,6 +334,7 @@ in
           vscode-extensions.ms-vscode-remote.vscode-remote-extensionpack
           vscode-marketplace.nefrob.vscode-just-syntax
           vscode-marketplace.nico-castell.linux-desktop-file
+          vscode-marketplace.pawelhuryn.claude-usage-phuryn
           vscode-marketplace.pkief.material-product-icons
           vscode-marketplace.ryu1kn.partial-diff
           vscode-marketplace.s3anmorrow.openwithkraken
