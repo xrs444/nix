@@ -68,7 +68,6 @@
             "talos"
             "kanidm-primary"
             "letsencrypt-primary"
-            "cockpit"
             "tailscale-package"
             "monitoring-server"
             "github-runner"
@@ -322,7 +321,6 @@
 
       nixosModules = {
         asterisk = import ./modules/services/asterisk;
-        cockpit = import ./modules/packages-nixos/cockpit;
         zfs = import ./modules/services/zfs;
         letsencrypt = import ./modules/services/letsencrypt;
         kanidm = import ./modules/services/kanidm;

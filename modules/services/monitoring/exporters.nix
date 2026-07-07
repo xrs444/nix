@@ -261,7 +261,7 @@ in
     services.prometheus.exporters.blackbox = lib.mkIf isMonitoringServer {
       enable = true;
       port = 9115;
-      listenAddress = "0.0.0.0";
+      listenAddress = "127.0.0.1"; # Only scraped by local Prometheus
       openFirewall = false;
       configFile = pkgs.writeText "blackbox.yml" ''
         modules:
@@ -303,7 +303,7 @@ in
     services.prometheus.exporters.snmp = lib.mkIf isMonitoringServer {
       enable = true;
       port = 9116;
-      listenAddress = "0.0.0.0";
+      listenAddress = "127.0.0.1"; # Only scraped by local Prometheus
       openFirewall = false;
       # Disable config validation at eval time — the file lives at a runtime
       # path (/run/...) that doesn't exist in the Nix sandbox.

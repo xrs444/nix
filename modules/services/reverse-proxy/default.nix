@@ -29,11 +29,6 @@ let
       port = 3000;
       description = "Grafana Metrics Visualization";
     };
-    cockpit = {
-      subdomain = "cockpit";
-      port = 9092;
-      description = "Cockpit System Management";
-    };
   };
 
   # Helper to create OAuth2 proxy location

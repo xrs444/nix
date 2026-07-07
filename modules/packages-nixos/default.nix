@@ -2,7 +2,6 @@
 { lib, ... }:
 {
   imports = [
-    ./cockpit/default.nix
     ./kanidm/default.nix
   ];
 }

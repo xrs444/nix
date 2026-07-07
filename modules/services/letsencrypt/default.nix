@@ -130,7 +130,6 @@ lib.mkIf (!minimalImage) {
             extraDomainNames = [
               "alertmanager.${domain}"
               "grafana.${domain}"
-              "cockpit.${domain}"
               "auth.${domain}"
             ];
           };
