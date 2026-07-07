@@ -111,6 +111,26 @@
       "hermes-s-admin" = {
         members = [ "admins" ];
       };
+      # Kid-mode Hermes (hermes-k). Rowan + Greyson are members; parents
+      # (admins) get admin access. Sandbox: no infrastructure MCP tools,
+      # narrow capability set, kid-safe system prompt. Routed to by HA when
+      # speaker ID is a kid, kid-bound tablet is the input surface, or
+      # speaker is unidentified. See flux/apps/automation/hermes-k/ and
+      # the family-agent plan.
+      "hermes-k" = {
+        members = [ "rowan" "greyson" ];
+      };
+      "hermes-k-admin" = {
+        members = [ "admins" ];
+      };
+      # Vikunja — shared family task manager. All adults + kids get access;
+      # admins group grants Vikunja admin. See flux/apps/services/vikunja/.
+      "vikunja" = {
+        members = [ "users" ];
+      };
+      "vikunja-admin" = {
+        members = [ "admins" ];
+      };
       "grafana" = {
         members = [ "users" ];
       };
@@ -480,6 +500,52 @@
               "email"
             ];
             "hermes-s-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_hermes_k" = {
+          displayName = "Hermes Agent (kid-mode)";
+          originUrl = "https://hermes-k.xrs444.net";
+          originLanding = "https://hermes-k.xrs444.net";
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          # Requires a new sops entry `kanidm_oauth2_hermes_k_secret` in
+          # nix/secrets/kanidm_oauth2_secrets.yaml (sops edit). Until that
+          # is added, this OAuth2 client will fail to provision on xsvr1 —
+          # matches the "no deploy without the secret" invariant used by
+          # sealedsecret-hermes-k-config.yaml on the flux side.
+          basicSecretFile = "/run/secrets/kanidm_oauth2_hermes_k_secret";
+          scopeMaps = {
+            "hermes-k" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "hermes-k-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_vikunja" = {
+          displayName = "Vikunja";
+          originUrl = "https://vikunja.xrs444.net";
+          originLanding = "https://vikunja.xrs444.net";
+          preferShortUsername = true;
+          # Requires sops entry `oauth2_vikunja_secret` — see the pattern for
+          # oauth2_hermes_k_secret above.
+          basicSecretFile = "/run/secrets/kanidm_oauth2_vikunja_secret";
+          scopeMaps = {
+            "vikunja" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "vikunja-admin" = [
               "openid"
               "profile"
               "email"

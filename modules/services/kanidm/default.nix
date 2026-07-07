@@ -174,6 +174,25 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_hermes_k_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        # Add corresponding entry `oauth2_hermes_k_secret` to the sops file
+        # (run `sops nix/secrets/kanidm_oauth2_secrets.yaml` and paste an
+        # openssl-generated random secret) before deploying — provision.nix
+        # references this path via basicSecretFile.
+        key = "oauth2_hermes_k_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
+      sops.secrets.kanidm_oauth2_vikunja_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        # Add corresponding entry `oauth2_vikunja_secret` before deploying.
+        key = "oauth2_vikunja_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
       sops.secrets.kanidm_oauth2_grafana_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
         key = "oauth2_grafana_secret";
