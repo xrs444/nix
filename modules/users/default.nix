@@ -3,6 +3,7 @@
   lib,
   pkgs,
   minimalImage,
+  hostname ? null,
   ...
 }:
 {
@@ -11,7 +12,10 @@
     ./xrs444.nix
     ./deploy.nix
   ]
-  ++ lib.optional (!minimalImage) ./builder.nix;
+  ++ lib.optional (!minimalImage) ./builder.nix
+  # Samantha's account only exists on her own laptop, not fleet-wide like
+  # the admin accounts above.
+  ++ lib.optional (hostname == "xlt2-s") ./samantha.nix;
 
   config = {
     security.sudo.wheelNeedsPassword = true;

@@ -183,7 +183,7 @@ in
         extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
         extra-trusted-substituters = file:///zfs/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-        require-sigs = false
+        require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
         filter-syscalls = false
         system-features = nixos-test benchmark big-parallel kvm
@@ -195,7 +195,7 @@ in
         # Custom Nix configuration for native aarch64 builder
         extra-trusted-substituters = file:///zfs/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-        require-sigs = false
+        require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
         system-features = nixos-test benchmark big-parallel
         trusted-users = root builder
