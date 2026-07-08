@@ -177,6 +177,7 @@
           displayName = "Paperless-ngx";
           originUrl = "https://paperless.xrs444.net";
           originLanding = "https://paperless.xrs444.net";
+          allowInsecureClientDisablePkce = false; # Explicit false required: kanidm-provision doesn't unset a previously-true attribute merely by omitting the line
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_paperless_secret";
           scopeMaps = {
@@ -245,6 +246,7 @@
           displayName = "Mealie";
           originUrl = "https://mealie.xrs444.net";
           originLanding = "https://mealie.xrs444.net";
+          allowInsecureClientDisablePkce = false; # Explicit false required: kanidm-provision doesn't unset a previously-true attribute merely by omitting the line
           enableLegacyCrypto = true; # Required for Mealie's OIDC implementation
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_mealie_secret";
@@ -327,6 +329,7 @@
           displayName = "Audiobookshelf";
           originUrl = "https://audiobookshelf.xrs444.net";
           originLanding = "https://audiobookshelf.xrs444.net";
+          allowInsecureClientDisablePkce = false; # Explicit false required: kanidm-provision doesn't unset a previously-true attribute merely by omitting the line
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_audiobookshelf_secret";
           scopeMaps = {
