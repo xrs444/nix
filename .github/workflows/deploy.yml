@@ -214,6 +214,12 @@ jobs:
             #   2. DNS resolves to the wrong machine (e.g. stale cache pointing xcomm1.lan
             #      at xsvr1) — the wrong machine would return a different hostname, causing
             #      deploy-rs to activate the wrong config on xsvr1 and kill the CI runner.
+            # vocibuild is on Oracle Cloud, not .lan — reachable via vocibuild.xrs444.net
+            # (ProxyJump through the xts VIP, configured in programs.ssh.extraConfig).
+            DEPLOY_HOSTNAME="${host}.lan"
+            if [[ "$host" == "vocibuild" ]]; then
+              DEPLOY_HOSTNAME="vocibuild.xrs444.net"
+            fi
             REMOTE_HOSTNAME=$(ssh \
               -4 \
               -i /run/secrets/deploy_private_key \
@@ -221,7 +227,7 @@ jobs:
               -o UserKnownHostsFile=/dev/null \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
-              deploy@${host}.lan \
+              deploy@${DEPLOY_HOSTNAME} \
               "hostname" 2>/dev/null || echo "UNREACHABLE")
 
             if [[ "$REMOTE_HOSTNAME" != "$host" ]]; then
