@@ -156,6 +156,16 @@
             "auto-upgrade"
           ];
         };
+        xlt2-s = {
+          user = "samantha";
+          platform = "x86_64-linux";
+          type = "nixos";
+          desktop = "gnome";
+          roles = [
+            "monitoring-client"
+            "auto-upgrade"
+          ];
+        };
         cmrpi1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
