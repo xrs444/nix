@@ -266,8 +266,14 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          # Don't fail activation if this service fails - it will retry on next boot
-          SuccessExitStatus = "0 1 6";
+          # Retry automatically if Kanidm isn't ready yet when this runs (e.g. right
+          # after a deploy, before kanidm.service has finished restarting/re-issuing
+          # certs). Previously exit 1 was masked as "success" via SuccessExitStatus,
+          # which silently skipped retries and required a manual restart to apply.
+          Restart = "on-failure";
+          RestartSec = "15s";
+          StartLimitIntervalSec = 600;
+          StartLimitBurst = 15;
         };
         path = [
           pkgs.curl
@@ -280,14 +286,21 @@ in
 
           # Wait for Kanidm to be fully ready (with retries)
           echo "Waiting for Kanidm to be ready..."
-          for i in {1..30}; do
+          READY=false
+          for i in {1..40}; do
             if curl -sf "$IDM_URL/v1/auth" >/dev/null 2>&1; then
               echo "Kanidm is ready!"
+              READY=true
               break
             fi
-            echo "Attempt $i/30: Kanidm not ready yet, waiting..."
-            sleep 2
+            echo "Attempt $i/40: Kanidm not ready yet, waiting..."
+            sleep 3
           done
+
+          if [ "$READY" != "true" ]; then
+            echo "ERROR: Kanidm did not become ready in time" >&2
+            exit 1
+          fi
 
           # Authenticate via REST API (kanidm CLI requires interactive TTY)
           echo "Authenticating to Kanidm..."
