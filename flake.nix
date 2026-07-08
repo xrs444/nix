@@ -249,9 +249,7 @@
           "-i"                          # that may be unreachable from xsvr1 (different subnet)
           "/run/secrets/deploy_private_key"
           "-o"
-          "StrictHostKeyChecking=no"
-          "-o"
-          "UserKnownHostsFile=/dev/null"
+          "StrictHostKeyChecking=accept-new"
           "-o"
           "ConnectTimeout=30"
         ];
