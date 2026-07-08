@@ -165,7 +165,7 @@ lib.mkIf (!minimalImage) {
     # runtime chmod. Without this it defaults to 0700, which locks kanidm (in the
     # acme supplementary group) out of the synced idm.xrs444.net cert after any
     # deploy, until the next reboot re-runs acme-ssh-setup's chmod.
-    homeMode = "0750";
+    homeMode = lib.mkForce "0750";
     # bash shell required for SSH-based cert delivery from xsvr1
     shell = pkgs.bash;
     # Explicitly set empty authorized keys to prevent NixOS from building them at build time
