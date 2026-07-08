@@ -177,7 +177,6 @@
           displayName = "Paperless-ngx";
           originUrl = "https://paperless.xrs444.net";
           originLanding = "https://paperless.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_paperless_secret";
           scopeMaps = {
@@ -246,7 +245,6 @@
           displayName = "Mealie";
           originUrl = "https://mealie.xrs444.net";
           originLanding = "https://mealie.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           enableLegacyCrypto = true; # Required for Mealie's OIDC implementation
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_mealie_secret";
@@ -329,7 +327,6 @@
           displayName = "Audiobookshelf";
           originUrl = "https://audiobookshelf.xrs444.net";
           originLanding = "https://audiobookshelf.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_audiobookshelf_secret";
           scopeMaps = {
@@ -372,7 +369,6 @@
           displayName = "Matrix (Synapse)";
           originUrl = "https://matrix.xrs444.net";
           originLanding = "https://element.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_matrix_secret";
           scopeMaps = {
@@ -432,7 +428,6 @@
           displayName = "Warpgate Bastion";
           originUrl = "https://warpgate.xrs444.net";
           originLanding = "https://warpgate.xrs444.net";
-          allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_warpgate_secret";
           scopeMaps = {
