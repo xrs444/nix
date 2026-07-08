@@ -369,6 +369,7 @@
           displayName = "Matrix (Synapse)";
           originUrl = "https://matrix.xrs444.net";
           originLanding = "https://element.xrs444.net";
+          allowInsecureClientDisablePkce = true; # Re-added 2026-07-08: Element login failed with "home server error" after removal — see buglog
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_matrix_secret";
           scopeMaps = {
@@ -428,6 +429,7 @@
           displayName = "Warpgate Bastion";
           originUrl = "https://warpgate.xrs444.net";
           originLanding = "https://warpgate.xrs444.net";
+          allowInsecureClientDisablePkce = true; # Re-added 2026-07-08: login failed with a Kanidm-side error after removal — see buglog
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_warpgate_secret";
           scopeMaps = {
