@@ -18,16 +18,12 @@
       ];
     };
 
-    security.sudo.extraRules = [
-      {
-        users = [ "automation" ];
-        commands = [
-          {
-            command = "ALL";
-            options = [ "NOPASSWD" ];
-          }
-        ];
-      }
-    ];
+    # No NOPASSWD sudo here on purpose: audited 2026-07-08 (Windmill MCP listScripts/
+    # listFlows across the whole xrs444 workspace, plus a grep of flux/windmill-workspace)
+    # and found zero scripts or flows that SSH in as this user — f/sre/alert-ingest is the
+    # only flow that will eventually need runbook execution here, and it's explicitly
+    # stubbed ("No autonomous execution... wires in Phase C"). Add a scoped
+    # security.sudo.extraRules entry with the specific commands a runbook needs once one
+    # actually exists — don't restore NOPASSWD ALL as a placeholder for future use.
   };
 }

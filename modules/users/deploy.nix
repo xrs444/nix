@@ -20,17 +20,23 @@
     # closes the connection, producing "Bad file descriptor" / "unexpected end-of-file".
     nix.settings.trusted-users = [ "deploy" ];
 
-    # deploy-rs activates as root: it calls sudo for the activate-rs script and for the
-    # magic rollback canary (sudo rm /tmp/deploy-rs-canary-*). Rather than maintaining
-    # brittle glob patterns (paths change every build), grant NOPASSWD: ALL — the same
-    # policy the builder user uses. The deploy user has no interactive login and its
-    # SSH key is only held by xsvr1, so the blast radius is bounded.
+    # deploy-rs activates as root by SSHing in and running exactly two sudo'd commands
+    # (confirmed by reading deploy-rs src/deploy.rs + src/bin/activate.rs at the pinned
+    # revision): the per-deploy activate-rs binary, which already runs as root and
+    # internally execs the real activation script (switch-to-configuration or our
+    # extlinux wrapper) without needing a second sudo call; and a separate `rm` of the
+    # magic-rollback canary/lock file. The store path changes every deploy, so it's
+    # globbed on the hash rather than pinned.
     security.sudo.extraRules = [
       {
         users = [ "deploy" ];
         commands = [
           {
-            command = "ALL";
+            command = "/nix/store/*/activate-rs *";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/run/current-system/sw/bin/rm /tmp/deploy-rs-canary-*";
             options = [ "NOPASSWD" ];
           }
         ];
