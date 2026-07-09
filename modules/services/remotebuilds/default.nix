@@ -226,6 +226,14 @@ in
     Host ${lib.concatStringsSep " " (map buildHostname buildHosts)}
       User builder
       IdentityFile /root/.ssh/id_builder
+      # xlt1-t-vnixos is a VM on a laptop and goes offline without closing its
+      # end of the connection (sleep/shutdown, not a clean disconnect). Without
+      # keepalives, nix-daemon's ssh session just blocks on read() forever —
+      # observed hanging a CI run for 4+ hours. ServerAliveInterval/CountMax
+      # bounds detection to ~45s so nix falls back to the other builder instead.
+      ServerAliveInterval 15
+      ServerAliveCountMax 3
+      ConnectTimeout 10
 
     # VM hosts — skip strict key checking since they're rebuilt frequently.
     Host xlt1-t-vnixos.lan xlt1-t-vnixos

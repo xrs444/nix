@@ -103,11 +103,18 @@ jobs:
             fi
 
             BUILD_LOG=$(mktemp)
-            nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
+            # 40m circuit breaker: a remote builder (e.g. xlt1-t-vnixos, a laptop VM
+            # that goes offline without closing its connection) can otherwise hang
+            # this step for hours. timeout turns that into a normal build failure
+            # for this host instead of blocking the whole run.
+            timeout 40m nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
               --log-format bar-with-logs \
               --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
               2>&1 | tee "$BUILD_LOG"
             BUILD_RC=${PIPESTATUS[0]}
+            if [ $BUILD_RC -eq 124 ]; then
+              echo "$(ts) $host: BUILD TIMED OUT after 40m (builder likely unreachable)"
+            fi
 
             if [ $BUILD_RC -ne 0 ]; then
               # Extract leaf-failing drv paths from Nix's error output and propagate
@@ -134,7 +141,7 @@ jobs:
             # signed hash matches exactly what gets pushed to the remote.
             if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
               echo "$(ts) $host: building deploy-rs activatable path..."
-              nix build --no-link \
+              timeout 40m nix build --no-link \
                 --log-format bar-with-logs \
                 --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
                 ".#deploy.nodes.$host.profiles.system.path" 2>&1 || true
