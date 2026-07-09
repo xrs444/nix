@@ -372,7 +372,7 @@
           displayName = "Matrix (Synapse)";
           originUrl = "https://matrix.xrs444.net";
           originLanding = "https://element.xrs444.net";
-          allowInsecureClientDisablePkce = true; # Re-added 2026-07-08: Element login failed with "home server error" after removal — see buglog
+          allowInsecureClientDisablePkce = false; # Explicit false required: kanidm-provision doesn't unset a previously-true attribute merely by omitting the line (bug-371); earlier "true" was never genuinely tested — see bug-362
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_matrix_secret";
           scopeMaps = {
