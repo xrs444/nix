@@ -373,6 +373,7 @@ in
           add_redirect oauth2_hermes_t  "https://hermes-t.xrs444.net/auth/callback"
           add_redirect oauth2_hermes_s  "https://hermes-s.xrs444.net/auth/callback"
           add_redirect oauth2_grafana   "https://grafana.xrs444.net/login/generic_oauth"
+          add_redirect oauth2_vikunja   "https://vikunja.xrs444.net/auth/openid/kanidm"
         '';
       };
 
