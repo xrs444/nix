@@ -290,7 +290,7 @@
               ''
               else deployLib.activate.nixos cfg;
             magicRollback = true;
-            confirmTimeout = 60;
+            confirmTimeout = 180;
           };
         }) remoteNixosConfigs;
       };
