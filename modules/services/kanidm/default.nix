@@ -288,7 +288,7 @@ in
           echo "Waiting for Kanidm to be ready..."
           READY=false
           for i in {1..40}; do
-            if curl -sf "$IDM_URL/v1/auth" >/dev/null 2>&1; then
+            if curl -sf "$IDM_URL/status" >/dev/null 2>&1; then
               echo "Kanidm is ready!"
               READY=true
               break
