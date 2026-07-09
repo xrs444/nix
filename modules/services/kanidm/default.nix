@@ -362,7 +362,12 @@ in
           add_redirect oauth2_matrix "https://matrix.xrs444.net/_synapse/client/oidc/callback"
           add_redirect oauth2_seatable "https://seatable.xrs444.net/oauth/callback/"
           add_redirect oauth2_termix    "https://termix.xrs444.net/users/oidc/callback"
+          # Warpgate always affixes its internal http.listen port to the SSO
+          # redirect_uri it sends, regardless of external_host (upstream bug,
+          # warp-tech/warpgate#1252) -- register the :8888 variant it actually
+          # sends alongside the port-less one.
           add_redirect oauth2_warpgate  "https://warpgate.xrs444.net/@warpgate/api/sso/return"
+          add_redirect oauth2_warpgate  "https://warpgate.xrs444.net:8888/@warpgate/api/sso/return"
           add_redirect oauth2_manyfold  "https://manyfold.xrs444.net/users/auth/openid_connect/callback"
           add_redirect oauth2_windmill  "https://windmill.xrs444.net/user/login_callback/kanidm"
           add_redirect oauth2_hermes_t  "https://hermes-t.xrs444.net/auth/callback"
