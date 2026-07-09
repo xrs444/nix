@@ -222,8 +222,10 @@ rec {
             minimalImage = true;
             hostname = hostName;
           };
-          # Configure WiFi if enabled for this host
-          networking.wireless.enable = hostConfig.enableWifi or false;
+          # Configure WiFi if enabled for this host. mkDefault so NetworkManager's own
+          # internal `wireless.enable = true` (set when NM is active and not using iwd)
+          # doesn't conflict with this at the same priority.
+          networking.wireless.enable = inputs.nixpkgs.lib.mkDefault (hostConfig.enableWifi or false);
         }
       ]
       ++ [

@@ -102,13 +102,18 @@ write-sdcard device:
     diskutil unmountDisk {{device}}
     
     # Write the image (using rdisk for faster raw writes)
+    # bs=4M (uppercase) — GNU coreutils dd rejects lowercase "4m" as an invalid number,
+    # while BSD/macOS dd accepts either; uppercase works for both.
     set -l raw_device (string replace "disk" "rdisk" {{device}})
     echo "Writing image to $raw_device (this will take several minutes)..."
-    sudo dd if=$image of=$raw_device bs=4m status=progress
-    
+    if not sudo dd if=$image of=$raw_device bs=4M status=progress
+        echo "ERROR: dd failed — SD card was NOT written. Not ejecting."
+        exit 1
+    end
+
     echo "Ejecting disk..."
     diskutil eject {{device}}
-    
+
     echo "✅ SD card is ready!"
     echo "You can now remove the SD card and insert it into your device"
 

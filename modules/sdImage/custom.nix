@@ -16,9 +16,17 @@
 
 {
   config = lib.mkIf minimalImage {
-    # Networking: enable DHCP and NetworkManager for provisioning (unless wireless is enabled)
+    # Networking: enable DHCP for provisioning. NetworkManager is opt-in per-host (set
+    # networking.networkmanager.enable = true in the host's own network.nix, as cmrpi1 does)
+    # rather than defaulted on here.
+    # NOTE: do NOT derive this default from config.networking.wireless.enable — NetworkManager's
+    # own module conditionally sets networking.wireless.enable = true internally whenever it's
+    # active, which makes that a circular reference (infinite recursion) once evaluated either way.
+    # It also drags in bluez -> libical, which currently forces a local aarch64 build that hits
+    # the known Python 3.13 distutils/GIR failure (see cerebrum Do-Not-Repeat 2026-06-30) unless
+    # that exact libical output happens to be cached upstream.
     networking.useDHCP = lib.mkDefault true;
-    networking.networkmanager.enable = lib.mkDefault (!config.networking.wireless.enable);
+    networking.networkmanager.enable = lib.mkDefault false;
 
     # SSH for remote access during provisioning
     services.openssh.enable = lib.mkForce true;
