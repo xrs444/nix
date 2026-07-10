@@ -428,24 +428,6 @@
             ];
           };
         };
-        "oauth2_warpgate" = {
-          displayName = "Warpgate Bastion";
-          originUrl = "https://warpgate.xrs444.net";
-          originLanding = "https://warpgate.xrs444.net";
-          allowInsecureClientDisablePkce = true; # Re-added 2026-07-08: login failed with a Kanidm-side error after removal — see buglog
-          preferShortUsername = true;
-          basicSecretFile = "/run/secrets/kanidm_oauth2_warpgate_secret";
-          scopeMaps = {
-            "warpgate" = [
-              "openid"
-              "email"
-            ];
-            "warpgate-admin" = [
-              "openid"
-              "email"
-            ];
-          };
-        };
         "oauth2_windmill" = {
           displayName = "Windmill";
           originUrl = "https://windmill.xrs444.net";
