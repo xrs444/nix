@@ -536,6 +536,11 @@
           originUrl = "https://vikunja.xrs444.net";
           originLanding = "https://vikunja.xrs444.net";
           preferShortUsername = true;
+          # Vikunja's OIDC client doesn't send a PKCE code_challenge — Kanidm
+          # rejects the authorise request with "No PKCE code challenge was
+          # provided ... enforced PKCE mode" / invalid_request without this.
+          # Same class as Warpgate/Matrix/Paperless/Mealie/Audiobookshelf below.
+          allowInsecureClientDisablePkce = true;
           # Requires sops entry `oauth2_vikunja_secret` — see the pattern for
           # oauth2_hermes_k_secret above.
           basicSecretFile = "/run/secrets/kanidm_oauth2_vikunja_secret";
