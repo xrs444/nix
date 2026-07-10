@@ -242,6 +242,20 @@ in
       systemd.services.kanidm = {
         after = [ "acme-finished-idm.xrs444.net.target" ];
         wants = [ "acme-finished-idm.xrs444.net.target" ];
+        # services.kanidm.provision's built-in ExecStartPost reconciles
+        # oauth2 clients to their DECLARED state (originUrl/originLanding
+        # only) on every kanidm start — not just when provision.nix
+        # changes, but also cert renewals, crashes, reboots. That wipes
+        # out the extra callback-path redirect URIs added imperatively by
+        # kanidm-oauth2-redirect-urls.service below, silently breaking
+        # OIDC login for every app needing one (Vikunja, Warpgate, etc.)
+        # until someone notices and manually restarts that service. Re-run
+        # it after every kanidm start so it always re-layers on top.
+        # mkAfter ensures this runs after the built-in provisioning step.
+        # See bug-409/bug-410/bug-411.
+        serviceConfig.ExecStartPost = lib.mkAfter [
+          "+${pkgs.systemd}/bin/systemctl restart --no-block kanidm-oauth2-redirect-urls.service"
+        ];
       }
       // lib.optionalAttrs (config ? sops.secrets.kanidm_replication_cert) {
         environment = {
