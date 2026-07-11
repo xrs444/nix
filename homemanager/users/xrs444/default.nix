@@ -342,4 +342,26 @@
     fi
   '';
 
+  # Headroom (family-agent plan §9) — compresses Claude Code's own
+  # input/output tokens via verbosity steering + effort routing. Not in
+  # nixpkgs; installed via pipx (already in home.packages) rather than a
+  # hand-rolled derivation. Phase A adoption is this wrapper only — the
+  # DeepSeek-facing proxy hop and Headroom MCP server are Phase B/C (see
+  # plan §9 phasing; local MLX traffic deliberately never gets a Headroom
+  # hop).
+  home.activation.installHeadroom = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if ! $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx list --short 2>/dev/null | grep -q '^headroom-ai '; then
+      $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]"
+    fi
+  '';
+
+  # conf.d file (not programs.fish, which is Linux-only in fish.nix) so this
+  # lands regardless — fish itself is enabled system-wide via nix-darwin
+  # (hosts/darwin/default.nix) and auto-sources ~/.config/fish/conf.d/*.fish.
+  home.file.".config/fish/conf.d/headroom.fish".text = ''
+    if command -v headroom >/dev/null 2>&1
+      alias claude "headroom wrap claude"
+    end
+  '';
+
 }

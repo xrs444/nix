@@ -169,10 +169,6 @@ in
       };
       sops.secrets.kanidm_oauth2_hermes_k_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        # Add corresponding entry `oauth2_hermes_k_secret` to the sops file
-        # (run `sops nix/secrets/kanidm_oauth2_secrets.yaml` and paste an
-        # openssl-generated random secret) before deploying — provision.nix
-        # references this path via basicSecretFile.
         key = "oauth2_hermes_k_secret";
         owner = "kanidm";
         group = "kanidm";
@@ -180,7 +176,6 @@ in
       };
       sops.secrets.kanidm_oauth2_vikunja_secret = {
         sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        # Add corresponding entry `oauth2_vikunja_secret` before deploying.
         key = "oauth2_vikunja_secret";
         owner = "kanidm";
         group = "kanidm";
@@ -373,6 +368,7 @@ in
           add_redirect oauth2_windmill  "https://windmill.xrs444.net/user/login_callback/kanidm"
           add_redirect oauth2_hermes_t  "https://hermes-t.xrs444.net/auth/callback"
           add_redirect oauth2_hermes_s  "https://hermes-s.xrs444.net/auth/callback"
+          add_redirect oauth2_hermes_k  "https://hermes-k.xrs444.net/auth/callback"
           add_redirect oauth2_grafana   "https://grafana.xrs444.net/login/generic_oauth"
           add_redirect oauth2_vikunja   "https://vikunja.xrs444.net/auth/openid/kanidm"
         '';

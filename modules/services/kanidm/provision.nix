@@ -494,11 +494,6 @@
           originLanding = "https://hermes-k.xrs444.net";
           allowInsecureClientDisablePkce = true;
           preferShortUsername = true;
-          # Requires a new sops entry `kanidm_oauth2_hermes_k_secret` in
-          # nix/secrets/kanidm_oauth2_secrets.yaml (sops edit). Until that
-          # is added, this OAuth2 client will fail to provision on xsvr1 —
-          # matches the "no deploy without the secret" invariant used by
-          # sealedsecret-hermes-k-config.yaml on the flux side.
           basicSecretFile = "/run/secrets/kanidm_oauth2_hermes_k_secret";
           scopeMaps = {
             "hermes-k" = [
@@ -523,8 +518,6 @@
           # provided ... enforced PKCE mode" / invalid_request without this.
           # Same class as Warpgate/Matrix/Paperless/Mealie/Audiobookshelf below.
           allowInsecureClientDisablePkce = true;
-          # Requires sops entry `oauth2_vikunja_secret` — see the pattern for
-          # oauth2_hermes_k_secret above.
           basicSecretFile = "/run/secrets/kanidm_oauth2_vikunja_secret";
           scopeMaps = {
             "vikunja" = [
