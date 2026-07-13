@@ -4,7 +4,11 @@
   networking = {
     useNetworkd = true;
   };
- 
+
+  # Termix (k8s pod on 172.20.3.0/24) was tripping fail2ban's maxretry=3 sshd
+  # jail while the routing issue to the main IP was being worked out.
+  services.fail2ban.ignoreIP = [ "172.20.3.0/24" ];
+
   systemd.network = {
     enable = true;
     netdevs = {
