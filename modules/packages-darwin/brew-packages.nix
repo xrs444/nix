@@ -78,10 +78,19 @@
     };
 
     # Automatically update Homebrew and packages
+    #
+    # cleanup: "none", not "uninstall" — nix-darwin's homebrew module still
+    # invokes brew bundle's old (now-deprecated, no-op per Homebrew's own
+    # warning) --cleanup flag, so it silently fails to auto-force and falls
+    # through to an interactive [y/n] confirm prompt on every activation,
+    # which hangs `darwin-rebuild switch` (no TTY passthrough from the
+    # activation subprocess). Disables automatic removal of Homebrew
+    # packages that fall out of the Brewfile — run `brew bundle cleanup
+    # --force` manually if that's ever wanted.
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      cleanup = "uninstall";
+      cleanup = "none";
     };
   };
 }
