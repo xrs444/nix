@@ -40,6 +40,37 @@
     then prev.libxkbcommon.overrideAttrs (_: { doCheck = false; })
     else prev.libxkbcommon;
 
+  # gobject-introspection-unwrapped: giscanner/utils.py has an unconditional
+  # top-level `import distutils.cygwinccompiler` (only actually used on
+  # Windows/cygwin cross-builds), which crashes at import time on Python
+  # 3.12+ since distutils was removed from the stdlib. Breaks any from-source
+  # build that needs g-ir-scanner (e.g. gcr on aarch64-darwin — confirmed via
+  # `curl -sI https://cache.nixos.org/<hash>.narinfo` returning 404, i.e. no
+  # prebuilt binary exists for this platform, unlike the aarch64-linux
+  # packages covered by the note above). Scoped to Darwin since Linux builds
+  # are cached per that note; per the same note, verify cache availability
+  # before extending this further rather than assuming it's needed broadly.
+  gobject-introspection-unwrapped = if final.stdenv.hostPlatform.isDarwin
+    then prev.gobject-introspection-unwrapped.overrideAttrs (old: {
+      # All three lines are top-level, unconditional, and only meaningful on
+      # Windows/cygwin (monkeypatches distutils' MSVC-runtime detection) —
+      # wrap in try/except so it's skipped cleanly when distutils doesn't
+      # exist, rather than deleting behavior real Windows cross-builds need.
+      postPatch = (old.postPatch or "") + ''
+        substituteInPlace giscanner/utils.py \
+          --replace-fail 'import distutils.cygwinccompiler
+orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
+distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore' \
+          'try:
+    import distutils.cygwinccompiler
+    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
+    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore
+except ImportError:
+    pass'
+      '';
+    })
+    else prev.gobject-introspection-unwrapped;
+
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
   # of ['--list']. 1 test out of 18154 fails; package itself is fine.

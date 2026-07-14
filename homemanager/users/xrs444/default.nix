@@ -125,9 +125,11 @@
     just
     claude-code
     k9s
+    vja
+    nodejs
   ] ++ lib.optionals pkgs.stdenv.isLinux [
     baobab
-    windmill
+    vikunja-desktop
   ]
   # wimlib pulls in syslinux on Linux (for mkwinpeimg), which nixpkgs only
   # supports on i686-linux/x86_64-linux — evaluating it on aarch64-linux
@@ -135,45 +137,13 @@
   ++ lib.optional (pkgs.stdenv.hostPlatform.system != "aarch64-linux") wimlib;
 
   # Claude Code CLI settings
-  # PATH must be explicit — VSCode's extension host launches with a bare PATH
-  # that excludes /usr/local/bin (docker/OrbStack) and nix profile paths (sops).
   home.file.".claude/settings.json".text =
-    let
-      mcpPath = "/usr/local/bin:/etc/profiles/per-user/xrs444/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-    in
     builtins.toJSON {
       model = "opusplan";
       permissions.allow = [
         "WebFetch"
         "WebSearch"
       ];
-      mcpServers = {
-        homeassistant = {
-          command = "/Users/xrs444/.claude/scripts/run-ha-mcp.sh";
-          args = [];
-          env = { PATH = mcpPath; };
-        };
-        firewalla = {
-          command = "/Users/xrs444/.claude/scripts/run-firewalla-mcp.sh";
-          args = [];
-          env = { PATH = mcpPath; };
-        };
-        arr = {
-          command = "/Users/xrs444/.claude/scripts/run-arr-mcp.sh";
-          args = [];
-          env = { PATH = mcpPath; };
-        };
-        omada = {
-          command = "/Users/xrs444/.claude/scripts/run-omada-mcp.sh";
-          args = [];
-          env = { PATH = mcpPath; };
-        };
-        jellyfin = {
-          command = "/Users/xrs444/.claude/scripts/run-jellyfin-mcp.sh";
-          args = [];
-          env = { PATH = mcpPath; };
-        };
-      };
     };
 
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
@@ -182,102 +152,6 @@
       - path_regex: secrets/.*\.yaml$
         age: age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
   '';
-
-  # MCP server wrapper scripts — decrypt SOPS credentials and launch containers
-  home.file.".claude/scripts/run-omada-mcp.sh" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
-      OMADA_ID=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /client_id:/{print $2; exit}' | tr -d '"')
-      OMADA_SECRET=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /client_secret:/{print $2; exit}' | tr -d '"')
-      OMADA_OMADAC=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /omadac_id:/{print $2; exit}' | tr -d '"')
-      OMADA_SITE=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /site_id:/{print $2; exit}' | tr -d '"')
-      docker rm -f mcp-omada 2>/dev/null || true
-      exec docker run --rm -i --name "mcp-omada" \
-        -e OMADA_BASE_URL=https://omada.xrs444.net \
-        -e OMADA_CLIENT_ID="$OMADA_ID" \
-        -e OMADA_CLIENT_SECRET="$OMADA_SECRET" \
-        -e OMADA_OMADAC_ID="$OMADA_OMADAC" \
-        -e OMADA_SITE_ID="$OMADA_SITE" \
-        -e OMADA_STRICT_SSL=false \
-        jmtvms/tplink-omada-mcp:latest
-    '';
-  };
-
-  home.file.".claude/scripts/run-ha-mcp.sh" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
-      HA_URL=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /url:/{print $2; exit}' | tr -d '"')
-      HA_TOKEN=$(echo "$SECRETS" | awk '/^homeassistant:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
-      docker rm -f mcp-homeassistant 2>/dev/null || true
-      exec docker run --rm -i --name "mcp-homeassistant" \
-        -v mcp-ha-npm-cache:/root/.npm \
-        -e HOME_ASSISTANT_URL="$HA_URL" \
-        -e HOME_ASSISTANT_TOKEN="$HA_TOKEN" \
-        node:20-alpine \
-        npx --yes home-assistant-mcp
-    '';
-  };
-
-  home.file.".claude/scripts/run-firewalla-mcp.sh" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
-      FW_TOKEN=$(echo "$SECRETS" | awk '/^firewalla:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
-      docker rm -f mcp-firewalla 2>/dev/null || true
-      exec docker run --rm -i --name "mcp-firewalla" \
-        -e FIREWALLA_MSP_ID=dn-j3almw.firewalla.net \
-        -e FIREWALLA_MSP_TOKEN="$FW_TOKEN" \
-        amittell/firewalla-mcp-server:latest
-    '';
-  };
-
-  home.file.".claude/scripts/run-arr-mcp.sh" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
-      RADARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /radarr_api_key:/{print $2; exit}' | tr -d '"')
-      SONARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /sonarr_api_key:/{print $2; exit}' | tr -d '"')
-      LIDARR_KEY=$(echo "$SECRETS" | awk '/^arr:/{f=1} f && /lidarr_api_key:/{print $2; exit}' | tr -d '"')
-      docker rm -f mcp-arr 2>/dev/null || true
-      exec docker run --rm -i --name "mcp-arr" \
-        -v mcp-arr-npm-cache:/root/.npm \
-        -e RADARR_URL="https://radarr.xrs444.net" \
-        -e RADARR_API_KEY="$RADARR_KEY" \
-        -e SONARR_URL="https://sonarr.xrs444.net" \
-        -e SONARR_API_KEY="$SONARR_KEY" \
-        -e LIDARR_URL="https://lidarr.xrs444.net" \
-        -e LIDARR_API_KEY="$LIDARR_KEY" \
-        node:20-alpine \
-        npx --yes mcp-arr-server
-    '';
-  };
-
-  home.file.".claude/scripts/run-jellyfin-mcp.sh" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
-      JF_TOKEN=$(echo "$SECRETS" | awk '/^jellyfin:/{f=1} f && /token:/{print $2; exit}' | tr -d '"')
-      docker rm -f mcp-jellyfin 2>/dev/null || true
-      exec docker run --rm -i --name "mcp-jellyfin" \
-        -v mcp-jellyfin-npm-cache:/root/.npm \
-        -e JELLYFIN_URL="https://jellyfin.xrs444.net" \
-        -e JELLYFIN_API_KEY="$JF_TOKEN" \
-        node:20-alpine \
-        npx --yes jellyfin-mcp
-    '';
-  };
 
   # Enable font configuration
   fonts.fontconfig.enable = true;
@@ -360,6 +234,17 @@
   home.activation.installHeadroom = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if ! $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx list --short 2>/dev/null | grep -q '^headroom-ai '; then
       $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]"
+    fi
+  '';
+
+  # windmill-cli (wmill) — the actual CLI client for scripting against a
+  # hosted Windmill instance (push/pull scripts, run flows). Not in nixpkgs
+  # (only the 500MB self-hosted server/worker binary is, and it's Linux-only)
+  # so this installs the npm package into ~/.npm-global, matching
+  # home.sessionPath above. Cross-platform — applies on both xdt1-t and xlt1-t.
+  home.activation.installWindmillCli = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if ! $DRY_RUN_CMD test -x "$HOME/.npm-global/bin/wmill"; then
+      $DRY_RUN_CMD ${pkgs.nodejs}/bin/npm install --global --prefix "$HOME/.npm-global" windmill-cli
     fi
   '';
 
