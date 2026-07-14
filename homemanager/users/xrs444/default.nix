@@ -115,7 +115,6 @@
     lz4
     lzo
     p7zip
-    wimlib
     xz
     zstd
     wireshark
@@ -129,7 +128,11 @@
   ] ++ lib.optionals pkgs.stdenv.isLinux [
     baobab
     windmill
-  ];
+  ]
+  # wimlib pulls in syslinux on Linux (for mkwinpeimg), which nixpkgs only
+  # supports on i686-linux/x86_64-linux — evaluating it on aarch64-linux
+  # (xlt1-t-vnixos) throws "not available on the requested hostPlatform".
+  ++ lib.optional (pkgs.stdenv.hostPlatform.system != "aarch64-linux") wimlib;
 
   # Claude Code CLI settings
   # PATH must be explicit — VSCode's extension host launches with a bare PATH
@@ -186,13 +189,18 @@
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
+      SECRETS=$(sops --decrypt "$HOME/.claude/secrets/mcp-credentials.yaml")
+      OMADA_ID=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /client_id:/{print $2; exit}' | tr -d '"')
+      OMADA_SECRET=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /client_secret:/{print $2; exit}' | tr -d '"')
+      OMADA_OMADAC=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /omadac_id:/{print $2; exit}' | tr -d '"')
+      OMADA_SITE=$(echo "$SECRETS" | awk '/^omada:/{f=1} f && /site_id:/{print $2; exit}' | tr -d '"')
       docker rm -f mcp-omada 2>/dev/null || true
       exec docker run --rm -i --name "mcp-omada" \
         -e OMADA_BASE_URL=https://omada.xrs444.net \
-        -e OMADA_CLIENT_ID=680ae9cdd8da44bab937bfbeac61cf99 \
-        -e OMADA_CLIENT_SECRET=09cbfcd6756843f89c8a1fe97412668f \
-        -e OMADA_OMADAC_ID=44d12ba71e4a4c20a9ae0ba9450b329f \
-        -e OMADA_SITE_ID=697265cd09f80c5efb95b309 \
+        -e OMADA_CLIENT_ID="$OMADA_ID" \
+        -e OMADA_CLIENT_SECRET="$OMADA_SECRET" \
+        -e OMADA_OMADAC_ID="$OMADA_OMADAC" \
+        -e OMADA_SITE_ID="$OMADA_SITE" \
         -e OMADA_STRICT_SSL=false \
         jmtvms/tplink-omada-mcp:latest
     '';
