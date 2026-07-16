@@ -9,6 +9,7 @@
       "qmk/qmk"
       "nikitabobko/tap"
       "FelixKratz/formulae"
+      "fenio/tap"
     ];
 
     # Packages installed via `brew install`
@@ -23,6 +24,7 @@
     # GUI applications installed via `brew install --cask`
     casks = [
       "nikitabobko/tap/aerospace"
+      "fenio/tap/anylinuxfs-gui"
       "balenaetcher"
       "bambu-studio"
       "batteryboi"
