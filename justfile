@@ -246,33 +246,29 @@ extract-thomas-local-key:
     echo ""
     echo "Note: The corresponding public key is deployed via NixOS configuration"
 
-# Deploy thomas-local SSH key (from SOPS) to a Bazzite host for Ansible access
+# Deploy thomas-local SSH key (~/.ssh/thomas-local_key) to a nixable host for Ansible access
 deploy-ssh-key hostname user="$USER":
     #!/usr/bin/env bash
     set -euo pipefail
 
     HOSTNAME="{{hostname}}"
     INITIAL_USER="{{user}}"
-    SECRETS_FILE="{{scripts_dir}}/secrets/deploy-ssh-key.yaml"
+    # nixible's ansible_private_key_file (hosts/nixable/common/default.nix) connects as
+    # the ansible user using this exact local key file — deploy its public half, not
+    # whatever secrets/deploy-ssh-key.yaml currently decrypts to (that file has drifted
+    # to hold the deploy-rs CI key, "deploy@xsvr1", not the thomas-local key nixible
+    # actually authenticates with — deploying it left ansible@<host> unreachable by key).
+    KEY_PATH="$HOME/.ssh/thomas-local_key"
 
-    # Extract public key from SOPS-encrypted private key
-    echo "Extracting public key from SOPS..."
-    if [[ ! -f "$SECRETS_FILE" ]]; then
-        echo "ERROR: Secrets file not found: $SECRETS_FILE"
+    if [[ ! -f "$KEY_PATH" ]]; then
+        echo "ERROR: $KEY_PATH not found. Run 'just extract-thomas-local-key' first."
         exit 1
     fi
 
-    # Decrypt private key and extract public key using ssh-keygen
-    TMP_KEY=$(mktemp)
-    trap "rm -f $TMP_KEY" EXIT
-
-    sops -d "$SECRETS_FILE" 2>/dev/null | awk '/-----BEGIN/,/-----END/' | sed 's/^    //' > "$TMP_KEY"
-    chmod 600 "$TMP_KEY"
-
-    SSH_PUBLIC_KEY=$(ssh-keygen -y -f "$TMP_KEY")
+    SSH_PUBLIC_KEY=$(ssh-keygen -y -f "$KEY_PATH")
 
     if [[ -z "$SSH_PUBLIC_KEY" ]]; then
-        echo "ERROR: Failed to extract public key from private key"
+        echo "ERROR: Failed to extract public key from $KEY_PATH"
         exit 1
     fi
 
@@ -282,8 +278,11 @@ deploy-ssh-key hostname user="$USER":
     echo ""
 
     # Test SSH connectivity
+    # accept-new: nixable hosts (Bazzite reinstalls, SD card reflashes) legitimately
+    # rotate their host key between onboardings — treat an unknown/changed key as
+    # trust-on-first-use rather than failing hard like a stale-cache MITM warning.
     echo "Testing SSH connectivity to $HOSTNAME..."
-    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "$INITIAL_USER@$HOSTNAME" "echo 'SSH connection successful'" 2>/dev/null; then
+    if ! ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$INITIAL_USER@$HOSTNAME" "echo 'SSH connection successful'" 2>/dev/null; then
         echo "⚠️  Cannot connect with key-based auth, you may need to enter password"
     fi
 
@@ -291,7 +290,7 @@ deploy-ssh-key hostname user="$USER":
     echo "Creating ansible user on $HOSTNAME..."
     echo "Note: You may be prompted for sudo password"
 
-    ssh -t "$INITIAL_USER@$HOSTNAME" 'bash -c "
+    ssh -t -o StrictHostKeyChecking=accept-new "$INITIAL_USER@$HOSTNAME" 'bash -c "
         set -euo pipefail
         if [[ \$EUID -ne 0 ]]; then
             SUDO=\"sudo\"
@@ -300,7 +299,9 @@ deploy-ssh-key hostname user="$USER":
         fi
         echo \"Creating ansible user...\"
         \$SUDO useradd -m -s /bin/bash -c \"Ansible automation user\" ansible 2>/dev/null || echo \"User ansible already exists\"
-        \$SUDO usermod -aG wheel ansible
+        # wheel is the Fedora/Bazzite admin group; Debian-based hosts (e.g. DietPi) use sudo instead.
+        # sudoers.d/ansible below grants access directly, so a missing group here is not fatal.
+        \$SUDO usermod -aG wheel ansible 2>/dev/null || \$SUDO usermod -aG sudo ansible 2>/dev/null || true
         echo \"ansible ALL=(ALL) NOPASSWD: ALL\" | \$SUDO tee /etc/sudoers.d/ansible > /dev/null
         \$SUDO chmod 0440 /etc/sudoers.d/ansible
         \$SUDO mkdir -p /home/ansible/.ssh
@@ -311,11 +312,13 @@ deploy-ssh-key hostname user="$USER":
 
     # Deploy SSH key
     echo "Deploying SSH public key..."
-    ssh -t "$INITIAL_USER@$HOSTNAME" "sudo bash -c 'echo \"$SSH_PUBLIC_KEY\" >> /home/ansible/.ssh/authorized_keys && chmod 600 /home/ansible/.ssh/authorized_keys && chown ansible:ansible /home/ansible/.ssh/authorized_keys && sort -u /home/ansible/.ssh/authorized_keys -o /home/ansible/.ssh/authorized_keys && echo \"SSH key deployed successfully\"'"
+    ssh -t -o StrictHostKeyChecking=accept-new "$INITIAL_USER@$HOSTNAME" "sudo bash -c 'echo \"$SSH_PUBLIC_KEY\" >> /home/ansible/.ssh/authorized_keys && chmod 600 /home/ansible/.ssh/authorized_keys && chown ansible:ansible /home/ansible/.ssh/authorized_keys && sort -u /home/ansible/.ssh/authorized_keys -o /home/ansible/.ssh/authorized_keys && echo \"SSH key deployed successfully\"'"
 
     # Test ansible user connection
+    # ~/.ssh/config's thomas-local IdentityFile block only matches *.lan / thomas-local@*,
+    # not ansible@<bare-hostname>, so the deployed key must be passed explicitly here.
     echo "Testing ansible user SSH connection..."
-    if ssh -o ConnectTimeout=5 "ansible@$HOSTNAME" "echo 'Ansible user connection successful'" 2>/dev/null; then
+    if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i "$KEY_PATH" "ansible@$HOSTNAME" "echo 'Ansible user connection successful'" 2>/dev/null; then
         echo ""
         echo "✅ SSH key deployment successful!"
         echo ""

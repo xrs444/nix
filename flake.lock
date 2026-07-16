@@ -597,6 +597,23 @@
         "url": "https://flakehub.com/f/NixOS/nix/%3D2.26.2"
       }
     },
+    "nixible": {
+      "locked": {
+        "dir": "lib",
+        "lastModified": 1767290102,
+        "narHash": "sha256-XmTqZH8tYRFPvRm5ZtcUTn1wYDLn767vq4ed0wr87Ok=",
+        "owner": "TECHNOFAB",
+        "repo": "nixible",
+        "rev": "f87cd73c98cae38e5a6eaafb1beb28e05a46905f",
+        "type": "gitlab"
+      },
+      "original": {
+        "dir": "lib",
+        "owner": "TECHNOFAB",
+        "repo": "nixible",
+        "type": "gitlab"
+      }
+    },
     "nixos-hardware": {
       "locked": {
         "lastModified": 1761824787,
@@ -885,6 +902,7 @@
         "nix-index-database": "nix-index-database",
         "nix-snapd": "nix-snapd",
         "nix-vscode-extensions": "nix-vscode-extensions",
+        "nixible": "nixible",
         "nixos-hardware": "nixos-hardware",
         "nixos-needsreboot": "nixos-needsreboot",
         "nixpkgs": "nixpkgs_8",

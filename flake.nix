@@ -32,6 +32,8 @@
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     nix-index-database.url = "github:Mic92/nix-index-database";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
+    # Ansible playbooks-as-Nix, used to manage non-NixOS hosts (Bazzite, DietPi) — see hosts/nixable/
+    nixible.url = "gitlab:TECHNOFAB/nixible?dir=lib";
     nix-flatpak.url = "https://flakehub.com/f/gmodena/nix-flatpak/*";
     nix-snapd.url = "https://flakehub.com/f/io12/nix-snapd/*";
     nix-snapd.inputs.nixpkgs.follows = "nixpkgs";
@@ -346,6 +348,25 @@
         github-runner = import ./modules/services/github-runner;
       };
       formatter = lib.forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.nixfmt);
+
+      # Nixible CLIs for non-NixOS hosts (Bazzite, DietPi) — run with `nix run .#<host>`.
+      # See hosts/nixable/readme-doc.md for the underlying Ansible-as-Nix pattern.
+      packages = lib.forAllSystems (
+        system:
+        let
+          nixible_lib = inputs.nixible.lib {
+            pkgs = inputs.nixpkgs.legacyPackages.${system};
+            lib = inputs.nixpkgs.lib;
+          };
+        in
+        {
+          xdt1-t-game = nixible_lib.mkNixibleCli ./hosts/nixable/xdt1-t-game/default.nix;
+          xdt2-g = nixible_lib.mkNixibleCli ./hosts/nixable/xdt2-g/default.nix;
+          xdt3-r = nixible_lib.mkNixibleCli ./hosts/nixable/xdt3-r/default.nix;
+          xdash1 = nixible_lib.mkNixibleCli ./hosts/nixable/xdash1/default.nix;
+        }
+      );
+
       overlays = {
         kanidm = import ./overlays/kanidm.nix { inherit inputs; };
         pkgs = import ./overlays/pkgs.nix { inherit inputs; };

@@ -1,13 +1,13 @@
 # Summary: Common nixible configuration for Bazzite hosts, shared collections and settings
 {...}: {
-  # Common Ansible collections used across all Bazzite hosts
+  # Common Ansible collections used across all nixable hosts
   # Add frequently used collections here with their versions and hashes
   collections = {
-    # Example: Uncomment and add hash when needed
-    # "community-general" = {
-    #   version = "8.0.0";
-    #   hash = "sha256-REPLACE_WITH_ACTUAL_HASH";
-    # };
+    # Provides the authorized_key module used by every host's SSH key deployment task
+    "ansible-posix" = {
+      version = "2.2.2";
+      hash = "sha256-AKWMXYBMmtyZw8PcG58iRvS7X3M3lBRA4JVvDjHDuCs=";
+    };
   };
 
   # Common configuration that can be shared across all nixable hosts

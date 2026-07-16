@@ -20,6 +20,7 @@ let
     "172.18.10.2" # xts2 — static IP avoids VIP/keepalived routing issues
     "xcomm1.lan"
     "xpbx1.lan"
+    "xdash1.lan" # DietPi — HA dashboard kiosk, node_exporter via nixible (hosts/nixable/xdash1)
     # cmrpi1 removed — host decommissioned, DNS NXDOMAIN
     # vocibuild — Oracle Cloud A1 ARM builder, reachable via Tailscale MagicDNS.
     # Replace with static Tailscale IP (100.x.x.x) once the host is up and registered.

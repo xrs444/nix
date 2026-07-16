@@ -74,7 +74,7 @@ in {
         }
         {
           name = "Deploy SSH public keys for thomas-local";
-          authorized_key = {
+          "ansible.posix.authorized_key" = {
             user = "thomas-local";
             key = "{{ item }}";
             state = "present";
