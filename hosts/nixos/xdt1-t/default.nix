@@ -38,4 +38,14 @@
   # nvme must be in kernelModules (not just availableKernelModules) so it is
   # loaded before systemd-initrd attempts to mount the root filesystem.
   boot.initrd.kernelModules = [ "nvme" ];
+
+  # obs-websocket password for xrs444's home-manager OBS config (apps/obs.nix).
+  # xdt1-t only — OBS is only installed here.
+  sops.secrets."obs-websocket-password" = {
+    sopsFile = ../../../secrets/obs-websocket.yaml;
+    key = "obs_websocket_password";
+    owner = "xrs444";
+    group = "xrs444";
+    mode = "0400";
+  };
 }
