@@ -154,7 +154,6 @@
       "xcomm1" = { };
       "xcomm1-admin" = { };
       "xdash1-admin" = { };
-      "xhac-radio-admin" = { };
     };
     systems = {
       oauth2 = {
