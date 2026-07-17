@@ -18,12 +18,12 @@
       "lazyssh"
       "ice"
       "mas"
-      "FelixKratz/formulae/borders"
+      { name = "FelixKratz/formulae/borders"; postinstall = "xattr -cr $(brew --prefix)/opt/borders"; }
     ];
 
     # GUI applications installed via `brew install --cask`
     casks = [
-      "nikitabobko/tap/aerospace"
+      { name = "nikitabobko/tap/aerospace"; args = { no_quarantine = true; }; }
       "fenio/tap/anylinuxfs-gui"
       "balenaetcher"
       "bambu-studio"
