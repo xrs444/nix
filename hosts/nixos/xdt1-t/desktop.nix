@@ -114,6 +114,7 @@ in
 
       # File manager
       thunar
+      gparted # Partition editor
 
       # Audio / network
       pavucontrol

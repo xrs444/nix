@@ -56,6 +56,7 @@
 
     # File manager
     thunar            # Simple GUI file manager
+    gparted           # Partition editor
 
     # System utilities
     pavucontrol       # Audio control
