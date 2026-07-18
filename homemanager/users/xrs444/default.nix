@@ -71,7 +71,10 @@
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
-  ] ++ lib.optional (hostName == "xdt1-t") ./apps/obs.nix
+  ] ++ lib.optionals (hostName == "xdt1-t") [
+    ./apps/obs.nix
+    ./apps/rip.nix
+  ]
     ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
   # Install non-standard fonts

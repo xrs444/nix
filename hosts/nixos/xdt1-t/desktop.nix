@@ -129,6 +129,11 @@ in
       mangohud
       gamemode
 
+      # Disc ripping for Romm (bin/cue) — redumper does the actual dump,
+      # cuetools verifies/post-processes the resulting cue sheets
+      redumper
+      cuetools
+
       # RGB lighting control
       openrgb
 
