@@ -197,6 +197,7 @@ let
     community=$(cat /run/secrets/snmp-community)
     ${pkgs.gnused}/bin/sed "s/@SNMP_COMMUNITY@/$community/g" \
       ${snmpYmlTemplate} > /run/prometheus-snmp-exporter/snmp.yml
+    chown snmp-exporter:snmp-exporter /run/prometheus-snmp-exporter/snmp.yml
     chmod 640 /run/prometheus-snmp-exporter/snmp.yml
   '';
 in

@@ -14,4 +14,24 @@
     pkgs.vja
     pkgs.vikunja-desktop
   ];
+
+  # vja (Vikunja CLI) server config — non-secret. The API token is decrypted
+  # by sops-nix (modules/users/samantha.nix) to its default /run/secrets/
+  # location, then symlinked into ~/.config/vja/token.json below.
+  home.file.".config/vja/config.rc".text = lib.mkIf pkgs.stdenv.isLinux ''
+    [application]
+    frontend_url=https://vikunja.xrs444.net/
+    api_url=https://vikunja.xrs444.net/api/v1
+  '';
+
+  # Symlink the sops-managed token into vja's expected location.
+  # Deliberately not a sops `path` override — see
+  # homemanager/users/xrs444/default.nix for why that races with this same-
+  # directory config.rc write and can silently break other home-manager-
+  # managed dotfiles.
+  home.activation.linkVjaToken = lib.mkIf pkgs.stdenv.isLinux (
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      $DRY_RUN_CMD ln -sfn /run/secrets/vikunja-api-token-samantha "$HOME/.config/vja/token.json"
+    ''
+  );
 }

@@ -156,6 +156,31 @@
         age: age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
   '';
 
+  # vja (Vikunja CLI) server config — non-secret. The API token is decrypted
+  # by sops-nix (modules/users/xrs444.nix on Linux, hosts/darwin/default.nix
+  # on Darwin) to its default /run/secrets/<name> location, then symlinked
+  # into ~/.config/vja/token.json below.
+  home.file.".config/vja/config.rc".text = ''
+    [application]
+    frontend_url=https://vikunja.xrs444.net/
+    api_url=https://vikunja.xrs444.net/api/v1
+  '';
+
+  # Symlink the sops-managed token into vja's expected location.
+  # Deliberately not a sops `path` override: sops places secrets as root, so
+  # a custom path under ~/.config/vja would force that directory to be
+  # created root-owned, racing with this same-directory config.rc write
+  # above (unprivileged) and aborting home-manager's activation partway —
+  # which is what silently wiped VS Code's extension symlinks on xlt1-t.
+  home.activation.linkVjaToken = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    $DRY_RUN_CMD ln -sfn ${
+      if pkgs.stdenv.isDarwin then
+        "/run/secrets/vikunja-api-token"
+      else
+        "/run/secrets/vikunja-api-token-xrs444"
+    } "$HOME/.config/vja/token.json"
+  '';
+
   # Enable font configuration
   fonts.fontconfig.enable = true;
 
@@ -236,7 +261,17 @@
   # hop).
   home.activation.installHeadroom = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if ! $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx list --short 2>/dev/null | grep -q '^headroom-ai '; then
-      $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]"
+      # litellm (a headroom-ai dep) builds Rust extensions via maturin, which
+      # needs a C linker. This activation script's PATH is deliberately
+      # minimal (coreutils etc. only) and has no compiler on it, so pull in
+      # the system toolchain (Xcode CLT's /usr/bin/cc on Darwin) just for
+      # this install. Best-effort and non-fatal: a failed optional dev-tool
+      # install must never abort the rest of activation — this step used to
+      # be fatal and its failure skipped every later step (VS Code extension
+      # symlinking, settings.json writability, etc.), which is what broke
+      # VS Code on xlt1-t.
+      PATH="/usr/bin:$PATH" $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]" \
+        || echo "Warning: headroom-ai install failed, continuing activation" >&2
     fi
   '';
 
@@ -247,7 +282,19 @@
   # home.sessionPath above. Cross-platform — applies on both xdt1-t and xlt1-t.
   home.activation.installWindmillCli = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if ! $DRY_RUN_CMD test -x "$HOME/.npm-global/bin/wmill"; then
-      $DRY_RUN_CMD ${pkgs.nodejs}/bin/npm install --global --prefix "$HOME/.npm-global" windmill-cli
+      # windmill-cli's postinstall (esbuild) shells out to a bare `node`.
+      # This activation script's PATH is deliberately minimal and has no
+      # node on it, so pull in nodejs's own bin dir just for this install.
+      # Best-effort and non-fatal — see installHeadroom above for why a
+      # failed optional dev-tool install must never abort the rest of
+      # activation.
+      PATH="${pkgs.nodejs}/bin:$PATH" $DRY_RUN_CMD ${pkgs.nodejs}/bin/npm install --global --prefix "$HOME/.npm-global" windmill-cli \
+        || echo "Warning: windmill-cli install failed, continuing activation" >&2
+      # npm (at least under this activation script's environment) installs
+      # windmill-cli's bin script without the executable bit, so the
+      # `test -x` guard above never sees it as installed and this step
+      # re-runs (and fails) every single activation. Force it executable.
+      $DRY_RUN_CMD chmod +x "$HOME/.npm-global/lib/node_modules/windmill-cli/esm/main.js" 2>/dev/null || true
     fi
   '';
 

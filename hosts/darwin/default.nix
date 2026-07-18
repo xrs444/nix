@@ -17,6 +17,37 @@
   # Set system state version
   system.stateVersion = 5;
 
+  # sops-nix on Darwin: no host SSH key to derive an age key from (unlike
+  # base-nixos.nix's /etc/ssh/sops-age-key.txt), so decryption uses the
+  # user's own personal age key instead. That key must already exist at this
+  # path on every Darwin host (it's the same key used for manual `sops -d`
+  # via SOPS_AGE_KEY_FILE in home-manager, and is one of the recipients in
+  # .sops.yaml as user_xrs444 — not host-specific, so it's shared across
+  # xlt1-t and xcog1). Runs via system.activationScripts.postActivation
+  # (on darwin-rebuild switch) and a RunAtLoad launchd daemon (on boot).
+  sops.age.keyFile = "/Users/${username}/.config/sops/age/keys.txt";
+  sops.defaultSopsFile = ../../secrets/vikunja-api-tokens.yaml;
+
+  # vja (Vikunja CLI) API token — see homemanager/users/xrs444/default.nix
+  # for the non-secret config.rc, and modules/users/xrs444.nix for the
+  # equivalent secret on xrs444's NixOS hosts (same key, one token per user
+  # shared across all their machines).
+  #
+  # Deliberately no custom `path` here: sops secrets are placed by root
+  # during darwin-rebuild switch, so a custom path under ~/.config/vja
+  # forces that directory to be created root-owned. home-manager (running
+  # unprivileged, separately) then can't write config.rc into the same
+  # directory and its activation aborts partway — which is what silently
+  # wiped VS Code's extension symlinks on xlt1-t. Leaving the secret at its
+  # default /run/secrets/vikunja-api-token and letting home-manager symlink
+  # it in (see homemanager/users/xrs444/default.nix) avoids the race.
+  sops.secrets."vikunja-api-token" = {
+    key = "${username}_token_json";
+    owner = username;
+    group = "staff";
+    mode = "0400";
+  };
+
   # Enable fish shell system-wide
   programs.fish.enable = true;
 
