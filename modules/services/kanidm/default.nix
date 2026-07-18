@@ -188,6 +188,13 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_craftycontroller_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_craftycontroller_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -371,6 +378,7 @@ in
           add_redirect oauth2_hermes_k  "https://hermes-k.xrs444.net/auth/callback"
           add_redirect oauth2_grafana   "https://grafana.xrs444.net/login/generic_oauth"
           add_redirect oauth2_vikunja   "https://vikunja.xrs444.net/auth/openid/kanidm"
+          add_redirect oauth2_craftycontroller "https://crafty.xrs444.net/oauth2/callback"
         '';
       };
 

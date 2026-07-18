@@ -120,6 +120,7 @@ rec {
           nixpkgs.overlays = overlays;
           nixpkgs.config.allowUnfree = true;
         }
+        inputs.sops-nix.darwinModules.sops
         ../hosts/darwin/default.nix
         (../hosts/darwin + "/${hostName}")
       ]

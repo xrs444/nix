@@ -27,6 +27,12 @@
       "longhorn-admin" = {
         members = [ "admins" ];
       };
+      "craftycontroller" = {
+        members = [ "users" ];
+      };
+      "craftycontroller-admin" = {
+        members = [ "admins" ];
+      };
       "lubelogger" = {
         members = [ "users" ];
       };
@@ -220,6 +226,26 @@
           basicSecretFile = "/run/secrets/kanidm_oauth2_longhorn_secret";
           scopeMaps = {
             "longhorn-admin" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
+        "oauth2_craftycontroller" = {
+          displayName = "Crafty Controller";
+          originUrl = "https://crafty.xrs444.net";
+          originLanding = "https://crafty.xrs444.net";
+          basicSecretFile = "/run/secrets/kanidm_oauth2_craftycontroller_secret";
+          scopeMaps = {
+            "craftycontroller" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            "craftycontroller-admin" = [
               "openid"
               "profile"
               "email"

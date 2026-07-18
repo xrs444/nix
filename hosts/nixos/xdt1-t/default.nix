@@ -48,4 +48,15 @@
     group = "xrs444";
     mode = "0400";
   };
+
+  # Same password, also delivered as a plain text file for external tooling
+  # that expects it at a fixed path.
+  sops.secrets."obs-websocket-password-pwdfile" = {
+    sopsFile = ../../../secrets/obs-websocket.yaml;
+    key = "obs_websocket_password";
+    owner = "xrs444";
+    group = "xrs444";
+    mode = "0400";
+    path = "/home/xrs444/.pwd/obs";
+  };
 }
