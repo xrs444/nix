@@ -12,6 +12,7 @@
     ./disks.nix
     ./hardware-nvidia.nix
     ./shares.nix
+    ./syncthing.nix
     ../../common
   ];
 

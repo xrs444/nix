@@ -133,6 +133,10 @@
   ] ++ lib.optionals pkgs.stdenv.isLinux [
     baobab
     vikunja-desktop
+    # Obsidian is already installed via brew on darwin (packages-darwin/brew-packages.nix);
+    # this brings xdt1-t to parity so the vault (synced via services.syncthing below) has
+    # the same editor available. Unfree — see allowUnfreePredicate in this host's config.
+    obsidian
   ]
   # wimlib pulls in syslinux on Linux (for mkwinpeimg), which nixpkgs only
   # supports on i686-linux/x86_64-linux — evaluating it on aarch64-linux
@@ -190,8 +194,72 @@
   #  executable = true;
   # };
 
+  # Obsidian vault workflow scripts (see the "obsidian vault" plan for full
+  # context). Cross-platform: both use $HOME internally so the same script
+  # works unmodified on xlt1-t (/Users/xrs444) and xdt1-t (/home/xrs444).
+  #
+  # publish-blog: one-way rsync of vault Blog/*.md -> site repo
+  # content/posts/, then git commit+push. Cloudflare Pages builds on push,
+  # so this script's job ends at the push.
+  home.file.".local/bin/publish-blog" = {
+    source = ./scripts/publish-blog.sh;
+    executable = true;
+  };
+
+  # sync-vikunja-tasks: one-way mirror of the Vikunja "HomeProd" project
+  # into a generated, read-only Tasks/HomeProd.md in the vault. Vikunja
+  # stays the single source of truth for task management (user + Claude +
+  # future Hermes-t) — see plan doc for why this is one-way, not the
+  # two-way obsidian-vikunja-plugin (its "Obsidian always wins"/single-user
+  # conflict model and broken bucket/project support make it unsafe for
+  # multi-client use).
+  home.file.".local/bin/sync-vikunja-tasks" = {
+    source = ./scripts/sync-vikunja-tasks.sh;
+    executable = true;
+  };
+
+  # Refresh timer for sync-vikunja-tasks, ~every 15 min. launchd doesn't
+  # expand $HOME in ProgramArguments, so the absolute path is rebuilt here
+  # the same way home.homeDirectory is above rather than depending on
+  # `config` (not in this module's function head).
+  launchd.agents.sync-vikunja-tasks = lib.mkIf pkgs.stdenv.isDarwin {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        "${if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}"}/.local/bin/sync-vikunja-tasks"
+      ];
+      StartInterval = 900;
+      StandardOutPath = "${
+        if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}"
+      }/Library/Logs/sync-vikunja-tasks.log";
+      StandardErrorPath = "${
+        if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}"
+      }/Library/Logs/sync-vikunja-tasks.log";
+    };
+  };
+
+  systemd.user.services.sync-vikunja-tasks = lib.mkIf pkgs.stdenv.isLinux {
+    Unit.Description = "Sync Vikunja HomeProd tasks into Obsidian vault";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "%h/.local/bin/sync-vikunja-tasks";
+    };
+  };
+
+  systemd.user.timers.sync-vikunja-tasks = lib.mkIf pkgs.stdenv.isLinux {
+    Unit.Description = "Timer for sync-vikunja-tasks";
+    Timer = {
+      OnStartupSec = "2m";
+      OnUnitActiveSec = "15m";
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
+
   # Prevent Home Manager from overriding PATH
-  home.sessionPath = [ "$HOME/.npm-global/bin" ];
+  home.sessionPath = [
+    "$HOME/.npm-global/bin"
+    "$HOME/.local/bin"
+  ];
 
   # Set default shell preferences
   home.sessionVariables = {
@@ -232,6 +300,14 @@
       $DRY_RUN_CMD mkdir -p "$dest"
       $DRY_RUN_CMD cp -f ${./openrgb/visual-map-xrs444.json} "$dest/xrs444"
       $DRY_RUN_CMD chmod 644 "$dest/xrs444"
+
+      # Mirror the same profile the systemd service loads (nix/hosts/nixos/xdt1-t/openrgb/xrs444.orp)
+      # into the GUI's own config dir -- the GUI's Profiles list only reads from its local
+      # ~/.config/OpenRGB, not /var/lib/OpenRGB (the service's --config dir), so without this
+      # the "xrs444" profile never appears as a loadable option in the app.
+      $DRY_RUN_CMD mkdir -p "$HOME/.config/OpenRGB"
+      $DRY_RUN_CMD cp -f ${../../../hosts/nixos/xdt1-t/openrgb/xrs444.orp} "$HOME/.config/OpenRGB/xrs444.orp"
+      $DRY_RUN_CMD chmod 644 "$HOME/.config/OpenRGB/xrs444.orp"
     ''
   );
 
@@ -305,6 +381,68 @@
     if command -v headroom >/dev/null 2>&1
       alias claude "headroom wrap claude"
     end
+  '';
+
+  # Ensure the Hugo site repo is present so publish-blog (above) has
+  # somewhere to push into. Best-effort and non-fatal — see installHeadroom
+  # above for why an optional setup step must never abort the rest of
+  # activation. The theme (ananke) is a git submodule, hence --recurse-submodules.
+  home.activation.cloneSite = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "$HOME/site/xrs444/.git" ]; then
+      $DRY_RUN_CMD mkdir -p "$HOME/site"
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --recurse-submodules \
+        https://github.com/xrs444/xrs444-site "$HOME/site/xrs444" \
+        || echo "Warning: xrs444-site clone failed, continuing activation" >&2
+    fi
+  '';
+
+  # Scaffold the Obsidian vault's working folders. Cheap and idempotent —
+  # runs every activation, just mkdir -p. The vault itself is synced in by
+  # Syncthing (brew cask on darwin, services.syncthing on xdt1-t), so this
+  # only creates subfolders once the vault root exists; if Syncthing hasn't
+  # synced yet on a fresh host, this is a harmless no-op until it has.
+  home.activation.obsidianVaultScaffold = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    vault="$HOME/Documents/obsidian/xrs444"
+    if [ -d "$vault" ]; then
+      $DRY_RUN_CMD mkdir -p "$vault/Memory/claude-code" "$vault/Memory/basic-memory" \
+        "$vault/Memory/hermes-t" "$vault/Tasks" "$vault/data"
+    fi
+  '';
+
+  # Symlink this Claude Code instance's native per-project memory
+  # (~/.claude/projects/<slug>/memory) into the vault's Memory/claude-code,
+  # so the real files live in the vault (Syncthing-carried across hosts)
+  # and memory is editable/reviewable in Obsidian. <slug> is the repo's
+  # absolute path with every "/" replaced by "-" (observed Claude Code
+  # convention). This repo is checked out at the same relative location on
+  # every host ($HOME/Repositories/HomeProd), so the slug — which differs
+  # per host because $HOME differs (/Users/... vs /home/...) — is computed
+  # at activation time rather than hard-coded.
+  home.activation.linkClaudeMemory = lib.hm.dag.entryAfter [ "obsidianVaultScaffold" ] ''
+    repo_path="$HOME/Repositories/HomeProd"
+    slug=$(printf '%s' "$repo_path" | tr '/' '-')
+    claude_memory_dir="$HOME/.claude/projects/$slug/memory"
+    vault_memory_dir="$HOME/Documents/obsidian/xrs444/Memory/claude-code"
+
+    if [ -d "$HOME/Documents/obsidian/xrs444" ]; then
+      $DRY_RUN_CMD mkdir -p "$vault_memory_dir"
+
+      if [ -d "$claude_memory_dir" ] && [ ! -L "$claude_memory_dir" ]; then
+        # One-time migration: move the real files into the vault, then
+        # replace the original location with a symlink. Best-effort —
+        # a failure here must not abort the rest of activation.
+        $DRY_RUN_CMD sh -c 'cp -na "$1"/. "$2"/ && rm -rf "$1"' _ \
+          "$claude_memory_dir" "$vault_memory_dir" \
+          || echo "Warning: claude-code memory migration into vault failed, continuing activation" >&2
+      fi
+
+      if [ ! -e "$claude_memory_dir" ] || [ -L "$claude_memory_dir" ]; then
+        $DRY_RUN_CMD mkdir -p "$(dirname "$claude_memory_dir")"
+        $DRY_RUN_CMD ln -sfn "$vault_memory_dir" "$claude_memory_dir"
+      fi
+    else
+      echo "linkClaudeMemory: vault not present at $HOME/Documents/obsidian/xrs444 yet (Syncthing not synced?), skipping" >&2
+    fi
   '';
 
 }
