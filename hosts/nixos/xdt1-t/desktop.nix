@@ -116,6 +116,12 @@ in
       thunar
       gparted # Partition editor
 
+      # Niri (25.08+) auto-spawns this on demand once it's on PATH, exporting
+      # $DISPLAY. Needed for GParted's pkexec+xhost root-elevation to have an
+      # X11 display to attach to — without it, GParted's root process has no
+      # display at all and exits silently.
+      xwayland-satellite
+
       # Audio / network
       pavucontrol
       networkmanagerapplet
