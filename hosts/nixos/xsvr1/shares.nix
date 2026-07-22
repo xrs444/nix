@@ -174,7 +174,7 @@
       what = "/zfs/media/games";
       where = "/export/zfs/media/games";
       type = "none";
-      options = "bind";
+      options = "rbind";
       wantedBy = [ "multi-user.target" ];
       after = [ "zfs-mount.service" ];
       requires = [ "zfs-mount.service" ];
