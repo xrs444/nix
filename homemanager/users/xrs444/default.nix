@@ -68,6 +68,7 @@
   imports = [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
+    ../../common/syncthing.nix
     ./shell/starship.nix
     ./shell/tmux.nix
     ./shell/fish.nix
@@ -264,7 +265,7 @@
   # Set default shell preferences
   home.sessionVariables = {
     EDITOR = "micro";
-    BROWSER = "chrome";
+    BROWSER = "firefox";
     SOPS_AGE_KEY_FILE = "/Users/xrs444/.config/sops/age/keys.txt";
     KUBECONFIG = "/Users/xrs444/k8s/kubeconfig";
     TALOSCONFIG = "/Users/xrs444/k8s/talosconfig";

@@ -12,7 +12,6 @@
     ./disks.nix
     ./hardware-nvidia.nix
     ./shares.nix
-    ./syncthing.nix
     ../../common
   ];
 
@@ -27,7 +26,21 @@
   '';
 
   # Wired NIC is enp8s0 (confirmed from installer). Open monitoring exporter ports.
-  networking.firewall.interfaces.enp8s0.allowedTCPPorts = [ 9080 9100 9633 ];
+  networking.firewall.interfaces.enp8s0.allowedTCPPorts = [
+    9080
+    9100
+    9633
+    22000
+  ];
+
+  # Syncthing sync protocol (home-manager's services.syncthing, see
+  # homemanager/common/syncthing.nix). Host-specific rather than in the
+  # shared common module since the interface name (enp8s0) isn't guaranteed
+  # to match on a future host running the same per-user module.
+  networking.firewall.interfaces.enp8s0.allowedUDPPorts = [
+    22000
+    21027
+  ];
 
   boot.initrd.availableKernelModules = [
     "xhci_pci"

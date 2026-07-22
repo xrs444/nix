@@ -49,7 +49,6 @@
       "raspberry-pi-imager"
       "monarch"
       "sf-symbols"
-      "syncthing-app"
       "zoom"
       "bettertouchtool"
       "via"
