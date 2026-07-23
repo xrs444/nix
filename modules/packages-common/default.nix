@@ -27,6 +27,7 @@ in
       bind # DNS utilities (dig, host, nslookup)
     ] ++ lib.optionals pkgs.stdenv.isLinux [
       traceroute # Network path tracing utility (macOS has built-in traceroute)
+      smartmontools # SMART disk health monitoring (smartctl)
     ];
   };
 }
