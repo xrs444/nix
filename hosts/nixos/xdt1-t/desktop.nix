@@ -141,6 +141,12 @@ in
       redumper
       cuetools
 
+      # DOS game testing/config-building for Romm — run installers (e.g. sound
+      # setup) against real files here, then bake the resulting config files
+      # into the game's zip, since Romm's own dosbox-pure mount is ephemeral
+      dosbox
+      bchunk
+
       # RGB lighting control
       openrgb
 
