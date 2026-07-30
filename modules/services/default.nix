@@ -4,6 +4,7 @@
   imports = [
     ./Samba
     ./adguard
+    ./arm
     ./auto-upgrade
     ./asterisk
     ./phone-config-nginx
