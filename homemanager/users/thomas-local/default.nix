@@ -1,12 +1,17 @@
 # Summary: Home Manager configuration for user 'thomas-local', sets up bash shell and basic packages.
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  desktop ? null,
+  ...
+}:
 {
   home.stateVersion = "25.05";
 
   # Import common configurations
   imports = [
     ../../common/shell/atuin.nix
-  ];
+  ] ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
   programs.bash = {
     enable = true;
