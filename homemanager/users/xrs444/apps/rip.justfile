@@ -56,7 +56,37 @@ setup-config name:
 arm_dir := "/home/xrs444/rips/arm"
 
 # Start ARM: both drives + GPU passed through, on-demand (no --restart).
-# --privileged is required for ARM's internal udev to see disc-insert events.
+#
+# ARM's own udev bootstrap (/etc/my_init.d/start_udev.sh) is skipped entirely
+# and replaced with a manual, scoped sequence run via `docker exec` after
+# boot. Three separate problems were found running this live on xdt1-t, in
+# order of how deep they went before the real cause surfaced:
+#   1. --device=/dev/srN alone (no /dev bind mount): start_udev.sh tries to
+#      mount a fresh devtmpfs over /dev and my_init aborts before runit boots.
+#      Fixed by -v /dev:/dev (use the host's real, already-populated /dev).
+#      --privileged already grants full device access via cgroup rules, so
+#      this doesn't add exposure beyond that.
+#   2. start_udev.sh's `#!/bin/sh -i` shebang: with no tty, my_init's
+#      supervisor misreads the interactive shell as hung and kills container
+#      init, even though the udev start underneath succeeds.
+#   3. THE REAL CAUSE: ARM's own udev start does a blanket
+#      `udevadm trigger --type=devices --action=add`, which resynthesizes a
+#      genuine kernel uevent for *every* device node visible to the
+#      container — including the passed-through nvidia GPU device. Kernel
+#      uevents are not container-namespace-isolated, so that event also
+#      reaches xdt1-t's own host udevd, which has a rule (installed by
+#      nix/modules/services/arm's hardware.nvidia-container-toolkit.enable)
+#      that restarts nvidia-container-toolkit-cdi-generator.service on any
+#      `KERNEL=="nvidia"` event. docker.service *requires* that generator
+#      service, so the restart cascades into restarting docker.service
+#      itself — killing every running container, ARM included, ~6-7s after
+#      start regardless of what else changed. Confirmed via
+#      `systemctl status docker.service` showing a fresh restart timestamped
+#      to the exact moment ARM died, across multiple otherwise-unrelated
+#      test variations.
+#      Fixed by never doing a blanket device trigger: scope it to
+#      `--subsystem-match=block` (all ARM needs for optical drives), which
+#      never touches the GPU device node.
 arm-start:
 	#!/usr/bin/env fish
 	mkdir -p {{arm_dir}}/music {{arm_dir}}/logs {{arm_dir}}/media {{arm_dir}}/config
@@ -64,21 +94,29 @@ arm-start:
 		echo "mkdir failed — check ownership of {{arm_dir}} (must be writable by xrs444)"
 		exit 1
 	end
+	docker rm -f arm >/dev/null 2>&1
 	docker run -d --rm --name arm \
 		-p 8080:8080 \
 		-e ARM_UID=(id -u) \
 		-e ARM_GID=(id -g) \
 		-e TZ=(timedatectl show -p Timezone --value) \
 		--device nvidia.com/gpu=all \
+		-v /dev:/dev \
 		-v "{{arm_dir}}:/home/arm" \
 		-v "{{arm_dir}}/music:/home/arm/music" \
 		-v "{{arm_dir}}/logs:/home/arm/logs" \
 		-v "{{arm_dir}}/media:/home/arm/media" \
 		-v "{{arm_dir}}/config:/etc/arm/config" \
-		--device="/dev/sr0:/dev/sr0" \
-		--device="/dev/sr1:/dev/sr1" \
 		--privileged \
-		automaticrippingmachine/automatic-ripping-machine:latest
+		automaticrippingmachine/automatic-ripping-machine:latest \
+		sh -c 'rm -f /etc/my_init.d/start_udev.sh; exec /sbin/my_init'
+	sleep 5
+	docker exec arm sh -c '\
+		start-stop-daemon --start --name systemd-udevd --user root --quiet \
+			--pidfile /run/udev.pid --exec /lib/systemd/systemd-udevd \
+			--background --make-pidfile --notify-await; \
+		udevadm trigger --subsystem-match=block --action=add; \
+		udevadm settle'
 	echo "ARM starting — web UI at http://localhost:8080 (default admin/password — change it)"
 	echo "Waiting for config/arm.yaml to be seeded…"
 	for i in (seq 1 30)
