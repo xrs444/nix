@@ -417,8 +417,17 @@
       chown -R 1000:1000 /zfs/system/crafty
       chown -R 1000:1000 /zfs/systembackups/crafty
 
-      # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse (UID 1001)
-      chown -R 1001:1001 /zfs/devicebackups
+      # Ensure /zfs/devicebackups has correct ownership for BorgWarehouse.
+      # Was chowned to 1001:1001 here (stale -- likely an older version of
+      # the app used that UID), which this activation script re-applied on
+      # every deploy, silently reverting any manual fix. The live container
+      # (flux/apps/system-services/borgwarehouse/deployment-borgwarehouse.yaml)
+      # actually runs as 1000:1000 (pod securityContext.fsGroup: 1000, and
+      # its fix-permissions initContainer chowns everything else to
+      # 1000:1000 too) -- confirmed 2026-08-03 after this mismatch caused a
+      # ~2h CrashLoopBackOff ("Volume 'repos' is not writable by UID=1000
+      # GID=1000").
+      chown -R 1000:1000 /zfs/devicebackups
       chmod 755 /zfs/devicebackups
 
       # Ingest drop-box directories: world-writable + sticky bit (trusted LAN)
