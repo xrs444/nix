@@ -70,6 +70,16 @@ lib.mkIf (mesh != null) {
     overrideDevices = true;
     overrideFolders = true;
     guiAddress = "127.0.0.1:8384";
+    # nixpkgs' pkgs.syncthing is pinned at 2.0.15 (config format v51) here,
+    # while xlt1-t's pre-existing config.xml was last written by a newer
+    # brew-cask build (2.1.x, config format v52) -- syncthing refuses to
+    # load a newer-versioned config with an older binary as a safety check.
+    # v51->v52 is a minor, backward-read-compatible bump; this is Syncthing's
+    # own documented override for exactly this case (confirmed via the
+    # daemon's own error message: "if this is expected, use
+    # --allow-newer-config to override"). Revisit if nixpkgs' syncthing is
+    # ever bumped past 2.1.x, at which point this becomes unnecessary.
+    extraOptions = [ "--allow-newer-config" ];
     settings = {
       devices = mesh.devices;
       folders.${mesh.folderId} = {

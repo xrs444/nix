@@ -60,14 +60,16 @@ arm_dir := "/home/xrs444/rips/arm"
 arm-start:
 	#!/usr/bin/env fish
 	mkdir -p {{arm_dir}}/music {{arm_dir}}/logs {{arm_dir}}/media {{arm_dir}}/config
+	if test $status -ne 0
+		echo "mkdir failed — check ownership of {{arm_dir}} (must be writable by xrs444)"
+		exit 1
+	end
 	docker run -d --rm --name arm \
 		-p 8080:8080 \
 		-e ARM_UID=(id -u) \
 		-e ARM_GID=(id -g) \
 		-e TZ=(timedatectl show -p Timezone --value) \
-		-e NVIDIA_VISIBLE_DEVICES=all \
-		-e NVIDIA_DRIVER_CAPABILITIES=all \
-		--gpus all \
+		--device nvidia.com/gpu=all \
 		-v "{{arm_dir}}:/home/arm" \
 		-v "{{arm_dir}}/music:/home/arm/music" \
 		-v "{{arm_dir}}/logs:/home/arm/logs" \
@@ -104,7 +106,7 @@ arm-seed-keys:
 # an NVENC one (e.g. containing "NVEnc") for HB_PRESET_DVD/HB_PRESET_BD in
 # config/arm.yaml — ARM's shipped defaults are CPU x264/x265 presets.
 arm-list-presets:
-	docker run --rm --gpus all automaticrippingmachine/automatic-ripping-machine:latest HandBrakeCLI -z
+	docker run --rm automaticrippingmachine/automatic-ripping-machine:latest HandBrakeCLI -z
 
 # Stop the ARM container (it's --rm, so this also removes it).
 arm-stop:
