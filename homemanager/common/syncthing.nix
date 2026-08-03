@@ -44,10 +44,21 @@ let
         xdt1-t = {
           id = "IQ2OA2T-XE3O23R-FDHNVHS-KTM35FF-Q3ZMZYS-BMS4RLP-GIN5PLB-APVJ7QK";
         };
+        # Mobile devices, out-of-band (no nix/flux management), just
+        # registered here so they're trusted on every nix-managed host.
+        # 2026-08-03: replaced the old "munin" entry (X4L5ZWN-...) -- that
+        # device ID never matched either of the two real phone/tablet
+        # installs (confirmed via their own Settings/Identification
+        # screens); it was almost certainly an old/retired device still
+        # quietly running Syncthing via the BasicSync Android app in the
+        # background. It never completed a folder-share handshake (no
+        # index exchange ever logged on xsvr1), so no vault data reached
+        # it. Removed rather than investigated further.
         munin = {
-          # The phone. Out-of-band device (no nix/flux management), just
-          # registered here so it's trusted on every nix-managed host.
-          id = "X4L5ZWN-HCUKYPU-J2Q77M3-E5R5IHF-CL3UGUN-IMDOZRU-U6BZNYF-TINVTQD";
+          id = "QRAATSP-VFTEBEF-IDE2KSU-T4AWPLU-MACEMWG-XLWWTZO-TEC2TUY-PH77ZQU";
+        };
+        hugin = {
+          id = "NPX6BFZ-QFKNTPA-22YOZDL-R7JCSWC-NJMOWXD-3HCYDKH-PHBOTEX-R2T4DAO";
         };
       };
     };
