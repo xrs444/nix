@@ -90,6 +90,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/devicebackups";
@@ -97,6 +99,8 @@
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
     }
     {
       what = "/zfs/documents/manyfold";
