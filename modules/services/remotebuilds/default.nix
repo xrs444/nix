@@ -196,8 +196,12 @@ in
         # nixcache.xrs444.net (xsvr1's LAN-exposed cache) comes first so these remote/cloud
         # builders (vocibuild, xlt1-t-vnixos) prefer the already-built LAN copy over the
         # public cache — and keep working if cache.nixos.org DNS/reachability has a blip.
+        # extra-trusted-substituters alone is NOT enough: it only grants permission to use a
+        # substituter that a client requests via --option substituters, it does not itself
+        # make the daemon query it. Must also be in extra-substituters to actually be tried.
         # file:///zfs/nixcache/cache is a no-op here (local-filesystem path, meaningless off xsvr1)
         # but harmless to leave for parity with the QEMU-builder block above.
+        extra-substituters = http://nixcache.xrs444.net
         extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
