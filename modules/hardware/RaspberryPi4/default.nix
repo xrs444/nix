@@ -28,7 +28,7 @@
   ];
 
   boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxKernel.packages.linux_rpi4;
+    kernelPackages = lib.mkDefault pkgs.linuxKernel.packages.linux_6_12;
     initrd.availableKernelModules = [
       "usbhid"
       "usb-storage"
@@ -44,6 +44,13 @@
   };
 
   hardware.deviceTree.filter = lib.mkDefault "bcm2711-rpi-*.dtb";
+
+  # linux_6_12 (mainline) dropped the thermal_trips devicetree label that the
+  # PoE+ HAT overlay (poe-plus-hat.nix) targets. Source DTBs from the
+  # downstream Raspberry Pi firmware instead of the mainline kernel's own
+  # compiled dtbs so overlays keep working while the kernel itself stays on
+  # the (non-deprecated) mainline series.
+  hardware.deviceTree.dtbSource = lib.mkDefault pkgs.device-tree_rpi;
 
   assertions = [
     {
