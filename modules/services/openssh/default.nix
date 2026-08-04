@@ -1,5 +1,6 @@
-# Summary: NixOS module for OpenSSH, enables SSH service and configures authentication and firewall settings.
-{ ... }:
+# Summary: NixOS module for OpenSSH, enables SSH service, fail2ban (with an
+# Apprise/ntfy ban-notification action), and configures firewall settings.
+{ pkgs, ... }:
 {
   services.openssh = {
     enable = true;
@@ -9,6 +10,19 @@
       PermitRootLogin = "no";
     };
   };
+
+  # Custom fail2ban action: POST an alert to Apprise (-> ntfy, tag "alerts" ->
+  # xrs444's topic) whenever a jail bans an IP. actionunban is intentionally
+  # empty — we only alert on lockout, not release. Absolute curl path because
+  # fail2ban's systemd unit runs with a restricted PATH.
+  environment.etc."fail2ban/action.d/apprise-ntfy.local".text = ''
+    [Definition]
+    actionstart =
+    actionstop =
+    actioncheck =
+    actionunban =
+    actionban = ${pkgs.curl}/bin/curl -f --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise -H "Content-Type: application/json" -d '{"title":"fail2ban: <ip> banned on <fq-hostname>","body":"Jail <name> banned <ip> after <failures> failures (bantime <bantime>s).","type":"warning","tag":"alerts"}'
+  '';
 
   services.fail2ban = {
     enable = true;
@@ -27,6 +41,11 @@
       enabled = true;
       filter = "sshd";
       maxretry = 10;
+      # Keep the default nftables ban action and append the Apprise notification.
+      action = ''
+        %(action_)s
+        apprise-ntfy
+      '';
     };
   };
 
