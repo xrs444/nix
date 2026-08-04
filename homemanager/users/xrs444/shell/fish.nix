@@ -5,6 +5,12 @@
     
     # Shell initialization for justfile awareness
     interactiveShellInit = ''
+      # Force XDG_RUNTIME_DIR to match the actual current user, not whatever
+      # was inherited from a parent session (e.g. `sudo su - xrs444` from
+      # thomas-local leaves a stale /run/user/<other-uid> in the environment,
+      # which breaks `just`'s runtime dir with a permission error).
+      set -gx XDG_RUNTIME_DIR /run/user/(id -u)
+
       # Auto-load justfile completions
       if command -v just >/dev/null 2>&1
         # Generate completions for fish
