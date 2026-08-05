@@ -42,10 +42,11 @@
       filter = "sshd";
       maxretry = 10;
       # Keep the default nftables ban action and append the Apprise notification.
-      action = ''
-        %(action_)s
-        apprise-ntfy
-      '';
+      # NixOS's ini generator drops this string in verbatim with no
+      # auto-indentation, so the continuation line must be manually indented —
+      # fail2ban's INI parser (Python configparser) treats an unindented
+      # second line as a bare, keyless line and rejects the whole file.
+      action = "%(action_)s\n           apprise-ntfy";
     };
   };
 
