@@ -7,6 +7,7 @@
     ./brew-packages.nix
     ./netbox-devicetype-import/default.nix
     ./qmk/default.nix
+    ./tmux/default.nix
   ];
 
   # Darwin-specific packages (Nix packages)

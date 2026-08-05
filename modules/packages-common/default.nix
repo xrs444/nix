@@ -8,7 +8,7 @@
 let
   currentDir = ./.;
   hasDefaultNix =
-    name: type: type == "directory" && builtins.pathExists (currentDir + "/" + name + "/default.nix");
+    name: type: type == "directory" && builtins.pathExists (currentDir + "/${name}/default.nix");
   directories = lib.filterAttrs hasDefaultNix (builtins.readDir currentDir);
   importDirectory = name: import (currentDir + "/${name}");
 in

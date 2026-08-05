@@ -1,5 +1,7 @@
-# Summary: Terminal configuration module for all systems, adds WezTerm terminfo support
-{ pkgs, lib, config, ... }:
+# Summary: Terminal configuration module for all systems, adds WezTerm terminfo support.
+# environment.sessionVariables doesn't exist as an option on nix-darwin, so that part
+# lives in packages-nixos/terminal instead of being conditioned here.
+{ pkgs, lib, ... }:
 
 {
   config = {
@@ -13,12 +15,6 @@
     environment.variables = {
       # Ensure TERMINFO_DIRS includes system terminfo
       TERMINFO_DIRS = lib.mkDefault "/run/current-system/sw/share/terminfo:/usr/share/terminfo";
-    };
-
-    # For users, ensure proper fallback behavior
-    environment.sessionVariables = {
-      # If TERM is not found, fallback to xterm-256color
-      TERM = lib.mkDefault "xterm-256color";
     };
 
     # Install WezTerm terminfo definition

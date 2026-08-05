@@ -3,5 +3,7 @@
 {
   imports = [
     ./kanidm/default.nix
+    ./tmux/default.nix
+    ./terminal/default.nix
   ];
 }
