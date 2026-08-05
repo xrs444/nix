@@ -193,12 +193,7 @@ in
     (lib.mkIf isNativeBuilder {
       text = ''
         # Custom Nix configuration for native aarch64 builder
-        # nixcache.xrs444.net (xsvr1's LAN-exposed cache) comes first so these remote/cloud
-        # builders (vocibuild, xlt1-t-vnixos) prefer the already-built LAN copy over the
-        # public cache — and keep working if cache.nixos.org DNS/reachability has a blip.
-        # file:///zfs/nixcache/cache is a no-op here (local-filesystem path, meaningless off xsvr1)
-        # but harmless to leave for parity with the QEMU-builder block above.
-        extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
+        extra-trusted-substituters = file:///zfs/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
