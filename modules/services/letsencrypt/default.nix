@@ -95,6 +95,7 @@ lib.mkIf (!minimalImage) {
           {
             "xpbx1.${domain}" = {
               postRun = ''
+                set -e
                 SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
                 # chmod 750 on the home dir itself — createHome sets it 700 which blocks nginx
                 $SSH acme@xpbx1.lan "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
@@ -125,6 +126,7 @@ lib.mkIf (!minimalImage) {
               "xsvr2.${domain}"
             ];
             postRun = ''
+              set -e
               SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
               for host in xsvr2.lan xsvr3.lan; do
                 $SSH acme@$host "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/idm.${domain} && chmod 750 /var/lib/acme/idm.${domain}"
@@ -153,6 +155,20 @@ lib.mkIf (!minimalImage) {
           };
         })
     );
+  };
+
+  # Pin xpbx1's host key so the postRun cert push above fails loudly (via `set -e` +
+  # StrictHostKeyChecking) instead of silently accepting whatever key is live and then
+  # silently going stale after a reinstall/SD-card swap — bug-499, nginx down 2026-07-20
+  # to 2026-08-05 because the push kept "succeeding" while never actually reaching xpbx1.
+  # xsvr2/xsvr3 (the idm.${domain} push targets above) are already covered by
+  # nix/modules/services/remotebuilds/default.nix.
+  # Refresh with: ssh-keyscan -t ed25519 xpbx1.lan
+  programs.ssh.knownHosts = lib.mkIf isPrimaryServer {
+    "xpbx1.lan" = {
+      hostNames = [ "xpbx1.lan" "xpbx1" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBp4xrmX34j/lWb+u1t8WrwM0LQ6b8uZYOp+cbJvPq/J";
+    };
   };
 
   # Ensure acme user/group exists only on letsencrypt hosts
