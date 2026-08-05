@@ -64,6 +64,18 @@
   # Cloud VMs have no physical disks — SMART exporter finds nothing and errors.
   services.prometheus.exporters.smartctl.enable = lib.mkForce false;
 
+  # loki.xrs444.net is split-horizon internal-only DNS (no public A record — confirmed
+  # via `dig loki.xrs444.net @1.1.1.1`, NOERROR/ANSWER:0). This host runs with
+  # --accept-dns=false (see bug-500: Tailscale's quad-100 DNS proxy got stuck and had
+  # to be toggled off), so it can no longer resolve internal-only names at all. Pin the
+  # IP directly instead — vocibuild already has a working Tailscale subnet route to it
+  # (172.16.0.0/12, advertised by xts1/xts2), confirmed via a direct curl by IP with a
+  # Host header. This keeps Alloy's log shipping working regardless of accept-dns state.
+  # 172.21.0.2 is the Traefik LoadBalancer VIP; update here if it ever moves.
+  networking.extraHosts = ''
+    172.21.0.2 loki.xrs444.net
+  '';
+
   environment.systemPackages = with pkgs; [
     tmux
     htop

@@ -59,6 +59,11 @@ in
     services.alloy = {
       enable = true;
       configPath = alloyConfig;
+      # Alloy's default HTTP server only binds 127.0.0.1:12345 — the "keep port 9080"
+      # firewall rule below was a stale assumption carried over from the old promtail
+      # migration and scraped nothing fleet-wide. Bind explicitly so /metrics is
+      # actually reachable on the port everyone assumes it's on.
+      extraFlags = [ "--server.http.listen-addr=0.0.0.0:9080" ];
     };
 
     # Add journal access via service config (services.alloy creates the user/group)

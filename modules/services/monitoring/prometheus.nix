@@ -22,9 +22,11 @@ let
     "xpbx1.lan"
     "xdash1.lan" # DietPi — HA dashboard kiosk, node_exporter via nixible (hosts/nixable/xdash1)
     # cmrpi1 removed — host decommissioned, DNS NXDOMAIN
-    # vocibuild — Oracle Cloud A1 ARM builder, reachable via Tailscale MagicDNS.
-    # Replace with static Tailscale IP (100.x.x.x) once the host is up and registered.
-    # "vocibuild"
+    # vocibuild — Oracle Cloud A1 ARM builder, Tailscale-only. Static Tailscale IP
+    # (not the DNS name) because xsvr1 has no Tailscale client itself — it reaches
+    # this address via a learned BGP route through xts1/xts2, confirmed working via
+    # `curl http://100.104.72.47:9100/metrics` returning 200 directly from xsvr1.
+    "100.104.72.47" # vocibuild
   ];
 
   # Hosts with ZFS
