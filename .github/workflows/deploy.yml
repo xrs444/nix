@@ -227,15 +227,27 @@ jobs:
             if [[ "$host" == "vocibuild" ]]; then
               DEPLOY_HOSTNAME="vocibuild.xrs444.net"
             fi
-            REMOTE_HOSTNAME=$(ssh \
-              -4 \
-              -i /run/secrets/deploy_private_key \
-              -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null \
-              -o ConnectTimeout=10 \
-              -o BatchMode=yes \
-              deploy@${DEPLOY_HOSTNAME} \
-              "hostname" 2>/dev/null || echo "UNREACHABLE")
+            # vocibuild's route is a multi-hop ProxyJump over Tailscale (xsvr1 -> xts
+            # VIP -> vocibuild), which occasionally drops a single connection attempt
+            # mid-handshake ("kex_exchange_identification: Connection closed by remote
+            # host") — confirmed harmless and transient (the same route's Nix builder
+            # connections succeed continuously; only this single, non-retried probe was
+            # failing on the blip). Retry a few times before giving up, since one bad
+            # attempt shouldn't skip the whole host's deploy.
+            REMOTE_HOSTNAME="UNREACHABLE"
+            for attempt in 1 2 3; do
+              REMOTE_HOSTNAME=$(ssh \
+                -4 \
+                -i /run/secrets/deploy_private_key \
+                -o StrictHostKeyChecking=no \
+                -o UserKnownHostsFile=/dev/null \
+                -o ConnectTimeout=10 \
+                -o BatchMode=yes \
+                deploy@${DEPLOY_HOSTNAME} \
+                "hostname" 2>/dev/null || echo "UNREACHABLE")
+              [[ "$REMOTE_HOSTNAME" == "$host" ]] && break
+              [[ "$attempt" -lt 3 ]] && sleep 5
+            done
 
             if [[ "$REMOTE_HOSTNAME" != "$host" ]]; then
               echo "$host: SKIPPED — hostname verification failed (got '${REMOTE_HOSTNAME}', expected '${host}')"
