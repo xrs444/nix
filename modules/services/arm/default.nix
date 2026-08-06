@@ -6,6 +6,13 @@ let
   isArmHost = lib.elem hostname [ "xdt1-t" ];
 in
 lib.mkIf isArmHost {
+  # MakeMKV needs the SCSI generic (/dev/sg*) device for its low-level MMC
+  # commands, separate from the block device (/dev/srN) ARM's own mount-based
+  # identification step uses. Without this, MakeMKV fails with "Failed to
+  # open disc" even though identification succeeds fine — confirmed live: no
+  # /dev/sg* nodes existed on xdt1-t at all, sg module wasn't loaded.
+  boot.kernelModules = [ "sg" ];
+
   virtualisation.docker.enable = true;
 
   # CDI-based GPU-in-container support (the modern replacement for the
