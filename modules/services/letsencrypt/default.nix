@@ -100,6 +100,7 @@ lib.mkIf (!minimalImage) {
                 # chmod 750 on the home dir itself — createHome sets it 700 which blocks nginx
                 $SSH acme@xpbx1.lan "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/xpbx1.${domain} && chmod 750 /var/lib/acme/xpbx1.${domain}"
                 ${pkgs.rsync}/bin/rsync \
+                  -rl \
                   -e "$SSH" \
                   --perms --chmod=F640 \
                   /var/lib/acme/xpbx1.${domain}/ \
@@ -131,6 +132,7 @@ lib.mkIf (!minimalImage) {
               for host in xsvr2.lan xsvr3.lan; do
                 $SSH acme@$host "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/idm.${domain} && chmod 750 /var/lib/acme/idm.${domain}"
                 ${pkgs.rsync}/bin/rsync \
+                  -rl \
                   -e "$SSH" \
                   --perms --chmod=F640 \
                   /var/lib/acme/idm.${domain}/ \
