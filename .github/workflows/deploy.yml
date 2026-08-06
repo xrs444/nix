@@ -234,9 +234,14 @@ jobs:
             # connections succeed continuously; only this single, non-retried probe was
             # failing on the blip). Retry a few times before giving up, since one bad
             # attempt shouldn't skip the whole host's deploy.
+            # ConnectTimeout=10 only bounds the initial TCP connect — a stall AFTER
+            # that (e.g. mid-handshake inside the ProxyJump hop) isn't bounded by it,
+            # so one bad attempt was observed taking 6+ minutes instead of ~10s
+            # (confirmed 2026-08-06: 3 "retried" attempts still took 6m41s total).
+            # Wrap each attempt in `timeout` for a hard wall-clock bound instead.
             REMOTE_HOSTNAME="UNREACHABLE"
             for attempt in 1 2 3; do
-              REMOTE_HOSTNAME=$(ssh \
+              REMOTE_HOSTNAME=$(timeout 15 ssh \
                 -4 \
                 -i /run/secrets/deploy_private_key \
                 -o StrictHostKeyChecking=no \
