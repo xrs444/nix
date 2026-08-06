@@ -59,10 +59,15 @@
   # build that needs g-ir-scanner (e.g. gcr on aarch64-darwin — confirmed via
   # `curl -sI https://cache.nixos.org/<hash>.narinfo` returning 404, i.e. no
   # prebuilt binary exists for this platform, unlike the aarch64-linux
-  # packages covered by the note above). Scoped to Darwin since Linux builds
-  # are cached per that note; per the same note, verify cache availability
-  # before extending this further rather than assuming it's needed broadly.
-  gobject-introspection-unwrapped = if final.stdenv.hostPlatform.isDarwin
+  # packages covered by the note above). Originally scoped to Darwin only
+  # since most Linux builds are cached per that note; extended to isAarch64
+  # (2026-08-06) after hitting the identical crash natively on xlt1-t-vnixos
+  # (aarch64-linux) building libnice/gtk-layer-shell/gnome-autoar — confirmed
+  # via the same `curl -sI .../<hash>.narinfo` 404 check that none of those
+  # three are cached either, so this isn't the unnecessary-rebuild pattern.
+  # Verify cache availability the same way before extending this further.
+  gobject-introspection-unwrapped =
+    if final.stdenv.hostPlatform.isDarwin || final.stdenv.hostPlatform.isAarch64
     then prev.gobject-introspection-unwrapped.overrideAttrs (old: {
       # All three lines are top-level, unconditional, and only meaningful on
       # Windows/cygwin (monkeypatches distutils' MSVC-runtime detection) —
