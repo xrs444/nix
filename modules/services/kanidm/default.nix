@@ -195,6 +195,13 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_scanopy_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "kanidm_oauth2_scanopy_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -379,6 +386,11 @@ in
           add_redirect oauth2_grafana   "https://grafana.xrs444.net/login/generic_oauth"
           add_redirect oauth2_vikunja   "https://vikunja.xrs444.net/auth/openid/kanidm"
           add_redirect oauth2_craftycontroller "https://crafty.xrs444.net/oauth2/callback"
+          # Provider slug is "kanidm" (set in the SCANOPY_OIDC_PROVIDERS TOML on the
+          # server side, flux/apps/services/scanopy/) — unverified against a live
+          # Scanopy instance; confirm this exact path before relying on it (see
+          # bug-410/411 pattern in .wolf/cerebrum.md for how this fails if wrong).
+          add_redirect oauth2_scanopy   "https://scanopy.xrs444.net/api/auth/oidc/kanidm/callback"
         '';
       };
 

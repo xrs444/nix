@@ -143,6 +143,15 @@
       "grafana-admin" = {
         members = [ "admins" ];
       };
+      # Scanopy — network discovery/topology map. Server runs in k8s
+      # (flux/apps/services/scanopy/); a remote DaemonPoll scanning daemon
+      # runs on xfw (Firewalla) via nixible, see hosts/nixable/xfw/.
+      "scanopy" = {
+        members = [ "users" ];
+      };
+      "scanopy-admin" = {
+        members = [ "admins" ];
+      };
       # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
       # xsvr1's pam_allowed_login_groups references this group.
       "posix_users" = {
@@ -575,6 +584,32 @@
               "profile"
               "email"
               "groups"
+            ];
+          };
+        };
+        "oauth2_scanopy" = {
+          displayName = "Scanopy";
+          originUrl = "https://scanopy.xrs444.net";
+          originLanding = "https://scanopy.xrs444.net";
+          # Unverified whether Scanopy's OIDC client sends a PKCE code_challenge —
+          # defaulting to disabled PKCE enforcement (netbox/immich precedent). If
+          # login fails with an "InvalidState"/"No PKCE code challenge" error, this
+          # was the right call; if PKCE turns out to be supported, flip this to
+          # `false` explicitly (deleting the line is a no-op — see bug-371 in
+          # .wolf/cerebrum.md) and confirm via `kanidm system oauth2 get oauth2_scanopy`.
+          allowInsecureClientDisablePkce = true;
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_scanopy_secret";
+          scopeMaps = {
+            "scanopy" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "scanopy-admin" = [
+              "openid"
+              "profile"
+              "email"
             ];
           };
         };

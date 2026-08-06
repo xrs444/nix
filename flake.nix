@@ -364,6 +364,7 @@
           xdt2-g = nixible_lib.mkNixibleCli ./hosts/nixable/xdt2-g/default.nix;
           xdt3-r = nixible_lib.mkNixibleCli ./hosts/nixable/xdt3-r/default.nix;
           xdash1 = nixible_lib.mkNixibleCli ./hosts/nixable/xdash1/default.nix;
+          xfw = nixible_lib.mkNixibleCli ./hosts/nixable/xfw/default.nix;
         }
       );
 

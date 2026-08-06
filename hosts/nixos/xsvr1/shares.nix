@@ -79,6 +79,14 @@
       /export/zfs/ingest/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
       /export/zfs/ingest/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
       /export/zfs/scan/scans 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
+      # Scanopy daemon config (identity/API key), mounted by the privileged
+      # host-network container on xfw (Firewalla) — nix/hosts/nixable/xfw/.
+      # no_root_squash: the daemon process runs as root inside its container
+      # (--privileged) and needs to write its config.json as root over NFS;
+      # root_squash (the default elsewhere in this file) would map that to
+      # "nobody" and break writes. 172.20.0.0/16 already covers xfw's k8s-VLAN
+      # gateway address (172.20.3.250), so no separate CIDR is needed for it.
+      /export/zfs/system/scanopy 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -254,6 +262,15 @@
       wantedBy = [ "multi-user.target" ];
     }
     {
+      what = "/zfs/system/scanopy";
+      where = "/export/zfs/system/scanopy";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
+    }
+    {
       what = "/zfs/users/syncthing";
       where = "/export/zfs/users/syncthing";
       type = "none";
@@ -384,6 +401,10 @@
       mkdir -p /export/zfs/ingest/tvshows
       mkdir -p /export/zfs/ingest/music
       mkdir -p /export/zfs/scan/scans
+      mkdir -p /export/zfs/system/scanopy
+      mkdir -p /zfs/system/scanopy
+      chown root:root /zfs/system/scanopy
+      chmod 700 /zfs/system/scanopy
 
       # Ensure ZFS directories exist (created by zfs create, but mkdir -p is a no-op if present)
       mkdir -p /zfs/media/books/fiction
