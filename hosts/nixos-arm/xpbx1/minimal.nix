@@ -48,7 +48,13 @@
     expandOnBoot = true;
 
     # Firmware configuration for Raspberry Pi 3B
-    firmwareSize = 128; # MB
+    # Was 128MB — the 2026-08-06 mainline-kernel migration (215ba0c) grew the
+    # per-generation footprint to ~77MB (Image+initrd+dtbs), and an atomic switch
+    # needs old+new simultaneously, blowing past 128MB entirely (bug-508). 1GB is
+    # trivial cost against the 116GB card and avoids revisiting this again even if
+    # kernel sizes keep trending up. Only takes effect on the NEXT SD card flash
+    # (see hosts/nixos-arm/xpbx1/README.md); does not resize the live card.
+    firmwareSize = 1024; # MB
 
     # Manually populate firmware to avoid device-tree-overlays Python libfdt issue
     populateFirmwareCommands =

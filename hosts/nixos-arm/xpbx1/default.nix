@@ -39,8 +39,14 @@
     "ext4"
   ];
 
-  # Ensure boot partition is writable during rebuild
-  boot.loader.generic-extlinux-compatible.configurationLimit = 3;
+  # /boot is a dedicated 128MB SD card partition (not part of root, unlike xts1/xts2).
+  # The 2026-08-06 mainline-kernel migration (commit 215ba0c) nearly doubled the
+  # per-generation footprint (~33MB -> ~55MB Image alone), which filled the partition
+  # and left a stuck .tmp file from a failed atomic switch (bug-508). Dropped from 3 to
+  # 1: an atomic switch still needs old+new simultaneously (~150MB+ at current kernel
+  # size, already over budget regardless of this setting), but 1 keeps the steady-state
+  # footprint minimal for the common case of a deploy that doesn't touch the kernel.
+  boot.loader.generic-extlinux-compatible.configurationLimit = 1;
 
   # Pi3B (39-bit VA) kernel rejects NixOS's hardening default of 33 for vm.mmap_rnd_bits.
   # CONFIG_ARCH_MMAP_RND_BITS_MAX is lower on Pi3 than Pi4 (48-bit VA). Use 18 (kernel default).
