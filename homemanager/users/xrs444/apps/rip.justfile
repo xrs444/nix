@@ -136,8 +136,17 @@ arm-seed-keys:
 		echo "No $cfg yet — run 'just arm-start' first so ARM can seed its default config."
 		exit 1
 	end
-	sed -i "s|^MAKEMKV_PERMA_KEY:.*|MAKEMKV_PERMA_KEY: \"(cat /run/secrets/arm-makemkv-key)\"|" "$cfg"
-	sed -i "s|^OMDB_API_KEY:.*|OMDB_API_KEY: \"(cat /run/secrets/arm-omdb-key)\"|" "$cfg"
+	# Read into variables first, then interpolate — a (cat ...) command
+	# substitution embedded directly inside the sed argument's escaped
+	# quotes was NOT being evaluated by fish, so the literal text
+	# "(cat /run/secrets/arm-...)" was written into arm.yaml instead of
+	# the real key (confirmed live: MakeMKV rejected it as
+	# INVALID_MAKEMKV_SERIAL, OMDb's own error echoed the literal string
+	# back in the request URL). $variable interpolation is unambiguous.
+	set -l makemkv_key (cat /run/secrets/arm-makemkv-key)
+	set -l omdb_key (cat /run/secrets/arm-omdb-key)
+	sed -i "s|^MAKEMKV_PERMA_KEY:.*|MAKEMKV_PERMA_KEY: \"$makemkv_key\"|" "$cfg"
+	sed -i "s|^OMDB_API_KEY:.*|OMDB_API_KEY: \"$omdb_key\"|" "$cfg"
 	echo "Keys seeded into $cfg — restart ARM (arm-stop then arm-start) if it was already running."
 
 # List HandBrake's built-in preset names inside the ARM image, so you can pick
