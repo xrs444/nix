@@ -133,6 +133,18 @@ in {
                     SCANOPY_DAEMON_API_KEY: "{{ scanopy_daemon_api_key }}"
                   volumes:
                     - ${daemonConfigDir}:/root/.config/scanopy/daemon
+                  # Confirmed live: the Firewalla's own host-level DNS
+                  # resolution bypasses its local dnsmasq entirely and
+                  # queries upstream (1.1.1.1) directly, which only has the
+                  # PUBLIC xrs444.net zone — no "scanopy" record there (that
+                  # only exists in the internal dnsmasq LAN clients use).
+                  # Pin the hostname to the known Traefik ingress IP instead
+                  # (same one vikunja/netbox/etc. resolve to internally).
+                  # TLS still validates fine: SNI/cert matching is based on
+                  # the hostname string, not the resolved IP, and the
+                  # wildcard cert covers *.xrs444.net.
+                  extra_hosts:
+                    - "scanopy.xrs444.net:172.21.0.2"
             '';
           };
         }
