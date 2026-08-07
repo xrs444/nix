@@ -22,6 +22,13 @@
 
   networking.nameservers = [ "172.18.10.250" ];
 
+  # xsvr1 (172.20.1.10) is the CI/build/deploy hub — it repeatedly connects
+  # through this VIP pair (172.18.10.100, xts1/xts2 VRRP) as a Nix remote-build
+  # ProxyJump hop and to deploy xts2 itself. See xts1/network.nix for the full
+  # root-cause note — same fix applied to both VIP-pair members since either
+  # can hold the VIP at ban time.
+  services.fail2ban.ignoreIP = [ "172.20.1.10" ];
+
   # accept_ra=2: accept RAs even when all.forwarding=1 (set by tailscale exit-node role).
   # Without this, forwarding=1 causes the kernel to silently ignore RAs despite accept_ra=1.
   boot.kernel.sysctl."net.ipv6.conf.eth0.accept_ra" = 2;
