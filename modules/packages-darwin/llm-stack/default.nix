@@ -1,26 +1,33 @@
 # LLM stack module for Darwin — MLX-lm + LiteLLM + Wyoming voice pipeline.
 #
 # Owns:
-#   - one launchd daemon per served MLX model (mlx-lm.server per port)
-#   - LiteLLM launchd daemon fronting the MLX ports + upstream cloud tiers
-#   - Wyoming Whisper (STT), Kokoro (TTS), Resemblyzer (speaker ID) launchd daemons
-#   - Prometheus exporters: node_exporter, apple_silicon_exporter
+#   - one launchd daemon per served MLX model (mlx_lm.server per port)
+#   - LiteLLM launchd daemon fronting the MLX ports + upstream cloud tier
+#   - Wyoming faster-whisper (STT) and Piper (TTS) launchd daemons
+#   - Prometheus node_exporter
 #
 # Does NOT own:
-#   - model file downloads. Nix derivations pin repo + revision + sha256; if
-#     mlx-community publishes a new revision, bump revision + rehash.
-#   - LiteLLM upstream secrets (DeepSeek/Anthropic keys). Provided via sops-nix
-#     and passed as environment variables at launchd time.
+#   - model weights in the Nix store. Weights live under `modelsDir` (the
+#     external SSD on xcog1) and are downloaded at daemon start by a
+#     self-healing wrapper pinned to an immutable HuggingFace commit SHA
+#     (see .wolf/cerebrum.md Decision Log 2026-08-07: large single-host data
+#     stays out of the store so builds/cache/remote builders never carry it).
+#   - secrets. sops-nix delivers the LiteLLM master key and DeepSeek API key
+#     as files under /run/secrets; wrappers read them into env at exec time
+#     (launchd has no file-to-env primitive).
 #
 # Design notes:
 #   - MLX-lm has no single-daemon model registry (unlike Ollama); one launchd
 #     unit per served model on a distinct port. LiteLLM routes between them by
-#     model name.
-#   - Voice paths need low latency — voice model (Qwen3 14B) is alwaysOn.
-#     30B-A3B runs on-demand: KeepAlive.SuccessfulExit=false so launchd starts
-#     it once a request lands but doesn't respawn if it exits cleanly (idle).
+#     model name. All models are resident (KeepAlive) — launchd cannot do
+#     start-on-request without socket activation, which mlx_lm.server does not
+#     support (bug-523). Residency is a RAM decision made in the host config.
+#   - Every daemon that touches modelsDir first waits for the backing volume
+#     to be mounted. Writing to /Volumes/<name> before mount would create a
+#     plain directory on the internal disk and block the volume from mounting.
 #   - Runs as system daemons (launchd.daemons, root-owned) not user agents,
-#     because they need to survive user logout and expose network ports.
+#     because they must survive user logout and expose network ports.
+#     Phase B hardening moves them to a dedicated `_llm` user.
 
 {
   config,
@@ -32,28 +39,19 @@
 let
   cfg = config.services.llm-stack;
 
-  # Fetches an mlx-community model repo from HuggingFace pinned to a specific
-  # revision. LFS blobs come from HuggingFace's LFS endpoint (fetchgit + fetchLFS).
-  # NOTE: For any model whose sha256 is `lib.fakeHash` below, the first `nix build`
-  # will fail with the correct hash — copy it into the definition. Standard Nix
-  # workflow. Do not commit `lib.fakeHash` values to main.
-  mkMlxModel =
-    {
-      name,
-      repo,
-      revision,
-      sha256,
-    }:
-    pkgs.fetchgit {
-      name = "mlx-model-${name}";
-      url = "https://huggingface.co/${repo}";
-      rev = revision;
-      inherit sha256;
-      fetchLFS = true;
-    };
+  # Shell fragment: block until the models volume is mounted (no-op when
+  # modelsVolume is null, e.g. models on the boot disk).
+  mountGuard =
+    lib.optionalString (cfg.modelsVolume != null) ''
+      until /sbin/mount | /usr/bin/grep -q " on ${cfg.modelsVolume} "; do
+        echo "llm-stack: waiting for ${cfg.modelsVolume} to mount..." >&2
+        /bin/sleep 5
+      done
+    '';
 
-  # LiteLLM YAML config generated from the model attrset + upstream tier config.
-  # Each MLX model becomes a local upstream; DeepSeek is added as `tier: hard`.
+  # LiteLLM YAML config generated from the model attrset + upstream tier
+  # config (JSON is valid YAML). Secrets arrive via os.environ/ references —
+  # no key material in the nix store.
   litellmConfigFile = pkgs.writeText "litellm-config.yaml" (
     builtins.toJSON {
       model_list =
@@ -66,7 +64,7 @@ let
             api_key = "not-used";
           };
         }) cfg.models)
-        # Cloud fallback tier (DeepSeek) — API key injected via env at launchd time
+        # Cloud fallback tier (DeepSeek) — key injected via env at exec time
         ++ lib.optional cfg.cloudTier.enable {
           model_name = cfg.cloudTier.modelName;
           litellm_params = {
@@ -76,14 +74,11 @@ let
           };
         };
 
-      # LiteLLM router: prefer local for routine, cloud for `tier: hard`
-      router_settings = {
-        routing_strategy = "usage-based-routing-v2";
-        model_group_alias = { };
-      };
-
-      # /metrics for Prometheus scraping (also drives §6 alert rules)
       general_settings = {
+        # Reject unauthenticated requests — consumers present this as a
+        # Bearer token. Without a DB there are no per-consumer virtual keys;
+        # one household master key is the accepted tier (plan §S1).
+        master_key = "os.environ/LITELLM_MASTER_KEY";
         telemetry = false;
         store_model_in_db = false;
       };
@@ -94,41 +89,38 @@ let
     }
   );
 
-  # launchd daemon for a single mlx-lm.server serving one model.
-  mkMlxDaemon =
-    modelName: modelCfg:
-    let
-      modelDrv = mkMlxModel {
-        name = modelName;
-        inherit (modelCfg) repo revision sha256;
-      };
-    in
-    {
-      name = "mlx-lm-${modelName}";
-      value = {
-        # mlx-lm.server is a Python entry point. Runs as root; binds 127.0.0.1
-        # so only LiteLLM (also on the Mac) can reach it directly. External
-        # traffic goes through LiteLLM on cfg.litellmPort.
-        command = "${cfg.mlxLmPackage}/bin/mlx_lm.server --model ${modelDrv} --host 127.0.0.1 --port ${toString modelCfg.port}";
-        serviceConfig = {
-          Label = "net.xrs444.mlx-lm-${modelName}";
-          # alwaysOn models: KeepAlive=true — respawn always.
-          # on-demand models: KeepAlive.SuccessfulExit=false — respawn only on
-          # crash, exit cleanly when idle-timeout fires (mlx-lm has --idle-timeout).
-          KeepAlive =
-            if modelCfg.alwaysOn then
-              true
-            else
-              {
-                SuccessfulExit = false;
-              };
-          RunAtLoad = modelCfg.alwaysOn;
-          StandardErrorPath = "/var/log/llm-stack/mlx-lm-${modelName}.stderr";
-          StandardOutPath = "/var/log/llm-stack/mlx-lm-${modelName}.stdout";
-          ProcessType = "Adaptive"; # macOS scheduler hint: not a background-only task
-        };
+  # launchd daemon for a single mlx_lm.server serving one model. The wrapper
+  # downloads the pinned revision into modelsDir on first start (or after a
+  # revision bump) and is a fast no-op otherwise. KeepAlive + ThrottleInterval
+  # make an interrupted download self-retry without hammering HuggingFace.
+  mkMlxDaemon = modelName: m: {
+    name = "mlx-lm-${modelName}";
+    value = {
+      command = pkgs.writeShellScript "mlx-lm-${modelName}" ''
+        set -euo pipefail
+        ${mountGuard}
+        dir="${cfg.modelsDir}/${modelName}"
+        if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
+          echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
+          /bin/rm -rf "$dir"
+          export HF_HOME="${cfg.modelsDir}/.hf-cache"
+          export HF_HUB_DISABLE_TELEMETRY=1
+          ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
+          printf '%s' "${m.revision}" > "$dir/.revision"
+        fi
+        exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port}
+      '';
+      serviceConfig = {
+        Label = "net.xrs444.mlx-lm-${modelName}";
+        KeepAlive = true;
+        RunAtLoad = true;
+        ThrottleInterval = 30;
+        StandardErrorPath = "/var/log/llm-stack/mlx-lm-${modelName}.stderr";
+        StandardOutPath = "/var/log/llm-stack/mlx-lm-${modelName}.stdout";
+        ProcessType = "Adaptive"; # macOS scheduler hint: not a background-only task
       };
     };
+  };
 in
 
 {
@@ -136,12 +128,24 @@ in
     enable = mkEnableOption "MLX + LiteLLM + Wyoming voice pipeline for family agent";
 
     modelsDir = mkOption {
-      type = types.path;
+      type = types.str;
       default = "/var/models";
       description = ''
-        Filesystem root for MLX model derivations. Point at the external NVMe
-        (typical for xcog1: /Volumes/xcog1-models or /var/models symlinked to it)
-        so the 512GB internal SSD isn't consumed by the model library.
+        Filesystem root for model weights (MLX models, whisper/piper caches).
+        On xcog1 this is the external SSD mount. Deliberately NOT a Nix store
+        path — weights are host-local data.
+      '';
+    };
+
+    modelsVolume = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "/Volumes/xcog1-models";
+      description = ''
+        Mount point backing modelsDir, if it lives on an external volume.
+        Daemons wait for this mount before touching modelsDir, preventing the
+        macOS trap of writing to an unmounted /Volumes path (which creates a
+        plain directory on the boot disk and blocks the real mount).
       '';
     };
 
@@ -149,64 +153,64 @@ in
 
     mlxLmPackage = mkOption {
       type = types.package;
-      default = pkgs.python3.withPackages (ps: with ps; [
-        # TODO: verify mlx-lm attribute exists in the nixpkgs revision pinned by
-        # the flake. If not, add via overlay (see nix/overlays/pkgs.nix pattern
-        # for openrsat) — mlx-lm is a straightforward PyPI wheel with an mlx
-        # dependency. Fallback: use pkgs.python3.pkgs.buildPythonApplication with
-        # a src fetched from GitHub (ml-explore/mlx-lm).
-        # ps.mlx-lm
-      ]);
-      description = "Python environment providing mlx_lm.server entrypoint.";
+      default = pkgs.python3.withPackages (ps: [ ps.mlx-lm ]);
+      description = "Python environment providing the mlx_lm.server entrypoint.";
+    };
+
+    hfPackage = mkOption {
+      type = types.package;
+      default = pkgs.python3.withPackages (ps: [ ps.huggingface-hub ]);
+      description = "Python environment providing the `hf` download CLI.";
     };
 
     models = mkOption {
-      type = types.attrsOf (types.submodule {
-        options = {
-          repo = mkOption {
-            type = types.str;
-            example = "mlx-community/Qwen3-14B-Instruct-4bit";
-            description = "HuggingFace repo path (org/name).";
+      type = types.attrsOf (
+        types.submodule {
+          options = {
+            repo = mkOption {
+              type = types.str;
+              example = "mlx-community/Qwen3-14B-4bit";
+              description = "HuggingFace repo path (org/name). Verify existence via the HF API before pinning.";
+            };
+            revision = mkOption {
+              type = types.str;
+              description = "Immutable HF commit SHA. Never a branch name — the wrapper re-downloads on change.";
+            };
+            port = mkOption {
+              type = types.port;
+              description = "Localhost port for this model's mlx_lm.server.";
+            };
           };
-          revision = mkOption {
-            type = types.str;
-            default = "main";
-            description = "Git revision (commit sha or tag). Pin explicitly; don't leave as 'main'.";
-          };
-          sha256 = mkOption {
-            type = types.str;
-            description = "Nix hash of the fetched repo. Use lib.fakeHash until nix reports the real value.";
-          };
-          port = mkOption {
-            type = types.port;
-            description = "Localhost port for this model's mlx-lm.server.";
-          };
-          alwaysOn = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Pin resident (KeepAlive=true). Use for voice-path models where cold start latency is unacceptable.";
-          };
-        };
-      });
+        }
+      );
       default = { };
-      description = "MLX models to serve. Each becomes an mlx-lm.server launchd daemon on its own port.";
+      description = ''
+        MLX models to serve, one resident mlx_lm.server launchd daemon each.
+        Which models to include is a host-level RAM decision (all are pinned
+        resident; launchd cannot start-on-request — bug-523).
+      '';
     };
 
     # ── LiteLLM router ─────────────────────────────────────────────────────
 
     litellmPackage = mkOption {
       type = types.package;
-      default = pkgs.python3.withPackages (ps: with ps; [
-        # TODO: verify litellm attribute in pinned nixpkgs; add via overlay if not.
-        # ps.litellm
-      ]);
-      description = "Python environment providing the litellm CLI.";
+      default = pkgs.python3.withPackages (
+        ps: [ ps.litellm ] ++ ps.litellm.optional-dependencies.proxy
+      );
+      description = "Python environment providing the litellm proxy CLI (needs the proxy extras).";
     };
 
     litellmPort = mkOption {
       type = types.port;
       default = 4000;
-      description = "Port LiteLLM exposes on the LAN (Hermes, Grafana LLM app, and app-to-LLM integrations all point here).";
+      description = "Port LiteLLM exposes on the LAN (hermes, HA, and app-to-LLM integrations all point here).";
+    };
+
+    masterKeyFile = mkOption {
+      type = types.str;
+      default = "/run/secrets/litellm-master-key";
+      description = "File containing the LiteLLM master key (sops-delivered). Read into env at exec time.";
     };
 
     cloudTier = {
@@ -229,21 +233,23 @@ in
         type = types.str;
         default = "https://api.deepseek.com";
       };
-      # DEEPSEEK_API_KEY is delivered via sops-nix and referenced by LiteLLM
-      # config through os.environ/ — no key material in the nix store.
+      apiKeyFile = mkOption {
+        type = types.str;
+        default = "/run/secrets/deepseek-api-key";
+        description = "File containing the DeepSeek API key (sops-delivered).";
+      };
     };
 
     # ── Voice pipeline (Wyoming) ───────────────────────────────────────────
 
     voice = {
-      enable = mkEnableOption "Wyoming voice services (Whisper STT, Kokoro TTS, Resemblyzer speaker ID)";
+      enable = mkEnableOption "Wyoming voice services (faster-whisper STT, Piper TTS)";
 
       whisper = {
         package = mkOption {
           type = types.package;
-          # TODO: pkgs.wyoming-whisper or pkgs.openai-whisper-cpp — verify availability
-          default = pkgs.hello;
-          description = "Wyoming-wrapped Whisper package.";
+          default = pkgs.wyoming-faster-whisper;
+          description = "Wyoming faster-whisper package.";
         };
         port = mkOption {
           type = types.port;
@@ -251,37 +257,34 @@ in
         };
         model = mkOption {
           type = types.str;
-          default = "large-v3";
+          # CTranslate2 is CPU-only on macOS — turbo keeps voice latency sane
+          # at near-identical accuracy for command STT (plan §D6).
+          default = "large-v3-turbo";
+        };
+        language = mkOption {
+          type = types.str;
+          default = "en";
         };
       };
 
-      kokoro = {
+      piper = {
         package = mkOption {
           type = types.package;
-          # TODO: Kokoro TTS packaging — likely needs a custom derivation in
-          # overlays/pkgs.nix (Python + torch + kokoro-onnx / kokoro-fastapi).
-          default = pkgs.hello;
-          description = "Wyoming-wrapped Kokoro TTS package.";
+          # withTrain drags in pysilero-vad (broken on darwin: GNU-ld flag) and
+          # torch/lightning — inference needs none of it.
+          default = pkgs.wyoming-piper.override {
+            piper-tts = pkgs.piper-tts.override { withTrain = false; };
+          };
+          description = "Wyoming Piper TTS package (bundles piper-tts, inference-only; Kokoro upgrade is plan §D7/Phase D).";
         };
         port = mkOption {
           type = types.port;
           default = 10200;
         };
-      };
-
-      resemblyzer = {
-        package = mkOption {
-          type = types.package;
-          # TODO: Speaker embedding service. Not in nixpkgs — will need a
-          # Python wrapper derivation (resemblyzer OR pyannote ECAPA-TDNN).
-          # Small model (~50-80MB); the wrapper just needs to expose an HTTP
-          # or Wyoming endpoint that HA Assist calls with an audio chunk.
-          default = pkgs.hello;
-          description = "Speaker ID service (Resemblyzer or ECAPA-TDNN).";
-        };
-        port = mkOption {
-          type = types.port;
-          default = 10400;
+        voice = mkOption {
+          type = types.str;
+          default = "en_US-lessac-medium";
+          description = "Piper voice name; downloaded into modelsDir/piper on first start.";
         };
       };
     };
@@ -292,15 +295,11 @@ in
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = "Prometheus exporters — node_exporter and apple_silicon_exporter.";
+        description = "Prometheus node_exporter. (Apple-silicon GPU/ANE exporter is unpackaged — plan §D4, Phase D.)";
       };
       nodeExporterPort = mkOption {
         type = types.port;
         default = 9100;
-      };
-      appleSiliconExporterPort = mkOption {
-        type = types.port;
-        default = 9101;
       };
     };
   };
@@ -308,77 +307,96 @@ in
   # ── Implementation ───────────────────────────────────────────────────────
 
   config = lib.mkIf cfg.enable {
-    # Log directory for all daemons in this module.
+    # Log directory for all daemons in this module. modelsDir is deliberately
+    # NOT created here — it lives on the external volume, and touching the
+    # path before mount would shadow the mount point (see modelsVolume).
     system.activationScripts.llm-stack-dirs.text = ''
       /bin/mkdir -p /var/log/llm-stack
-      /bin/mkdir -p ${cfg.modelsDir}
-      /usr/sbin/chown root:wheel /var/log/llm-stack ${cfg.modelsDir}
-      /bin/chmod 755 /var/log/llm-stack ${cfg.modelsDir}
+      /usr/sbin/chown root:wheel /var/log/llm-stack
+      /bin/chmod 755 /var/log/llm-stack
     '';
 
-    # One launchd.daemon per MLX-served model.
-    launchd.daemons = lib.mkMerge [
-      (lib.listToAttrs (
-        lib.mapAttrsToList (name: mCfg: mkMlxDaemon name mCfg) cfg.models
-      ))
+    # Rotate daemon logs: 10MB per file, 5 bzip2'd archives (G = glob entry).
+    environment.etc."newsyslog.d/llm-stack.conf".text = ''
+      # logfilename                      mode count size(KB) when flags
+      /var/log/llm-stack/*.stdout        644  5     10240    *    GJ
+      /var/log/llm-stack/*.stderr        644  5     10240    *    GJ
+    '';
 
-      # LiteLLM router — depends on the MLX daemons being started but launchd
-      # has no ordering primitives; LiteLLM must retry its upstream connections
-      # (it does by default). RunAtLoad + KeepAlive so LiteLLM survives model
-      # daemon restarts.
+    launchd.daemons = lib.mkMerge [
+      # One daemon per MLX-served model.
+      (lib.listToAttrs (lib.mapAttrsToList mkMlxDaemon cfg.models))
+
+      # LiteLLM router — launchd has no ordering primitives; LiteLLM retries
+      # its upstream connections by default, so model daemons may come up
+      # after it. KeepAlive so it survives model daemon restarts.
       {
         litellm = {
-          command = "${cfg.litellmPackage}/bin/litellm --config ${litellmConfigFile} --port ${toString cfg.litellmPort} --host 0.0.0.0";
+          command = pkgs.writeShellScript "litellm-wrapped" ''
+            set -euo pipefail
+            export LITELLM_MASTER_KEY="$(/bin/cat ${cfg.masterKeyFile})"
+            ${lib.optionalString cfg.cloudTier.enable ''
+              export DEEPSEEK_API_KEY="$(/bin/cat ${cfg.cloudTier.apiKeyFile})"
+            ''}
+            exec ${cfg.litellmPackage}/bin/litellm --config ${litellmConfigFile} \
+              --port ${toString cfg.litellmPort} --host 0.0.0.0
+          '';
           serviceConfig = {
             Label = "net.xrs444.litellm";
             KeepAlive = true;
             RunAtLoad = true;
+            ThrottleInterval = 15;
             StandardErrorPath = "/var/log/llm-stack/litellm.stderr";
             StandardOutPath = "/var/log/llm-stack/litellm.stdout";
-            # sops-nix delivers DEEPSEEK_API_KEY into /run/secrets/deepseek-api-key
-            # at activation. Read into env at launchd time via EnvironmentVariables
-            # with the file contents. For now, template — actual sops wiring is
-            # a separate step when the Mac lands (secrets can't be tested pre-arrival).
-            # TODO: EnvironmentVariables = { DEEPSEEK_API_KEY = "<from sops>"; };
           };
         };
       }
 
-      # Wyoming voice services.
+      # Wyoming voice services. Both cache their model data under modelsDir,
+      # so they carry the same mount guard as the MLX daemons.
       (lib.mkIf cfg.voice.enable {
         wyoming-whisper = {
-          command = "${cfg.voice.whisper.package}/bin/wyoming-faster-whisper --model ${cfg.voice.whisper.model} --uri tcp://0.0.0.0:${toString cfg.voice.whisper.port}";
+          command = pkgs.writeShellScript "wyoming-whisper" ''
+            set -euo pipefail
+            ${mountGuard}
+            /bin/mkdir -p ${cfg.modelsDir}/whisper
+            exec ${cfg.voice.whisper.package}/bin/wyoming-faster-whisper \
+              --model ${cfg.voice.whisper.model} \
+              --language ${cfg.voice.whisper.language} \
+              --uri tcp://0.0.0.0:${toString cfg.voice.whisper.port} \
+              --data-dir ${cfg.modelsDir}/whisper
+          '';
           serviceConfig = {
             Label = "net.xrs444.wyoming-whisper";
             KeepAlive = true;
             RunAtLoad = true;
+            ThrottleInterval = 30;
             StandardErrorPath = "/var/log/llm-stack/wyoming-whisper.stderr";
             StandardOutPath = "/var/log/llm-stack/wyoming-whisper.stdout";
           };
         };
-        wyoming-kokoro = {
-          command = "${cfg.voice.kokoro.package}/bin/wyoming-kokoro --uri tcp://0.0.0.0:${toString cfg.voice.kokoro.port}";
+        wyoming-piper = {
+          command = pkgs.writeShellScript "wyoming-piper" ''
+            set -euo pipefail
+            ${mountGuard}
+            /bin/mkdir -p ${cfg.modelsDir}/piper
+            exec ${cfg.voice.piper.package}/bin/wyoming-piper \
+              --voice ${cfg.voice.piper.voice} \
+              --uri tcp://0.0.0.0:${toString cfg.voice.piper.port} \
+              --data-dir ${cfg.modelsDir}/piper
+          '';
           serviceConfig = {
-            Label = "net.xrs444.wyoming-kokoro";
+            Label = "net.xrs444.wyoming-piper";
             KeepAlive = true;
             RunAtLoad = true;
-            StandardErrorPath = "/var/log/llm-stack/wyoming-kokoro.stderr";
-            StandardOutPath = "/var/log/llm-stack/wyoming-kokoro.stdout";
-          };
-        };
-        speaker-id = {
-          command = "${cfg.voice.resemblyzer.package}/bin/resemblyzer-wyoming --uri tcp://0.0.0.0:${toString cfg.voice.resemblyzer.port}";
-          serviceConfig = {
-            Label = "net.xrs444.speaker-id";
-            KeepAlive = true;
-            RunAtLoad = true;
-            StandardErrorPath = "/var/log/llm-stack/speaker-id.stderr";
-            StandardOutPath = "/var/log/llm-stack/speaker-id.stdout";
+            ThrottleInterval = 30;
+            StandardErrorPath = "/var/log/llm-stack/wyoming-piper.stderr";
+            StandardOutPath = "/var/log/llm-stack/wyoming-piper.stdout";
           };
         };
       })
 
-      # Prometheus exporters.
+      # Prometheus node_exporter.
       (lib.mkIf cfg.exporters.enable {
         node-exporter = {
           command = "${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort}";
@@ -390,13 +408,6 @@ in
             StandardOutPath = "/var/log/llm-stack/node-exporter.stdout";
           };
         };
-        # apple_silicon_exporter isn't in nixpkgs — see overlays/pkgs.nix TODO.
-        # Placeholder daemon definition; wire the real command after the package
-        # is added.
-        # apple-silicon-exporter = {
-        #   command = "${pkgs.apple-silicon-exporter}/bin/apple-silicon-exporter --port ${toString cfg.exporters.appleSiliconExporterPort}";
-        #   serviceConfig = { ... };
-        # };
       })
     ];
   };

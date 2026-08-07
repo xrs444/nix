@@ -90,36 +90,34 @@
 
   # ── LLM stack — the reason this host exists ──────────────────────────────
   #
-  # Model port assignments follow the plan:
-  #   qwen3-14b       → 8001 (alwaysOn, voice path)
-  #   qwen3-30b-a3b   → 8002 (on-demand, text/agent path)
+  # Model port assignments:
+  #   qwen3-14b       → 8001 (voice path; hybrid thinking — HA prompt uses /no_think)
+  #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
   #
-  # sha256 fields are `lib.fakeHash`-style placeholders because the flake is
-  # not yet evaluated on real Apple Silicon hardware. First `darwin-rebuild
-  # build` on xcog1 will report the correct hashes; copy them in, commit, done.
-  # Do not deploy this file to xcog1 with placeholder hashes.
+  # Both models are resident (launchd can't start-on-request — bug-523).
+  # Weights live on the external SSD, NOT the Nix store (cerebrum Decision
+  # Log 2026-08-07); revisions are immutable HF commit SHAs verified via the
+  # HF API (bug-522: repo names must be checked — anonymous 401 = not found).
+  # If this box turns out to have 24GB RAM, drop qwen3-14b and let the 30B
+  # MoE serve the voice path too (plan §D9).
   services.llm-stack = {
     enable = true;
 
-    # Point at the external NVMe once mounted. During Phase A the internal SSD
-    # is fine (models aren't pulled until first activation on real hardware).
-    modelsDir = "/var/models";
+    # External SSD, APFS volume "xcog1-models" (Phase A formats it and runs
+    # `diskutil enableOwnership`). Daemons wait for this mount before writing.
+    modelsDir = "/Volumes/xcog1-models";
+    modelsVolume = "/Volumes/xcog1-models";
 
     models = {
       qwen3-14b = {
-        repo = "mlx-community/Qwen3-14B-Instruct-4bit";
-        # TODO: pin a specific revision once verified; do not ship "main".
-        revision = "main";
-        sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        repo = "mlx-community/Qwen3-14B-4bit";
+        revision = "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4";
         port = 8001;
-        alwaysOn = true; # Voice path — cold start is unacceptable
       };
       qwen3-30b-a3b = {
-        repo = "mlx-community/Qwen3-30B-A3B-Instruct-4bit-DWQ";
-        revision = "main";
-        sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        repo = "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit-DWQ";
+        revision = "53bfb233acb2e50f6060c3c5709f23fac547827f";
         port = 8002;
-        alwaysOn = false; # On-demand — text/agent path can absorb cold start
       };
     };
 
@@ -134,14 +132,38 @@
 
     voice = {
       enable = true;
-      # Default ports (10300/10200/10400) match the module defaults — HA
-      # Assist Wyoming integration will reference these directly.
+      # Default ports (10300 whisper / 10200 piper) match the module — HA
+      # Assist Wyoming integrations reference these directly.
     };
 
     exporters.enable = true;
   };
 
+  # ── Secrets (decrypted with the shared user_xrs444 age key, see
+  # hosts/darwin/default.nix). Placed at /run/secrets/* where the llm-stack
+  # wrappers read them. secrets/llm.yaml: litellm_master_key is real;
+  # deepseek_api_key starts as a placeholder — paste the household key via
+  # `sops secrets/llm.yaml` before relying on the cloud tier.
+  sops.secrets."litellm-master-key" = {
+    sopsFile = ../../../secrets/llm.yaml;
+    key = "litellm_master_key";
+    mode = "0400";
+  };
+  sops.secrets."deepseek-api-key" = {
+    sopsFile = ../../../secrets/llm.yaml;
+    key = "deepseek_api_key";
+    mode = "0400";
+  };
+
+  # ── Headless server power policy ─────────────────────────────────────────
+  # autorestart: come back after any power failure without a button press.
+  # Sleep disabled — this box serves the voice path 24/7.
+  system.activationScripts.extraActivation.text = ''
+    /usr/bin/pmset -a sleep 0 disksleep 0 displaysleep 10 autorestart 1 womp 1
+  '';
+
   # ── ntp / logging niceties for a headless box ────────────────────────────
-  # (Time Machine and xsvr1 SMB mounts intentionally omitted — this host is
-  # backed by ZFS snapshots + Restic per the plan, not Time Machine.)
+  # (Time Machine and xsvr1 SMB mounts intentionally omitted — nothing on
+  # this host is unreproducible: config is git, weights are pinned re-downloads,
+  # secrets are sops.)
 }
