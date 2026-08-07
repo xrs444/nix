@@ -4,8 +4,8 @@
 # any host in the fleet (no NixOS host or k8s node reaches more than two
 # subnets — see the Scanopy deployment plan).
 #
-# Firewalla runs Debian Linux with an SSH-accessible "pi" user (confirmed via
-# https://help.firewalla.com/hc/en-us/articles/115004397274, not guessed) —
+# Firewalla runs Ubuntu 22.04 with an SSH-accessible "pi" user (confirmed live
+# — the vendor's own docs said "Debian Linux", which was imprecise/wrong).
 # NOT DietPi/Bazzite. It's a managed security appliance, not a general-purpose
 # Linux box: only touch the sanctioned customization points documented at
 # https://help.firewalla.com/hc/en-us/articles/360048882174 (Docker under
@@ -13,6 +13,15 @@
 # ~/.firewalla/config/post_main.d/) — don't apt-get install packages Firewalla
 # itself manages (docker, its own network stack), and don't assume the vendor
 # firmware won't reset non-sanctioned changes on a major update.
+#
+# Confirmed live: apt is locked to Firewalla's own minimal package mirror, not
+# full Ubuntu main/universe — `nfs-common` (and presumably most generic
+# packages) is NOT installable. So daemon config persistence is a purely
+# LOCAL directory under the sanctioned Docker path, not NFS-backed from
+# xsvr1 as originally planned (nix/hosts/nixos/xsvr1/shares.nix still has
+# the now-unused /export/zfs/system/scanopy export — harmless to leave, low
+# priority cleanup). Acceptable: it's just the daemon's identity/API key, not
+# real data — a Firewalla reflash means re-enrolling the daemon either way.
 #
 # One-time bootstrap (SSH is off by default, and this must be done from the
 # Firewalla app first — Settings > Advanced > Configurations > SSH Console >
@@ -23,7 +32,7 @@
   common = import ../common/default.nix {inherit pkgs;};
 
   daemonComposeDir = "/home/pi/.firewalla/run/docker/scanopy-daemon";
-  nfsMountPoint = "/mnt/scanopy-daemon";
+  daemonConfigDir = "${daemonComposeDir}/config";
 in {
   collections = common.collections // {};
 
@@ -79,33 +88,18 @@ in {
           changed_when = false;
         }
         {
-          # nfs-common IS safe to apt-install — it's a generic client package,
-          # not something Firewalla's own firmware manages.
-          name = "Install nfs-common (NFS client support)";
-          package = {
-            name = "nfs-common";
-            state = "present";
-          };
-        }
-        {
-          name = "Mount xsvr1 NFS export for daemon config persistence (identity/API key)";
-          "ansible.posix.mount" = {
-            src = "172.20.3.201:/export/zfs/system/scanopy";
-            path = nfsMountPoint;
-            fstype = "nfs";
-            opts = "vers=4.1,hard,intr";
-            state = "mounted";
-          };
-        }
-        {
-          name = "Create Scanopy daemon compose directory (Firewalla's sanctioned Docker location)";
+          name = "Create Scanopy daemon compose + config directories (Firewalla's sanctioned Docker location)";
           "ansible.builtin.file" = {
-            path = daemonComposeDir;
+            path = "{{ item }}";
             state = "directory";
             owner = "pi";
             group = "pi";
             mode = "0755";
           };
+          loop = [
+            daemonComposeDir
+            daemonConfigDir
+          ];
         }
         {
           # scanopy_daemon_api_key is intentionally NOT defaulted — it's
@@ -138,7 +132,7 @@ in {
                     SCANOPY_MODE: daemon_poll
                     SCANOPY_DAEMON_API_KEY: "{{ scanopy_daemon_api_key }}"
                   volumes:
-                    - ${nfsMountPoint}:/root/.config/scanopy/daemon
+                    - ${daemonConfigDir}:/root/.config/scanopy/daemon
             '';
           };
         }
