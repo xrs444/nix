@@ -27,7 +27,7 @@ let
   mkBuildMachine = b: {
     hostName = buildHostname b;
     sshUser = "builder";
-    sshKey = "/root/.ssh/id_builder";
+    sshKey = "/etc/ssh/id_builder";
     # Native aarch64 builders (native=true) cannot build x86_64-linux — they have no binfmt
     # for the reverse direction. Only x86_64 hosts (native=false) get x86_64-linux in systems.
     # Adding x86_64-linux to a native aarch64 builder causes Nix to delegate x86_64 builds there,
@@ -215,9 +215,30 @@ in
   # Deploy builder SSH key on all non-builder hosts AND on xsvr1.
   # xsvr1 is a builder itself but also acts as the CI runner; it needs
   # id_builder to SSH to xsvr2/xsvr3/xdt1-t/xlt1-t-vnixos for distributed builds.
+  #
+  # Moved from /root/.ssh/id_builder to /etc/ssh/id_builder, owner "builder"
+  # (2026-08-07): the GitHub Actions self-hosted runner service
+  # (github-runner-xsvr1-builder.service) runs as User=builder, not root — a
+  # plain workflow `ssh` step (e.g. deploy.yml's vocibuild hostname
+  # pre-flight, which ProxyJumps through builder@172.18.10.100) could never
+  # read the key, even with owner=builder alone: /root itself is 0700
+  # root:root, blocking traversal into /root/.ssh for any other user
+  # regardless of the file's own ownership. Relocating to /etc/ssh (0755,
+  # world-traversable) fixes that. Effect of the original root-only key: sshd
+  # never received a publickey attempt for these connections, fell straight
+  # to keyboard-interactive, which then failed and repeatedly tripped
+  # fail2ban's sshd jail on the xts VIP pair (bug-524). Nix's own
+  # remote-build SSH connections were unaffected throughout, because
+  # nix-daemon itself runs as real root, which reads any file regardless of
+  # ownership or directory permissions — that's what made this so confusing
+  # to diagnose (some SSH paths through this exact identity worked fine,
+  # others never even attempted publickey). Confirmed via `ssh -vvv` in CI:
+  # "no such identity: /root/.ssh/id_builder: Permission denied" immediately
+  # before the keyboard-interactive fallback and ban.
   sops.secrets.builder_private_key = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") {
     sopsFile = ../../../secrets/builder-ssh-key.yaml;
-    path = "/root/.ssh/id_builder";
+    path = "/etc/ssh/id_builder";
+    owner = "builder";
     mode = "0600";
   };
 
@@ -225,7 +246,7 @@ in
   programs.ssh.extraConfig = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") ''
     Host ${lib.concatStringsSep " " (map buildHostname buildHosts)}
       User builder
-      IdentityFile /root/.ssh/id_builder
+      IdentityFile /etc/ssh/id_builder
       # xlt1-t-vnixos is a VM on a laptop and goes offline without closing its
       # end of the connection (sleep/shutdown, not a clean disconnect). Without
       # keepalives, nix-daemon's ssh session just blocks on read() forever —
@@ -249,7 +270,7 @@ in
       ProxyJump builder@172.18.10.100
     Host 172.18.10.100
       User builder
-      IdentityFile /root/.ssh/id_builder
+      IdentityFile /etc/ssh/id_builder
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
   '';
