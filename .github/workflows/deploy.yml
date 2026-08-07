@@ -241,15 +241,38 @@ jobs:
             # Wrap each attempt in `timeout` for a hard wall-clock bound instead.
             REMOTE_HOSTNAME="UNREACHABLE"
             for attempt in 1 2 3; do
-              REMOTE_HOSTNAME=$(timeout 15 ssh \
-                -4 \
-                -i /run/secrets/deploy_private_key \
-                -o StrictHostKeyChecking=no \
-                -o UserKnownHostsFile=/dev/null \
-                -o ConnectTimeout=10 \
-                -o BatchMode=yes \
-                deploy@${DEPLOY_HOSTNAME} \
-                "hostname" 2>/dev/null || echo "UNREACHABLE")
+              # On the last attempt, if it fails, capture verbose diagnostics — no
+              # local root/sops access exists to reproduce this manually, so this
+              # is the only way to see exactly where the connection dies (DNS,
+              # jump-hop auth, final auth, or a hang) with the real credentials.
+              if [[ "$attempt" -eq 3 ]]; then
+                if REMOTE_HOSTNAME=$(timeout 15 ssh \
+                  -4 -vvv \
+                  -i /run/secrets/deploy_private_key \
+                  -o StrictHostKeyChecking=no \
+                  -o UserKnownHostsFile=/dev/null \
+                  -o ConnectTimeout=10 \
+                  -o BatchMode=yes \
+                  deploy@${DEPLOY_HOSTNAME} \
+                  "hostname" 2>/tmp/vocibuild-ssh-debug.log); then
+                  :
+                else
+                  REMOTE_HOSTNAME="UNREACHABLE"
+                  echo "::group::vocibuild ssh -vvv diagnostics (final attempt only)"
+                  cat /tmp/vocibuild-ssh-debug.log || true
+                  echo "::endgroup::"
+                fi
+              else
+                REMOTE_HOSTNAME=$(timeout 15 ssh \
+                  -4 \
+                  -i /run/secrets/deploy_private_key \
+                  -o StrictHostKeyChecking=no \
+                  -o UserKnownHostsFile=/dev/null \
+                  -o ConnectTimeout=10 \
+                  -o BatchMode=yes \
+                  deploy@${DEPLOY_HOSTNAME} \
+                  "hostname" 2>/dev/null || echo "UNREACHABLE")
+              fi
               [[ "$REMOTE_HOSTNAME" == "$host" ]] && break
               [[ "$attempt" -lt 3 ]] && sleep 5
             done
