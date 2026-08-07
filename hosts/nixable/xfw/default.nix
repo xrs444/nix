@@ -172,6 +172,17 @@ in {
           };
         }
         {
+          # Docker isn't always running by default on Firewalla (confirmed
+          # live: "Cannot connect to the Docker daemon" even though the CLI
+          # is present) — the vendor's own post_main.d boot script explicitly
+          # starts it too, so this isn't a one-off state.
+          name = "Ensure Docker service is running";
+          "ansible.builtin.systemd" = {
+            name = "docker";
+            state = "started";
+          };
+        }
+        {
           name = "Start the Scanopy daemon now (don't wait for a reboot)";
           "ansible.builtin.command" = {
             cmd = "docker compose up -d";
