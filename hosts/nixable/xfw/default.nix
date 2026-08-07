@@ -131,6 +131,18 @@ in {
                     SCANOPY_NAME: xfw
                     SCANOPY_MODE: daemon_poll
                     SCANOPY_DAEMON_API_KEY: "{{ scanopy_daemon_api_key }}"
+                    # Confirmed live via `ip -br addr` on xfw: eth1 is the WAN
+                    # interface (public IP 174.73.145.188) — scanning it means
+                    # probing the public internet, not the LAN. eth0/eth3 are
+                    # just the raw bond0 members (redundant with bond0 itself,
+                    # which carries no untagged traffic — every internal VLAN
+                    # is a bond0.<id> sub-interface). Excluded too: vpn_* (VPN
+                    # tunnels, not LAN inventory), ifb*/lo/wg0/docker0 (not
+                    # real network segments). Update this list if VLANs are
+                    # added/removed on xfw (see nix/hosts/nixable/xswcore for
+                    # the switch-side VLAN definitions this must stay in sync
+                    # with).
+                    SCANOPY_INTERFACES: bond0.10,bond0.14,bond0.15,bond0.16,bond0.17,bond0.19,bond0.20,bond0.21,bond0.22,bond0.100,bond0.111,bond0.112,bond0.114,bond0.115,bond0.1000,bond0.1001,bond0.2000,bond0.2001,bond0.2002,bond0.2004
                   volumes:
                     - ${daemonConfigDir}:/root/.config/scanopy/daemon
                   # Confirmed live: the Firewalla's own host-level DNS
