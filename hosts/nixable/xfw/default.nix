@@ -137,6 +137,18 @@ in {
           };
         }
         {
+          # post_main.d does not exist by default — must be created first
+          # (confirmed live), matching the vendor tutorial's own `mkdir` step.
+          name = "Ensure Firewalla's post_main.d boot-hook directory exists";
+          "ansible.builtin.file" = {
+            path = "/home/pi/.firewalla/config/post_main.d";
+            state = "directory";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+          };
+        }
+        {
           # Firewalla's own boot process doesn't guarantee arbitrary systemd
           # units/containers restart on power-cycle — post_main.d is the
           # documented, sanctioned boot hook (Firewalla Tutorial: Expanding
