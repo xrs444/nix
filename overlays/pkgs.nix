@@ -1,5 +1,51 @@
 { inputs, ... }:
-(final: prev: {
+(final: prev:
+let
+  # giscanner/utils.py has an unconditional top-level `import
+  # distutils.cygwinccompiler` (only actually used on Windows/cygwin
+  # cross-builds), which crashes at import time on Python 3.12+ since
+  # distutils was removed from the stdlib. Wrap it in try/except so it's
+  # skipped cleanly when distutils doesn't exist, rather than deleting
+  # behavior real Windows cross-builds need.
+  patchGiscannerDistutils = pkg: pkg.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace giscanner/utils.py \
+        --replace-fail 'import distutils.cygwinccompiler
+orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
+distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore' \
+        'try:
+    import distutils.cygwinccompiler
+    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
+    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore
+except ImportError:
+    pass'
+    '';
+  });
+
+  # aarch64-linux hits the identical crash (confirmed on xlt1-t-vnixos
+  # building libnice/gtk-layer-shell/gnome-autoar) but pkgs.gobject-introspection
+  # is a nativeBuildInput for most of the GLib/GNOME stack (glib, cairo, pango,
+  # harfbuzz, gdk-pixbuf, ffmpeg-headless, matplotlib, ...). Patching the
+  # shared top-level attribute (as the 2026-08-06 commit did) changes ITS
+  # hash and cascades to every one of those, dropping all of them out of the
+  # binary cache even though only these 3 packages actually hit the crash —
+  # confirmed incident: forced 226 derivations to rebuild from source on
+  # xts1. So the fix is applied only as a nativeBuildInput swap on the
+  # specific packages that need it (libnice/gtk-layer-shell/gnome-autoar
+  # below), never on pkgs.gobject-introspection(-unwrapped) itself. If a NEW
+  # aarch64 package hits this same crash, give it the same
+  # `useAarch64GiscannerFix prev.<pkg>` treatment rather than reaching for
+  # the shared attr.
+  gobjectIntrospectionAarch64Fix = prev.gobject-introspection.override {
+    gobject-introspection-unwrapped = patchGiscannerDistutils prev.gobject-introspection-unwrapped;
+  };
+  useAarch64GiscannerFix = pkg: pkg.overrideAttrs (old: {
+    nativeBuildInputs = map
+      (x: if (x.pname or "") == "gobject-introspection-wrapped" then gobjectIntrospectionAarch64Fix else x)
+      (old.nativeBuildInputs or [ ]);
+  });
+in
+{
   # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
   # network access unavailable in the nix sandbox. Strip it from yt-dlp's
   # dependencies so it is never built.
@@ -59,34 +105,34 @@
   # build that needs g-ir-scanner (e.g. gcr on aarch64-darwin — confirmed via
   # `curl -sI https://cache.nixos.org/<hash>.narinfo` returning 404, i.e. no
   # prebuilt binary exists for this platform, unlike the aarch64-linux
-  # packages covered by the note above). Originally scoped to Darwin only
-  # since most Linux builds are cached per that note; extended to isAarch64
-  # (2026-08-06) after hitting the identical crash natively on xlt1-t-vnixos
-  # (aarch64-linux) building libnice/gtk-layer-shell/gnome-autoar — confirmed
-  # via the same `curl -sI .../<hash>.narinfo` 404 check that none of those
-  # three are cached either, so this isn't the unnecessary-rebuild pattern.
-  # Verify cache availability the same way before extending this further.
+  # packages covered by the note above). Scoped to Darwin only — most Linux
+  # builds are cached per that note. Do NOT extend this to isAarch64 (tried
+  # 2026-08-06, reverted same day): this attribute is a nativeBuildInput for
+  # most of the GLib/GNOME stack, so patching it here changes its hash and
+  # cascades to every downstream package's hash too, defeating cache
+  # substitution for all of them (confirmed: forced 226 derivations to
+  # rebuild from source on xts1). If an aarch64-linux package hits this same
+  # giscanner crash, add it to the aarch64GiscannerFixPkgs list below instead
+  # — that patches only the affected packages' own nativeBuildInput.
   gobject-introspection-unwrapped =
-    if final.stdenv.hostPlatform.isDarwin || final.stdenv.hostPlatform.isAarch64
-    then prev.gobject-introspection-unwrapped.overrideAttrs (old: {
-      # All three lines are top-level, unconditional, and only meaningful on
-      # Windows/cygwin (monkeypatches distutils' MSVC-runtime detection) —
-      # wrap in try/except so it's skipped cleanly when distutils doesn't
-      # exist, rather than deleting behavior real Windows cross-builds need.
-      postPatch = (old.postPatch or "") + ''
-        substituteInPlace giscanner/utils.py \
-          --replace-fail 'import distutils.cygwinccompiler
-orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
-distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore' \
-          'try:
-    import distutils.cygwinccompiler
-    orig_get_msvcr = distutils.cygwinccompiler.get_msvcr  # type: ignore
-    distutils.cygwinccompiler.get_msvcr = get_msvcr_overwrite  # type: ignore
-except ImportError:
-    pass'
-      '';
-    })
+    if final.stdenv.hostPlatform.isDarwin
+    then patchGiscannerDistutils prev.gobject-introspection-unwrapped
     else prev.gobject-introspection-unwrapped;
+
+  # aarch64-linux equivalent of the Darwin fix above, scoped per-package (see
+  # the note above gobject-introspection-unwrapped for why). Confirmed via
+  # `curl -sI .../<hash>.narinfo` 404 that libnice/gtk-layer-shell/gnome-autoar
+  # are genuinely uncached on aarch64-linux, not just victims of our own
+  # cascading overrideAttrs.
+  libnice = if final.stdenv.hostPlatform.isAarch64
+    then useAarch64GiscannerFix prev.libnice
+    else prev.libnice;
+  gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
+    then useAarch64GiscannerFix prev.gtk-layer-shell
+    else prev.gtk-layer-shell;
+  gnome-autoar = if final.stdenv.hostPlatform.isAarch64
+    then useAarch64GiscannerFix prev.gnome-autoar
+    else prev.gnome-autoar;
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
