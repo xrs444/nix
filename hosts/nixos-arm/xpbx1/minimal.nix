@@ -2,6 +2,7 @@
 # Bootstrap workflow: flash SD image → boot → deploy .#xpbx1 from xsvr1.
 # SSH access via thomas-local key (sdImage/custom.nix injects authorizedKeys).
 {
+  config,
   pkgs,
   stateVersion,
   hostname,
@@ -72,9 +73,23 @@
       ''
         (cd ${pkgs.raspberrypifw}/share/raspberrypi/boot && cp bootcode.bin fixup*.dat start*.elf $NIX_BUILD_TOP/firmware/)
 
-        # Device tree files for Raspberry Pi 3B
-        cp ${pkgs.raspberrypifw}/share/raspberrypi/boot/bcm2710-rpi-3-b.dtb firmware/
-        cp ${pkgs.raspberrypifw}/share/raspberrypi/boot/bcm2710-rpi-3-b-plus.dtb firmware/
+        # Device tree files for Raspberry Pi 3B.
+        # IMPORTANT: sourced from the mainline kernel's OWN compiled dtbs
+        # (config.boot.kernelPackages.kernel), not pkgs.raspberrypifw's downstream
+        # firmware blobs. Mainline names this board "bcm2837-rpi-3-b" (the actual
+        # SoC part number) while downstream firmware calls the same physical board
+        # "bcm2710-rpi-3-b" (a legacy family codename) — same hardware, but the two
+        # DTBs have different node structures/bindings, and this kernel's drivers
+        # (compiled against upstream DT bindings) don't correctly bind to the
+        # downstream-formatted one. Confirmed root cause of bug-508's follow-on:
+        # totally dead USB (no keyboard, no network — Pi3B's onboard Ethernet is
+        # internally wired through the same USB controller) after the 215ba0c
+        # mainline-kernel migration, while still copying the downstream DTB here.
+        # Kept under the bcm2710-* filename because VideoCore's board
+        # auto-detection looks for that exact name regardless of file content —
+        # only the CONTENT needs to match the kernel, not the name on disk.
+        cp ${config.boot.kernelPackages.kernel}/dtbs/broadcom/bcm2837-rpi-3-b.dtb firmware/bcm2710-rpi-3-b.dtb
+        cp ${config.boot.kernelPackages.kernel}/dtbs/broadcom/bcm2837-rpi-3-b-plus.dtb firmware/bcm2710-rpi-3-b-plus.dtb
         cp -r ${pkgs.raspberrypifw}/share/raspberrypi/boot/overlays firmware/
 
         cp ${pkgs.ubootRaspberryPi3_64bit}/u-boot.bin firmware/u-boot-rpi3.bin

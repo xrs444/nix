@@ -315,9 +315,12 @@ Intelligence/iCloud extras, enable Remote Login + Screen Sharing, plug into the 
 3. Copy the age key to `~/.config/sops/age/keys.txt` (same key as xlt1-t).
 4. Copy `~/.ssh/builder_key` (remote-builder credential) from xlt1-t.
 5. `git clone` the nix repo; `darwin-rebuild switch --flake .#xcog1` (first run: expect
-   LuLu-style firewall prompts; cerebrum notes apply). The switch itself is fast — model
-   downloads (~25 GB) happen on first daemon start afterwards; watch
-   `/var/log/llm-stack/mlx-lm-*.stderr` until both models are serving.
+   LuLu-style firewall prompts; cerebrum notes apply). **The first switch builds the
+   aarch64-darwin closure on xcog1 itself** (decision 2026-08-07: no pre-building from
+   xlt1-t; CI runners are Linux and can't cover darwin builds) — it substitutes what
+   cache.nixos.org/nixcache have and compiles the rest (Qt, ffmpeg, etc.); budget an hour
+   or two and run it under `caffeinate -im`. Model downloads (~25 GB) then happen on first
+   daemon start; watch `/var/log/llm-stack/mlx-lm-*.stderr` until both models are serving.
 6. Record RAM (`sysctl -n hw.memsize`) → apply D9 decision, adjust models if 24 GB, commit.
 7. Verify base: fish shell, nix.custom.conf substituters, node_exporter answering on :9100,
    Tailscale app if the `tailscale-client` role is wanted day-1.

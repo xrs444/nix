@@ -18,6 +18,21 @@
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
 
+  # arrow-azurefs-test spins up a local azurite (node.js) TLS mock whose
+  # self-signed cert fails verification ("unable to get local issuer
+  # certificate") — hit on this host's first darwin-rebuild switch; the other
+  # 96/97 arrow tests passed. arrow-cpp blocks pyarrow → datasets/tokenizers
+  # → mlx-lm + faster-whisper, i.e. the whole LLM stack. Host-scoped overlay
+  # (not hosts/darwin common) so no other host's cache hits are disturbed;
+  # aarch64-darwin arrow isn't cached upstream anyway.
+  nixpkgs.overlays = [
+    (final: prev: {
+      arrow-cpp = prev.arrow-cpp.overrideAttrs (old: {
+        doInstallCheck = false;
+      });
+    })
+  ];
+
   # ── Server-appropriate macOS defaults ────────────────────────────────────
   # No dock/Finder theming — this is a headless daemon host. Only the minimum
   # needed for the rare interactive session (Screen Sharing / SSH).

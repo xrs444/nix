@@ -235,7 +235,7 @@ in
   # others never even attempted publickey). Confirmed via `ssh -vvv` in CI:
   # "no such identity: /root/.ssh/id_builder: Permission denied" immediately
   # before the keyboard-interactive fallback and ban.
-  sops.secrets.builder_private_key = lib.mkIf (!isBuilder || config.networking.hostName == "xsvr1") {
+  sops.secrets.builder_private_key = lib.mkIf ((!isBuilder || config.networking.hostName == "xsvr1") && !minimalImage) {
     sopsFile = ../../../secrets/builder-ssh-key.yaml;
     path = "/etc/ssh/id_builder";
     owner = "builder";
