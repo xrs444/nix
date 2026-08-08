@@ -135,18 +135,27 @@
   #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
   #
   # Both models are resident (launchd can't start-on-request — bug-523).
-  # Weights live on the external SSD, NOT the Nix store (cerebrum Decision
-  # Log 2026-08-07); revisions are immutable HF commit SHAs verified via the
-  # HF API (bug-522: repo names must be checked — anonymous 401 = not found).
-  # If this box turns out to have 24GB RAM, drop qwen3-14b and let the 30B
-  # MoE serve the voice path too (plan §D9).
+  # Weights live outside the Nix store (cerebrum Decision Log 2026-08-07),
+  # but NOT on the external SSD despite the original plan — bug-528: macOS's
+  # kTCCServiceSystemPolicyRemovableVolumes blocks ANY automated/headless
+  # process (even root, even with diskutil enableOwnership) from writing to
+  # an externally-connected volume, confirmed via `log show` TCC denials on
+  # xcog1's first real activation. A symlink from the internal disk doesn't
+  # help either — the sandbox resolves to the real target volume before the
+  # policy check. The only fixes are a manual Full Disk Access grant per
+  # nix-store binary (re-required every time nixpkgs bumps that binary — no
+  # automation exists without either disabling SIP to hand-edit TCC.db, or
+  # real MDM device enrollment for a PrivacyPreferencesPolicyControl profile
+  # — both disproportionate for this), or the internal disk. User chose
+  # internal (830GB free there) over accepting either tradeoff.
+  # Revisions are immutable HF commit SHAs verified via the HF API (bug-522:
+  # repo names must be checked — anonymous 401 = not found). If this box
+  # turns out to have 24GB RAM, drop qwen3-14b and let the 30B MoE serve the
+  # voice path too (plan §D9).
   services.llm-stack = {
     enable = true;
-
-    # External SSD, APFS volume "xcog1-models" (Phase A formats it and runs
-    # `diskutil enableOwnership`). Daemons wait for this mount before writing.
-    modelsDir = "/Volumes/xcog1-models";
-    modelsVolume = "/Volumes/xcog1-models";
+    # modelsDir/modelsVolume left at the module defaults (/var/models on the
+    # internal disk, no mount guard needed).
 
     models = {
       qwen3-14b = {

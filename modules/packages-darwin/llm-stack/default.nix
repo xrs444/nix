@@ -8,10 +8,15 @@
 #
 # Does NOT own:
 #   - model weights in the Nix store. Weights live under `modelsDir` (the
-#     external SSD on xcog1) and are downloaded at daemon start by a
-#     self-healing wrapper pinned to an immutable HuggingFace commit SHA
-#     (see .wolf/cerebrum.md Decision Log 2026-08-07: large single-host data
-#     stays out of the store so builds/cache/remote builders never carry it).
+#     internal disk by default — bug-528: macOS blocks headless/automated
+#     processes, even root, from writing to externally-connected volumes via
+#     kTCCServiceSystemPolicyRemovableVolumes, with no scriptable way around
+#     it short of disabling SIP or real MDM enrollment, so `modelsVolume`
+#     support exists but isn't used on xcog1) and are downloaded at daemon
+#     start by a self-healing wrapper pinned to an immutable HuggingFace
+#     commit SHA (see .wolf/cerebrum.md Decision Log 2026-08-07: large
+#     single-host data stays out of the store so builds/cache/remote
+#     builders never carry it).
 #   - secrets. sops-nix delivers the LiteLLM master key and DeepSeek API key
 #     as files under /run/secrets; wrappers read them into env at exec time
 #     (launchd has no file-to-env primitive).
@@ -132,8 +137,14 @@ in
       default = "/var/models";
       description = ''
         Filesystem root for model weights (MLX models, whisper/piper caches).
-        On xcog1 this is the external SSD mount. Deliberately NOT a Nix store
-        path — weights are host-local data.
+        Deliberately NOT a Nix store path — weights are host-local data.
+        Defaults to the internal disk: bug-528 found that macOS's
+        kTCCServiceSystemPolicyRemovableVolumes blocks headless/automated
+        writes (even as root) to externally-connected volumes with no
+        scriptable workaround, so an external `modelsVolume` isn't viable
+        for an unattended host without either disabling SIP or real MDM
+        enrollment. Left configurable in case a future host's storage layout
+        differs (e.g. genuinely internal-only expansion storage).
       '';
     };
 
@@ -142,10 +153,12 @@ in
       default = null;
       example = "/Volumes/xcog1-models";
       description = ''
-        Mount point backing modelsDir, if it lives on an external volume.
+        Mount point backing modelsDir, if it lives on a separate volume.
         Daemons wait for this mount before touching modelsDir, preventing the
         macOS trap of writing to an unmounted /Volumes path (which creates a
-        plain directory on the boot disk and blocks the real mount).
+        plain directory on the boot disk and blocks the real mount). NOTE:
+        this does not help with EXTERNALLY-connected (USB/Thunderbolt)
+        volumes specifically — see modelsDir's description (bug-528).
       '';
     };
 
@@ -307,13 +320,23 @@ in
   # ── Implementation ───────────────────────────────────────────────────────
 
   config = lib.mkIf cfg.enable {
-    # Log directory for all daemons in this module. modelsDir is deliberately
-    # NOT created here — it lives on the external volume, and touching the
-    # path before mount would shadow the mount point (see modelsVolume).
+    # Log directory for all daemons in this module. modelsDir is only
+    # created here when it's NOT on a separate mounted volume — touching the
+    # path before an external volume mounts would shadow the mount point
+    # (see modelsVolume). When modelsVolume is null (bug-528: external
+    # volumes are TCC-blocked for headless writes, so this is the common
+    # case), each daemon's own `mkdir -p`/`parents=True` would create it
+    # anyway, but doing it once here up front is cheaper and keeps ownership
+    # consistent from the start.
     system.activationScripts.llm-stack-dirs.text = ''
       /bin/mkdir -p /var/log/llm-stack
       /usr/sbin/chown root:wheel /var/log/llm-stack
       /bin/chmod 755 /var/log/llm-stack
+    ''
+    + lib.optionalString (cfg.modelsVolume == null) ''
+      /bin/mkdir -p ${cfg.modelsDir}
+      /usr/sbin/chown root:wheel ${cfg.modelsDir}
+      /bin/chmod 755 ${cfg.modelsDir}
     '';
 
     # Rotate daemon logs: 10MB per file, 5 bzip2'd archives (G = glob entry).

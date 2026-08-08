@@ -192,12 +192,24 @@ xcog1 closure. The models are only ever needed on xcog1 itself, so:
 - First daemon start on xcog1 downloads ~25 GB — expect the models to take tens of minutes to
   become ready on first boot (watch `/var/log/llm-stack/mlx-lm-*.stderr`); every later start is
   instant.
-- **`modelsDir` points at the external SSD from day one** (`/Volumes/xcog1-models`, per the
-  original plan — the drive shipped with the Mac). A `modelsVolume` option makes every daemon
-  that touches modelsDir **wait for the mount** before writing: writing to an unmounted
-  `/Volumes/<name>` path silently creates a plain directory on the boot disk and then blocks
-  the real volume from mounting — the classic macOS external-drive trap. The activation script
-  correspondingly never creates modelsDir itself. Whisper/Piper caches live there too.
+- **`modelsDir` ended up on the internal disk, not the external SSD, despite the original
+  plan — bug-528, found during the actual xcog1 deployment (2026-08-07).** macOS's
+  `kTCCServiceSystemPolicyRemovableVolumes` blocks *any* headless/automated process — including
+  root — from writing to an externally-connected volume (USB/Thunderbolt), confirmed via
+  `log show`'s TCC denial trail during xcog1's first real activation; `diskutil enableOwnership`
+  and correct Unix permissions make no difference, since TCC sits above the POSIX permission
+  layer. A symlink from the internal disk to the external volume doesn't help either — the
+  sandbox resolves through to the real target volume before the policy check runs. The only
+  fixes are a manual per-binary Full Disk Access grant (which breaks and needs re-granting
+  every time nixpkgs bumps the bash/python derivation involved — no scriptable way to automate
+  it without disabling SIP to hand-edit `TCC.db`, or real MDM device enrollment for a
+  `PrivacyPreferencesPolicyControl` profile, both disproportionate here) or just using the
+  internal disk. Given no lightweight automation path exists, internal disk won (830GB free).
+  A `modelsVolume` option remains in the module for a future host with a genuinely different
+  storage layout — it makes daemons **wait for the mount** before writing (preventing the
+  separate, unrelated macOS trap of writing to an unmounted `/Volumes/<name>` path, which
+  silently creates a plain directory on the boot disk and blocks the real volume from ever
+  mounting) — but it isn't used on xcog1. Whisper/Piper caches live under `modelsDir` too.
 
 **D2 — `routing_strategy = "usage-based-routing-v2"` requires Redis** and only matters with
 multiple deployments of the same model name. With one instance per model it adds a dependency
@@ -307,9 +319,9 @@ Manual (macOS setup assistant): create user `xrs444`, hostname `xcog1`, skip App
 Intelligence/iCloud extras, enable Remote Login + Screen Sharing, plug into the servers VLAN.
 
 1. Firewalla/DHCP: static reservation + DNS `xcog1.lan`; confirm `ssh xrs444@xcog1.lan`.
-   Prepare the external SSD: `diskutil eraseDisk APFS xcog1-models <disk>` then
-   `sudo diskutil enableOwnership /Volumes/xcog1-models` (external volumes default to
-   "ignore ownership", which would break root-owned model dirs).
+   The external SSD that shipped with the Mac is **not used for models** — bug-528, see D1 —
+   macOS blocks headless writes to it regardless of `diskutil enableOwnership`. No disk prep
+   needed; models land on the internal disk automatically.
 2. Install Determinate Systems Nix, then Homebrew (required by `brew-packages.nix`;
    remember `onActivation.cleanup = "none"` is already the repo norm).
 3. Copy the age key to `~/.config/sops/age/keys.txt` (same key as xlt1-t).
