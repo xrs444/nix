@@ -48,6 +48,102 @@
     mode = "0400";
   };
 
+  # SSH private keys for ${username}'s ad-hoc admin access, declaratively
+  # provisioned to ~/.ssh so they survive a fresh machine / are backed up
+  # encrypted in git — mirrors the pattern already used for thomas-local_key
+  # on NixOS (modules/users/xrs444.nix). Real files land on disk (not an
+  # agent-only vault) so existing ad-hoc `ssh -i ~/.ssh/<key>` commands and
+  # scripts keep working unchanged. See homemanager/users/xrs444/default.nix
+  # for the matching programs.ssh routing (which key is offered for which
+  # host).
+  sops.secrets."ssh-thomas-local" = {
+    sopsFile = ../../secrets/thomas-local-ssh-key.yaml;
+    key = "thomas_local_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/thomas-local_key";
+  };
+
+  # xrs444's own dedicated identity — see modules/users/xrs444.nix for the
+  # matching NixOS-side secret and authorized_key.
+  sops.secrets."ssh-xrs444" = {
+    sopsFile = ../../secrets/xrs444-ssh-key.yaml;
+    key = "xrs444_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/xrs444_key";
+  };
+
+  # Same identity as the fleet's /etc/ssh/id_builder (modules/services/remotebuilds/default.nix)
+  # — xcog1/xlt1-t reference this local copy directly in their own nix.buildMachines
+  # (they don't import the remotebuilds NixOS module) so it needs its own path here.
+  sops.secrets."ssh-builder" = {
+    sopsFile = ../../secrets/builder-ssh-key.yaml;
+    key = "builder_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/builder_key";
+  };
+
+  # Nutanix cluster admin access (xntnx).
+  sops.secrets."ssh-ntnx" = {
+    sopsFile = ../../secrets/ntnx-ssh-key.yaml;
+    key = "ntnx_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/ntnx";
+  };
+
+  # Legacy Brocade/FastIron switch admin (xswcore and friends) — RSA key,
+  # needs the legacy KexAlgorithms/PubkeyAcceptedKeyTypes carried in ssh
+  # config alongside it (see homemanager/users/xrs444/default.nix).
+  sops.secrets."ssh-ansible-brocade" = {
+    sopsFile = ../../secrets/ansible-brocade-ssh-key.yaml;
+    key = "ansible_brocade_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/ansible-brocade_key";
+  };
+
+  # opc@vocibuild.xrs444.net — Oracle Cloud's default per-instance admin
+  # user, separate from the builder/deploy service identities.
+  sops.secrets."ssh-oci" = {
+    sopsFile = ../../secrets/oci-ssh-key.yaml;
+    key = "oci_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/oci";
+  };
+
+  # pi@<firewalla> — Firewalla's fixed default SSH username; not a
+  # Nix-managed host so there's no fixed hostname to route on.
+  sops.secrets."ssh-pi" = {
+    sopsFile = ../../secrets/pi-ssh-key.yaml;
+    key = "pi_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/pi";
+  };
+
+  # BetterTouchTool automation scripts on xlt1-t use this to reach xdt1-t
+  # as xrs444 (see modules/users/xrs444.nix for the matching authorized_key
+  # on xdt1-t).
+  sops.secrets."ssh-obs" = {
+    sopsFile = ../../secrets/obs-ssh-key.yaml;
+    key = "obs_private_key";
+    owner = username;
+    group = "staff";
+    mode = "0600";
+    path = "/Users/${username}/.ssh/obs-key";
+  };
+
   # Enable fish shell system-wide
   programs.fish.enable = true;
 

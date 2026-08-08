@@ -45,7 +45,10 @@
     go.enable = true;
     rbenv.enable = true;
     yt-dlp.enable = true;
-    # SSH configuration for thomas-local key
+    # SSH configuration — declares which key is offered for which host so
+    # plain `ssh <host>` picks the right identity with no manual `-i` flag.
+    # Key material itself is provisioned separately (sops-nix): NixOS via
+    # modules/users/xrs444.nix, Darwin via hosts/darwin/default.nix.
     ssh = {
       enable = true;
       enableDefaultConfig = false;
@@ -55,10 +58,105 @@
           ServerAliveInterval = 60;
           ServerAliveCountMax = 3;
         };
-        "*.lan thomas-local@*" = {
-          User = "thomas-local";
+        # Default interactive identity for plain `ssh <host>.lan` (no
+        # explicit user). Excludes thomas-local@ invocations so that path
+        # stays on its own dedicated key below, not this one.
+        "*.lan !thomas-local@*" = {
+          User = "xrs444";
+          # NixOS path matches sops.secrets."xrs444-ssh-key".path in
+          # modules/users/xrs444.nix (custom path, not the /run/secrets
+          # default — a custom `path` fully replaces the default location).
           IdentityFile =
-            if pkgs.stdenv.isDarwin then "~/.ssh/thomas-local_key" else "/run/secrets/thomas-local-ssh-key";
+            if pkgs.stdenv.isDarwin then "~/.ssh/xrs444_key" else "/home/xrs444/.ssh/xrs444_key";
+          IdentitiesOnly = true;
+        };
+        # Reserved for explicit thomas-local@ invocations (automation/scripts).
+        "thomas-local@*" = {
+          User = "thomas-local";
+          # See sops.secrets."thomas-local-ssh-key".path in modules/users/xrs444.nix —
+          # was previously (incorrectly) pointing at the unused /run/secrets default.
+          IdentityFile =
+            if pkgs.stdenv.isDarwin then "~/.ssh/thomas-local_key" else "/home/xrs444/.ssh/thomas-local_key";
+          IdentitiesOnly = true;
+        };
+      }
+      # The remaining keys below are only usable on Darwin: their key material
+      # is provisioned to ~/.ssh there (hosts/darwin/default.nix). On NixOS,
+      # /etc/ssh/id_builder is owner=builder mode=0600 (see
+      # modules/services/remotebuilds/default.nix), unreadable by xrs444, and
+      # ntnx/ansible-brocade/oci/pi/obs-key have no NixOS-side use at all.
+      // lib.optionalAttrs pkgs.stdenv.isDarwin {
+        # Interactive access to the Nix remote-build pool as the `builder`
+        # service user — same identity as the fleet's /etc/ssh/id_builder.
+        "builder@xsvr1.lan xsvr1-builder" = {
+          User = "builder";
+          HostName = "xsvr1.lan";
+          IdentityFile = "~/.ssh/builder_key";
+          IdentitiesOnly = true;
+        };
+
+        # Nutanix cluster.
+        xntnx = {
+          HostName = "172.25.1.100";
+          User = "nutanix";
+          IdentityFile = "~/.ssh/ntnx";
+          IdentitiesOnly = true;
+          StrictHostKeyChecking = "no";
+        };
+
+        # Legacy Brocade/Ruckus FastIron core switch (xswcore) — old enough to
+        # need KexAlgorithms/PubkeyAcceptedKeyTypes/HostKeyAlgorithms
+        # re-enabled; modern OpenSSH disables these by default.
+        xswcore1 = {
+          HostName = "172.18.4.100";
+          User = "dog";
+          Port = 22;
+          IdentityFile = "~/.ssh/ansible-brocade_key";
+          IdentitiesOnly = true;
+          KexAlgorithms = "+diffie-hellman-group14-sha1";
+          PubkeyAcceptedKeyTypes = "+ssh-rsa";
+          HostKeyAlgorithms = "+ssh-rsa";
+        };
+        "xswcore1.x.xrs444.net" = {
+          IdentityFile = "~/.ssh/ansible-brocade_key";
+          IdentitiesOnly = true;
+          KexAlgorithms = "+diffie-hellman-group14-sha1";
+          PubkeyAcceptedKeyTypes = "+ssh-rsa";
+          HostKeyAlgorithms = "+ssh-rsa";
+        };
+        # A second, older legacy device on the same admin key — needs an even
+        # older KEX (group1-sha1). No known hostname, IP only.
+        "172.18.11.249" = {
+          IdentityFile = "~/.ssh/ansible-brocade_key";
+          IdentitiesOnly = true;
+          KexAlgorithms = "+diffie-hellman-group1-sha1";
+          PubkeyAcceptedKeyTypes = "+ssh-rsa";
+          HostKeyAlgorithms = "+ssh-rsa";
+        };
+
+        # Oracle Cloud default per-instance admin user (opc), separate from
+        # the builder/deploy service identities that also reach vocibuild.
+        "opc@vocibuild.xrs444.net" = {
+          User = "opc";
+          IdentityFile = "~/.ssh/oci";
+          IdentitiesOnly = true;
+        };
+
+        # Firewalla's fixed default SSH username — matched by user, not
+        # hostname, since it's not a Nix-managed host with a fixed address.
+        "pi@*" = {
+          IdentityFile = "~/.ssh/pi";
+          IdentitiesOnly = true;
+        };
+
+        # BetterTouchTool automation scripts on xlt1-t reaching xdt1-t as
+        # xrs444 (see modules/users/xrs444.nix for the matching
+        # authorized_key, gated to hostname == "xdt1-t").
+        xdt1-t-obs = {
+          HostName = "xdt1-t.lan";
+          User = "xrs444";
+          IdentityFile = "~/.ssh/obs-key";
+          IdentitiesOnly = true;
         };
       };
     };

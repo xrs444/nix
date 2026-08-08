@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  hostname ? null,
+  ...
+}:
 
 {
   programs.fish.enable = true;
@@ -14,7 +19,16 @@
     ];
     shell = pkgs.fish;
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKuEzwE067tav1hJ44etyUMBlgPIeNqRn4E1+zPt7dK"
+      # Replaced 2026-08-07: the previous key here had no matching private
+      # key anywhere on the fleet (orphaned) — this is xrs444's own dedicated
+      # identity, distinct from thomas-local (secrets/xrs444-ssh-key.yaml).
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBqg7PhaNdpB69GZOwbXgG8XpoWv1wlLBcx+sqW/D2oO xrs444@homeprod"
+    ]
+    # BetterTouchTool automation on xlt1-t SSHes in as xrs444 using a
+    # dedicated key (~/.ssh/obs-key on the Mac, provisioned in
+    # hosts/darwin/default.nix) rather than the shared thomas-local key.
+    ++ lib.optionals (hostname == "xdt1-t") [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAW81IrYVjb7wFduYvJFUpCE6ni0GPrOr0LyHmEO9BAU xrs444@xlt1-t.i.xrs444.net.lan"
     ];
     initialPassword = "changeme";
     createHome = true;
@@ -32,6 +46,18 @@
     group = "xrs444";
     mode = "0400";
     path = "/home/xrs444/.ssh/thomas-local_key";
+  };
+
+  # xrs444's own dedicated identity — default for plain interactive `ssh
+  # <host>.lan` (see homemanager/users/xrs444/default.nix). thomas-local
+  # stays reserved for explicit thomas-local@ invocations (automation).
+  sops.secrets."xrs444-ssh-key" = {
+    sopsFile = ../../secrets/xrs444-ssh-key.yaml;
+    key = "xrs444_private_key";
+    owner = "xrs444";
+    group = "xrs444";
+    mode = "0400";
+    path = "/home/xrs444/.ssh/xrs444_key";
   };
 
   # vja (Vikunja CLI) reads its API token from ~/.config/vja/token.json
