@@ -8,6 +8,12 @@
   desktop ? null,
   ...
 }:
+let
+  # xcog1 is a headless LLM server, not a workstation — see
+  # nix/docs/xcog1-llm-deployment-plan.md and the cerebrum Decision Log
+  # (2026-08-07) for the core+marginal+diagnostics package split this gates.
+  isServer = hostName == "xcog1";
+in
 {
 
   home.stateVersion = stateVersion;
@@ -15,18 +21,6 @@
   home.homeDirectory = if pkgs.stdenv.isDarwin then "/Users/${username}" else "/home/${username}";
 
   programs = {
-    wezterm = {
-      enable = true;
-      extraConfig = ''
-        local config = wezterm.config_builder()
-        config.initial_cols = 120
-        config.initial_rows = 28
-        config.font_size = 12
-        config.color_scheme = 'Catppuccin Mocha'
-        config.font = wezterm.font 'SpaceMono Nerd Font'
-        return config
-      '';
-    };
     home-manager.enable = true;
     git = {
       enable = true;
@@ -41,10 +35,6 @@
     };
     # Fish configuration is managed by nix-darwin on macOS to prevent PATH issues
     fish.enable = pkgs.stdenv.isLinux;
-    starship.enable = true;
-    go.enable = true;
-    rbenv.enable = true;
-    yt-dlp.enable = true;
     # SSH configuration — declares which key is offered for which host so
     # plain `ssh <host>` picks the right identity with no manual `-i` flag.
     # Key material itself is provisioned separately (sops-nix): NixOS via
@@ -160,14 +150,35 @@
         };
       };
     };
+  } // lib.optionalAttrs (!isServer) {
+    wezterm = {
+      enable = true;
+      extraConfig = ''
+        local config = wezterm.config_builder()
+        config.initial_cols = 120
+        config.initial_rows = 28
+        config.font_size = 12
+        config.color_scheme = 'Catppuccin Mocha'
+        config.font = wezterm.font 'SpaceMono Nerd Font'
+        return config
+      '';
+    };
+    starship.enable = true;
+    go.enable = true;
+    rbenv.enable = true;
+    yt-dlp.enable = true;
   };
 
-  # Apps + desktop (niri/gnome/etc.) when this host has a desktop environment
-  imports = [
+  # Apps + desktop (niri/gnome/etc.) when this host has a desktop environment.
+  # xcog1 (isServer) skips vscode/atuin/syncthing/starship entirely — none of
+  # it is relevant to a headless LLM server, and vscode's Python extension
+  # was what dragged Django's test suite into xcog1's build (bug-526).
+  imports = lib.optionals (!isServer) [
     ../../common/apps/vscode
     ../../common/shell/atuin.nix
     ../../common/syncthing.nix
     ./shell/starship.nix
+  ] ++ [
     ./shell/tmux.nix
     ./shell/fish.nix
   ] ++ lib.optionals (hostName == "xdt1-t") [
@@ -176,60 +187,75 @@
   ]
     ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
-  # Install non-standard fonts
-  home.packages = with pkgs; [
-    # Nerd Fonts for terminal and coding
-    nerd-fonts.jetbrains-mono
-    nerd-fonts.fira-code
-    nerd-fonts.meslo-lg
-    nerd-fonts.hack
-    nerd-fonts.iosevka
-    nerd-fonts.space-mono
-    nerd-fonts.symbols-only
-    (direnv.overrideAttrs (_: {
-      doCheck = false;
-    }))
+  # Core + marginal admin tooling — every host gets this, including xcog1.
+  # See homemanager/users/xrs444/default.nix's isServer split and
+  # nix/docs/xcog1-llm-deployment-plan.md for the full core/marginal/
+  # diagnostics rationale (2026-08-07).
+  home.packages =
+    with pkgs;
+    [
+      just
+      sops
+      claude-code
+      tree
+      yq
+      yamllint
+      k9s
+      # Diagnostics-only, requested for if/when xcog1 needs them — nmap and
+      # bitwarden-cli are cheap and cached for aarch64-darwin; firefox is
+      # NOT here (nixpkgs' aarch64-darwin firefox isn't cache-built —
+      # confirmed 404 on cache.nixos.org — so it'd be an hours-long local
+      # compile; it's a Homebrew cask on xcog1 instead, see that host's
+      # dedicated homebrew block).
+      nmap
+      bitwarden-cli
+    ]
+    ++ lib.optionals (!isServer) [
+      # Nerd Fonts for terminal and coding
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.fira-code
+      nerd-fonts.meslo-lg
+      nerd-fonts.hack
+      nerd-fonts.iosevka
+      nerd-fonts.space-mono
+      nerd-fonts.symbols-only
+      (direnv.overrideAttrs (_: {
+        doCheck = false;
+      }))
 
-    kustomize
-    kubeconform
-    pre-commit
-    hugo
-    openjdk
-    ruby
-    ansible
-    cilium-cli
-    cmctl
-    fluxcd
-    hubble
-    kubectl
-    kubeseal
-    talosctl
-    arping
-    nmap
-    sops
-    sshpass
-    tfswitch
-    tree
-    yq
-    yamllint
-    _7zz
-    brotli
-    lz4
-    lzo
-    p7zip
-    xz
-    zstd
-    wireshark
-    openscad
-    powershell
-    pipx
-    virtualenv
-    just
-    claude-code
-    k9s
-    vja
-    nodejs
-  ] ++ lib.optionals pkgs.stdenv.isLinux [
+      kustomize
+      kubeconform
+      pre-commit
+      hugo
+      openjdk
+      ruby
+      ansible
+      cilium-cli
+      cmctl
+      fluxcd
+      hubble
+      kubectl
+      kubeseal
+      talosctl
+      arping
+      sshpass
+      tfswitch
+      _7zz
+      brotli
+      lz4
+      lzo
+      p7zip
+      xz
+      zstd
+      wireshark
+      openscad
+      powershell
+      pipx
+      virtualenv
+      vja
+      nodejs
+    ]
+    ++ lib.optionals pkgs.stdenv.isLinux [
     baobab
     vikunja-desktop
     # Obsidian is already installed via brew on darwin (packages-darwin/brew-packages.nix);
@@ -262,12 +288,15 @@
   # vja (Vikunja CLI) server config — non-secret. The API token is decrypted
   # by sops-nix (modules/users/xrs444.nix on Linux, hosts/darwin/default.nix
   # on Darwin) to its default /run/secrets/<name> location, then symlinked
-  # into ~/.config/vja/token.json below.
-  home.file.".config/vja/config.rc".text = ''
-    [application]
-    frontend_url=https://vikunja.xrs444.net/
-    api_url=https://vikunja.xrs444.net/api/v1
-  '';
+  # into ~/.config/vja/token.json below. Skipped on isServer — vja's package
+  # is in the !isServer home.packages block above, no client to use this.
+  home.file.".config/vja/config.rc" = lib.mkIf (!isServer) {
+    text = ''
+      [application]
+      frontend_url=https://vikunja.xrs444.net/
+      api_url=https://vikunja.xrs444.net/api/v1
+    '';
+  };
 
   # Symlink the sops-managed token into vja's expected location.
   # Deliberately not a sops `path` override: sops places secrets as root, so
@@ -275,17 +304,20 @@
   # created root-owned, racing with this same-directory config.rc write
   # above (unprivileged) and aborting home-manager's activation partway —
   # which is what silently wiped VS Code's extension symlinks on xlt1-t.
-  home.activation.linkVjaToken = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    $DRY_RUN_CMD ln -sfn ${
-      if pkgs.stdenv.isDarwin then
-        "/run/secrets/vikunja-api-token"
-      else
-        "/run/secrets/vikunja-api-token-xrs444"
-    } "$HOME/.config/vja/token.json"
-  '';
+  home.activation.linkVjaToken = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      $DRY_RUN_CMD ln -sfn ${
+        if pkgs.stdenv.isDarwin then
+          "/run/secrets/vikunja-api-token"
+        else
+          "/run/secrets/vikunja-api-token-xrs444"
+      } "$HOME/.config/vja/token.json"
+    ''
+  );
 
-  # Enable font configuration
-  fonts.fontconfig.enable = true;
+  # Enable font configuration — no nerd-fonts installed on isServer, so no
+  # fontconfig cache needed there either.
+  fonts.fontconfig.enable = !isServer;
 
   # Deploy nix-sh.fish selector script to ~/.local/bin
   # home.file.".local/bin/nix-sh.fish" = {
@@ -300,7 +332,7 @@
   # publish-blog: one-way rsync of vault Blog/*.md -> site repo
   # content/posts/, then git commit+push. Cloudflare Pages builds on push,
   # so this script's job ends at the push.
-  home.file.".local/bin/publish-blog" = {
+  home.file.".local/bin/publish-blog" = lib.mkIf (!isServer) {
     source = ./scripts/publish-blog.sh;
     executable = true;
   };
@@ -312,7 +344,7 @@
   # two-way obsidian-vikunja-plugin (its "Obsidian always wins"/single-user
   # conflict model and broken bucket/project support make it unsafe for
   # multi-client use).
-  home.file.".local/bin/sync-vikunja-tasks" = {
+  home.file.".local/bin/sync-vikunja-tasks" = lib.mkIf (!isServer) {
     source = ./scripts/sync-vikunja-tasks.sh;
     executable = true;
   };
@@ -321,7 +353,7 @@
   # expand $HOME in ProgramArguments, so the absolute path is rebuilt here
   # the same way home.homeDirectory is above rather than depending on
   # `config` (not in this module's function head).
-  launchd.agents.sync-vikunja-tasks = lib.mkIf pkgs.stdenv.isDarwin {
+  launchd.agents.sync-vikunja-tasks = lib.mkIf (pkgs.stdenv.isDarwin && !isServer) {
     enable = true;
     config = {
       ProgramArguments = [
@@ -370,7 +402,10 @@
     # PATH is managed by nix-darwin - don't override it
   };
 
-  catppuccin = {
+  # No theming on isServer — none of catppuccin's targets (vscode, starship,
+  # obs) are enabled there. Leaving this unset lets the sharedModules default
+  # (autoEnable = mkDefault false) stand, which is a true no-op.
+  catppuccin = lib.mkIf (!isServer) {
     enable = true;
     autoEnable = true;
     flavor = "mocha";
@@ -410,22 +445,24 @@
     ''
   );
 
-  home.activation.fixVscodeExtensionSymlinks = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    ext_dir="$HOME/.vscode/extensions"
-    if [ -d "$ext_dir" ]; then
-      for link in "$ext_dir"/*/; do
-        link="''${link%/}"
-        if [ -L "$link" ]; then
-          real=$(${pkgs.coreutils}/bin/realpath "$link" 2>/dev/null) || continue
-          current=$(readlink "$link")
-          if [ "$real" != "$current" ]; then
-            ln -sfn "$real" "$link"
+  home.activation.fixVscodeExtensionSymlinks = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      ext_dir="$HOME/.vscode/extensions"
+      if [ -d "$ext_dir" ]; then
+        for link in "$ext_dir"/*/; do
+          link="''${link%/}"
+          if [ -L "$link" ]; then
+            real=$(${pkgs.coreutils}/bin/realpath "$link" 2>/dev/null) || continue
+            current=$(readlink "$link")
+            if [ "$real" != "$current" ]; then
+              ln -sfn "$real" "$link"
+            fi
           fi
-        fi
-      done
-      rm -f "$ext_dir/.obsolete"
-    fi
-  '';
+        done
+        rm -f "$ext_dir/.obsolete"
+      fi
+    ''
+  );
 
   # Headroom (family-agent plan §9) — compresses Claude Code's own
   # input/output tokens via verbosity steering + effort routing. Not in
@@ -434,79 +471,93 @@
   # DeepSeek-facing proxy hop and Headroom MCP server are Phase B/C (see
   # plan §9 phasing; local MLX traffic deliberately never gets a Headroom
   # hop).
-  home.activation.installHeadroom = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if ! $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx list --short 2>/dev/null | grep -q '^headroom-ai '; then
-      # litellm (a headroom-ai dep) builds Rust extensions via maturin, which
-      # needs a C linker. This activation script's PATH is deliberately
-      # minimal (coreutils etc. only) and has no compiler on it, so pull in
-      # the system toolchain (Xcode CLT's /usr/bin/cc on Darwin) just for
-      # this install. Best-effort and non-fatal: a failed optional dev-tool
-      # install must never abort the rest of activation — this step used to
-      # be fatal and its failure skipped every later step (VS Code extension
-      # symlinking, settings.json writability, etc.), which is what broke
-      # VS Code on xlt1-t.
-      PATH="/usr/bin:$PATH" $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]" \
-        || echo "Warning: headroom-ai install failed, continuing activation" >&2
-    fi
-  '';
+  home.activation.installHeadroom = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if ! $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx list --short 2>/dev/null | grep -q '^headroom-ai '; then
+        # litellm (a headroom-ai dep) builds Rust extensions via maturin, which
+        # needs a C linker. This activation script's PATH is deliberately
+        # minimal (coreutils etc. only) and has no compiler on it, so pull in
+        # the system toolchain (Xcode CLT's /usr/bin/cc on Darwin) just for
+        # this install. Best-effort and non-fatal: a failed optional dev-tool
+        # install must never abort the rest of activation — this step used to
+        # be fatal and its failure skipped every later step (VS Code extension
+        # symlinking, settings.json writability, etc.), which is what broke
+        # VS Code on xlt1-t.
+        PATH="/usr/bin:$PATH" $DRY_RUN_CMD ${pkgs.pipx}/bin/pipx install "headroom-ai[all]" \
+          || echo "Warning: headroom-ai install failed, continuing activation" >&2
+      fi
+    ''
+  );
 
   # windmill-cli (wmill) — the actual CLI client for scripting against a
   # hosted Windmill instance (push/pull scripts, run flows). Not in nixpkgs
   # (only the 500MB self-hosted server/worker binary is, and it's Linux-only)
   # so this installs the npm package into ~/.npm-global, matching
   # home.sessionPath above. Cross-platform — applies on both xdt1-t and xlt1-t.
-  home.activation.installWindmillCli = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if ! $DRY_RUN_CMD test -x "$HOME/.npm-global/bin/wmill"; then
-      # windmill-cli's postinstall (esbuild) shells out to a bare `node`.
-      # This activation script's PATH is deliberately minimal and has no
-      # node on it, so pull in nodejs's own bin dir just for this install.
-      # Best-effort and non-fatal — see installHeadroom above for why a
-      # failed optional dev-tool install must never abort the rest of
-      # activation.
-      PATH="${pkgs.nodejs}/bin:$PATH" $DRY_RUN_CMD ${pkgs.nodejs}/bin/npm install --global --prefix "$HOME/.npm-global" windmill-cli \
-        || echo "Warning: windmill-cli install failed, continuing activation" >&2
-      # npm (at least under this activation script's environment) installs
-      # windmill-cli's bin script without the executable bit, so the
-      # `test -x` guard above never sees it as installed and this step
-      # re-runs (and fails) every single activation. Force it executable.
-      $DRY_RUN_CMD chmod +x "$HOME/.npm-global/lib/node_modules/windmill-cli/esm/main.js" 2>/dev/null || true
-    fi
-  '';
+  home.activation.installWindmillCli = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if ! $DRY_RUN_CMD test -x "$HOME/.npm-global/bin/wmill"; then
+        # windmill-cli's postinstall (esbuild) shells out to a bare `node`.
+        # This activation script's PATH is deliberately minimal and has no
+        # node on it, so pull in nodejs's own bin dir just for this install.
+        # Best-effort and non-fatal — see installHeadroom above for why a
+        # failed optional dev-tool install must never abort the rest of
+        # activation.
+        PATH="${pkgs.nodejs}/bin:$PATH" $DRY_RUN_CMD ${pkgs.nodejs}/bin/npm install --global --prefix "$HOME/.npm-global" windmill-cli \
+          || echo "Warning: windmill-cli install failed, continuing activation" >&2
+        # npm (at least under this activation script's environment) installs
+        # windmill-cli's bin script without the executable bit, so the
+        # `test -x` guard above never sees it as installed and this step
+        # re-runs (and fails) every single activation. Force it executable.
+        $DRY_RUN_CMD chmod +x "$HOME/.npm-global/lib/node_modules/windmill-cli/esm/main.js" 2>/dev/null || true
+      fi
+    ''
+  );
 
   # conf.d file (not programs.fish, which is Linux-only in fish.nix) so this
   # lands regardless — fish itself is enabled system-wide via nix-darwin
   # (hosts/darwin/default.nix) and auto-sources ~/.config/fish/conf.d/*.fish.
-  home.file.".config/fish/conf.d/headroom.fish".text = ''
-    if command -v headroom >/dev/null 2>&1
-      alias claude "headroom wrap claude"
-    end
-  '';
+  # Skipped on isServer — headroom isn't installed there (installHeadroom is
+  # gated too), and the alias would just always fall through its own guard.
+  home.file.".config/fish/conf.d/headroom.fish" = lib.mkIf (!isServer) {
+    text = ''
+      if command -v headroom >/dev/null 2>&1
+        alias claude "headroom wrap claude"
+      end
+    '';
+  };
 
   # Ensure the Hugo site repo is present so publish-blog (above) has
   # somewhere to push into. Best-effort and non-fatal — see installHeadroom
   # above for why an optional setup step must never abort the rest of
   # activation. The theme (ananke) is a git submodule, hence --recurse-submodules.
-  home.activation.cloneSite = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "$HOME/site/xrs444/.git" ]; then
-      $DRY_RUN_CMD mkdir -p "$HOME/site"
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --recurse-submodules \
-        https://github.com/xrs444/xrs444-site "$HOME/site/xrs444" \
-        || echo "Warning: xrs444-site clone failed, continuing activation" >&2
-    fi
-  '';
+  home.activation.cloneSite = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ ! -d "$HOME/site/xrs444/.git" ]; then
+        $DRY_RUN_CMD mkdir -p "$HOME/site"
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone --recurse-submodules \
+          https://github.com/xrs444/xrs444-site "$HOME/site/xrs444" \
+          || echo "Warning: xrs444-site clone failed, continuing activation" >&2
+      fi
+    ''
+  );
 
   # Scaffold the Obsidian vault's working folders. Cheap and idempotent —
   # runs every activation, just mkdir -p. The vault itself is synced in by
   # Syncthing (brew cask on darwin, services.syncthing on xdt1-t), so this
   # only creates subfolders once the vault root exists; if Syncthing hasn't
   # synced yet on a fresh host, this is a harmless no-op until it has.
-  home.activation.obsidianVaultScaffold = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    vault="$HOME/Documents/obsidian/xrs444"
-    if [ -d "$vault" ]; then
-      $DRY_RUN_CMD mkdir -p "$vault/Memory/claude-code" "$vault/Memory/basic-memory" \
-        "$vault/Memory/hermes-t" "$vault/Tasks" "$vault/data"
-    fi
-  '';
+  # Skipped on isServer — xcog1 doesn't import common/syncthing.nix, so no
+  # vault will ever appear there.
+  home.activation.obsidianVaultScaffold = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      vault="$HOME/Documents/obsidian/xrs444"
+      if [ -d "$vault" ]; then
+        $DRY_RUN_CMD mkdir -p "$vault/Memory/claude-code" "$vault/Memory/basic-memory" \
+          "$vault/Memory/hermes-t" "$vault/Tasks" "$vault/data"
+      fi
+    ''
+  );
 
   # Symlink this Claude Code instance's native per-project memory
   # (~/.claude/projects/<slug>/memory) into the vault's Memory/claude-code,
@@ -517,31 +568,36 @@
   # every host ($HOME/Repositories/HomeProd), so the slug — which differs
   # per host because $HOME differs (/Users/... vs /home/...) — is computed
   # at activation time rather than hard-coded.
-  home.activation.linkClaudeMemory = lib.hm.dag.entryAfter [ "obsidianVaultScaffold" ] ''
-    repo_path="$HOME/Repositories/HomeProd"
-    slug=$(printf '%s' "$repo_path" | tr '/' '-')
-    claude_memory_dir="$HOME/.claude/projects/$slug/memory"
-    vault_memory_dir="$HOME/Documents/obsidian/xrs444/Memory/claude-code"
+  # Skipped on isServer along with obsidianVaultScaffold above — gating both
+  # (rather than leaving this one's own runtime guard to no-op) also avoids
+  # entryAfter referencing a dag step that was never defined.
+  home.activation.linkClaudeMemory = lib.mkIf (!isServer) (
+    lib.hm.dag.entryAfter [ "obsidianVaultScaffold" ] ''
+      repo_path="$HOME/Repositories/HomeProd"
+      slug=$(printf '%s' "$repo_path" | tr '/' '-')
+      claude_memory_dir="$HOME/.claude/projects/$slug/memory"
+      vault_memory_dir="$HOME/Documents/obsidian/xrs444/Memory/claude-code"
 
-    if [ -d "$HOME/Documents/obsidian/xrs444" ]; then
-      $DRY_RUN_CMD mkdir -p "$vault_memory_dir"
+      if [ -d "$HOME/Documents/obsidian/xrs444" ]; then
+        $DRY_RUN_CMD mkdir -p "$vault_memory_dir"
 
-      if [ -d "$claude_memory_dir" ] && [ ! -L "$claude_memory_dir" ]; then
-        # One-time migration: move the real files into the vault, then
-        # replace the original location with a symlink. Best-effort —
-        # a failure here must not abort the rest of activation.
-        $DRY_RUN_CMD sh -c 'cp -na "$1"/. "$2"/ && rm -rf "$1"' _ \
-          "$claude_memory_dir" "$vault_memory_dir" \
-          || echo "Warning: claude-code memory migration into vault failed, continuing activation" >&2
+        if [ -d "$claude_memory_dir" ] && [ ! -L "$claude_memory_dir" ]; then
+          # One-time migration: move the real files into the vault, then
+          # replace the original location with a symlink. Best-effort —
+          # a failure here must not abort the rest of activation.
+          $DRY_RUN_CMD sh -c 'cp -na "$1"/. "$2"/ && rm -rf "$1"' _ \
+            "$claude_memory_dir" "$vault_memory_dir" \
+            || echo "Warning: claude-code memory migration into vault failed, continuing activation" >&2
+        fi
+
+        if [ ! -e "$claude_memory_dir" ] || [ -L "$claude_memory_dir" ]; then
+          $DRY_RUN_CMD mkdir -p "$(dirname "$claude_memory_dir")"
+          $DRY_RUN_CMD ln -sfn "$vault_memory_dir" "$claude_memory_dir"
+        fi
+      else
+        echo "linkClaudeMemory: vault not present at $HOME/Documents/obsidian/xrs444 yet (Syncthing not synced?), skipping" >&2
       fi
-
-      if [ ! -e "$claude_memory_dir" ] || [ -L "$claude_memory_dir" ]; then
-        $DRY_RUN_CMD mkdir -p "$(dirname "$claude_memory_dir")"
-        $DRY_RUN_CMD ln -sfn "$vault_memory_dir" "$claude_memory_dir"
-      fi
-    else
-      echo "linkClaudeMemory: vault not present at $HOME/Documents/obsidian/xrs444 yet (Syncthing not synced?), skipping" >&2
-    fi
-  '';
+    ''
+  );
 
 }

@@ -9,8 +9,10 @@
 {
   imports = [
     ../../modules/packages-common/default.nix
+    # brew-packages.nix is imported from within packages-darwin/default.nix
+    # (host-gated there — xcog1 gets its own minimal homebrew block instead,
+    # see hosts/darwin/xcog1/default.nix), not duplicated here.
     ../../modules/packages-darwin/default.nix
-    ../../modules/packages-darwin/brew-packages.nix
     ../../modules/packages-workstation/default.nix
   ];
 

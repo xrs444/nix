@@ -18,6 +18,19 @@
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
 
+  # Dedicated minimal Homebrew (not the shared brew-packages.nix, which this
+  # host's packages-darwin import skips entirely) — Firefox for diagnostics
+  # only; no other casks/MAS apps.
+  homebrew = {
+    enable = true;
+    casks = [ "firefox" ];
+    onActivation = {
+      autoUpdate = true;
+      upgrade = true;
+      cleanup = "none"; # see brew-packages.nix for why: brew bundle's --cleanup is a deprecated no-op that hangs on an unanswerable [y/n] prompt otherwise.
+    };
+  };
+
   # arrow-azurefs-test spins up a local azurite (node.js) TLS mock whose
   # self-signed cert fails verification ("unable to get local issuer
   # certificate") — hit on this host's first darwin-rebuild switch; the other

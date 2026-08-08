@@ -225,7 +225,11 @@
           user = "xrs444";
           platform = "aarch64-darwin";
           type = "darwin";
-          desktop = "aqua";
+          # Headless LLM server, no monitor/keyboard — no desktop/window
+          # manager (was "aqua", which deployed a pointless AeroSpace tiling
+          # config). See homemanager/users/xrs444/default.nix's isServer
+          # gate and modules/packages-darwin/default.nix for the matching
+          # trimmed package sets.
           enableHomeManager = true;
           roles = [ "tailscale-client" ];
         };
