@@ -169,7 +169,7 @@ lib.mkIf (!minimalImage) {
   programs.ssh.knownHosts = lib.mkIf isPrimaryServer {
     "xpbx1.lan" = {
       hostNames = [ "xpbx1.lan" "xpbx1" ];
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBp4xrmX34j/lWb+u1t8WrwM0LQ6b8uZYOp+cbJvPq/J";
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKU5QhMkhCUP+JtK213THNUByJDMKPta6bLiEA4zDMsU";
     };
   };
 
