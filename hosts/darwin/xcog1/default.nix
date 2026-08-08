@@ -25,11 +25,23 @@
   # → mlx-lm + faster-whisper, i.e. the whole LLM stack. Host-scoped overlay
   # (not hosts/darwin common) so no other host's cache hits are disturbed;
   # aarch64-darwin arrow isn't cached upstream anyway.
+  # django's 18k-test suite (~30min) failed one timing-sensitive perf test
+  # (test_crafted_xml_performance, "not quadratic") while the box was busy
+  # compiling the rest of the closure. django is only here as a *test* dep of
+  # debugpy, itself a dep of the VS Code ms-python extension in home-manager.
+  # (django = self.django_5, so the alias picks this up too.)
   nixpkgs.overlays = [
     (final: prev: {
       arrow-cpp = prev.arrow-cpp.overrideAttrs (old: {
         doInstallCheck = false;
       });
+      pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+        (pyfinal: pyprev: {
+          django_5 = pyprev.django_5.overridePythonAttrs (old: {
+            doCheck = false;
+          });
+        })
+      ];
     })
   ];
 
