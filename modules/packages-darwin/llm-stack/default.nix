@@ -86,6 +86,13 @@ let
         master_key = "os.environ/LITELLM_MASTER_KEY";
         telemetry = false;
         store_model_in_db = false;
+        # Without this, LiteLLM's auth path still probes for a Postgres
+        # connection on every request (even master-key-only requests) and
+        # fails closed with "No connected db" when none exists — bug-529,
+        # found live on xcog1's first end-to-end test. We deliberately run
+        # DB-less (store_model_in_db = false, single household master key,
+        # no per-consumer virtual keys) so this must be explicit.
+        allow_requests_on_db_unavailable = true;
       };
       litellm_settings = {
         set_verbose = false;
