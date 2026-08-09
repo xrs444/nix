@@ -62,9 +62,17 @@ let
       model_list =
         # Local MLX-served models
         (lib.mapAttrsToList (name: m: {
+          # model_name is the consumer-facing alias LiteLLM routes on
+          # (picks which api_base/port to hit). The forwarded litellm_params
+          # `model` value is deliberately NOT this name: mlx_lm.server only
+          # recognizes the literal string "default_model" for its single
+          # CLI-loaded model (its _model_map has no other alias) — any other
+          # value falls through and mlx_lm.server tries to fetch it fresh
+          # from HuggingFace as a bare repo id (bug-530, found live: it
+          # attempted "https://huggingface.co/api/models/qwen3-30b-a3b/...").
           model_name = name;
           litellm_params = {
-            model = "openai/${name}";
+            model = "openai/default_model";
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
           };
