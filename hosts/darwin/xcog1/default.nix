@@ -72,18 +72,36 @@
           # this explicit per-derivation regardless of the global sandbox
           # setting. Requires Xcode.app installed on xcog1 before this
           # builds — CLT alone will fail with "metal: command not found".
-          mlx = pyprev.mlx.overridePythonAttrs (old: {
-            __noChroot = true;
-            env = (old.env or { }) // {
-              CMAKE_ARGS = builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ] [
-                "-DMLX_BUILD_METAL:BOOL=TRUE"
-              ] old.env.CMAKE_ARGS;
-              DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
-            };
-            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
-              (final.xcodeenv.composeXcodeWrapper { })
-            ];
-          });
+          mlx =
+            let
+              xcodeWrapper = final.xcodeenv.composeXcodeWrapper { };
+            in
+            pyprev.mlx.overridePythonAttrs (old: {
+              __noChroot = true;
+              env = (old.env or { }) // {
+                CMAKE_ARGS = builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ] [
+                  "-DMLX_BUILD_METAL:BOOL=TRUE"
+                ] old.env.CMAKE_ARGS;
+                DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
+              };
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ xcodeWrapper ];
+              # nativeBuildInputs alone isn't enough: Darwin's stdenv already
+              # puts apple-sdk's own bin/xcrun on PATH ahead of it — that's
+              # nixpkgs' xcbuild-based *reimplementation* of xcrun (Apple's
+              # real one is closed-source, so nixpkgs ships a workalike for
+              # sandboxed builds that never touch a real Xcode). It has no
+              # idea how to reach an externally-installed Xcode.app, and
+              # every xcrun call through it just hangs forever instead of
+              # erroring — confirmed live: dozens of `apple-sdk-14.4/usr/bin/
+              # xcrun clang -Aa CMakeCCompilerId.c` processes sitting at ~0%
+              # CPU. Force our real-Xcode xcrun to the very front of PATH so
+              # CMake's compiler-id probe (and mlx's own metal/metallib
+              # calls) reach it instead.
+              preBuild = ''
+                export PATH="${xcodeWrapper}/bin:$PATH"
+              ''
+              + (old.preBuild or "");
+            });
         })
       ];
     })
