@@ -94,7 +94,14 @@
                   # after preBuild's export. Explicit CMAKE_<LANG>_COMPILER
                   # skips that discovery path entirely for C/C++.
                   + " -DCMAKE_C_COMPILER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
-                  + " -DCMAKE_CXX_COMPILER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++";
+                  + " -DCMAKE_CXX_COMPILER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
+                  # The C++ compiler-works check failed with `ld: library
+                  # 'c++' not found` — CMake was still pointing -isysroot at
+                  # nixpkgs' own apple-sdk sysroot (via CMAKE_OSX_SYSROOT
+                  # default), which doesn't lay out libc++ the way a real
+                  # Xcode linker expects. Now that the compiler itself is
+                  # real Xcode, the SDK it links against needs to be too.
+                  + " -DCMAKE_OSX_SYSROOT:PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk";
                 DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
               };
               nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ xcodeWrapper ];
