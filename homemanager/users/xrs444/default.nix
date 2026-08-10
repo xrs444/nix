@@ -262,6 +262,13 @@ in
     # this brings xdt1-t to parity so the vault (synced via services.syncthing below) has
     # the same editor available. Unfree — see allowUnfreePredicate in this host's config.
     obsidian
+    # Google Drive sync for xrs444's own account. Unfree (allowUnfree already
+    # set in hosts/nixos/xdt1-t/default.nix). No Nautilus extension here —
+    # xdt1-t's file manager is Thunar (see desktop.nix's gvfs comment), which
+    # insync-nautilus doesn't target; the standalone app is still fully
+    # functional without it. First run needs an interactive `insync start`
+    # login (OAuth) — not something Nix can provision declaratively.
+    insync
   ]
   # wimlib pulls in syslinux on Linux (for mkwinpeimg), which nixpkgs only
   # supports on i686-linux/x86_64-linux — evaluating it on aarch64-linux

@@ -22,6 +22,13 @@
   home.packages = lib.optionals pkgs.stdenv.isLinux [
     pkgs.vja
     pkgs.vikunja-desktop
+    # Google Drive sync for Samantha's own account (separate Insync license
+    # from xrs444's — see homemanager/users/xrs444/default.nix). xlt2-s runs
+    # GNOME, so insync-nautilus adds Insync's right-click integration into
+    # Files/Nautilus. First run needs an interactive `insync start` login
+    # (OAuth) — not something Nix can provision declaratively.
+    pkgs.insync
+    pkgs.insync-nautilus
   ];
 
   # vja (Vikunja CLI) server config — non-secret. The API token is decrypted
