@@ -14,5 +14,6 @@
   environment.systemPackages = with pkgs; [
     file-roller # Archive manager
     gparted # Partition editor
+    prismlauncher # Minecraft launcher
   ];
 }

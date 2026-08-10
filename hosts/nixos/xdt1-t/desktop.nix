@@ -135,6 +135,7 @@ in
       # Gaming utilities
       mangohud
       gamemode
+      prismlauncher
 
       # Disc ripping for Romm (bin/cue) — redumper does the actual dump,
       # cuetools verifies/post-processes the resulting cue sheets
