@@ -1,10 +1,9 @@
 {
-  # Single-drive layout. Replace `main.device` with the actual
-  # /dev/disk/by-id/... path once confirmed from the installer.
+  # Single-drive layout. Device confirmed from installer 2026-08-09.
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/CHANGEME";
+        device = "/dev/disk/by-id/nvme-SAMSUNG_MZVLQ512HBLU-00BH1_S671NJ3T389723";
         type = "disk";
         content = {
           type = "gpt";

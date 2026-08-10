@@ -5,6 +5,5 @@
   networking.networkmanager.enable = true;
   networking.useDHCP = lib.mkDefault true;
 
-  # WiFi NIC name (e.g. wlanX/wlpXsX) — confirm from the installer and note
-  # it here once known, matching the convention on other hosts.
+  # WiFi NIC: wlp2s0 (confirmed from installer 2026-08-09)
 }
