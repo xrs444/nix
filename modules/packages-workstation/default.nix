@@ -7,5 +7,6 @@
     lib.optionals stdenv.isLinux [
       obs-studio
       google-chrome
+      beeper
     ];
 }
