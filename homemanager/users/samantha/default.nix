@@ -10,6 +10,15 @@
 
   imports = lib.optional (builtins.isString desktop) ../../common/desktop;
 
+  # System-wide default font: Dyslexie, served from the read-only fonts share
+  # on xsvr1 (nix/hosts/nixos/xlt2-s/fonts.nix mounts it and sets the
+  # fontconfig sans-serif alias). Set here in GNOME's own dconf key so it
+  # applies to the desktop shell/UI, not just fontconfig-aware apps.
+  dconf.settings."org/gnome/desktop/interface" = lib.mkIf pkgs.stdenv.isLinux {
+    font-name = "Dyslexie 11";
+    document-font-name = "Dyslexie 11";
+  };
+
   home.packages = lib.optionals pkgs.stdenv.isLinux [
     pkgs.vja
     pkgs.vikunja-desktop

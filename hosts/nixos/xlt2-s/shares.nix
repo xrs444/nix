@@ -26,5 +26,16 @@
         "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600"
       ];
     };
+    # Read-only distribution share (fonts, etc.) — see nix/hosts/nixos/xsvr1/shares.nix.
+    # ro + nofail: this is a laptop on WiFi, so the mount must not block boot if the
+    # network or xsvr1 isn't up yet.
+    "/mnt/xsvr1/distribute/fonts" = {
+      device = "172.20.3.201:/zfs/distribute/fonts";
+      fsType = "nfs";
+      options = [
+        "nfsvers=4.2" "ro" "soft" "timeo=30"
+        "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600" "nofail"
+      ];
+    };
   };
 }

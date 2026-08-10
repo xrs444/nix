@@ -87,6 +87,12 @@
       # "nobody" and break writes. 172.20.0.0/16 already covers xfw's k8s-VLAN
       # gateway address (172.20.3.250), so no separate CIDR is needed for it.
       /export/zfs/system/scanopy 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
+      # Read-only distribution tree — arbitrary files (fonts, etc.) that must not
+      # live in git. Writable to xrs444 via the "distribute" Samba share below;
+      # exported read-only here so every NFS client is protected from accidental
+      # writes. Export the parent so future subfolders under /zfs/distribute
+      # don't each need their own export line.
+      /export/zfs/distribute 172.21.0.0/24(ro,sync,no_subtree_check,root_squash) 172.20.0.0/16(ro,sync,no_subtree_check,root_squash) 100.64.0.0/10(ro,sync,no_subtree_check,root_squash)
     '';
   };
 
@@ -361,6 +367,15 @@
       after = [ "zfs-mount.service" ];
       requires = [ "zfs-mount.service" ];
     }
+    {
+      what = "/zfs/distribute";
+      where = "/export/zfs/distribute";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
+    }
   ];
 
   # Ensure export directory structure exists
@@ -405,6 +420,11 @@
       mkdir -p /zfs/system/scanopy
       chown root:root /zfs/system/scanopy
       chmod 700 /zfs/system/scanopy
+
+      # Read-only distribution tree (fonts, etc.) — see exports comment above.
+      mkdir -p /zfs/distribute/fonts
+      mkdir -p /export/zfs/distribute
+      chmod 755 /zfs/distribute /zfs/distribute/fonts
 
       # Ensure ZFS directories exist (created by zfs create, but mkdir -p is a no-op if present)
       mkdir -p /zfs/media/books/fiction
@@ -651,6 +671,20 @@
         "valid users" = "scanner xrs444 samantha rowan greyson";
         "create mask" = "0664";
         "directory mask" = "0775";
+      };
+      # ---- Distribution share: arbitrary files (fonts, etc.) kept out of git.
+      #      Writable here over SMB for xrs444 only; exported read-only over NFS
+      #      (see exports above) so consuming hosts can't accidentally modify it.
+      "distribute" = {
+        "path" = "/zfs/distribute";
+        "browseable" = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "valid users" = "xrs444";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+        "oplocks" = "no";
+        "level2 oplocks" = "no";
       };
     };
   };

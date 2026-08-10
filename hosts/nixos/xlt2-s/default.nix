@@ -11,6 +11,7 @@
     ./desktop.nix
     ./disks.nix
     ./shares.nix
+    ./fonts.nix
     ../../common
   ];
 
