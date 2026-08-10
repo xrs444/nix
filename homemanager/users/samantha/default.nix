@@ -19,6 +19,16 @@
     document-font-name = "Dyslexie 11";
   };
 
+  # Desktop wallpaper, served from the read-only distribute share on xsvr1
+  # (nix/hosts/nixos/xlt2-s/shares.nix mounts it) so image files don't have
+  # to live in git. Automount triggers on first access, same as the fonts
+  # share.
+  dconf.settings."org/gnome/desktop/background" = lib.mkIf pkgs.stdenv.isLinux {
+    picture-uri = "file:///mnt/xsvr1/distribute/wallpaper/ponyta.png";
+    picture-uri-dark = "file:///mnt/xsvr1/distribute/wallpaper/ponyta.png";
+    picture-options = "zoom";
+  };
+
   home.packages = lib.optionals pkgs.stdenv.isLinux [
     pkgs.vja
     pkgs.vikunja-desktop

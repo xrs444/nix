@@ -421,10 +421,11 @@
       chown root:root /zfs/system/scanopy
       chmod 700 /zfs/system/scanopy
 
-      # Read-only distribution tree (fonts, etc.) — see exports comment above.
+      # Read-only distribution tree (fonts, wallpaper, etc.) — see exports comment above.
       mkdir -p /zfs/distribute/fonts
+      mkdir -p /zfs/distribute/wallpaper
       mkdir -p /export/zfs/distribute
-      chmod 755 /zfs/distribute /zfs/distribute/fonts
+      chmod 755 /zfs/distribute /zfs/distribute/fonts /zfs/distribute/wallpaper
 
       # Ensure ZFS directories exist (created by zfs create, but mkdir -p is a no-op if present)
       mkdir -p /zfs/media/books/fiction
