@@ -53,6 +53,37 @@
           django_5 = pyprev.django_5.overridePythonAttrs (old: {
             doCheck = false;
           });
+
+          # bug-531: nixpkgs' mlx is deliberately built CPU-only
+          # (MLX_BUILD_METAL:BOOL=FALSE) — the `metal` shader compiler is
+          # closed-source and unreachable from inside Nix's build sandbox
+          # (see the NOTE in nixpkgs' pkgs/development/python-modules/mlx/
+          # default.nix). Confirmed live on xcog1: mx.default_device() was
+          # Device(cpu, 0), mx.metal.is_available() was False — every
+          # mlx_lm.server request was running 30B-parameter matmuls on the
+          # CPU, explaining minutes-per-token latency and the daemon crash
+          # loop. This Mac's nix.custom.conf already sets `sandbox = false`
+          # fleet-wide, so the stated blocker doesn't apply once a real
+          # Xcode.app (not just Command Line Tools — `metal`/`metallib` only
+          # ship inside the full Xcode bundle) is installed: flip the one
+          # cmake flag and hand the build `xcrun` from a real Xcode via
+          # nixpkgs' own `composeXcodeWrapper` (the same "sandbox escape
+          # hatch" the upstream comment names). `__noChroot = true` makes
+          # this explicit per-derivation regardless of the global sandbox
+          # setting. Requires Xcode.app installed on xcog1 before this
+          # builds — CLT alone will fail with "metal: command not found".
+          mlx = pyprev.mlx.overridePythonAttrs (old: {
+            __noChroot = true;
+            env = (old.env or { }) // {
+              CMAKE_ARGS = builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ] [
+                "-DMLX_BUILD_METAL:BOOL=TRUE"
+              ] old.env.CMAKE_ARGS;
+              DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
+            };
+            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+              (final.xcodeenv.composeXcodeWrapper { })
+            ];
+          });
         })
       ];
     })
