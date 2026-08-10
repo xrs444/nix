@@ -104,7 +104,18 @@
                   + " -DCMAKE_OSX_SYSROOT:PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk";
                 DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
               };
-              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ xcodeWrapper ];
+              # CMake's FetchContent step needs to download metal-cpp from
+              # developer.apple.com mid-build (something the original
+              # CPU-only mlx derivation never needed to do) and failed TLS
+              # verification: "SSL peer certificate ... was not OK" — no CA
+              # bundle was ever wired up for this derivation, since ordinary
+              # (non-fixed-output) nix builds aren't expected to touch the
+              # network at all. cacert's setup-hook sets
+              # NIX_SSL_CERT_FILE/SSL_CERT_FILE automatically.
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                xcodeWrapper
+                final.cacert
+              ];
               # nativeBuildInputs alone isn't enough: Darwin's stdenv already
               # puts apple-sdk's own bin/xcrun on PATH ahead of it — that's
               # nixpkgs' xcbuild-based *reimplementation* of xcrun (Apple's
