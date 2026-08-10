@@ -79,9 +79,22 @@
             pyprev.mlx.overridePythonAttrs (old: {
               __noChroot = true;
               env = (old.env or { }) // {
-                CMAKE_ARGS = builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ] [
-                  "-DMLX_BUILD_METAL:BOOL=TRUE"
-                ] old.env.CMAKE_ARGS;
+                CMAKE_ARGS =
+                  builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ]
+                    [ "-DMLX_BUILD_METAL:BOOL=TRUE" ]
+                    old.env.CMAKE_ARGS
+                  # Belt-and-suspenders on top of the PATH fix below: hand
+                  # CMake the real compiler directly, bypassing its own
+                  # xcrun-based auto-discovery (CMakeDetermineCCompiler) for
+                  # the specific step that was hanging — confirmed even a
+                  # brand-new build attempt (fresh PID, correct commit
+                  # pulled) still invoked apple-sdk's broken xcrun for
+                  # CMakeCCompilerId.c, meaning some nixpkgs cmake setup
+                  # hook re-asserts apple-sdk's bin dir ahead of ours even
+                  # after preBuild's export. Explicit CMAKE_<LANG>_COMPILER
+                  # skips that discovery path entirely for C/C++.
+                  + " -DCMAKE_C_COMPILER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+                  + " -DCMAKE_CXX_COMPILER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++";
                 DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
               };
               nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ xcodeWrapper ];
@@ -94,9 +107,10 @@
               # every xcrun call through it just hangs forever instead of
               # erroring — confirmed live: dozens of `apple-sdk-14.4/usr/bin/
               # xcrun clang -Aa CMakeCCompilerId.c` processes sitting at ~0%
-              # CPU. Force our real-Xcode xcrun to the very front of PATH so
-              # CMake's compiler-id probe (and mlx's own metal/metallib
-              # calls) reach it instead.
+              # CPU, reproduced even after this preBuild fix (see the
+              # CMAKE_ARGS comment above for why it needed a second layer).
+              # Still worth keeping for mlx's own metal/metallib custom
+              # commands, which do go through a plain PATH-searched xcrun.
               preBuild = ''
                 export PATH="${xcodeWrapper}/bin:$PATH"
               ''
