@@ -115,11 +115,19 @@
               # erroring — confirmed live: dozens of `apple-sdk-14.4/usr/bin/
               # xcrun clang -Aa CMakeCCompilerId.c` processes sitting at ~0%
               # CPU, reproduced even after this preBuild fix (see the
-              # CMAKE_ARGS comment above for why it needed a second layer).
-              # Still worth keeping for mlx's own metal/metallib custom
-              # commands, which do go through a plain PATH-searched xcrun.
+              # CMAKE_ARGS comment above for why it needed a second layer for
+              # CMake's own compiler-id step). Still needed here for mlx's
+              # own CMakeLists.txt (line ~200), which shells out to
+              # `zsh -c "... | xcrun -sdk macosx metal ..."` to probe the
+              # Metal shader-language version. That failed too, but with a
+              # *different* symptom — "no such file or directory" — because
+              # nix's build PATH has neither `zsh` nor `/bin` on it at all
+              # (not sandbox-related; __noChroot only lifts filesystem
+              # isolation, PATH is still just nativeBuildInputs' bin dirs).
+              # `/bin` covers zsh itself; xcodeWrapper covers the xcrun that
+              # zsh -c then invokes.
               preBuild = ''
-                export PATH="${xcodeWrapper}/bin:$PATH"
+                export PATH="${xcodeWrapper}/bin:/bin:/usr/bin:$PATH"
               ''
               + (old.preBuild or "");
             });
