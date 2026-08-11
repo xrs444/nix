@@ -107,8 +107,29 @@
               __noChroot = true;
               env = (old.env or { }) // {
                 CMAKE_ARGS =
-                  builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ]
-                    [ "-DMLX_BUILD_METAL:BOOL=TRUE" ]
+                  builtins.replaceStrings
+                    [
+                      "-DMLX_BUILD_METAL:BOOL=FALSE"
+                      # bug-538: nixpkgs' own mlx derivation passes
+                      # -I.../nlohmann_json-.../include/nlohmann — one
+                      # directory too deep. json.hpp does
+                      # #include <nlohmann/adl_serializer.hpp>, which needs
+                      # .../include (the parent of the nlohmann/ dir that
+                      # actually has adl_serializer.hpp etc in it, confirmed
+                      # via a throwaway build+find of the real package) on
+                      # the search path, not .../include/nlohmann itself. A
+                      # latent bug MLX_BUILD_METAL:BOOL=FALSE never
+                      # exercised — the Metal-only translation units are the
+                      # first thing in this derivation to actually need
+                      # nlohmann_json's adl_serializer transitively. Exact
+                      # substring confirmed via `nix eval` on the rendered
+                      # CMAKE_ARGS string before this fix, not guessed.
+                      "-nlohmann_json-3.12.0/include/nlohmann"
+                    ]
+                    [
+                      "-DMLX_BUILD_METAL:BOOL=TRUE"
+                      "-nlohmann_json-3.12.0/include"
+                    ]
                     old.env.CMAKE_ARGS
                   # Belt-and-suspenders on top of the PATH fix below: hand
                   # CMake the real compiler directly, bypassing its own
