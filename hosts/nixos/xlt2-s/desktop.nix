@@ -26,5 +26,12 @@
     file-roller # Archive manager
     gparted # Partition editor
     prismlauncher # Minecraft launcher
+    solaar # Logitech Unifying/Bolt receiver manager
   ];
+
+  # solaar's own `udev` output (aliased as logitech-udev-rules) grants
+  # unprivileged access to the Logitech receiver — without it Solaar can only
+  # read device state as root. Package comment explicitly recommends this
+  # alias over wiring the derivation's `udev` output directly.
+  services.udev.packages = [ pkgs.logitech-udev-rules ];
 }
