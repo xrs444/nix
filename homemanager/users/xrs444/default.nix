@@ -42,6 +42,23 @@ in
     ssh = {
       enable = true;
       enableDefaultConfig = false;
+      # `Host` patterns can ONLY match the hostname argument — OpenSSH has no
+      # `user@host`-as-Host-pattern feature despite the tempting syntax (see
+      # ssh_config(5) PATTERNS/Host: matched against "the hostname argument
+      # given on the command line"). A `Host thomas-local@*`-style block
+      # silently never matches on real OpenSSH (10.2p1 confirmed); it falls
+      # straight through to ssh's own hardcoded default identities.
+      #
+      # Any block that needs to key off the *user* an invocation uses
+      # (thomas-local vs. the xrs444 default, builder@, opc@, pi@) instead
+      # uses a real `Match ... user <name>` block, written as an attribute
+      # name literally starting with "Match " — home-manager's settings
+      # module uses the attribute name verbatim as the block header when it
+      # already starts with "Host " or "Match ", only auto-prefixing "Host "
+      # otherwise (see home-manager's modules/programs/ssh.nix, the
+      # `settings` option's `header` default). Confirmed working (both
+      # positive and `!user` negated forms) via `ssh -F <test-config> -G`
+      # before writing this.
       settings = {
         # Explicit default configuration to replace removed defaults
         "*" = {
@@ -49,9 +66,18 @@ in
           ServerAliveCountMax = 3;
         };
         # Default interactive identity for plain `ssh <host>.lan` (no
-        # explicit user). Excludes thomas-local@ invocations so that path
-        # stays on its own dedicated key below, not this one.
-        "*.lan !thomas-local@*" = {
+        # explicit user). Excludes every other special-purpose user that can
+        # also target a *.lan host (thomas-local, builder, pi) — Match
+        # blocks are independently additive (IdentityFile accumulates across
+        # every block that matches, not first-wins), so without these
+        # exclusions e.g. `ssh builder@xsvr1.lan` would get offered BOTH
+        # xrs444_key and builder_key: harmless in that ssh just tries the
+        # wrong one first and falls through, but noisy extra failed-auth
+        # attempts are exactly what has tripped fail2ban on this fleet
+        # before (bug-510/524/527) — worth avoiding, not just tolerating.
+        # opc/nutanix/dog aren't listed: none of their blocks target a *.lan
+        # host, so there's no overlap to exclude.
+        "Match host *.lan !user thomas-local !user builder !user pi" = {
           User = "xrs444";
           # NixOS path matches sops.secrets."xrs444-ssh-key".path in
           # modules/users/xrs444.nix (custom path, not the /run/secrets
@@ -61,7 +87,7 @@ in
           IdentitiesOnly = true;
         };
         # Reserved for explicit thomas-local@ invocations (automation/scripts).
-        "thomas-local@*" = {
+        "Match host *.lan user thomas-local" = {
           User = "thomas-local";
           # See sops.secrets."thomas-local-ssh-key".path in modules/users/xrs444.nix —
           # was previously (incorrectly) pointing at the unused /run/secrets default.
@@ -76,11 +102,16 @@ in
       # modules/services/remotebuilds/default.nix), unreadable by xrs444, and
       # ntnx/ansible-brocade/oci/pi/obs-key have no NixOS-side use at all.
       // lib.optionalAttrs pkgs.stdenv.isDarwin {
-        # Interactive access to the Nix remote-build pool as the `builder`
-        # service user — same identity as the fleet's /etc/ssh/id_builder.
+        # `xsvr1-builder` is a bare alias (not a real hostname), so a plain
+        # `Host` pattern works fine for it — only the explicit
+        # `builder@xsvr1.lan` form needs `Match ... user builder`.
         "builder@xsvr1.lan xsvr1-builder" = {
           User = "builder";
           HostName = "xsvr1.lan";
+          IdentityFile = "~/.ssh/builder_key";
+          IdentitiesOnly = true;
+        };
+        "Match host xsvr1.lan user builder" = {
           IdentityFile = "~/.ssh/builder_key";
           IdentitiesOnly = true;
         };
@@ -126,15 +157,14 @@ in
 
         # Oracle Cloud default per-instance admin user (opc), separate from
         # the builder/deploy service identities that also reach vocibuild.
-        "opc@vocibuild.xrs444.net" = {
-          User = "opc";
+        "Match host vocibuild.xrs444.net user opc" = {
           IdentityFile = "~/.ssh/oci";
           IdentitiesOnly = true;
         };
 
-        # Firewalla's fixed default SSH username — matched by user, not
+        # Firewalla's fixed default SSH username — matched by user only, not
         # hostname, since it's not a Nix-managed host with a fixed address.
-        "pi@*" = {
+        "Match user pi" = {
           IdentityFile = "~/.ssh/pi";
           IdentitiesOnly = true;
         };
