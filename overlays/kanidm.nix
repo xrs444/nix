@@ -8,7 +8,7 @@
 # removing them breaks flake evaluation even when services.kanidm.package is
 # overridden with mkForce.
 let
-  pinnedVersion = "kanidm_1_10";
+  pinnedVersion = "kanidm_1_11";
 in
 (final: prev:
   let
