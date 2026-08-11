@@ -45,6 +45,27 @@ build-and-cache-all:
 
     echo "All hosts built and cached"
 
+# Switch this Mac to a new generation (darwin-rebuild). Authenticates sudo
+# once up front and keeps the credential cache alive in the background for
+# the whole build — nix-darwin's activation runs several separate root
+# steps (package installers, sops-install-secrets, etc.), each a fresh sudo
+# call, so without this you get re-prompted for a password mid-build every
+# time macOS's 5-minute sudo timestamp lapses between them.
+#
+# The refresher is a bounded, self-terminating `sh -c` loop (30 min, plenty
+# for any real switch) rather than a killed-on-exit background job: fish's
+# job control (`$last_pid` + `kill`) does not reliably hand control back to
+# the calling script when backgrounded from a non-interactive `fish -c`/just
+# recipe context (confirmed by testing — the outer script hung indefinitely
+# instead of continuing past the `&`). A bounded loop that just expires on
+# its own sidesteps that entirely; the few extra minutes of a harmless
+# `sudo -n true` no-op after a fast switch finishes cost nothing.
+darwin-switch host:
+    #!/usr/bin/env fish
+    sudo -v
+    sh -c 'i=0; while [ $i -lt 60 ]; do sudo -n true; sleep 30; i=$((i+1)); done' &
+    caffeinate -im sudo darwin-rebuild switch --flake .#{{host}}
+
 # Deploy a single remote host via deploy-rs (not xsvr1)
 deploy host:
     deploy ".#{{host}}"
