@@ -4,8 +4,8 @@
 {
   options.workstationPackages.enableObs = lib.mkOption {
     type = lib.types.bool;
-    default = true;
-    description = "Whether to include obs-studio in this workstation's default packages.";
+    default = false;
+    description = "Whether to include obs-studio in this workstation's default packages. OBS is xdt1-t only — opt in per host, don't flip this default.";
   };
 
   config.environment.systemPackages =

@@ -18,6 +18,10 @@
   networking.hostName = "xdt1-t";
   nixpkgs.config.allowUnfree = true;
 
+  # OBS is xdt1-t only — see workstationPackages.enableObs in
+  # modules/packages-workstation for the (false) default.
+  workstationPackages.enableObs = true;
+
   # Determinate Nix ignores nix.conf for trusted-users — must be in nix.custom.conf.
   # Use extra-trusted-users so this appends to (rather than overrides) the
   # remotebuilds module's "trusted-users = root builder" line.
