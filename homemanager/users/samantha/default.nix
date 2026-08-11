@@ -39,6 +39,7 @@
     # (OAuth) — not something Nix can provision declaratively.
     pkgs.insync
     pkgs.insync-nautilus
+    pkgs.bitwarden-desktop
   ];
 
   # vja (Vikunja CLI) server config — non-secret. The API token is decrypted

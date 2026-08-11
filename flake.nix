@@ -166,6 +166,7 @@
           roles = [
             "monitoring-client"
             "auto-upgrade"
+            "tailscale-client"
           ];
         };
         cmrpi1 = {
