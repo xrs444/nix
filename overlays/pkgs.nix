@@ -98,6 +98,36 @@ in
     then prev.libsecret.overrideAttrs (_: { doCheck = false; })
     else prev.libsecret;
 
+  # sdl3: testprocess (SDL_CreateProcess IPC test) times out under the Nix
+  # build sandbox (exit code 8 = ctest timeout) on the x86_64-linux remote
+  # builder (xsvr1) — 24/25 tests otherwise pass; the library itself builds
+  # and functions correctly. Pulled in transitively via desktop.nix's GNOME
+  # (gnome-remote-desktop -> gtk-frdp -> freerdp/sdl3-image/sdl3-ttf -> sdl3),
+  # first hit while bringing up xlt2-s. Confirmed via `curl -sI
+  # https://cache.nixos.org/<hash>.narinfo` 404 that sdl3-3.4.8 isn't on the
+  # binary cache at all — genuine from-source build, not our own overlay
+  # forcing an unnecessary rebuild. Not architecture-specific (unlike the
+  # aarch64 IPC flakiness above), so left unscoped.
+  sdl3 = prev.sdl3.overrideAttrs (_: { doCheck = false; });
+
+  # webkitgtk_4_1/6_0: OOM-killed (exit 137/SIGKILL) building on xsvr1's
+  # remote builder, ~89% through — ninja's setup-hook defaults to
+  # `-j$NIX_BUILD_CORES` (all cores), and with WebCore's large unified-source
+  # translation units that spikes peak RSS past available RAM once other
+  # concurrent builds are also contending for it on the shared builder.
+  # `ninjaFlags` is appended after the default `-j` flag by the setup hook
+  # and ninja takes the last `-j` seen, so this reliably caps webkitgtk's own
+  # parallelism without touching NIX_BUILD_CORES (which the Nix daemon may
+  # re-inject) or any other package. Neither ABI variant nor their
+  # downstream consumers (gnome-shell itself — unavoidable, evolution-data-server,
+  # sushi) are on the binary cache at this nixpkgs revision (confirmed via
+  # narinfo 404), so this is a genuine from-source build. First hit bringing
+  # up xlt2-s (the first host in this repo to actually enable full GNOME via
+  # services.desktopManager.gnome — xcomm1's flake `desktop = "gnome"` label
+  # is misleading, its actual desktop.nix uses Niri).
+  webkitgtk_4_1 = prev.webkitgtk_4_1.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
+  webkitgtk_6_0 = prev.webkitgtk_6_0.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
+
   # gobject-introspection-unwrapped: giscanner/utils.py has an unconditional
   # top-level `import distutils.cygwinccompiler` (only actually used on
   # Windows/cygwin cross-builds), which crashes at import time on Python
