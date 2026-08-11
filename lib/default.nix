@@ -207,6 +207,7 @@ rec {
         minimalImage = false;
         hostRoles = hostConfig.roles or [ ];
         generateManCache = hostConfig.generateManCache or false;
+        enableHomeManager = hostConfig.enableHomeManager or true;
         lib = inputs.nixpkgs.lib;
       };
       modules = modulesList;

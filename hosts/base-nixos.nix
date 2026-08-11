@@ -2,9 +2,16 @@
 # Base NixOS configuration shared between x86_64 and ARM platforms
 {
   inputs,
+  lib,
   stateVersion ? "25.05",
   hostRoles ? [ ],
   generateManCache ? false,
+  hostname ? null,
+  username ? null,
+  desktop ? null,
+  platform ? null,
+  enableHomeManager ? true,
+  minimalImage ? false,
   ...
 }:
 {
@@ -22,6 +29,33 @@
     ../modules/packages-nixos/default.nix
     ../modules/services/default.nix
   ];
+
+  # Integrated Home Manager: activates as part of `nixos-rebuild switch`, so it
+  # rides the same push (CI deploy.yml) and pull (auto-upgrade role) paths the
+  # system config already uses — no separate `home-manager switch` or timer
+  # needed. inputs.home-manager.nixosModules.home-manager was imported above
+  # but never configured (no `home-manager.users.*`), which is why it did
+  # nothing until now. Skipped for minimal installer images (before deploy-rs
+  # has run) and for hosts with enableHomeManager = false (servers with no
+  # interactive user, e.g. xts1/xts2/cmrpi1/xpbx1/vocibuild).
+  home-manager = lib.mkIf (enableHomeManager && !minimalImage && username != null) {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    backupFileExtension = "backup";
+    sharedModules = [
+      inputs.catppuccin.homeModules.catppuccin
+      {
+        catppuccin.autoEnable = lib.mkDefault false;
+        catppuccin.enable = lib.mkDefault true;
+      }
+    ];
+    extraSpecialArgs = {
+      inherit inputs stateVersion desktop platform;
+      hostName = hostname;
+      inherit username;
+    };
+    users.${username} = ../homemanager;
+  };
 
   time.timeZone = "America/Phoenix";
   console.keyMap = "us";
