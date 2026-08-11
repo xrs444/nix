@@ -28,6 +28,7 @@ in
     ] ++ lib.optionals pkgs.stdenv.isLinux [
       traceroute # Network path tracing utility (macOS has built-in traceroute)
       smartmontools # SMART disk health monitoring (smartctl)
+      usbutils # lsusb
     ];
   };
 }
