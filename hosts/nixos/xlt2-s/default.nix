@@ -17,4 +17,7 @@
 
   networking.hostName = "xlt2-s";
   nixpkgs.config.allowUnfree = true;
+
+  # Samantha doesn't need OBS on this laptop.
+  workstationPackages.enableObs = false;
 }
