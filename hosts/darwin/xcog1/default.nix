@@ -106,31 +106,9 @@
             pyprev.mlx.overridePythonAttrs (old: {
               __noChroot = true;
               env = (old.env or { }) // {
-                CMAKE_ARGS =
-                  builtins.replaceStrings
-                    [
-                      "-DMLX_BUILD_METAL:BOOL=FALSE"
-                      # bug-538: nixpkgs' own mlx derivation passes
-                      # -I.../nlohmann_json-.../include/nlohmann — one
-                      # directory too deep. json.hpp does
-                      # #include <nlohmann/adl_serializer.hpp>, which needs
-                      # .../include (the parent of the nlohmann/ dir that
-                      # actually has adl_serializer.hpp etc in it, confirmed
-                      # via a throwaway build+find of the real package) on
-                      # the search path, not .../include/nlohmann itself. A
-                      # latent bug MLX_BUILD_METAL:BOOL=FALSE never
-                      # exercised — the Metal-only translation units are the
-                      # first thing in this derivation to actually need
-                      # nlohmann_json's adl_serializer transitively. Exact
-                      # substring confirmed via `nix eval` on the rendered
-                      # CMAKE_ARGS string before this fix, not guessed.
-                      "-nlohmann_json-3.12.0/include/nlohmann"
-                    ]
-                    [
-                      "-DMLX_BUILD_METAL:BOOL=TRUE"
-                      "-nlohmann_json-3.12.0/include"
-                    ]
-                    old.env.CMAKE_ARGS
+                CMAKE_ARGS = builtins.replaceStrings [ "-DMLX_BUILD_METAL:BOOL=FALSE" ]
+                  [ "-DMLX_BUILD_METAL:BOOL=TRUE" ]
+                  old.env.CMAKE_ARGS
                   # Belt-and-suspenders on top of the PATH fix below: hand
                   # CMake the real compiler directly, bypassing its own
                   # xcrun-based auto-discovery (CMakeDetermineCCompiler) for
@@ -151,6 +129,22 @@
                   # real Xcode, the SDK it links against needs to be too.
                   + " -DCMAKE_OSX_SYSROOT:PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk";
                 DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
+                # bug-538: nixpkgs' own mlx derivation's CMAKE_CXX_FLAGS
+                # only has -I.../nlohmann_json-3.12.0/include/nlohmann (one
+                # dir too deep for `#include <nlohmann/adl_serializer.hpp>`-
+                # style includes, e.g. json.hpp itself) — a latent bug
+                # MLX_BUILD_METAL:BOOL=FALSE never exercised, since the
+                # Metal-only translation units are the first thing here to
+                # need nlohmann_json transitively. Tried just fixing the
+                # existing -I to drop the trailing /nlohmann, but OTHER
+                # files (mlx/distributed/ring/ring.cpp, mlx/io/safetensors.cpp)
+                # do a bare #include "json.hpp"/<json.hpp>, which needs the
+                # /nlohmann-suffixed path instead — the two styles coexist
+                # in mlx's own source tree. CPATH is Clang's "extra include
+                # dirs" env var, searched in ADDITION to -I flags rather
+                # than replacing them, so both styles resolve at once
+                # without touching (or fighting) the existing CMAKE_CXX_FLAGS.
+                CPATH = "${final.nlohmann_json}/include";
               };
               # CMake's FetchContent step needs to download metal-cpp from
               # developer.apple.com mid-build (something the original
