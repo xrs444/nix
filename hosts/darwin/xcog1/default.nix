@@ -75,6 +75,33 @@
           mlx =
             let
               xcodeWrapper = final.xcodeenv.composeXcodeWrapper { };
+              # bug-537: even with the real Xcode's xcrun reachable (bug-532)
+              # and the Metal Toolchain downloaded (`xcodebuild
+              # -downloadComponent MetalToolchain`), `xcrun -sdk macosx
+              # metal`/`metallib` still can't find the tool from this
+              # build's user — a documented Apple bug (FB20389216): a
+              # cryptex-delivered component, once installed, isn't visible
+              # via xcrun to users other than the one that triggered the
+              # download. The stopgap (manually mounting the component's own
+              # .dmg — christiantietze.de/posts/2026/01/manually-mount-metal-toolchain)
+              # only fixes visibility for whoever ran `open` on it; it does
+              # NOT make xcrun's own internal SDK/toolchain resolution find
+              # it either, since that resolution isn't a plain PATH search.
+              # Skip xcrun's resolution entirely for just these two
+              # subcommands — exec the real binaries (confirmed present
+              # under the manually-mounted volume) directly — and fall
+              # through to the real xcrun for everything else.
+              xcrunMetalWrapper = final.writeShellScriptBin "xcrun" ''
+                if [ "$1" = "-sdk" ] && [ "$2" = "macosx" ] && [ "$3" = "metal" ]; then
+                  shift 3
+                  exec /Volumes/MetalToolchainCryptex/Metal.xctoolchain/usr/bin/metal "$@"
+                elif [ "$1" = "-sdk" ] && [ "$2" = "macosx" ] && [ "$3" = "metallib" ]; then
+                  shift 3
+                  exec /Volumes/MetalToolchainCryptex/Metal.xctoolchain/usr/bin/metallib "$@"
+                else
+                  exec /usr/bin/xcrun "$@"
+                fi
+              '';
             in
             pyprev.mlx.overridePythonAttrs (old: {
               __noChroot = true;
@@ -138,7 +165,7 @@
               # `/bin` covers zsh itself; xcodeWrapper covers the xcrun that
               # zsh -c then invokes.
               preBuild = ''
-                export PATH="${xcodeWrapper}/bin:/bin:/usr/bin:$PATH"
+                export PATH="${xcrunMetalWrapper}/bin:${xcodeWrapper}/bin:/bin:/usr/bin:$PATH"
               ''
               + (old.preBuild or "");
             });
