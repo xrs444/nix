@@ -31,17 +31,22 @@ except ImportError:
   # binary cache even though only these 3 packages actually hit the crash —
   # confirmed incident: forced 226 derivations to rebuild from source on
   # xts1. So the fix is applied only as a nativeBuildInput swap on the
-  # specific packages that need it (libnice/gtk-layer-shell/gnome-autoar
-  # below), never on pkgs.gobject-introspection(-unwrapped) itself. If a NEW
-  # aarch64 package hits this same crash, give it the same
-  # `useAarch64GiscannerFix prev.<pkg>` treatment rather than reaching for
-  # the shared attr.
-  gobjectIntrospectionAarch64Fix = prev.gobject-introspection.override {
+  # specific packages that need it (libnice/gtk-layer-shell/gnome-autoar,
+  # gcr below), never on pkgs.gobject-introspection(-unwrapped) itself. If a
+  # NEW package on any platform hits this same crash, give it the same
+  # `useGiscannerDistutilsFix prev.<pkg>` treatment rather than reaching for
+  # the shared attr. Named without a platform prefix since 2026-08-10: the
+  # exact same helper is used for both aarch64-linux packages and gcr on
+  # Darwin below — see that entry for why the Darwin case previously patched
+  # the shared attribute directly, which turned out to be the identical
+  # anti-pattern with a much bigger blast radius (gtk3/glib/cairo/pango/
+  # gdk-pixbuf all forced out of the binary cache fleet-wide on Darwin).
+  gobjectIntrospectionGiscannerFix = prev.gobject-introspection.override {
     gobject-introspection-unwrapped = patchGiscannerDistutils prev.gobject-introspection-unwrapped;
   };
-  useAarch64GiscannerFix = pkg: pkg.overrideAttrs (old: {
+  useGiscannerDistutilsFix = pkg: pkg.overrideAttrs (old: {
     nativeBuildInputs = map
-      (x: if (x.pname or "") == "gobject-introspection-wrapped" then gobjectIntrospectionAarch64Fix else x)
+      (x: if (x.pname or "") == "gobject-introspection-wrapped" then gobjectIntrospectionGiscannerFix else x)
       (old.nativeBuildInputs or [ ]);
   });
 in
@@ -128,26 +133,36 @@ in
   webkitgtk_4_1 = prev.webkitgtk_4_1.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
   webkitgtk_6_0 = prev.webkitgtk_6_0.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
 
-  # gobject-introspection-unwrapped: giscanner/utils.py has an unconditional
-  # top-level `import distutils.cygwinccompiler` (only actually used on
-  # Windows/cygwin cross-builds), which crashes at import time on Python
-  # 3.12+ since distutils was removed from the stdlib. Breaks any from-source
-  # build that needs g-ir-scanner (e.g. gcr on aarch64-darwin — confirmed via
-  # `curl -sI https://cache.nixos.org/<hash>.narinfo` returning 404, i.e. no
-  # prebuilt binary exists for this platform, unlike the aarch64-linux
-  # packages covered by the note above). Scoped to Darwin only — most Linux
-  # builds are cached per that note. Do NOT extend this to isAarch64 (tried
-  # 2026-08-06, reverted same day): this attribute is a nativeBuildInput for
-  # most of the GLib/GNOME stack, so patching it here changes its hash and
-  # cascades to every downstream package's hash too, defeating cache
-  # substitution for all of them (confirmed: forced 226 derivations to
-  # rebuild from source on xts1). If an aarch64-linux package hits this same
-  # giscanner crash, add it to the aarch64GiscannerFixPkgs list below instead
-  # — that patches only the affected packages' own nativeBuildInput.
-  gobject-introspection-unwrapped =
-    if final.stdenv.hostPlatform.isDarwin
-    then patchGiscannerDistutils prev.gobject-introspection-unwrapped
-    else prev.gobject-introspection-unwrapped;
+  # gcr: giscanner/utils.py has an unconditional top-level `import
+  # distutils.cygwinccompiler` (only actually used on Windows/cygwin
+  # cross-builds), which crashes at import time on Python 3.12+ since
+  # distutils was removed from the stdlib. Breaks gcr's from-source build on
+  # aarch64-darwin — confirmed via `curl -sI https://cache.nixos.org/<hash>.narinfo`
+  # returning 404, i.e. no prebuilt binary exists for this platform.
+  #
+  # FIXED 2026-08-10 (bug found while chasing unrelated aarch64-darwin build
+  # flakiness — librsvg/adwaita-icon-theme SIGKILL, django timing-test
+  # failure): this used to patch the SHARED gobject-introspection-unwrapped
+  # attribute directly for all of Darwin, unconditionally — the exact
+  # anti-pattern the aarch64-linux note above warns against, just not
+  # applied to itself. Confirmed via `nix eval` comparison against a vanilla
+  # (zero-overlay) import at the same pinned nixpkgs rev: patching the
+  # shared attribute changed gtk3's own hash (a completely unrelated
+  # package) from the upstream/cached one, meaning gtk3 — and everything
+  # built on it (glib, cairo, pango, gdk-pixbuf, and in turn librsvg,
+  # adwaita-icon-theme, ...) — was being forced to build from source locally
+  # on every Darwin host instead of substituting from cache.nixos.org. That
+  # from-source GNOME/GTK stack build is almost certainly *why* the
+  # librsvg/adwaita-icon-theme SIGKILLs showed up in the first place: Hydra's
+  # own builders don't hit them, only ours did, doing work Hydra had already
+  # done. Scoped now to gcr only, via the same nativeBuildInput-swap pattern
+  # as libnice/gtk-layer-shell/gnome-autoar below — no other Darwin package
+  # is confirmed to need this fix. If a NEW Darwin package hits this same
+  # giscanner crash, give it the same `useGiscannerDistutilsFix prev.<pkg>`
+  # treatment rather than reaching for the shared attr again.
+  gcr = if final.stdenv.hostPlatform.isDarwin
+    then useGiscannerDistutilsFix prev.gcr
+    else prev.gcr;
 
   # aarch64-linux equivalent of the Darwin fix above, scoped per-package (see
   # the note above gobject-introspection-unwrapped for why). Confirmed via
@@ -155,22 +170,32 @@ in
   # are genuinely uncached on aarch64-linux, not just victims of our own
   # cascading overrideAttrs.
   libnice = if final.stdenv.hostPlatform.isAarch64
-    then useAarch64GiscannerFix prev.libnice
+    then useGiscannerDistutilsFix prev.libnice
     else prev.libnice;
   gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
-    then useAarch64GiscannerFix prev.gtk-layer-shell
+    then useGiscannerDistutilsFix prev.gtk-layer-shell
     else prev.gtk-layer-shell;
   gnome-autoar = if final.stdenv.hostPlatform.isAarch64
-    then useAarch64GiscannerFix prev.gnome-autoar
+    then useGiscannerDistutilsFix prev.gnome-autoar
     else prev.gnome-autoar;
 
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
   # of ['--list']. 1 test out of 18154 fails; package itself is fine.
   # Tests run in installCheckPhase; doInstallCheck=false skips them.
+  #
+  # Separately, doCheck's own checkPhase test suite (~2200s/36min on xlt1-t)
+  # includes test_crafted_xml_performance, a TIMING-based assertion that XML
+  # deserialization scales sub-quadratically (measured factor must be <= 2).
+  # Measured 5.38 on xlt1-t under real build load — a build-hardware-timing
+  # flake, not a functional defect (the other 18151 tests pass). Timing
+  # assertions like this are inherently unreliable on shared/sandboxed build
+  # machines; disabling the whole checkPhase also saves ~36min on every
+  # future rebuild touching this dependency (django feeds python3.13-ansible
+  # and other tools pulled in transitively via home.packages).
   pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
     (_: pyprev: {
-      django = pyprev.django.overridePythonAttrs (_: { doInstallCheck = false; });
+      django = pyprev.django.overridePythonAttrs (_: { doCheck = false; doInstallCheck = false; });
 
       # pygobject3: builds gobject-introspection test subprojects (libutility,
       # libwarnlib) and generates GIR for them during the BUILD phase. doCheck
@@ -279,6 +304,18 @@ DESKTOP
           platforms = prev.lib.platforms.linux;
         };
       };
+
+  # NOTE (2026-08-10): a librsvg withPixbufLoader=false override used to live
+  # here, worked around an aarch64-darwin SIGKILL in librsvg's postInstall
+  # gdk-pixbuf-query-loaders step. Root cause turned out to be the unscoped
+  # Darwin gobject-introspection-unwrapped override above (see the gcr entry
+  # for the full story) forcing librsvg out of the binary cache into a local
+  # from-source build in the first place — vanilla librsvg is cached
+  # (confirmed via cache.nixos.org narinfo 200) and doesn't hit this at all
+  # once substituted normally. Removed now that the real cause is fixed; if
+  # this SIGKILL resurfaces on a genuine from-source librsvg build, this is
+  # the override to bring back (`prev.librsvg.override { withPixbufLoader =
+  # false; }`, scoped to isDarwin).
 
   # ffmpeg-headless in nixos-26.05 enables withPlacebo and withVulkan by
   # default, pulling vulkan-loader into any closure that uses matplotlib
