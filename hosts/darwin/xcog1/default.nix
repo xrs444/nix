@@ -179,8 +179,19 @@
               # isolation, PATH is still just nativeBuildInputs' bin dirs).
               # `/bin` covers zsh itself; xcodeWrapper covers the xcrun that
               # zsh -c then invokes.
+              #
+              # bug-540: putting /bin:/usr/bin ahead of $PATH also shadows
+              # nixpkgs' own GNU find/cut (from findutils/coreutils) for
+              # every LATER phase, not just the configure-time zsh probe —
+              # fixupPhase's strip step failed with `find: -printf: unknown
+              # primary or operator` / `cut: illegal option -- z`, both
+              # GNU-only flags BSD's /usr/bin/find and /usr/bin/cut don't
+              # support. /bin and /usr/bin now go at the END instead — a
+              # low-priority fallback so zsh (which only exists there) still
+              # resolves, but nix-provided GNU coreutils win whenever both
+              # are on PATH.
               preBuild = ''
-                export PATH="${xcrunMetalWrapper}/bin:${xcodeWrapper}/bin:/bin:/usr/bin:$PATH"
+                export PATH="${xcrunMetalWrapper}/bin:${xcodeWrapper}/bin:$PATH:/bin:/usr/bin"
               ''
               + (old.preBuild or "");
             });
