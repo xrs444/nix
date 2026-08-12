@@ -54,6 +54,20 @@ let
       done
     '';
 
+  # Shell fragment: block until a sops-nix secret file exists and is
+  # non-empty. sops-install-secrets runs as its own launchd service
+  # (org.nixos.sops-install-secrets) with no ordering guarantee relative to
+  # other launchd.daemons — on a cold boot, a RunAtLoad daemon that reads a
+  # secret can start (and read a missing/empty file) before sops has
+  # populated /run/secrets, then run with a broken key for its whole
+  # KeepAlive lifetime (bug-555, found live on xcog1 after a reboot).
+  secretGuard = file: ''
+    until [ -s "${file}" ]; do
+      echo "llm-stack: waiting for secret ${file} (sops-install-secrets)..." >&2
+      /bin/sleep 2
+    done
+  '';
+
   # LiteLLM YAML config generated from the model attrset + upstream tier
   # config (JSON is valid YAML). Secrets arrive via os.environ/ references —
   # no key material in the nix store.
@@ -372,8 +386,10 @@ in
         litellm = {
           command = pkgs.writeShellScript "litellm-wrapped" ''
             set -euo pipefail
+            ${secretGuard cfg.masterKeyFile}
             export LITELLM_MASTER_KEY="$(/bin/cat ${cfg.masterKeyFile})"
             ${lib.optionalString cfg.cloudTier.enable ''
+              ${secretGuard cfg.cloudTier.apiKeyFile}
               export DEEPSEEK_API_KEY="$(/bin/cat ${cfg.cloudTier.apiKeyFile})"
             ''}
             exec ${cfg.litellmPackage}/bin/litellm --config ${litellmConfigFile} \
