@@ -60,6 +60,11 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
+        # xsvr1 advertises i686-linux via extra-platforms (native execution on its
+        # x86_64 kernel, no QEMU needed) — required for xdt1-t's 32-bit NVIDIA/
+        # EGL-Wayland driver closure (pulls in an i686 moreutils build). See
+        # modules/services/remotebuilds/default.nix's isQemuBuilder block.
+        "i686-linux"
       ];
       maxJobs = 8;
       speedFactor = 2;
