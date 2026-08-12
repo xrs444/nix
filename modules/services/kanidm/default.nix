@@ -26,6 +26,15 @@ in
   # Use overlayed pkgs.kanidm for both servers
   config = lib.mkMerge [
     (lib.mkIf isKanidmServer {
+      # The ExecStartPre `kanidmd domain rename` no-op check (and the
+      # built-in provisioning ExecStartPost) can occasionally take far
+      # longer than systemd's 90s default start timeout — e.g. after an
+      # unclean prior shutdown requiring DB recovery/checkpoint. When that
+      # happens systemd kills it mid-operation, causing a restart loop
+      # instead of a slow-but-successful start. Confirmed live on xsvr1
+      # (2026-08-11, bug-554): raising this let a stalled start complete
+      # cleanly instead of being SIGTERM'd every ~90s.
+      systemd.services.kanidm.serviceConfig.TimeoutStartSec = "900s";
       sops.secrets.kanidm_admin_password = {
         sopsFile = ../../../secrets/idm.yaml;
         key = "admin_password";
