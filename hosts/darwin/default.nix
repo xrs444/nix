@@ -20,14 +20,18 @@
   system.stateVersion = 5;
 
   # sops-nix on Darwin: no host SSH key to derive an age key from (unlike
-  # base-nixos.nix's /etc/ssh/sops-age-key.txt), so decryption uses the
-  # user's own personal age key instead. That key must already exist at this
-  # path on every Darwin host (it's the same key used for manual `sops -d`
-  # via SOPS_AGE_KEY_FILE in home-manager, and is one of the recipients in
-  # .sops.yaml as user_xrs444 — not host-specific, so it's shared across
-  # xlt1-t and xcog1). Runs via system.activationScripts.postActivation
+  # base-nixos.nix's /etc/ssh/sops-age-key.txt), so each Darwin host gets a
+  # dedicated age key at this root-owned path (recipients host_xlt1-t /
+  # host_xcog1 in .sops.yaml — rotated 2026-08-13; previously both hosts
+  # shared the user_xrs444 personal key). The private key must exist at
+  # this path BEFORE the first darwin-rebuild switch that uses it:
+  #   sudo mkdir -p /var/lib/sops-nix/age
+  #   sudo mv ~/.config/sops/age/host-*-staging.txt /var/lib/sops-nix/age/keys.txt
+  #   sudo chown root:wheel /var/lib/sops-nix/age/keys.txt
+  #   sudo chmod 600 /var/lib/sops-nix/age/keys.txt
+  # Decryption runs via system.activationScripts.postActivation
   # (on darwin-rebuild switch) and a RunAtLoad launchd daemon (on boot).
-  sops.age.keyFile = "/Users/${username}/.config/sops/age/keys.txt";
+  sops.age.keyFile = "/var/lib/sops-nix/age/keys.txt";
   sops.defaultSopsFile = ../../secrets/vikunja-api-tokens.yaml;
 
   # vja (Vikunja CLI) API token — see homemanager/users/xrs444/default.nix

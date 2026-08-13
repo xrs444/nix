@@ -26,7 +26,8 @@ keys:
   - &host_xts1 age1u8za690m39g80xpfwwj4l3lsfwsyhst6hh9jxw7vn63dtue6c9qs7tu4de
   - &host_xts2 age1ud88p7dps3dyjwcmdcfhx2557maj33xplllq56dz5f6snzr4m4xq8gcg4z
   - &host_xlt1-t-vnixos age1rvz5fuyzcp2xuffxpugs907eem8yvzzxptqlh8zq0t3pfqgfnqpqgnzg37
-  - &host_xlt1-t age1rzatmse76n9mv975gyeydsj9pafl7mz9ndcznlc2zfwnl7g8x5pqv5haqt
+  - &host_xlt1-t age1euwl2t7d2qs4pxmkphfnu3gqtrrzhqza5d2ahk8pmqm5cqymqqdq4ypxq6
+  - &host_xcog1 age1jjsd86pydacswyu4kr37lt2lq7fe3lsx0djj0fx7674zdda5lqmqwsm0rt
   - &host_xlt2-s age15na3ghzt64ym89hufsn0h9p0wkm7dvuk8092ha9c78w3uzk82slq5h5uv4
   - &host_xdt2-g age1y6zaftf5unztga8fw7qwl9w0n5hkeca8m25fagqckavnmla4pg8sm6grqz
   - &host-xdt3-r age1c284tt2erjny8g8s3u4gp8h9f2x3rhzf7j6fuwlz4704uwdnhv5s3zl9zq
@@ -48,11 +49,11 @@ creation_rules:
       - *host_xts2
       - *host_xlt1-t-vnixos
       - *host_xlt1-t
+      - *host_xcog1
       - *host_xlt2-s
       - *host_xdt2-g
       - *host-xdt3-r
       - *host_xdt1-t
       - *host_xcomm1
       - *host_xpbx1
-      - *host_xdt1-t
       - *host_vocibuild
