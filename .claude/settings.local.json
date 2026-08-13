@@ -2,8 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(nix eval *)",
-      "Read(//Users/xrs444/.claude/**)",
-      "Read(//Users/xrs444/**)"
+      "Read(//Users/xrs444/.claude/**)"
     ]
   }
 }
