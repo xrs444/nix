@@ -226,10 +226,24 @@ in
 
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
+  #
+  # Force python3 = python313 in this isolated pkgs set (mirrors the
+  # python3 = python313 pin in python-no-tests.nix for the main overlay
+  # chain). Upstream nixpkgs-unstable's default python3 = python314 as of
+  # 2026-08: python314's python3.withPackages envs produce a bin/python3
+  # that readlink -f resolves straight through to the bare interpreter,
+  # bypassing the env's own site-packages entirely (confirmed live on
+  # xsvr1: sys.path never includes it, PYTHONPATH override fixes the
+  # import). auto-patchelfHook's own pythonEnv = python3.withPackages
+  # (ps: [ ps.pyelftools ]) hits this directly, so claude-code's build
+  # fails fixupPhase with "ModuleNotFoundError: No module named
+  # 'elftools'" even though pyelftools is present and correctly linked
+  # on disk. python313 doesn't have this defect.
   claude-code = (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
+      overlays = [ (cfinal: cprev: { python3 = cfinal.python313; }) ];
     }
   ).claude-code;
 
