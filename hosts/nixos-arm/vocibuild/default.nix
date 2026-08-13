@@ -83,4 +83,24 @@
   ];
 
   nixpkgs.config.allowUnfree = true;
+
+  # Builder-specific GC: daily schedule + automatic free-space trigger.
+  # Weekly GC (base-nixos.nix) is too infrequent for a remote builder —
+  # failed builds accumulate quickly and exhaust disk, causing spurious
+  # ENOSPC failures on legitimate subsequent builds. Same pattern as
+  # xsvr2/xsvr3. vocibuild hit exactly this on 2026-08-12/13: its single
+  # ext4 root disk filled, causing "No space left on device" build
+  # failures here and cascading deploy-rs failures for other hosts that
+  # used it as a remote builder.
+  nix.gc = {
+    automatic = true;
+    dates = lib.mkForce "daily";
+    options = lib.mkForce "--delete-older-than 7d";
+  };
+  nix.settings = {
+    # Trigger GC automatically if store drops below 10 GiB free,
+    # stopping once 50 GiB is reclaimed. Fires mid-build if needed.
+    min-free = 10737418240; # 10 GiB
+    max-free = 53687091200; # 50 GiB
+  };
 }
