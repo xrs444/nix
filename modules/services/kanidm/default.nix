@@ -211,6 +211,13 @@ in
         group = "kanidm";
         mode = "0400";
       };
+      sops.secrets.kanidm_oauth2_borgwarehouse_secret = {
+        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+        key = "oauth2_borgwarehouse_secret";
+        owner = "kanidm";
+        group = "kanidm";
+        mode = "0400";
+      };
 
       services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
       services.kanidm = {
@@ -400,6 +407,7 @@ in
           # Scanopy instance; confirm this exact path before relying on it (see
           # bug-410/411 pattern in .wolf/cerebrum.md for how this fails if wrong).
           add_redirect oauth2_scanopy   "https://scanopy.xrs444.net/api/auth/oidc/kanidm/callback"
+          add_redirect oauth2_borgwarehouse "https://borgwarehouse.xrs444.net/api/auth/callback/oidc"
         '';
       };
 

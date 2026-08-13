@@ -152,6 +152,12 @@
       "scanopy-admin" = {
         members = [ "admins" ];
       };
+      "borgwarehouse" = {
+        members = [ "users" ];
+      };
+      "borgwarehouse-admin" = {
+        members = [ "admins" ];
+      };
       # POSIX login gate — users in this group can log in to Linux hosts via Kanidm PAM.
       # xsvr1's pam_allowed_login_groups references this group.
       "posix_users" = {
@@ -607,6 +613,29 @@
               "email"
             ];
             "scanopy-admin" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+          };
+        };
+        "oauth2_borgwarehouse" = {
+          displayName = "BorgWarehouse";
+          originUrl = "https://borgwarehouse.xrs444.net";
+          originLanding = "https://borgwarehouse.xrs444.net";
+          # BorgWarehouse's own auth.ts sets pkce: true on its generic OIDC
+          # client, so unlike netbox/vikunja/etc. it reliably sends a
+          # code_challenge — leave PKCE enforced (no
+          # allowInsecureClientDisablePkce override needed).
+          preferShortUsername = true;
+          basicSecretFile = "/run/secrets/kanidm_oauth2_borgwarehouse_secret";
+          scopeMaps = {
+            "borgwarehouse" = [
+              "openid"
+              "profile"
+              "email"
+            ];
+            "borgwarehouse-admin" = [
               "openid"
               "profile"
               "email"
