@@ -118,12 +118,19 @@ in {
               name: scanopy-daemon
               services:
                 daemon:
-                  # TODO: pin to a real released tag before deploying — see
-                  # https://github.com/scanopy/scanopy/releases (never :latest).
-                  image: ghcr.io/scanopy/scanopy/daemon:latest
+                  # Pinned to match the server version deployed in flux
+                  # (apps/services/scanopy) — bump both together.
+                  image: ghcr.io/scanopy/scanopy/daemon:v0.17.9
                   container_name: scanopy-daemon
+                  # host networking is required: the daemon must see every
+                  # bond0.<vlan> interface to scan those segments.
                   network_mode: host
-                  privileged: true
+                  # Upstream's compose uses privileged:true, but scanning
+                  # only needs raw sockets + interface access. If discovery
+                  # breaks after a bump, revert to privileged:true.
+                  cap_add:
+                    - NET_RAW
+                    - NET_ADMIN
                   restart: unless-stopped
                   environment:
                     SCANOPY_LOG_LEVEL: info
@@ -132,7 +139,7 @@ in {
                     SCANOPY_MODE: daemon_poll
                     SCANOPY_DAEMON_API_KEY: "{{ scanopy_daemon_api_key }}"
                     # Confirmed live via `ip -br addr` on xfw: eth1 is the WAN
-                    # interface (public IP 174.73.145.188) — scanning it means
+                    # interface (public IP) — scanning it means
                     # probing the public internet, not the LAN. eth0/eth3 are
                     # just the raw bond0 members (redundant with bond0 itself,
                     # which carries no untagged traffic — every internal VLAN
