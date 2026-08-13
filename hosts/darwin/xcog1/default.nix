@@ -54,6 +54,22 @@
             doCheck = false;
           });
 
+          # MACHINE-LOCAL BUILD ONLY (bug-560): this derivation embeds two
+          # xcog1-specific absolute paths (/Applications/Xcode.app below, and
+          # the Metal Toolchain cryptex mount further down) that only exist
+          # on xcog1 itself, and only after a one-time manual step. It CANNOT
+          # be cross-built from another aarch64-darwin machine (e.g. xlt1-t)
+          # even though the architecture matches — `nix build
+          # .#darwinConfigurations.xcog1.system` must be run with xcog1 as
+          # the actual build host (ssh in, or as a remote builder), not just
+          # as the eval target. If the build fails with `tool 'metal' not
+          # found` / `.../MetalToolchainCryptex/...: No such file or
+          # directory`, the cryptex volume has been unmounted (it's a DMG
+          # mount, doesn't survive reboot) — remount on xcog1 with:
+          #   xcodebuild -downloadComponent MetalToolchain -exportPath /tmp/x
+          #   (prints the cached .dmg path under
+          #   /System/Library/AssetsV2/com_apple_MobileAsset_MetalToolchain/)
+          #   hdiutil attach <that .dmg path>
           # bug-531: nixpkgs' mlx is deliberately built CPU-only
           # (MLX_BUILD_METAL:BOOL=FALSE) — the `metal` shader compiler is
           # closed-source and unreachable from inside Nix's build sandbox
