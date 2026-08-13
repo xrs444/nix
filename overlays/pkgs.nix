@@ -247,6 +247,22 @@ in
     }
   ).claude-code;
 
+  # bitwarden-desktop: pinned nixpkgs' version (2026.5.0) bundles
+  # electron_39 (39.8.10), which nixpkgs flags as insecure/EOL —
+  # packages flagged insecure are excluded from Hydra's binary cache, so
+  # allowing it via permittedInsecurePackages forces a full from-source
+  # Electron/Chromium compile (~45k build steps, hours) on every host
+  # that uses it. nixpkgs-unstable already has 2026.7.0 on electron_41
+  # (41.10.3), which has no known vulnerabilities and IS cached
+  # (confirmed via narinfo 200) — same "just take it from unstable"
+  # fix as claude-code above, no permittedInsecurePackages needed.
+  bitwarden-desktop = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    }
+  ).bitwarden-desktop;
+
   # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
   # Not in nixpkgs; packaged from GitHub pre-built release binaries.
   # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.
