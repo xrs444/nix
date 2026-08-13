@@ -15,6 +15,7 @@
   sops.secrets.greyson_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
   sops.secrets.scanner_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
   sops.secrets.homeassistant_smb_password = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.longhorn_smb_password      = { sopsFile = ../../../secrets/samba.yaml; };
 
   # Scanner service account — exists only for Samba authentication (HP M281 printer)
   users.users.scanner = {
@@ -33,6 +34,16 @@
     description = "Home Assistant SMB service account";
   };
   users.groups.homeassistant = {};
+
+  # Longhorn backup service account — exists only for Samba authentication
+  # (replaces the former guest access to the longhorn-backups share)
+  users.users.longhorn = {
+    isSystemUser = true;
+    group = "longhorn";
+    shell = "${pkgs.shadow}/bin/nologin";
+    description = "Longhorn backup SMB service account";
+  };
+  users.groups.longhorn = {};
 
   # Avahi (mDNS) — required for Samba to advertise the Time Machine share over Bonjour.
   # Without this, macOS won't discover tm_xlt1-t as a Time Machine destination.
@@ -386,6 +397,9 @@
       mkdir -p /zfs/systembackups/homeassistant
       chown homeassistant:homeassistant /zfs/systembackups/homeassistant
       chmod 755 /zfs/systembackups/homeassistant
+      mkdir -p /zfs/systembackups/longhorn
+      chown longhorn:longhorn /zfs/systembackups/longhorn
+      chmod 755 /zfs/systembackups/longhorn
       mkdir -p /export/zfs/devicebackups
       mkdir -p /export/zfs/documents/manyfold
       mkdir -p /export/zfs/documents/photos
@@ -503,6 +517,7 @@
       set_smb_pass greyson  ${config.sops.secrets.greyson_smb_password.path} || true
       set_smb_pass scanner        ${config.sops.secrets.scanner_smb_password.path} || true
       set_smb_pass homeassistant  ${config.sops.secrets.homeassistant_smb_password.path} || true
+      set_smb_pass longhorn       ${config.sops.secrets.longhorn_smb_password.path} || true
     '';
   };
 
@@ -558,9 +573,14 @@
       };
       "longhorn-backups" = {
         "path" = "/zfs/systembackups/longhorn";
-        "browseable" = "yes";
+        "browseable" = "no";
         "read only" = "no";
-        "guest ok" = "yes";
+        "guest ok" = "no";
+        "valid users" = "longhorn";
+        # Map all access to the longhorn account so pre-rotation files
+        # (written via guest) and new backup blocks share one owner.
+        "force user" = "longhorn";
+        "force group" = "longhorn";
         "create mask" = "0644";
         "directory mask" = "0755";
       };
