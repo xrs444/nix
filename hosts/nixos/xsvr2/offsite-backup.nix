@@ -125,7 +125,7 @@ lib.mkIf enabled {
       ${pkgs.curl}/bin/curl -fsS -m 15 \
         -X POST \
         -H "Content-Type: application/json" \
-        "https://windmill.xrs444.net/api/w/xrs444/jobs_u/run/f/f/sre/alert-ingest?token=$TOKEN" \
+        "https://windmill.xrs444.net/api/w/xrs444/jobs/run/f/f/sre/alert-ingest?token=$TOKEN" \
         -d @- <<EOF
       {
         "version": "4",
