@@ -112,6 +112,23 @@
             "auto-upgrade"
           ];
         };
+        xsvr4 = {
+          user = "thomas-local";
+          platform = "x86_64-linux";
+          type = "nixos";
+          generateManCache = true;
+          desktop = "xfce";
+          roles = [
+            "kvm"
+            "samba"
+            "iprouting"
+            "talos"
+            "letsencrypt-host"
+            "tailscale-package"
+            "monitoring-client"
+            "auto-upgrade"
+          ];
+        };
         xts1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
