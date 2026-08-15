@@ -17,10 +17,6 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Create or switch to update branch
-        run: |
-          git checkout -B docs-clippy/update-readmes
-
       - name: Set up Nix
         uses: cachix/install-nix-action@v31
 
