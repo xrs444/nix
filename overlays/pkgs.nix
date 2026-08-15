@@ -263,6 +263,21 @@ in
     }
   ).bitwarden-desktop;
 
+  # vikunja-desktop (samantha's HM profile): the pinned nixpkgs' build
+  # bundles electron_41.9.1, which has no cache.nixos.org narinfo (404) —
+  # forces the same from-source Electron/Chromium compile as the
+  # bitwarden_39 case above. nixpkgs-unstable has the same vikunja-desktop
+  # version (2.3.0) built against electron_41.10.3 — identical to the
+  # version bitwarden-desktop already pulls above, confirmed cached
+  # (narinfo 200) — so this also collapses two separate Electron builds
+  # in the closure down to one shared one.
+  vikunja-desktop = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    }
+  ).vikunja-desktop;
+
   # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
   # Not in nixpkgs; packaged from GitHub pre-built release binaries.
   # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.
