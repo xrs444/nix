@@ -16,6 +16,7 @@
     ./network.nix
     ./replication.nix
     ./shares.nix
+    ./tape-backup.nix
     ./vms.nix
   ];
 
