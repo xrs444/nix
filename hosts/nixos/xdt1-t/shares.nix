@@ -3,11 +3,11 @@
   # noauto + x-systemd.automount: mounts trigger on first access, unmount after 10 min idle.
   fileSystems = let
     ingest = sub: {
-      device = "172.20.3.201:/zfs/ingest/${sub}";
+      device = "xsvr1.lan:/zfs/ingest/${sub}";
       fsType = "nfs";
       options = [
         "nfsvers=4.2" "rw" "soft" "timeo=30"
-        "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600"
+        "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600" "nofail"
       ];
     };
   in {
@@ -19,11 +19,11 @@
     "/mnt/xsvr1/ingest/tvshows"   = ingest "tvshows";
     "/mnt/xsvr1/ingest/music"     = ingest "music";
     "/mnt/xsvr1/scans" = {
-      device = "172.20.3.201:/zfs/scan/scans";
+      device = "xsvr1.lan:/zfs/scan/scans";
       fsType = "nfs";
       options = [
         "nfsvers=4.2" "rw" "soft" "timeo=30"
-        "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600"
+        "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600" "nofail"
       ];
     };
   };
