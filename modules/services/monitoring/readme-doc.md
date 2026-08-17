@@ -1,91 +1,52 @@
 # Monitoring Module
 
-Role-based monitoring configuration using Prometheus and Grafana.
-
-## Architecture
-
-- **Prometheus Server**: Runs on monitoring server host, scrapes all targets
-- **Grafana**: Visualization and dashboarding, provisioned with Prometheus datasource
-- **Exporters**: Run on all monitored hosts (clients and server)
-  - `node_exporter`: System metrics (CPU, memory, disk, network)
-  - `zfs_exporter`: ZFS pool metrics (only on xsvr1, xsvr2)
+Role-based Prometheus exporters, scraped by the live Kubernetes
+kube-prometheus-stack (`flux/apps/observability/monitoring/`) via static
+targets in its `prometheus-additional-scrape-configs` secret. There is no
+Prometheus server or Grafana running on the NixOS side — both used to live
+here (`prometheus.nix`, `grafana.nix`) but were decommissioned once the k8s
+stack took over dashboards/alerting/Grafana entirely.
 
 ## Host Roles
 
 Add to `flake.nix` host configuration:
 
-### Monitoring Server
 ```nix
-hostRoles = [ "monitoring-server" ];
+hostRoles = [ "monitoring-client" ];   # or "monitoring-server"
 ```
-Enables: Prometheus server, Grafana, exporters
 
-### Monitoring Client
-```nix
-hostRoles = [ "monitoring-client" ];
-```
-Enables: Exporters only (node_exporter, zfs_exporter if applicable)
+Both roles enable the same exporters today (`enableExporters = isMonitoringServer
+|| isMonitoringClient` in `exporters.nix`) — the distinction is now vestigial,
+kept mainly because `monitoring-server` still identifies xsvr1 in a few other
+unrelated modules.
 
-## Network Configuration
+## Exporters (exporters.nix)
 
-- All services bind to `0.0.0.0` but firewall rules limit access to Tailscale interface
-- Ports opened on `tailscale0` interface:
-  - `9090`: Prometheus server
-  - `3000`: Grafana web UI
-  - `9100`: node_exporter (all hosts)
-  - `9134`: zfs_exporter (ZFS hosts only)
+- `node_exporter` (:9100) — all monitoring hosts
+- `zfs_exporter` (:9134) — xsvr1, xsvr2
+- `prometheus-libvirt-exporter` (:9177, custom systemd unit) — xsvr1, xsvr2, xsvr3
+- `smartctl_exporter` (:9633) — all monitoring hosts
+- `bind_exporter` (:9119) — currently disabled (`hasBIND = false`)
 
-## Access
+Firewall ports for these are opened on all interfaces (not Tailscale-scoped —
+k8s pod traffic needs to reach them too).
 
-Once deployed on the monitoring server (e.g., xsvr1):
+## Logs (promtail.nix)
 
-- **Prometheus**: `http://xsvr1:9090`
-- **Grafana**: `http://xsvr1:3000`
-  - Default user: `admin`
-  - Password: Set via Grafana's environment file (TODO: secrets management)
+Despite the filename, this ships systemd-journal logs to the k8s Loki app
+(`https://loki.xrs444.net/loki/api/v1/push`) via Grafana Alloy, not promtail
+(promtail was removed in NixOS 26.05). Independent of everything above.
 
-## Metrics Collected
+## Adding a New Host
 
-### Node Exporter (All Hosts)
-- CPU usage, load average
-- Memory and swap usage
-- Disk I/O and space
-- Network traffic
-- Systemd units status
-- Process counts
+1. Add `monitoring-client` to the host's `hostRoles` in `flake.nix`.
+2. If the k8s Prometheus should scrape it, add the host to the relevant
+   `static_configs` target list in
+   `flux/apps/observability/monitoring/sealedsecret-additional-scrape-configs.yaml`
+   (job `node`, plus `zfs`/`smartctl`/`libvirt` as applicable).
+3. Rebuild.
 
-### ZFS Exporter (xsvr1, xsvr2)
-- Pool health and status
-- Dataset usage
-- ARC statistics
-- I/O statistics
-- Scrub status
+## SNMP / blackbox / pushgateway
 
-## TODO
-
-- [ ] Add alerting rules (disk space, service down, etc.)
-- [ ] Configure Alertmanager
-- [ ] Provision Grafana dashboards
-- [ ] Secrets management for Grafana admin password
-- [ ] Add Kubernetes metrics scraping (Talos VMs)
-- [ ] Consider adding `smartmon_exporter` for disk health
-- [ ] Add `systemd_exporter` for detailed service metrics
-- [ ] Configure long-term storage retention strategy
-
-## Adding New Hosts
-
-1. Add hostname to `allHosts` in `prometheus.nix`
-2. If host has ZFS, add to `zfsHosts` as well
-3. Add `monitoring-client` role to host in `flake.nix`
-4. Rebuild host configuration
-
-## Customization
-
-### Change Scrape Interval
-Edit `globalConfig.scrape_interval` in `prometheus.nix`
-
-### Add Custom Exporters
-Add exporter configuration to `exporters.nix` and update firewall rules
-
-### Retention Period
-Edit `retentionTime` in `prometheus.nix` (default: 30 days)
+These are no longer configured on the NixOS side. Equivalent Deployments run
+in-cluster: `flux/apps/observability/monitoring/deployment-{blackbox,snmp-exporter,pushgateway}.yaml`.

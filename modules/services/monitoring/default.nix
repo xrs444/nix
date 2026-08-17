@@ -1,35 +1,12 @@
-# Summary: Main monitoring module - imports Prometheus, Grafana, and exporters based on host roles.
-{
-  hostname,
-  hostRoles ? [ ],
-  lib,
-  pkgs,
-  ...
-}:
-let
-  # Role-based configuration
-  isMonitoringServer = lib.elem "monitoring-server" hostRoles;
-  isMonitoringClient = lib.elem "monitoring-client" hostRoles;
-
-  # Enable monitoring if either role is present
-  enableMonitoring = isMonitoringServer || isMonitoringClient;
-in
+# Summary: Imports the monitoring-client/server exporters (node/zfs/libvirt/
+# smartctl) and the Loki log shipper. The Prometheus server + Grafana that
+# used to run here were decommissioned in favor of the k8s kube-prometheus-stack
+# (flux/apps/observability/monitoring/), which now scrapes these exporters
+# directly via static targets.
+{ ... }:
 {
   imports = [
     ./exporters.nix
-    ./prometheus.nix
-    ./grafana.nix
     ./promtail.nix
   ];
-
-  config = lib.mkIf enableMonitoring {
-    # Open firewall ports for monitoring services
-    networking.firewall = lib.mkIf isMonitoringServer {
-      allowedTCPPorts = [
-        9090 # Prometheus
-        9093 # Alertmanager
-        3000 # Grafana
-      ];
-    };
-  };
 }
