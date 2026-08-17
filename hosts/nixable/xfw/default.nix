@@ -1,8 +1,13 @@
 # Nixible configuration for xfw (Firewalla Gold Pro — edge firewall/router,
-# default gateway ".250" on every VLAN). Deploys the Scanopy scanning daemon
-# as a Docker container, giving it the widest possible L2/L3 network view of
-# any host in the fleet (no NixOS host or k8s node reaches more than two
-# subnets — see the Scanopy deployment plan).
+# default gateway ".250" on every VLAN). Deploys two Docker containers:
+# - Scanopy scanning daemon, giving it the widest possible L2/L3 network view
+#   of any host in the fleet (no NixOS host or k8s node reaches more than two
+#   subnets — see the Scanopy deployment plan).
+# - node_exporter, for xfw's own host OS metrics (CPU/mem/disk/net). This is
+#   distinct from flux/apps/observability/monitoring/firewalla-exporter/,
+#   which polls Firewalla's MSP *cloud* API for box/device/alarm telemetry
+#   and runs as an ordinary k8s Deployment (no flash-wear concern there —
+#   only containers running ON this box need the stateless treatment below).
 #
 # Firewalla runs Ubuntu 22.04 with an SSH-accessible "pi" user (confirmed live
 # — the vendor's own docs said "Debian Linux", which was imprecise/wrong).
@@ -33,6 +38,8 @@
 
   daemonComposeDir = "/home/pi/.firewalla/run/docker/scanopy-daemon";
   daemonConfigDir = "${daemonComposeDir}/config";
+  # node_exporter is fully stateless -- no config dir needed, unlike Scanopy.
+  nodeExporterComposeDir = "/home/pi/.firewalla/run/docker/node-exporter";
 in {
   collections = common.collections // {};
 
@@ -168,6 +175,55 @@ in {
           };
         }
         {
+          name = "Create node_exporter compose directory (Firewalla's sanctioned Docker location)";
+          "ansible.builtin.file" = {
+            path = nodeExporterComposeDir;
+            state = "directory";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+          };
+        }
+        {
+          # Host OS metrics for xfw itself (CPU/mem/disk/net of the Firewalla
+          # appliance) -- separate from firewalla-exporter in flux (box/device/
+          # alarm telemetry via the MSP cloud API, no flash-wear concern since
+          # that one's an ordinary k8s Deployment). This one genuinely runs on
+          # the box, so it gets the same flash-wear treatment as Scanopy:
+          # logging disabled, no persistent volume/writable bind mount.
+          # /proc, /sys, / are mounted read-only (required for node_exporter to
+          # report real host stats instead of the container's own view) --
+          # read-only mounts don't wear flash, only writes do.
+          name = "Deploy docker-compose.yml for node_exporter";
+          "ansible.builtin.copy" = {
+            dest = "${nodeExporterComposeDir}/docker-compose.yml";
+            owner = "pi";
+            group = "pi";
+            mode = "0644";
+            content = ''
+              name: node-exporter
+              services:
+                node-exporter:
+                  image: quay.io/prometheus/node-exporter:v1.8.2
+                  container_name: node-exporter
+                  network_mode: host
+                  pid: host
+                  restart: unless-stopped
+                  logging:
+                    driver: none
+                  command:
+                    - --path.procfs=/host/proc
+                    - --path.sysfs=/host/sys
+                    - --path.rootfs=/host/root
+                    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($$|/)
+                  volumes:
+                    - /proc:/host/proc:ro
+                    - /sys:/host/sys:ro
+                    - /:/host/root:ro
+            '';
+          };
+        }
+        {
           # post_main.d does not exist by default — must be created first
           # (confirmed live), matching the vendor tutorial's own `mkdir` step.
           name = "Ensure Firewalla's post_main.d boot-hook directory exists";
@@ -203,6 +259,24 @@ in {
           };
         }
         {
+          name = "Deploy boot-persistence hook for node_exporter (Firewalla's post_main.d convention)";
+          "ansible.builtin.copy" = {
+            dest = "/home/pi/.firewalla/config/post_main.d/start_node_exporter.sh";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+            content = ''
+              #!/bin/bash
+              # Deployed by nix/hosts/nixable/xfw/default.nix — starts node_exporter
+              # on every Firewalla boot. Safe to re-run.
+              set -e
+              sudo systemctl start docker
+              cd ${nodeExporterComposeDir}
+              docker compose up -d
+            '';
+          };
+        }
+        {
           # Docker isn't always running by default on Firewalla (confirmed
           # live: "Cannot connect to the Docker daemon" even though the CLI
           # is present) — the vendor's own post_main.d boot script explicitly
@@ -218,6 +292,14 @@ in {
           "ansible.builtin.command" = {
             cmd = "docker compose up -d";
             chdir = daemonComposeDir;
+          };
+          changed_when = true;
+        }
+        {
+          name = "Start node_exporter now (don't wait for a reboot)";
+          "ansible.builtin.command" = {
+            cmd = "docker compose up -d";
+            chdir = nodeExporterComposeDir;
           };
           changed_when = true;
         }
