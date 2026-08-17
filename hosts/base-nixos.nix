@@ -3,6 +3,7 @@
 {
   inputs,
   lib,
+  pkgs,
   stateVersion ? "25.05",
   hostRoles ? [ ],
   generateManCache ? false,
@@ -79,6 +80,11 @@
 
   # Configure sops-nix to use the age key file
   sops.age.keyFile = "/etc/ssh/sops-age-key.txt";
+
+  # Firefox on every host with a GUI (desktop != null), system-wide rather
+  # than tied to a specific Home Manager user — so it's available regardless
+  # of which user is logged in, not just the one HM-managed desktop user.
+  environment.systemPackages = lib.optional (desktop != null) pkgs.firefox;
 
   system.stateVersion = stateVersion;
   nixpkgs.config.allowUnfree = true;

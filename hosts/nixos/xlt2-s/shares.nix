@@ -9,7 +9,7 @@
   # which covers the main LAN too, so no server-side export change was needed.
   fileSystems = let
     ingest = sub: {
-      device = "xsvr1.lan:/zfs/ingest/${sub}";
+      device = "xsvr1.lan:/export/zfs/ingest/${sub}";
       fsType = "nfs";
       options = [
         "nfsvers=4.2" "rw" "soft" "timeo=30"
@@ -25,7 +25,7 @@
     "/mnt/xsvr1/ingest/tvshows"   = ingest "tvshows";
     "/mnt/xsvr1/ingest/music"     = ingest "music";
     "/mnt/xsvr1/scans" = {
-      device = "xsvr1.lan:/zfs/scan/scans";
+      device = "xsvr1.lan:/export/zfs/scan/scans";
       fsType = "nfs";
       options = [
         "nfsvers=4.2" "rw" "soft" "timeo=30"
