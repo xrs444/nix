@@ -566,3 +566,46 @@ configure-xswcore:
 
     rm -f $tmp_vars $tmp_key
     echo "xswcore configuration complete"
+
+# TEST recipe for the nixible path (2026-08-17) — default.nix is now a faithful mirror of
+# playbook.yml and registered in flake.nix as `xswcore`, matching every other nixable host.
+# Use this to VERIFY `nix run .#xswcore` works end-to-end before treating it as the real
+# deploy path; configure-xswcore above (hand-maintained playbook.yml) is untouched and stays
+# the known-working fallback until this is proven out.
+configure-xswcore-nix:
+    #!/usr/bin/env fish
+    set -l secrets "{{scripts_dir}}/secrets/ansible-network.yaml"
+    set -l tmp_vars (mktemp /tmp/net-vars-XXXXXX.yml)
+    set -l tmp_key  (mktemp /tmp/net-key-XXXXXX)
+    chmod 600 $tmp_vars $tmp_key
+
+    if not test -f $secrets
+        echo "ERROR: Secrets file not found: $secrets"
+        echo "Create it with: sops $secrets"
+        exit 1
+    end
+
+    echo "Decrypting ansible-network secrets..."
+    if not sops -d $secrets > $tmp_vars
+        rm -f $tmp_vars $tmp_key
+        echo "ERROR: Failed to decrypt $secrets"
+        exit 1
+    end
+
+    if not sops -d --extract '["ansible_private_key"]' $secrets > $tmp_key
+        rm -f $tmp_vars $tmp_key
+        echo "ERROR: Failed to extract ansible_private_key from $secrets"
+        exit 1
+    end
+
+    echo "Configuring xswcore via nix run .#xswcore (TEST PATH)..."
+    set -x ANSIBLE_TERMINAL_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/terminal"
+    set -x ANSIBLE_CLICONF_PLUGINS "{{scripts_dir}}/hosts/nixable/xswcore/plugins/cliconf"
+    nix run .#xswcore -- \
+        --extra-vars "@$tmp_vars" \
+        --extra-vars "ansible_private_key_file=$tmp_key" \
+        --skip-tags ssh_keys \
+        $argv
+
+    rm -f $tmp_vars $tmp_key
+    echo "xswcore (nix path) configuration complete"

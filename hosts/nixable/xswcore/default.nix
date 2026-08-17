@@ -1,8 +1,17 @@
 # Nixible configuration for xswcore (Brocade ICX-7250 2-unit stack)
 # Manages core switching: LAGs, VLANs, interfaces, routing, and services
 # Uses ansible.netcommon.cli_config + local terminal plugin (plugins/terminal/icx.py)
-# Auth: ECDSA P-256 key-based for ansible-brocade; enable password for privilege escalation
-# Secrets: nix/secrets/ansible-network.yaml (sops/age encrypted)
+# and cliconf plugin (plugins/cliconf/icx.py) — set ANSIBLE_TERMINAL_PLUGINS /
+# ANSIBLE_CLICONF_PLUGINS to this directory's plugins/{terminal,cliconf} when running.
+#
+# 2026-08-17: rewritten to be a faithful, complete mirror of playbook.yml (the
+# hand-maintained Ansible file this switch was actually deployed from — this
+# default.nix existed but was never wired into flake.nix's nixible apps, so it
+# silently drifted out of sync with every change made via playbook.yml since
+# 2026-08-04). Now registered as `xswcore` in flake.nix, matching every other
+# nixable host's pattern (`nix run .#xswcore`). playbook.yml/inventory.yml/
+# requirements.yml are kept as-is for now as a fallback until `nix run .#xswcore`
+# is verified end-to-end against the real switch — do not delete them yet.
 {...}: let
   common = import ../common/default.nix {};
 in {
@@ -69,6 +78,8 @@ in {
               lldp tagged-packets process
               ip ssh scp disable
               ip ssh encryption disable-aes-cbc
+              ip ssh key-authentication yes
+              ip tftp blocksize 8192
               manager disable
               manager port-list 987
             '';
@@ -76,16 +87,41 @@ in {
         }
 
         {
-          name = "Configure ansible-brocade SSH authorized key";
-          # ECDSA P-256 key — FastIron 09.x supports ecdsa-sha2-nistp256 in pub-key-chain
-          # ansible_public_key injected from ansible-network.yaml
-          "ansible.netcommon.cli_config" = {
-            config = ''
-              ip ssh pub-key-chain
-               user-key ansible-brocade
-                key-string {{ ansible_public_key }}
-            '';
+          # FastIron 09.x: ip ssh pub-key-file removed; use copy tftp flash (privileged EXEC).
+          # Key file must be in SSH2/RFC4716 format (ssh-keygen -e). RSA keys only.
+          # ansible_tftp_ip injected by push-ansible-key justfile recipe.
+          # Run with: just push-ansible-key (password auth, one-time per key rotation)
+          name = "Import ansible-brocade SSH public key";
+          "ansible.netcommon.cli_command" = {
+            command = "copy tftp flash {{ ansible_tftp_ip }} ansible-brocade.pub ssh-pub-key-file";
           };
+          register = "key_import_result";
+          tags = ["ssh_keys"];
+        }
+
+        {
+          name = "Show key import output";
+          "ansible.builtin.debug" = {
+            var = "key_import_result.stdout";
+          };
+          tags = ["ssh_keys"];
+        }
+
+        {
+          name = "Show client pub key on switch";
+          "ansible.netcommon.cli_command" = {
+            command = "show ip client-pub-key";
+          };
+          register = "client_pub_key";
+          tags = ["ssh_keys"];
+        }
+
+        {
+          name = "Print client pub key";
+          "ansible.builtin.debug" = {
+            var = "client_pub_key.stdout";
+          };
+          tags = ["ssh_keys"];
         }
 
         {
@@ -184,12 +220,13 @@ in {
         }
 
         {
-          name = "Configure LAG rfcab (id 6) - RF cabinet uplink SFP+";
+          name = "Configure LAG xswrf (id 6) - RF cabinet uplink SFP+";
           "ansible.netcommon.cli_config" = {
             config = ''
-              lag rfcab dynamic id 6
+              lag xswrf dynamic id 6
                lacp-timeout short
                ports ethe 1/2/5 ethe 2/2/5
+               force-up ethernet 1/2/5
                port-name rfcab-uplink-a ethernet 1/2/5
                port-name rfcab-uplink-b ethernet 2/2/5
             '';
@@ -203,27 +240,9 @@ in {
               lag xfw dynamic id 10
                lacp-timeout short
                ports ethe 1/2/6 ethe 2/2/6
+               force-up ethernet 2/2/6
                port-name xfw-a ethernet 1/2/6
                port-name xfw-b ethernet 2/2/6
-            '';
-          };
-        }
-
-        {
-          # Replaces the old git-declared "lag11-xswoffice" (id 11, ports 1/1/47+2/1/47),
-          # which was disconnected/superseded live and never actually carried traffic.
-          # This is the REAL office uplink — discovered live on 2026-08-04 (bug/drift not
-          # previously reflected in git): id 15, ports 1/2/4+2/2/4, name "xswoffce" (sic,
-          # matches the actual switch hostname typo, kept verbatim so `show run` diffs clean).
-          name = "Configure LAG xswoffce (id 15) - office switch uplink (real, SFP+)";
-          "ansible.netcommon.cli_config" = {
-            config = ''
-              lag xswoffce dynamic id 15
-               lacp-timeout short
-               ports ethe 1/2/4 ethe 2/2/4
-               force-up ethernet 1/2/4
-               port-name xswoffice1 ethernet 1/2/4
-               port-name xswoffice2 ethernet 2/2/4
             '';
           };
         }
@@ -255,20 +274,49 @@ in {
           };
         }
 
+        {
+          # lag 15 (xswoffce) formerly lived on these ports — office uplink was re-homed to
+          # xswrf1 ports 7/8 (2026-08-14) and lag 15 removed on-device (one-shot `no lag
+          # xswoffce` via cli_config, since cli_config is additive-only per bug-492 and can't
+          # remove a LAG just by deleting its task). Ports 1/2/4+2/2/4 are now xsvr4's LACP bond.
+          name = "Configure LAG xsvr4 (id 4) - LACP to xsvr4 SFP+";
+          "ansible.netcommon.cli_config" = {
+            config = ''
+              lag xsvr4 dynamic id 4
+               lacp-timeout short
+               ports ethe 1/2/4 ethe 2/2/4
+               force-up ethernet 1/2/4
+               port-name xsvr4-a ethernet 1/2/4
+               port-name xsvr4-b ethernet 2/2/4
+            '';
+          };
+        }
+
+        {
+          name = "Disable optical-monitor on uplink LAGs";
+          "ansible.netcommon.cli_config" = {
+            config = ''
+              interface lag {{ item }}
+               no optical-monitor
+            '';
+          };
+          loop = ["1" "2" "3" "4" "6" "10"];
+        }
+
         # =========================================================
         # VLANs
         # =========================================================
+        # STP standardization (2026-08-04): every VLAN now runs RSTP (802.1w) with an explicit
+        # low bridge priority (4096, well below the 32768 default) so xswcore always wins root
+        # election. Dead port refs (1/1/4, 1/1/44, and the orphaned former-lag11/lag12 member
+        # ports 1/1/47-48 / 2/1/47-48, all confirmed link-down/disabled live) are dropped from
+        # every VLAN's tagged/untagged membership.
+        #
+        # xsvr4 onboarding (2026-08-14, complete): the office switch (xswoffice) uplink was
+        # re-homed from xswcore ports 1/2/4+2/2/4 (lag 15) to xswrf1 (RF-cabinet Omada switch,
+        # already lag 6) ports 7/8, freeing 1/2/4+2/2/4 for a new lag 4 — xsvr4's LACP bond,
+        # same pattern as lag 1-3.
 
-        # STP standardization (2026-08-04): every VLAN now runs RSTP (802.1w), and every
-        # VLAN's instance gets an explicit low bridge priority so xswcore always wins root
-        # election — verified live that VLAN 19 (legacy 802.1D, no priority set) had ALREADY
-        # lost root to the RF-cabinet Omada switch (bridge 800040ae30cb1106, OUI=TP-Link)
-        # purely on MAC tiebreak. Priority 4096 is well below the 32768 default and below
-        # any unmanaged/default-priority downstream switch, with headroom left below it.
-        # Dead port refs (1/1/4, 1/1/44, and the orphaned lag11/lag12 member ports
-        # 1/1/47-48 / 2/1/47-48, all confirmed link-down/disabled live) are dropped from
-        # every VLAN's tagged/untagged membership. The real office uplink is lag 15 (see
-        # LINK AGGREGATION section) — VLAN membership below matches live exactly.
         {
           name = "Configure VLAN 10 (FW - firewall transit)";
           "ansible.netcommon.cli_config" = {
@@ -298,9 +346,8 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 14 name management by port
-               tagged ethe 1/1/5 lag 6 lag 10 lag 15
+               tagged ethe 1/1/5 lag 6 lag 10
                untagged ethe 1/1/2 ethe 1/1/13 to 1/1/14 ethe 2/1/1 to 2/1/2 ethe 2/1/13
-               router-interface ve 14
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -312,7 +359,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 15 name Printers by port
-               tagged lag 10 lag 15
+               tagged lag 6 lag 10
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -324,7 +371,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 16 name telephony by port
-               tagged lag 1 to 3 lag 10 lag 14 to 15
+               tagged lag 1 to 4 lag 6 lag 10 lag 14
                untagged ethe 1/1/35 ethe 1/1/40 ethe 2/1/3 ethe 2/1/20 to 2/1/25
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
@@ -337,7 +384,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 17 name HomeAutomation by port
-               tagged lag 1 to 3 lag 6 lag 10 lag 14 to 15
+               tagged lag 1 to 4 lag 6 lag 10 lag 14
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -357,14 +404,12 @@ in {
         }
 
         {
-          # This is the VLAN confirmed live (2026-08-04) to have already lost root to the
-          # RF-cabinet Omada switch under the old plain "spanning-tree" (802.1D) config.
           name = "Configure VLAN 19 (provisioning)";
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 19 name provisioning by port
                tagged lag 10
-               untagged ethe 1/1/5 lag 6 lag 15
+               untagged ethe 1/1/5 lag 6
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -377,7 +422,7 @@ in {
             config = ''
               vlan 20 by port
                tagged lag 10
-               untagged lag 1 to 3
+               untagged lag 1 to 4 ethe 1/1/3
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -389,7 +434,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 21 name HomeVMs by port
-               tagged lag 1 to 3 lag 10 lag 14 to 15
+               tagged lag 1 to 4 lag 6 lag 10 lag 14
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -401,7 +446,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 22 name k8s by port
-               tagged lag 1 to 3 lag 10
+               tagged lag 1 to 4 lag 10
                untagged ethe 2/1/36
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
@@ -414,7 +459,7 @@ in {
           "ansible.netcommon.cli_config" = {
             config = ''
               vlan 100 name WiredClients by port
-               tagged lag 10 lag 15
+               tagged lag 6 lag 10
                spanning-tree 802-1w
                spanning-tree 802-1w priority 4096
             '';
@@ -475,7 +520,7 @@ in {
                spanning-tree 802-1w priority 4096
             '';
           };
-          loop = [ "2001" "2002" "2004" ];
+          loop = ["2001" "2002" "2004"];
         }
 
         {
@@ -504,6 +549,7 @@ in {
           loop = [
             { intf = "1/1/1";  name = "atlas"; }
             { intf = "1/1/2";  name = "KVM"; }
+            { intf = "1/1/3";  name = "xcog1"; }
             { intf = "1/1/13"; name = "xsvr1-mgmt"; }
             { intf = "1/1/14"; name = "xsvr3-mgmt"; }
             { intf = "1/1/25"; name = "xsvr1_impi"; }
@@ -517,12 +563,13 @@ in {
         }
 
         {
-          # 1/1/4 (xswlab access port) and 1/1/44 (UplinkToOfficeSwitch) confirmed
-          # disconnected by the user 2026-08-04 — dropped from all VLANs above, disabled here.
-          # 1/1/47-48 / 2/1/47-48 are the orphaned members of the old lag11/lag12 (both
-          # already gone from live running-config, never actually reached by any LAG task
-          # above) — confirmed link-down/admin-disabled live; disabled explicitly here so
-          # they don't silently come up as untagged default-VLAN access ports.
+          # 1/1/4 (xswlab access port) and 1/1/44 (UplinkToOfficeSwitch) confirmed disconnected
+          # by the user 2026-08-04 — dropped from all VLANs above, disabled here. 1/1/47-48 /
+          # 2/1/47-48 are the orphaned members of the old lag11/lag12 (both already absent from
+          # live running-config; only their stale port-names lingered above) — confirmed
+          # link-down/admin-disabled live; disabled explicitly (and consistently — 2/1/47 was
+          # missing from this loop before, unlike its twin 1/1/47) so none of the five can
+          # silently come up as untagged default-VLAN access ports.
           name = "Disable unused/reserved/dead interfaces";
           "ansible.netcommon.cli_config" = {
             config = ''
@@ -530,7 +577,7 @@ in {
                disable
             '';
           };
-          loop = [ "1/1/4" "1/1/8" "1/1/9" "1/1/43" "1/1/44" "1/1/47" "1/1/48" "2/1/8" "2/1/9" "2/1/47" "2/1/48" ];
+          loop = ["1/1/4" "1/1/8" "1/1/9" "1/1/43" "1/1/44" "1/1/47" "1/1/48" "2/1/8" "2/1/9" "2/1/47" "2/1/48"];
         }
 
         # =========================================================
@@ -538,14 +585,12 @@ in {
         # =========================================================
         # admin-edge-port: skip STP listen/learn delay on ports that never have another
         # bridge behind them (applies across all VLANs the port/LAG participates in).
-        # stp-bpdu-guard: err-disable the port if it ever receives a BPDU — scoped only to
-        # the server LAGs, where the far end is verified STP=false Linux bridges (see
-        # nix/hosts/nixos/{xsvr1,xsvr2,xsvr3}/network.nix), plus the single-purpose infra
-        # ports (IPMI/KVM/UPS) — deliberately NOT applied to phone/FW-transit/Atlas ports,
-        # where there's less certainty nothing switch-like is ever patched in.
-        # root-protect: refuse to become root port here, guaranteeing xswcore stays root
-        # even if a downstream switch's priority/MAC would otherwise win — this is the
-        # direct fix for the VLAN 19 root loss to the RF-cabinet switch found live.
+        # stp-bpdu-guard: err-disable the port if it ever receives a BPDU — scoped only to the
+        # server LAGs, where the far end is verified STP=false Linux bridges, plus the
+        # single-purpose infra ports (IPMI/KVM/UPS) — deliberately NOT applied to phone/FW-
+        # transit/Atlas ports, where there's less certainty nothing switch-like is patched in.
+        # root-protect: refuse to become root port here, guaranteeing xswcore stays root even
+        # if a downstream switch's priority/MAC would otherwise win.
 
         {
           name = "Mark server-facing LAGs as edge ports (all VLANs)";
@@ -556,7 +601,7 @@ in {
                stp-bpdu-guard
             '';
           };
-          loop = [ "1" "2" "3" "14" ];
+          loop = ["1" "2" "3" "4" "14"];
         }
 
         {
@@ -568,7 +613,7 @@ in {
                stp-bpdu-guard
             '';
           };
-          loop = [ "1/1/2" "2/1/1" "2/1/2" "1/1/25" "1/1/26" "1/1/27" ];
+          loop = ["1/1/2" "2/1/1" "2/1/2" "1/1/25" "1/1/26" "1/1/27"];
         }
 
         {
@@ -580,21 +625,21 @@ in {
             '';
           };
           loop = [
-            "1/1/1" "1/1/11" "1/1/13" "1/1/14" "1/1/35" "1/1/37" "1/1/40" "1/1/45"
+            "1/1/1" "1/1/3" "1/1/11" "1/1/13" "1/1/14" "1/1/35" "1/1/37" "1/1/40" "1/1/45"
             "2/1/3" "2/1/13" "2/1/20" "2/1/21" "2/1/22" "2/1/23" "2/1/24" "2/1/25"
             "2/1/36" "2/1/44" "2/1/45"
           ];
         }
 
         {
-          name = "Enable root-guard on downstream-switch-facing LAGs (rfcab/xswlab/xswoffce)";
+          name = "Enable root-guard on downstream-switch-facing LAGs (rfcab/xswlab)";
           "ansible.netcommon.cli_config" = {
             config = ''
               interface lag {{ item }}
                spanning-tree root-protect
             '';
           };
-          loop = [ "6" "13" "15" ];
+          loop = ["6" "13"];
         }
 
         {
@@ -605,7 +650,7 @@ in {
                legacy-inline-power
             '';
           };
-          loop = [ "1/1/35" "1/1/45" ];
+          loop = ["1/1/35" "1/1/45"];
         }
 
         {
@@ -616,7 +661,7 @@ in {
                no inline power
             '';
           };
-          loop = [ "1/1/40" "2/1/29" ];
+          loop = ["1/1/40" "2/1/29"];
         }
 
         {
@@ -636,6 +681,16 @@ in {
             config = ''
               interface ve 14
                ip address 172.18.4.100 255.255.255.0
+            '';
+          };
+        }
+
+        {
+          name = "Configure VE 20 IP address (server subnet — enables direct TFTP to xsvr1)";
+          "ansible.netcommon.cli_config" = {
+            config = ''
+              interface ve 20
+               ip address 172.20.1.200 255.255.255.0
             '';
           };
         }

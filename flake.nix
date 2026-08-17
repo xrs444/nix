@@ -387,6 +387,14 @@
           xdt3-r = nixible_lib.mkNixibleCli ./hosts/nixable/xdt3-r/default.nix;
           xdash1 = nixible_lib.mkNixibleCli ./hosts/nixable/xdash1/default.nix;
           xfw = nixible_lib.mkNixibleCli ./hosts/nixable/xfw/default.nix;
+          # Newly wired in 2026-08-17 — default.nix existed but was never registered here,
+          # so it silently drifted from the hand-maintained playbook.yml/inventory.yml this
+          # switch was actually deployed from. Now a faithful mirror of playbook.yml. Needs
+          # ANSIBLE_TERMINAL_PLUGINS/ANSIBLE_CLICONF_PLUGINS env vars pointed at
+          # hosts/nixable/xswcore/plugins/{terminal,cliconf} to work — the justfile recipes
+          # set these; verify `nix run .#xswcore` end-to-end before retiring the old
+          # playbook.yml-based recipes.
+          xswcore = nixible_lib.mkNixibleCli ./hosts/nixable/xswcore/default.nix;
         }
       );
 
