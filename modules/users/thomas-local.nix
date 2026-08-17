@@ -28,10 +28,9 @@
 
   users.groups.thomas-local = { };
 
-  # Disable Kanidm PAM completely when using local authentication
-  services.kanidm.unix.enable = false;
-
-  # Ensure standard PAM configuration for local authentication
+  # thomas-local is the break-glass account: its keys and password must keep
+  # working even when Kanidm PAM/NSS is enabled on a host, so local unix auth
+  # stays first in the PAM stack.
   # (sshd.unixAuth is derived automatically from services.openssh.settings.PasswordAuthentication)
   security.pam.services.login.unixAuth = true;
 

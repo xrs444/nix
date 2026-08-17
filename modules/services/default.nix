@@ -12,6 +12,7 @@
     ./determinate-nix
     ./bird-bgp
     ./flakehub-auth
+    ./fwupd
     ./github-runner
     ./iprouting
     ./kanidm
