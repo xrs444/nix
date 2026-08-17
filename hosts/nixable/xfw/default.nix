@@ -73,18 +73,22 @@ in {
           name = "Bootstrap python3 (required for all other Ansible modules)";
           raw = "which python3 || (apt-get update && apt-get install -y python3)";
           changed_when = false;
+          tags = ["always"];
         }
         {
           name = "Gather facts";
           setup = {};
+          tags = ["always"];
         }
         {
           name = "Verify connectivity";
           ping = {};
+          tags = ["always"];
         }
         {
           name = "Display host information";
           debug.msg = "Connected to {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})";
+          tags = ["always"];
         }
         {
           # Docker itself is a Firewalla-managed feature (enable it via the
@@ -93,6 +97,7 @@ in {
           name = "Verify Docker is available (enable via the Firewalla app if this fails)";
           "ansible.builtin.command" = "docker --version";
           changed_when = false;
+          tags = ["always"];
         }
         {
           name = "Create Scanopy daemon compose + config directories (Firewalla's sanctioned Docker location)";
@@ -107,6 +112,7 @@ in {
             daemonComposeDir
             daemonConfigDir
           ];
+          tags = ["scanopy"];
         }
         {
           # scanopy_daemon_api_key is intentionally NOT defaulted — it's
@@ -115,6 +121,10 @@ in {
           # variable rather than silently deploying an empty/placeholder
           # key. Pass it explicitly: nix run .#xfw -- --extra-vars
           # scanopy_daemon_api_key=<key-from-ui>
+          # While Scanopy is being rebuilt (corrupted storage, separate
+          # session) and no key exists yet, deploy everything else with
+          # `nix run .#xfw -- --tags node-exporter` to skip this task and
+          # the rest of the scanopy-tagged ones without failing the play.
           name = "Deploy docker-compose.yml for the Scanopy daemon";
           "ansible.builtin.copy" = {
             dest = "${daemonComposeDir}/docker-compose.yml";
@@ -173,6 +183,7 @@ in {
                     - "scanopy.xrs444.net:172.21.0.2"
             '';
           };
+          tags = ["scanopy"];
         }
         {
           name = "Create node_exporter compose directory (Firewalla's sanctioned Docker location)";
@@ -183,6 +194,7 @@ in {
             group = "pi";
             mode = "0755";
           };
+          tags = ["node-exporter"];
         }
         {
           # Host OS metrics for xfw itself (CPU/mem/disk/net of the Firewalla
@@ -222,6 +234,7 @@ in {
                     - /:/host/root:ro
             '';
           };
+          tags = ["node-exporter"];
         }
         {
           # post_main.d does not exist by default — must be created first
@@ -234,6 +247,7 @@ in {
             group = "pi";
             mode = "0755";
           };
+          tags = ["always"];
         }
         {
           # Firewalla's own boot process doesn't guarantee arbitrary systemd
@@ -257,6 +271,7 @@ in {
               docker compose up -d
             '';
           };
+          tags = ["scanopy"];
         }
         {
           name = "Deploy boot-persistence hook for node_exporter (Firewalla's post_main.d convention)";
@@ -275,6 +290,7 @@ in {
               docker compose up -d
             '';
           };
+          tags = ["node-exporter"];
         }
         {
           # Docker isn't always running by default on Firewalla (confirmed
@@ -286,6 +302,7 @@ in {
             name = "docker";
             state = "started";
           };
+          tags = ["always"];
         }
         {
           name = "Start the Scanopy daemon now (don't wait for a reboot)";
@@ -294,6 +311,7 @@ in {
             chdir = daemonComposeDir;
           };
           changed_when = true;
+          tags = ["scanopy"];
         }
         {
           name = "Start node_exporter now (don't wait for a reboot)";
@@ -302,6 +320,7 @@ in {
             chdir = nodeExporterComposeDir;
           };
           changed_when = true;
+          tags = ["node-exporter"];
         }
       ];
     }
