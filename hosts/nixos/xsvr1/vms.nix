@@ -35,7 +35,12 @@ let
       <driver name='qemu' type='${drive.driverType or "raw"}'/>
       <source dev='${drive.path}'/>
       <target dev='${drive.target or "sdb"}' bus='${drive.bus or "sata"}'/>
-      <address type='drive'/>
+      ${
+        # virtio disks are PCI devices -- a 'drive'-type address (meant for
+        # IDE/SATA controller addressing) is invalid on them and libvirt
+        # rejects the whole XML. Let libvirt auto-assign a PCI slot instead.
+        if (drive.bus or "sata") == "virtio" then "" else "<address type='drive'/>"
+      }
     </disk>
   '';
 
