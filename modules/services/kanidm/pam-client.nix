@@ -56,11 +56,15 @@ in
       unix.settings = {
         kanidm.pam_allowed_login_groups = cfg.allowedLoginGroups;
         home_prefix = "/home";
-        home_attr = "uuid";
-        home_alias = "spn";
+        # "name" (short username, e.g. "samantha") not "spn" (which would be
+        # "samantha@idm.xrs444.net") -- spn was the original default, but it
+        # meant the short username silently fell through NSS `kanidm` (no
+        # match) to `files`, authenticating against any pre-existing local
+        # account of the same name instead of Kanidm. See bug-634.
+        home_attr = "name";
         use_etc_skel = false;
-        uid_attr_map = "spn";
-        gid_attr_map = "spn";
+        uid_attr_map = "name";
+        gid_attr_map = "name";
       };
     };
 

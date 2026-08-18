@@ -18,8 +18,13 @@
   networking.hostName = "xlt2-s";
   nixpkgs.config.allowUnfree = true;
 
-  # Kanidm PAM/NSS login (kanidm-unixd). See nix/modules/services/kanidm/pam-client.nix.
-  # samantha and xrs444 are in the xlt2-s-admin Kanidm group (sudo); rowan and
-  # greyson are in the plain xlt2-s group (login only). See provision.nix.
-  homeprod.kanidm.enablePamLogin = true;
+  # Kanidm PAM/NSS login (kanidm-unixd) — DISABLED for now (2026-08-17).
+  # Short-username resolution collides with the local `samantha` account that
+  # home-manager's flake.nix wiring (user = "samantha") depends on, and the
+  # sops-managed vikunja secret is chowned to "samantha" before kanidm-unixd
+  # is even up, so it'd resolve to the wrong uid once she logs in via Kanidm.
+  # Needs a proper migration (home-manager rewiring + secret ownership fix)
+  # before re-enabling. See modules/services/kanidm/pam-client.nix and
+  # .wolf/buglog.json bug-634/bug-635.
+  homeprod.kanidm.enablePamLogin = false;
 }
