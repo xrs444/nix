@@ -158,8 +158,18 @@ let
             set -eu
             mkdir -p /etc/libvirt/qemu
             cp -f ${xmlFile} /etc/libvirt/qemu/${vm.name}.xml
-            virsh define /etc/libvirt/qemu/${vm.name}.xml || true
-            ${lib.optionalString vm.autostart "virsh autostart ${vm.name} || true"}
+
+            # Preserve the already-persisted domain UUID (if any). The generated
+            # XML has no <uuid>, and defining a same-name domain without one can
+            # conflict with libvirt's existing record ("already exists with uuid
+            # X") -- silently, if the caller swallows the error. Pin it explicitly
+            # so redefines always update in place instead of racing that conflict.
+            if existing_uuid=$(virsh domuuid "${vm.name}" 2>/dev/null); then
+              sed -i "s#<name>${vm.name}</name>#<name>${vm.name}</name>\n  <uuid>$existing_uuid</uuid>#" /etc/libvirt/qemu/${vm.name}.xml
+            fi
+
+            virsh define /etc/libvirt/qemu/${vm.name}.xml
+            ${lib.optionalString vm.autostart "virsh autostart ${vm.name}"}
           '';
         };
       };
@@ -179,9 +189,14 @@ let
           ExecStart = pkgs.writeShellScript "update-vm-${vm.name}" ''
             set -eu
             autostart="disable"  # Initialize with default value
+            existing_uuid=""
             # Check if VM exists and get autostart status
             if virsh dominfo "${vm.name}" >/dev/null 2>&1; then
               autostart=$(virsh dominfo "${vm.name}" | grep "Autostart:" | awk '{print $2}') || echo "disable"
+              # Capture the UUID before undefining so the redefine below can pin
+              # it -- otherwise a same-name domain with no <uuid> in its XML can
+              # conflict with libvirt's existing record on define.
+              existing_uuid=$(virsh domuuid "${vm.name}" 2>/dev/null || echo "")
               # Try to undefine only when fully stopped
               state=$(virsh domstate "${vm.name}" 2>/dev/null || echo "undefined")
               if [ "$state" = "shut off" ] || [ "$state" = "undefined" ]; then
@@ -193,11 +208,16 @@ let
                 }
               fi
             fi
+            # Pin the previous UUID (if any) so this redefine updates the same
+            # domain record instead of racing an "already exists" conflict.
+            if [ -n "$existing_uuid" ]; then
+              sed -i "s#<name>${vm.name}</name>#<name>${vm.name}</name>\n  <uuid>$existing_uuid</uuid>#" "/etc/libvirt/qemu/${vm.name}.xml"
+            fi
             # Define the VM
-            virsh define "/etc/libvirt/qemu/${vm.name}.xml" || true
+            virsh define "/etc/libvirt/qemu/${vm.name}.xml"
             # Restore autostart if it was enabled
             if [ "$autostart" = "yes" ]; then
-              virsh autostart "${vm.name}" || true
+              virsh autostart "${vm.name}"
             fi
           '';
         };
