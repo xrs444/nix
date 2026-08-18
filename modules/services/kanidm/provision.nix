@@ -652,6 +652,7 @@
         groups = [
           "admins"
           "posix_users"
+          "xlt2-s-admin"
         ];
       };
       "samantha" = {
@@ -661,6 +662,7 @@
         groups = [
           "admins"
           "posix_users"
+          "xlt2-s-admin"
         ];
       };
       "rowan" = {
@@ -670,6 +672,7 @@
         groups = [
           "users"
           "posix_users"
+          "xlt2-s"
         ];
       };
       "greyson" = {
@@ -679,6 +682,7 @@
         groups = [
           "users"
           "posix_users"
+          "xlt2-s"
         ];
       };
       # Synthetic monitoring account — used by Windmill to perform OIDC authorize

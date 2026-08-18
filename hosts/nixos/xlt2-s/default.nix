@@ -17,4 +17,9 @@
 
   networking.hostName = "xlt2-s";
   nixpkgs.config.allowUnfree = true;
+
+  # Kanidm PAM/NSS login (kanidm-unixd). See nix/modules/services/kanidm/pam-client.nix.
+  # samantha and xrs444 are in the xlt2-s-admin Kanidm group (sudo); rowan and
+  # greyson are in the plain xlt2-s group (login only). See provision.nix.
+  homeprod.kanidm.enablePamLogin = true;
 }

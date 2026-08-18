@@ -64,8 +64,12 @@ in
       };
     };
 
-    # Create home directories on first login
-    security.pam.makeHomeDir.enable = true;
+    # Create home directories on first login. This nixpkgs pin has no global
+    # `security.pam.makeHomeDir.enable` toggle — set it per PAM service that
+    # authenticates interactive logins (console/su, SSH, GDM password).
+    security.pam.services.login.makeHomeDir = true;
+    security.pam.services.sshd.makeHomeDir = lib.mkIf config.services.openssh.enable true;
+    security.pam.services.gdm-password.makeHomeDir = lib.mkIf config.services.displayManager.gdm.enable true;
 
     services.openssh = lib.mkIf cfg.distributeSshKeys {
       # Additive to AuthorizedKeysFile: sshd consults both, so nix-static keys

@@ -11,6 +11,7 @@
     ./thomas-local.nix
     ./xrs444.nix
     ./deploy.nix
+    ../services/kanidm/pam-client.nix
   ]
   ++ lib.optional (!minimalImage) ./builder.nix
   # Samantha's account only exists on her own laptop, not fleet-wide like
