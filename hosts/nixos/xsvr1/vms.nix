@@ -16,10 +16,12 @@ let
       };
       extraDrives = [
         {
-          path = "/dev/disk/by-id/ata-CT1000MX500SSD1_2410E89C985C";
+          # Replaced 2026-08-17: old MX500 SATA drive (ata-CT1000MX500SSD1_2410E89C985C)
+          # swapped for NVMe. by-path (not by-id) so future same-slot swaps need no config change.
+          path = "/dev/disk/by-path/pci-0000:10:00.0-nvme-1";
           device = "disk";
-          bus = "sata";
-          target = "sdb";
+          bus = "virtio";
+          target = "vdb";
           driverType = "raw";
         }
       ];
