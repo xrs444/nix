@@ -60,6 +60,13 @@ in
       # instant commands — test, beeper, delayed shutdown) over plain
       # RFC1628 UPS-MIB when available; that's the point of a separate RW
       # credential vs. snmp-exporter's read-only one.
+      #
+      # authProtocol/privProtocol are MD5/DES, not SHA/AES: the card's
+      # SNMPv3 UI takes no protocol selection (fixed internally) — confirmed
+      # by testing every combination net-snmp's snmpget supports directly
+      # against xups.lan; only MD5+DES got a real response, everything else
+      # timed out. See the matching note on snmpv3_ro in flux's
+      # configmap-snmp-exporter.yaml.
       ups.xups-rack = {
         driver = "snmp-ups";
         port = "xups.lan";
@@ -69,9 +76,9 @@ in
           "snmp_version = v3"
           "secLevel = authPriv"
           "secName = ${rwSnmpv3Username}"
-          "authProtocol = SHA"
+          "authProtocol = MD5"
           "authPassword = @SNMPV3_RW_AUTHPASS@"
-          "privProtocol = AES"
+          "privProtocol = DES"
           "privPassword = @SNMPV3_RW_PRIVPASS@"
         ];
       };
