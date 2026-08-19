@@ -1,5 +1,5 @@
 # Nixible configuration for xfw (Firewalla Gold Pro — edge firewall/router,
-# default gateway ".250" on every VLAN). Deploys two Docker containers:
+# default gateway ".250" on every VLAN). Deploys four Docker containers:
 # - Scanopy scanning daemon, giving it the widest possible L2/L3 network view
 #   of any host in the fleet (no NixOS host or k8s node reaches more than two
 #   subnets — see the Scanopy deployment plan).
@@ -8,6 +8,33 @@
 #   which polls Firewalla's MSP *cloud* API for box/device/alarm telemetry
 #   and runs as an ordinary k8s Deployment (no flash-wear concern there —
 #   only containers running ON this box need the stateless treatment below).
+# - Tailscale, replacing the xts1/xts2 SBC pair as subnet router + exit node.
+#   Running it on xfw (the actual gateway/NAT box) rather than a downstream
+#   SBC eliminates the exit-node + subnet-router-without-SNAT conflict and
+#   the 172.16.0.0/12 table-52 policy-routing hazard those SBCs hit — see
+#   nix/modules/services/tailscale/default.nix's inline history for that
+#   design and cerebrum 341-358. xfw already does LAN routing/NAT/forwarding
+#   for the whole network, so nothing extra is needed for kernel forwarding
+#   (unlike a plain container host) and there's no BGP/keepalived HA
+#   apparatus to run — the gateway's availability already gates the network.
+# - dns-forwarder, a small dnsmasq instance bound specifically to tailscale0.
+#   Needed because Firewalla runs one dnsmasq PER VLAN (confirmed live via
+#   `ps aux`), each with `interface=bond0.X` + `bind-interfaces` -- so none of
+#   them answer queries arriving via the tunnel (tailscale0), even though the
+#   destination IP (e.g. 172.18.10.250) is reachable and pings fine -- the
+#   query never reaches a bound listener, which looks like a timeout to the
+#   client (confirmed live 2026-08-19 via `dig`/`conntrack`/`ss -ulnp`).
+#   Firewalla's own native VPN server hits the identical problem and solves
+#   it the same way: a resolver bound to its own tunnel interface, pushing a
+#   VPN-subnet address (10.200.221.1) to its clients rather than reusing the
+#   per-VLAN instances. This mirrors that pattern for the tailnet: binds only
+#   to tailscale0, forwards `lan`/`xrs444.net` to Firewalla's real resolver
+#   (172.18.10.250 -- safe/fast since THIS query is locally-originated from
+#   xfw itself, not forwarded/NAT'd through, so it doesn't hit the same
+#   interface-binding wall), and forwards everything else to public
+#   resolvers directly. Point the Tailscale admin console's DNS settings
+#   (lan Split DNS, xrs444.net Split DNS, and Global Nameservers) at xfw's
+#   own tailscale IP instead of 172.18.10.250 once this is deployed.
 #
 # Firewalla runs Ubuntu 22.04 with an SSH-accessible "pi" user (confirmed live
 # — the vendor's own docs said "Debian Linux", which was imprecise/wrong).
@@ -40,6 +67,14 @@
   daemonConfigDir = "${daemonComposeDir}/config";
   # node_exporter is fully stateless -- no config dir needed, unlike Scanopy.
   nodeExporterComposeDir = "/home/pi/.firewalla/run/docker/node-exporter";
+  tailscaleComposeDir = "/home/pi/.firewalla/run/docker/tailscale";
+  # tailscaled's own state (identity/keys/netmap) -- low-write, like Scanopy's
+  # config dir, not chatty like a log. Must persist across container recreate
+  # or every redeploy re-triggers a fresh device enrollment.
+  tailscaleStateDir = "${tailscaleComposeDir}/state";
+  # dns-forwarder is fully stateless (just a forwarding policy) -- no
+  # persistent dir needed, same as node_exporter.
+  dnsForwarderComposeDir = "/home/pi/.firewalla/run/docker/dns-forwarder";
 in {
   collections = common.collections // {};
 
@@ -237,6 +272,170 @@ in {
           tags = ["node-exporter"];
         }
         {
+          name = "Create Tailscale compose + state directories (Firewalla's sanctioned Docker location)";
+          "ansible.builtin.file" = {
+            path = "{{ item }}";
+            state = "directory";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+          };
+          loop = [
+            tailscaleComposeDir
+            tailscaleStateDir
+          ];
+          tags = ["tailscale"];
+        }
+        {
+          # Kernel-mode networking (TS_USERSPACE=false) + network_mode: host +
+          # /dev/net/tun gives real subnet-router/exit-node throughput, matching
+          # the bare-host NixOS setup this replaces -- not the slower userspace
+          # fallback. network_mode: host means Docker's own `sysctls:` key can't
+          # be used here (rejected: "network sysctls are not allowed with host
+          # network mode") -- that's fine, xfw is the LAN gateway and already has
+          # IPv4/IPv6 forwarding enabled to route the whole network, so no extra
+          # sysctl work is needed here (unlike a non-gateway container host).
+          # Flags mostly mirror nix/modules/services/tailscale/default.nix's
+          # exit-node role (same advertised routes, --accept-dns=false since
+          # xfw runs its own dnsmasq) minus the BGP/keepalived HA machinery,
+          # which existed only to make a *non-gateway* subnet router highly
+          # available -- unnecessary here since the gateway's own availability
+          # already gates the network.
+          #
+          # Deliberately NOT --snat-subnet-routes=false, unlike xts1/xts2:
+          # that flag was carried over from the SBC design without
+          # re-examining it for this host and caused real subnet-routed
+          # traffic to be unreachable (verified live 2026-08-19). Firewalla's
+          # own FR_FORWARD/FW_FORWARD ACL chains key off which of its
+          # configured networks/VLANs traffic belongs to; un-SNAT'd packets
+          # arriving from 100.64.0.0/10 don't match any of them. SNAT (the
+          # default) rewrites forwarded packets to xfw's own address before
+          # they hit the LAN, which Firewalla implicitly trusts as its own
+          # router traffic -- matching the community reference script
+          # (mbierman/firewalla-tailscale-docker), which achieves the same
+          # thing via a manual `iptables -t nat -A POSTROUTING -s
+          # 100.64.0.0/10 -j MASQUERADE` rule; omitting the flag here lets
+          # tailscaled manage the equivalent NAT itself instead. Trade-off:
+          # Firewalla's flow logs/future per-device ACLs see xfw as the
+          # traffic source, not the real Tailscale client IP.
+          name = "Deploy docker-compose.yml for Tailscale";
+          "ansible.builtin.copy" = {
+            dest = "${tailscaleComposeDir}/docker-compose.yml";
+            owner = "pi";
+            group = "pi";
+            mode = "0644";
+            content = ''
+              name: tailscale
+              services:
+                tailscale:
+                  image: tailscale/tailscale:v1.102.2
+                  container_name: tailscale
+                  hostname: xfw
+                  network_mode: host
+                  restart: unless-stopped
+                  logging:
+                    driver: json-file
+                    options:
+                      max-size: "5m"
+                      max-file: "3"
+                  cap_add:
+                    - NET_ADMIN
+                    - NET_RAW
+                  devices:
+                    - /dev/net/tun:/dev/net/tun
+                  environment:
+                    TS_HOSTNAME: xfw
+                    TS_STATE_DIR: /var/lib/tailscale
+                    TS_USERSPACE: "false"
+                    TS_ACCEPT_DNS: "false"
+                    # Only consumed on first bring-up (Tailscale ignores it once
+                    # the state dir already holds an authenticated identity), so
+                    # default to empty -- unlike Scanopy's API key, re-running
+                    # this tag later shouldn't require re-supplying a live key.
+                    # First run: nix run .#xfw -- --tags tailscale --extra-vars
+                    # tailscale_authkey=<key-from-admin-console>
+                    TS_AUTHKEY: '{{ tailscale_authkey | default("") }}'
+                    # --reset: `tailscale up` otherwise refuses to apply a
+                    # flag change that drops a previously-set non-default
+                    # flag (e.g. removing --snat-subnet-routes=false) unless
+                    # every non-default flag is restated -- without --reset
+                    # it errors out on every container start once prefs
+                    # differ from TS_EXTRA_ARGS, crash-looping forever
+                    # (confirmed live 2026-08-19: "requires mentioning all
+                    # non-default flags"). --reset makes each start
+                    # authoritative: TS_EXTRA_ARGS always fully replaces
+                    # whatever was previously set, matching how this file is
+                    # meant to be used (declarative, not incremental).
+                    TS_EXTRA_ARGS: >-
+                      --reset
+                      --advertise-exit-node
+                      --advertise-routes=172.16.0.0/12,2600:8800:218d:9a00::/56
+                      --accept-dns=false
+                  volumes:
+                    - ${tailscaleStateDir}:/var/lib/tailscale
+            '';
+          };
+          tags = ["tailscale"];
+        }
+        {
+          name = "Create dns-forwarder compose directory (Firewalla's sanctioned Docker location)";
+          "ansible.builtin.file" = {
+            path = dnsForwarderComposeDir;
+            state = "directory";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+          };
+          tags = ["dns-forwarder"];
+        }
+        {
+          # Binds only to tailscale0 (network_mode: host, same as the
+          # tailscale container -- shares the host netns so tailscale0 is
+          # directly visible here even though a different container created
+          # it). `lan`/`xrs444.net` forward to Firewalla's real per-VLAN
+          # resolver (172.18.10.250) -- this query is locally-originated
+          # from xfw itself, so it doesn't hit the interface-binding wall
+          # that blocks tunnel-forwarded queries to the same address.
+          # Everything else forwards straight to public resolvers, replacing
+          # 172.18.10.250's role as Global Nameserver for the tailnet too,
+          # since that's equally unreachable from tunnel clients.
+          name = "Deploy docker-compose.yml for dns-forwarder";
+          "ansible.builtin.copy" = {
+            dest = "${dnsForwarderComposeDir}/docker-compose.yml";
+            owner = "pi";
+            group = "pi";
+            mode = "0644";
+            content = ''
+              name: dns-forwarder
+              services:
+                dns-forwarder:
+                  image: 4km3/dnsmasq:2.90-r3
+                  container_name: dns-forwarder
+                  network_mode: host
+                  restart: unless-stopped
+                  cap_add:
+                    - NET_ADMIN
+                  logging:
+                    driver: json-file
+                    options:
+                      max-size: "5m"
+                      max-file: "3"
+                  command:
+                    - -k
+                    - --interface=tailscale0
+                    - --bind-interfaces
+                    - --no-resolv
+                    - --no-hosts
+                    - --log-facility=-
+                    - --server=/lan/172.18.10.250
+                    - --server=/xrs444.net/172.18.10.250
+                    - --server=1.1.1.1
+                    - --server=8.8.8.8
+            '';
+          };
+          tags = ["dns-forwarder"];
+        }
+        {
           # post_main.d does not exist by default — must be created first
           # (confirmed live), matching the vendor tutorial's own `mkdir` step.
           name = "Ensure Firewalla's post_main.d boot-hook directory exists";
@@ -293,6 +492,49 @@ in {
           tags = ["node-exporter"];
         }
         {
+          name = "Deploy boot-persistence hook for Tailscale (Firewalla's post_main.d convention)";
+          "ansible.builtin.copy" = {
+            dest = "/home/pi/.firewalla/config/post_main.d/start_tailscale.sh";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+            content = ''
+              #!/bin/bash
+              # Deployed by nix/hosts/nixable/xfw/default.nix — starts Tailscale
+              # (subnet router + exit node) on every Firewalla boot. Safe to re-run.
+              set -e
+              sudo systemctl start docker
+              cd ${tailscaleComposeDir}
+              docker compose up -d
+            '';
+          };
+          tags = ["tailscale"];
+        }
+        {
+          # Named to sort after start_tailscale.sh (post_main.d scripts run in
+          # glob order) so tailscale0 likely already exists when this starts --
+          # not guaranteed, but harmless either way since restart:unless-stopped
+          # self-heals: if dnsmasq fails to bind on first try, Docker just
+          # restarts it until tailscale0 shows up.
+          name = "Deploy boot-persistence hook for dns-forwarder (Firewalla's post_main.d convention)";
+          "ansible.builtin.copy" = {
+            dest = "/home/pi/.firewalla/config/post_main.d/start_tailscale_z_dns_forwarder.sh";
+            owner = "pi";
+            group = "pi";
+            mode = "0755";
+            content = ''
+              #!/bin/bash
+              # Deployed by nix/hosts/nixable/xfw/default.nix — starts the
+              # tailscale0 DNS forwarder on every Firewalla boot. Safe to re-run.
+              set -e
+              sudo systemctl start docker
+              cd ${dnsForwarderComposeDir}
+              docker compose up -d
+            '';
+          };
+          tags = ["dns-forwarder"];
+        }
+        {
           # Docker isn't always running by default on Firewalla (confirmed
           # live: "Cannot connect to the Docker daemon" even though the CLI
           # is present) — the vendor's own post_main.d boot script explicitly
@@ -321,6 +563,24 @@ in {
           };
           changed_when = true;
           tags = ["node-exporter"];
+        }
+        {
+          name = "Start Tailscale now (don't wait for a reboot)";
+          "ansible.builtin.command" = {
+            cmd = "docker compose up -d";
+            chdir = tailscaleComposeDir;
+          };
+          changed_when = true;
+          tags = ["tailscale"];
+        }
+        {
+          name = "Start dns-forwarder now (don't wait for a reboot)";
+          "ansible.builtin.command" = {
+            cmd = "docker compose up -d";
+            chdir = dnsForwarderComposeDir;
+          };
+          changed_when = true;
+          tags = ["dns-forwarder"];
         }
       ];
     }
