@@ -261,18 +261,13 @@ in
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
 
-    # vocibuild is on Oracle Cloud — reachable via Tailscale only.
-    # xsvr1 can't route 100.64.0.0/10 directly; proxy through the xts VIP (172.18.10.100).
-    # xts1/xts2 form an HA pair; the VIP floats between them via VRRP. Using the VIP instead
-    # of xts1.lan directly means vocibuild stays reachable if xts1 is down and xts2 holds the VIP.
-    # StrictHostKeyChecking=no for the VIP because the presented key changes on failover.
-    Host vocibuild.xrs444.net
-      ProxyJump builder@172.18.10.100
-    Host 172.18.10.100
-      User builder
-      IdentityFile /etc/ssh/id_builder
-      StrictHostKeyChecking no
-      UserKnownHostsFile /dev/null
+    # vocibuild is on Oracle Cloud — reachable via Tailscale only. Previously
+    # required a ProxyJump through the xts1/xts2 keepalived VIP (172.18.10.100)
+    # because xsvr1 couldn't route 100.64.0.0/10 directly; that need went away
+    # once Tailscale moved to xfw (the LAN gateway) — xsvr1 now reaches
+    # vocibuild's tailnet IP directly through xfw's normal routing/NAT, no
+    # proxy hop required (confirmed live 2026-08-19). Falls through to the
+    # generic build-host Host block above for User/IdentityFile.
   '';
 
   # Known host keys for the build machines — prevents host key verification failures

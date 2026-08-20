@@ -135,9 +135,7 @@
           type = "nixos";
           enableHomeManager = false;
           roles = [
-            "iprouting"
             "letsencrypt-host"
-            "tailscale-exit-node"
             "monitoring-client"
             "auto-upgrade"
           ];
@@ -149,7 +147,6 @@
           enableHomeManager = false;
           roles = [
             "letsencrypt-host"
-            "tailscale-exit-node"
             "monitoring-client"
             "auto-upgrade"
           ];
