@@ -193,7 +193,18 @@ in
     (lib.mkIf isNativeBuilder {
       text = ''
         # Custom Nix configuration for native aarch64 builder
-        extra-trusted-substituters = file:///zfs/nixcache/cache
+        # nixcache.xrs444.net (xsvr1's LAN-exposed cache) comes first so these remote/cloud
+        # builders (vocibuild, xlt1-t-vnixos) prefer the already-built LAN copy over the public
+        # cache — and keep working if cache.nixos.org has a DNS/reachability blip. Must be in
+        # both extra-substituters (actually queried) and extra-trusted-substituters (permitted);
+        # trusted alone is not enough, Nix silently never tries it. This exact fix (83155a1d +
+        # 913071df, 2026-08-04) was accidentally reverted the same day with no explanation and
+        # stayed dormant for two weeks — the CI outage this restores was bug-500's original
+        # failure mode recurring because the fix was never actually live. Restored 2026-08-20.
+        # file:///zfs/nixcache/cache is a no-op here (local-filesystem path, meaningless off xsvr1)
+        # but harmless to leave for parity with the QEMU-builder block above.
+        extra-substituters = http://nixcache.xrs444.net
+        extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
