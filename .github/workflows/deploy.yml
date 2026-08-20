@@ -58,8 +58,12 @@ jobs:
           ts() { date '+[%H:%M:%S]'; }
           HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t xlt2-s vocibuild)
           REMOTE_HOSTS=(xsvr2 xsvr3 xcomm1 xts1 xts2 xpbx1 xlt1-t-vnixos xdt1-t xlt2-s vocibuild)
-          FAILED=()
-          FAILED_DRVS=()
+          # Arch split so x86_64 hosts (built on xsvr1/xsvr2/xsvr3/xdt1-t) and
+          # aarch64 hosts (delegated to the native ARM builders xlt1-t-vnixos/
+          # vocibuild) build concurrently instead of one arch sitting idle while
+          # the other builds. See nix/modules/services/remotebuilds/default.nix.
+          X64_HOSTS=(xsvr1 xsvr2 xsvr3 xcomm1 xdt1-t xlt2-s)
+          ARM_HOSTS=(xts1 xts2 xpbx1 xlt1-t-vnixos vocibuild)
 
           # Pre-evaluate all host derivation paths in parallel (evaluation only — no building).
           # Stored so we can quickly check each host's transitive drv closure later
@@ -84,69 +88,103 @@ jobs:
           rm -rf "$EVAL_TMPDIR"
           echo "$(ts) ============================================"
 
-          for host in "${HOSTS[@]}"; do
-            echo "$(ts) Building $host..."
+          RESULTS_DIR=$(mktemp -d)
 
-            # Short-circuit: if a prior build failed, check whether this host's closure
-            # contains the same failing derivation before wasting a full build attempt.
-            # nix-store --query --requisites lists all transitive drv inputs of a .drv,
-            # so a hash match means this host would hit the identical build failure.
-            if [ ${#FAILED_DRVS[@]} -gt 0 ] && [ -n "${HOST_DRV[$host]:-}" ]; then
-              HOST_DEPS=$(nix-store --query --requisites "${HOST_DRV[$host]}" 2>/dev/null || true)
-              for failed_drv in "${FAILED_DRVS[@]}"; do
-                if echo "$HOST_DEPS" | grep -qxF "$failed_drv"; then
-                  echo "$(ts) $host: SKIPPED — closure shares previously failed derivation: $(basename "$failed_drv")"
-                  FAILED+=("$host")
-                  continue 2
-                fi
-              done
-            fi
+          # Builds one arch group's hosts sequentially (so a group never contends with
+          # itself for the same physical builder), while the other group's build_group
+          # runs concurrently in a sibling background process. Failed hosts for this
+          # group are written to $RESULTS_DIR/failed.<group> for the parent to collect.
+          build_group() {
+            local group="$1"; shift
+            local hosts=("$@")
+            local FAILED=()
+            local FAILED_DRVS=()
 
-            BUILD_LOG=$(mktemp)
-            # 40m circuit breaker: a remote builder (e.g. xlt1-t-vnixos, a laptop VM
-            # that goes offline without closing its connection) can otherwise hang
-            # this step for hours. timeout turns that into a normal build failure
-            # for this host instead of blocking the whole run.
-            timeout 40m nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
-              --log-format bar-with-logs \
-              --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
-              2>&1 | tee "$BUILD_LOG"
-            BUILD_RC=${PIPESTATUS[0]}
-            if [ $BUILD_RC -eq 124 ]; then
-              echo "$(ts) $host: BUILD TIMED OUT after 40m (builder likely unreachable)"
-            fi
+            for host in "${hosts[@]}"; do
+              echo "$(ts) [$group] Building $host..."
 
-            if [ $BUILD_RC -ne 0 ]; then
-              # Extract leaf-failing drv paths from Nix's error output and propagate
-              # them forward so subsequent hosts that share the same drv can be skipped.
-              mapfile -t NEW_FAILED_DRVS < <(
-                grep -oP "(?<=error: builder for ')(/nix/store/[^']+\.drv)(?=' failed)" "$BUILD_LOG" || true
-              )
-              if [ ${#NEW_FAILED_DRVS[@]} -gt 0 ]; then
-                FAILED_DRVS+=("${NEW_FAILED_DRVS[@]}")
-                printf "$(ts)   Tracking failed drv: %s\n" "${NEW_FAILED_DRVS[@]}"
+              # Short-circuit: if a prior build in this group failed, check whether this
+              # host's closure contains the same failing derivation before wasting a full
+              # build attempt. nix-store --query --requisites lists all transitive drv
+              # inputs of a .drv, so a hash match means this host would hit the identical
+              # build failure. Scoped per-group since x86 and aarch64 closures don't share drvs.
+              if [ ${#FAILED_DRVS[@]} -gt 0 ] && [ -n "${HOST_DRV[$host]:-}" ]; then
+                HOST_DEPS=$(nix-store --query --requisites "${HOST_DRV[$host]}" 2>/dev/null || true)
+                for failed_drv in "${FAILED_DRVS[@]}"; do
+                  if echo "$HOST_DEPS" | grep -qxF "$failed_drv"; then
+                    echo "$(ts) [$group] $host: SKIPPED — closure shares previously failed derivation: $(basename "$failed_drv")"
+                    FAILED+=("$host")
+                    continue 2
+                  fi
+                done
               fi
-              FAILED+=("$host")
-              echo "$(ts) $host: BUILD FAILED"
-              rm -f "$BUILD_LOG"
-              continue
-            fi
 
-            rm -f "$BUILD_LOG"
-            echo "$(ts) $host: BUILD OK"
-
-            # For remote hosts, also build and cache the deploy-rs activatable path.
-            # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
-            # toplevel. Evaluate via the same flake attribute deploy-rs uses so the
-            # signed hash matches exactly what gets pushed to the remote.
-            if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
-              echo "$(ts) $host: building deploy-rs activatable path..."
-              timeout 40m nix build --no-link \
+              BUILD_LOG=$(mktemp)
+              # 40m circuit breaker: a remote builder (e.g. xlt1-t-vnixos, a laptop VM
+              # that goes offline without closing its connection) can otherwise hang
+              # this step for hours. timeout turns that into a normal build failure
+              # for this host instead of blocking the whole run.
+              timeout 40m nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
                 --log-format bar-with-logs \
                 --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
-                ".#deploy.nodes.$host.profiles.system.path" 2>&1 || true
-            fi
+                2>&1 | tee "$BUILD_LOG"
+              BUILD_RC=${PIPESTATUS[0]}
+              if [ $BUILD_RC -eq 124 ]; then
+                echo "$(ts) [$group] $host: BUILD TIMED OUT after 40m (builder likely unreachable)"
+              fi
+
+              if [ $BUILD_RC -ne 0 ]; then
+                # Extract leaf-failing drv paths from Nix's error output and propagate
+                # them forward so subsequent hosts in this group that share the same
+                # drv can be skipped.
+                mapfile -t NEW_FAILED_DRVS < <(
+                  grep -oP "(?<=error: builder for ')(/nix/store/[^']+\.drv)(?=' failed)" "$BUILD_LOG" || true
+                )
+                if [ ${#NEW_FAILED_DRVS[@]} -gt 0 ]; then
+                  FAILED_DRVS+=("${NEW_FAILED_DRVS[@]}")
+                  printf "$(ts) [$group]   Tracking failed drv: %s\n" "${NEW_FAILED_DRVS[@]}"
+                fi
+                FAILED+=("$host")
+                echo "$(ts) [$group] $host: BUILD FAILED"
+                rm -f "$BUILD_LOG"
+                continue
+              fi
+
+              rm -f "$BUILD_LOG"
+              echo "$(ts) [$group] $host: BUILD OK"
+
+              # For remote hosts, also build and cache the deploy-rs activatable path.
+              # deploy-rs deploys .#deploy.nodes.$host.profiles.system.path, not the plain
+              # toplevel. Evaluate via the same flake attribute deploy-rs uses so the
+              # signed hash matches exactly what gets pushed to the remote.
+              if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
+                echo "$(ts) [$group] $host: building deploy-rs activatable path..."
+                timeout 40m nix build --no-link \
+                  --log-format bar-with-logs \
+                  --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+                  ".#deploy.nodes.$host.profiles.system.path" 2>&1 || true
+              fi
+            done
+
+            printf '%s\n' "${FAILED[@]}" > "$RESULTS_DIR/failed.$group"
+          }
+
+          # Run both arch groups concurrently. `( ... ) &` forks the current shell,
+          # so each subshell inherits build_group/HOST_DRV/HOSTS/etc. directly —
+          # no export needed. Each keeps its own local FAILED/FAILED_DRVS state.
+          build_group x64 "${X64_HOSTS[@]}" &
+          X64_PID=$!
+          build_group arm "${ARM_HOSTS[@]}" &
+          ARM_PID=$!
+          wait "$X64_PID" "$ARM_PID"
+
+          FAILED=()
+          for group in x64 arm; do
+            while IFS= read -r h; do
+              [ -n "$h" ] && FAILED+=("$h")
+            done < "$RESULTS_DIR/failed.$group"
           done
+          rm -rf "$RESULTS_DIR"
 
           if [ ${#FAILED[@]} -gt 0 ]; then
             echo "BUILD_FAILED_HOSTS=${FAILED[*]}" >> "$GITHUB_ENV"
