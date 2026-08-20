@@ -22,8 +22,10 @@
     ./monitoring
     ./nfs
     ./nixcache
+    ./nut
     ./oauth2-proxy
     ./openssh
+    ./rack-shutdown
     ./remotebuilds
     ./reverse-proxy
     ./ser2net
