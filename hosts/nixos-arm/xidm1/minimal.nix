@@ -1,4 +1,4 @@
-# Summary: Minimal SD image configuration for xts2; deploy with deploy-rs after boot.
+# Summary: Minimal SD image configuration for xidm1 (formerly xts2); deploy with deploy-rs after boot.
 {
   pkgs,
   lib,

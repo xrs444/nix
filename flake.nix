@@ -140,12 +140,13 @@
             "auto-upgrade"
           ];
         };
-        xts2 = {
+        xidm1 = {
           user = "thomas-local";
           platform = "aarch64-linux";
           type = "nixos";
           enableHomeManager = false;
           roles = [
+            "kanidm-replica"
             "letsencrypt-host"
             "monitoring-client"
             "auto-upgrade"

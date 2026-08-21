@@ -249,6 +249,16 @@ in
               partner_cert = "MIICAzCCAaigAwIBAgIBATAKBggqhkjOPQQDAjBMMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24xLTArBgNVBAMMJDFmYjkyMjY0LTBmZjctNDliMC05MGFlLWY5MTU5MDkwMzlhZDAeFw0yNjAxMDgxNzU4MjdaFw0zMDAxMDgxNzU4MjdaMEwxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjEtMCsGA1UEAwwkMWZiOTIyNjQtMGZmNy00OWIwLTkwYWUtZjkxNTkwOTAzOWFkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMsFu0wVzowyIZaytCgPcFJqjh-BDodBEpgfrJtEjo6C4itIJuXYTUmqBWa5zAnpUxlMXn1mz5UXL3oNrI4xC0aN7MHkwDAYDVR0TAQH_BAIwADAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTaOaPuXmtLDTJVv--VYBiQr9gHCTAbBgNVHREEFDASghB4c3ZyMi54cnM0NDQubmV0MAoGCCqGSM49BAMCA0kAMEYCIQCvP3s9DfH81b83-nltMaGlW7yXbmr2o8fj0PtcrKhExQIhAOXAQYkNNJCZWE8zVVSKsZxKYnoUdWRAvfZsNpbsLKW8";
               # Do NOT set automatic_refresh on primary
             };
+            # 3rd replica (xidm1, Sweet Potato SBC on the server VLAN) — last-resort
+            # idm VIP member, added 2026-08-21 (bootstrap in progress).
+            # INTENTIONALLY NOT YET ADDED HERE: this is the live SSO primary — an
+            # unverified/malformed partner_cert string risks a kanidm config-parse
+            # failure fleet-wide (~25 OAuth2 clients + PAM logins), so the entry is
+            # deferred to Phase B, once xidm1 has been deployed and
+            # `kanidmd show-replication-certificate` run on it to get its real cert.
+            # Add a "repl://xidm1.xrs444.net:8444" block here (same shape as xsvr2's
+            # above, no automatic_refresh) with that real value before xidm1 can
+            # replicate.
           };
         };
         client.settings = {

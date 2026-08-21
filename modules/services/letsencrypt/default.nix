@@ -26,7 +26,7 @@ let
     "xsvr3"
     "xcomm1"
     "xts1"
-    "xts2"
+    "xidm1"
     "xpbx1"
   ];
   # Provide a default for minimalImage if not defined
@@ -125,11 +125,12 @@ lib.mkIf (!minimalImage) {
             extraDomainNames = [
               "xsvr1.${domain}"
               "xsvr2.${domain}"
+              "xidm1.${domain}"
             ];
             postRun = ''
               set -e
               SSH="${pkgs.openssh}/bin/ssh -i ${config.sops.secrets.acme_ssh_private_key.path} -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-              for host in xsvr2.lan xsvr3.lan; do
+              for host in xsvr2.lan xsvr3.lan xidm1.lan; do
                 $SSH acme@$host "chmod 750 /var/lib/acme && mkdir -p /var/lib/acme/idm.${domain} && chmod 750 /var/lib/acme/idm.${domain}"
                 ${pkgs.rsync}/bin/rsync \
                   -rl \

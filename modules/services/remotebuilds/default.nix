@@ -304,14 +304,17 @@ in
       hostNames = [ "vocibuild.xrs444.net" "vocibuild" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMIFFm/zZIwJTu0f8Eny30jKsp93S6nngemziFi0mOsR";
     };
-    # Tailscale exit node pair — ProxyJump hosts for vocibuild.
-    # Refresh with: ssh-keyscan -t ed25519 xts1.lan xts2.lan (from xsvr1)
+    # xts1: former Tailscale exit-node pair member, still deployed directly.
+    # xidm1 (formerly xts2, renamed 2026-08-21): same host, same SSH host key —
+    # in-place rename kept it, no ssh-keyscan needed. Now a Kanidm replica on the
+    # server VLAN, deployed directly like xsvr1/2/3.
+    # Refresh with: ssh-keyscan -t ed25519 xts1.lan xidm1.lan (from xsvr1)
     "xts1.lan" = {
       hostNames = [ "xts1.lan" "xts1" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAJ61+bV3g7btEe0V4O5/a3GScuQYGaeAWHPFM6Yx5Dz";
     };
-    "xts2.lan" = {
-      hostNames = [ "xts2.lan" "xts2" ];
+    "xidm1.lan" = {
+      hostNames = [ "xidm1.lan" "xidm1" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM0xL67aVSeg+E+jyzgzz0uMekVBjDAOzR+Z/l2B45RU";
     };
   };
