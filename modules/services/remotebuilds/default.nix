@@ -12,7 +12,9 @@ let
     { name = "xsvr2"; maxJobs = 6; speedFactor = 1; aarch64 = false; native = false; } # Atom C3758 — binfmt unreliable under QEMU aarch64
     { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
     { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
-    { name = "xlt1-t-vnixos"; maxJobs = 4; speedFactor = 8; aarch64 = true; native = true; } # Native aarch64 VM — builds aarch64 without QEMU
+    # xlt1-t-vnixos temporarily removed from the builder pool 2026-08-21 — vocibuild
+    # covers aarch64-linux alone for now. Re-add when needed:
+    # { name = "xlt1-t-vnixos"; maxJobs = 4; speedFactor = 8; aarch64 = true; native = true; } # Native aarch64 VM — builds aarch64 without QEMU
     { name = "vocibuild"; maxJobs = 4; speedFactor = 6; aarch64 = true; native = true; } # Oracle Cloud A1 Flex (4 OCPUs, Neoverse N1) — native aarch64, no QEMU
   ];
   isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
@@ -50,7 +52,7 @@ in
   # Use emulatedSystems to get the base binfmt registration (magic bytes, etc),
   # then override specific settings below for sandbox compatibility.
   # binfmt/QEMU: only for x86 hosts that emulate aarch64 via QEMU.
-  # Native aarch64 builders (xlt1-t-vnixos) must NOT register a binfmt handler
+  # Native aarch64 builders (vocibuild) must NOT register a binfmt handler
   # for aarch64-linux — the kernel already executes it natively, and registering
   # a QEMU binfmt entry would intercept native binaries and run them under QEMU.
   boot.binfmt.emulatedSystems = lib.mkIf isQemuBuilder [
@@ -194,7 +196,7 @@ in
       text = ''
         # Custom Nix configuration for native aarch64 builder
         # nixcache.xrs444.net (xsvr1's LAN-exposed cache) comes first so these remote/cloud
-        # builders (vocibuild, xlt1-t-vnixos) prefer the already-built LAN copy over the public
+        # builders (vocibuild) prefer the already-built LAN copy over the public
         # cache — and keep working if cache.nixos.org has a DNS/reachability blip. Must be in
         # both extra-substituters (actually queried) and extra-trusted-substituters (permitted);
         # trusted alone is not enough, Nix silently never tries it. This exact fix (83155a1d +
@@ -225,7 +227,7 @@ in
 
   # Deploy builder SSH key on all non-builder hosts AND on xsvr1.
   # xsvr1 is a builder itself but also acts as the CI runner; it needs
-  # id_builder to SSH to xsvr2/xsvr3/xdt1-t/xlt1-t-vnixos for distributed builds.
+  # id_builder to SSH to xsvr2/xsvr3/xdt1-t/vocibuild for distributed builds.
   #
   # Moved from /root/.ssh/id_builder to /etc/ssh/id_builder, owner "builder"
   # (2026-08-07): the GitHub Actions self-hosted runner service
@@ -258,19 +260,15 @@ in
     Host ${lib.concatStringsSep " " (map buildHostname buildHosts)}
       User builder
       IdentityFile /etc/ssh/id_builder
-      # xlt1-t-vnixos is a VM on a laptop and goes offline without closing its
-      # end of the connection (sleep/shutdown, not a clean disconnect). Without
-      # keepalives, nix-daemon's ssh session just blocks on read() forever —
-      # observed hanging a CI run for 4+ hours. ServerAliveInterval/CountMax
-      # bounds detection to ~45s so nix falls back to the other builder instead.
+      # A remote builder can go offline without cleanly closing its end of the
+      # connection (VM suspend, host sleep, network drop, not a clean disconnect).
+      # Without keepalives, nix-daemon's ssh session just blocks on read() forever —
+      # observed hanging a CI run for 4+ hours (xlt1-t-vnixos, a VM on a laptop).
+      # ServerAliveInterval/CountMax bounds detection to ~45s so nix falls back to
+      # another builder instead.
       ServerAliveInterval 15
       ServerAliveCountMax 3
       ConnectTimeout 10
-
-    # VM hosts — skip strict key checking since they're rebuilt frequently.
-    Host xlt1-t-vnixos.lan xlt1-t-vnixos
-      StrictHostKeyChecking no
-      UserKnownHostsFile /dev/null
 
     # vocibuild is on Oracle Cloud — reachable via Tailscale only. Previously
     # required a ProxyJump through the xts1/xts2 keepalived VIP (172.18.10.100)

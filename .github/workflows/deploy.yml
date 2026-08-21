@@ -253,6 +253,28 @@ jobs:
               done
             fi
 
+            # xlt2-s is only powered on when in use; send a WOL magic packet to its
+            # wired NIC (connected to xswoffice, VLAN 100, confirmed via Omada) so it
+            # wakes for deploy, then wait up to 90s for SSH to become available.
+            if [[ "$host" == "xlt2-s" ]]; then
+              echo "Sending WOL magic packet to xlt2-s (64-C9-01-A7-82-85)..."
+              python3 -c 'import socket; mac=bytes.fromhex("64C901A78285"); pkt=b"\xff"*6+mac*16; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1); s.sendto(pkt,("172.18.100.255",9)); print("Magic packet sent")' || true
+              echo "Waiting up to 90s for xlt2-s to come online..."
+              for i in $(seq 1 18); do
+                if ssh -4 \
+                     -i /run/secrets/deploy_private_key \
+                     -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null \
+                     -o ConnectTimeout=5 \
+                     -o BatchMode=yes \
+                     deploy@xlt2-s.lan "true" 2>/dev/null; then
+                  echo "xlt2-s is online after ~$((i * 5))s"
+                  break
+                fi
+                sleep 5
+              done
+            fi
+
             # Hostname pre-flight: SSH to the target and verify it reports the expected
             # hostname before deploying. Guards against two failure modes:
             #   1. Host is offline (SSH times out → skip safely)
