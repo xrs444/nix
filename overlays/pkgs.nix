@@ -179,6 +179,16 @@ in
     then useGiscannerDistutilsFix prev.gnome-autoar
     else prev.gnome-autoar;
 
+  # tinysparql (upstream rename of GNOME Tracker/localsearch, pulled in
+  # transitively via nautilus in the GNOME desktop stack since the
+  # 2026-08-11 flake.lock bump): identical g-ir-scanner distutils crash as
+  # libnice/gtk-layer-shell/gnome-autoar above. Confirmed via
+  # `curl -sI .../<hash>.narinfo` 404 that it's genuinely uncached for
+  # aarch64-linux, not our own overlay forcing an unnecessary rebuild.
+  tinysparql = if final.stdenv.hostPlatform.isAarch64
+    then useGiscannerDistutilsFix prev.tinysparql
+    else prev.tinysparql;
+
   # django 5.2.x: bash_completion test calls external bash completion
   # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
   # of ['--list']. 1 test out of 18154 fails; package itself is fine.
