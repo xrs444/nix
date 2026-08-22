@@ -102,6 +102,17 @@
       };
     };
     networks = {
+      # TEMPORARY: onboard eno1 DHCP fallback until the 10G NIC (enp1s0f0/f1,
+      # bonded below) is physically installed — bond0 has no members without
+      # it, which would otherwise leave this host with no network at all.
+      # Remove once the card is in and bond0 is confirmed up.
+      "05-eno1" = {
+        matchConfig.Name = "eno1";
+        networkConfig = {
+          DHCP = "yes";
+          IPv6AcceptRA = true;
+        };
+      };
       "30-enp1s0f0" = {
         matchConfig.Name = "enp1s0f0";
         networkConfig.Bond = "bond0";

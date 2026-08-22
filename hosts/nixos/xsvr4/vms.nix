@@ -16,9 +16,7 @@ let
       };
       extraDrives = [
         {
-          # PLACEHOLDER — replace with xsvr4's actual passthrough storage NVMe by-id path
-          # once the hardware is installed (ls -la /dev/disk/by-id/ | grep nvme on xsvr4).
-          path = "/dev/disk/by-id/nvme-REPLACE_ME_STORAGE_DISK";
+          path = "/dev/disk/by-id/nvme-KINGSTON_SNV3S1000G_50026B76878291A2";
           device = "disk";
           bus = "sata";
           target = "sdb";

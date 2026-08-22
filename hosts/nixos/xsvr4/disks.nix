@@ -1,10 +1,8 @@
 {
-  # PLACEHOLDER — replace with xsvr4's actual boot NVMe by-id path once the hardware is
-  # installed (ls -la /dev/disk/by-id/ | grep nvme on xsvr4). Layout mirrors xsvr3.
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-id/nvme-REPLACE_ME_BOOT_DISK";
+        device = "/dev/disk/by-id/nvme-Inland_TN320_NVMe_SSD_IB25ZJ0512P00957";
         type = "disk";
         content = {
           type = "gpt";
