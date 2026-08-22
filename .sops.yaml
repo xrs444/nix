@@ -24,7 +24,7 @@ keys:
   - &host_xsvr2 age1lyv34gqknhrpwy5c0e64hcumfkkacxf2vhmqtuf2r5fgv7x2wyhs943evx
   - &host_xsvr3 age1sud7hw2gdteg8u3fru6sc5u783w9ll38u5thw3u9yfmpu9xw9udq2vl0ka
   - &host_xts1 age1u8za690m39g80xpfwwj4l3lsfwsyhst6hh9jxw7vn63dtue6c9qs7tu4de
-  - &host_xts2 age1ud88p7dps3dyjwcmdcfhx2557maj33xplllq56dz5f6snzr4m4xq8gcg4z
+  - &host_xidm1 age1ud88p7dps3dyjwcmdcfhx2557maj33xplllq56dz5f6snzr4m4xq8gcg4z # formerly xts2, in-place rename — same host, same age key
   - &host_xlt1-t-vnixos age1rvz5fuyzcp2xuffxpugs907eem8yvzzxptqlh8zq0t3pfqgfnqpqgnzg37
   - &host_xlt1-t age1euwl2t7d2qs4pxmkphfnu3gqtrrzhqza5d2ahk8pmqm5cqymqqdq4ypxq6
   - &host_xcog1 age1jjsd86pydacswyu4kr37lt2lq7fe3lsx0djj0fx7674zdda5lqmqwsm0rt
@@ -47,7 +47,7 @@ creation_rules:
       - *host_xsvr2
       - *host_xsvr3
       - *host_xts1
-      - *host_xts2
+      - *host_xidm1
       - *host_xlt1-t-vnixos
       - *host_xlt1-t
       - *host_xcog1
