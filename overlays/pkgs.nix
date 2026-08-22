@@ -91,17 +91,19 @@ in
     then prev.libxkbcommon.overrideAttrs (_: { doCheck = false; })
     else prev.libxkbcommon;
 
-  # libsecret: test-collection flakes on aarch64 (SIGABRT — "Message recipient
+  # libsecret: test-collection flakes (SIGABRT — "Message recipient
   # disconnected from message bus without replying" from the sandboxed D-Bus
   # session used by the test). 23/24 tests pass; the library itself builds and
   # functions correctly, only the mock D-Bus IPC timing in the test sandbox is
-  # unreliable. Confirmed this exact output isn't on cache.nixos.org (curl
-  # 404), so this is a genuine from-source build, not an unnecessary
-  # cache-bypassing rebuild — see the note above this block before extending
-  # doCheck=false to anything that IS cached.
-  libsecret = if final.stdenv.hostPlatform.isAarch64
-    then prev.libsecret.overrideAttrs (_: { doCheck = false; })
-    else prev.libsecret;
+  # unreliable. Originally scoped to aarch64 only (first seen on xlt1-t-vnixos);
+  # confirmed 2026-08-22 the identical failure also hits x86_64-linux
+  # (xcomm1, built on xdt1-t.lan) — the D-Bus mock timing flake isn't
+  # architecture-specific, so the fix is now unconditional. Confirmed this
+  # exact output isn't on cache.nixos.org (curl 404) on both platforms, so
+  # this is a genuine from-source build, not an unnecessary cache-bypassing
+  # rebuild — see the note above this block before extending doCheck=false
+  # to anything that IS cached.
+  libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
 
   # sdl3: testprocess (SDL_CreateProcess IPC test) times out under the Nix
   # build sandbox (exit code 8 = ctest timeout) on the x86_64-linux remote
