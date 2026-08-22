@@ -45,6 +45,16 @@ build-and-cache-all:
 
     echo "All hosts built and cached"
 
+# Stand up a new Talos VM on a KVM host: create its qcow2 disk (skipped if it
+# already exists), attach the shared factory ISO from xsvr1's distribute share
+# (nix/hosts/nixos/xsvr1/shares.nix) as a readonly cdrom, and start it. Boot
+# order is hd-then-cdrom, so a fresh empty disk falls through to the ISO
+# automatically. Needs -t so sudo can prompt for a password interactively.
+# Example: just talos-vm-standup xsvr4 v-k8s-xsvr4
+talos-vm-standup host vm iso="/mnt/xsvr1/distribute/iso/metal-amd64-factory.iso" size="50G":
+    ssh -t {{host}}.lan "sudo mkdir -p /vm/{{vm}} && (test -f /vm/{{vm}}/{{vm}}.qcow2 || sudo qemu-img create -f qcow2 /vm/{{vm}}/{{vm}}.qcow2 {{size}}) && virsh -c qemu:///system attach-disk {{vm}} {{iso}} hdc --type cdrom --mode readonly --config && virsh -c qemu:///system start {{vm}}"
+    @echo "{{vm}} started on {{host}} — check talosctl for its maintenance-mode IP once it's up"
+
 # Switch this Mac to a new generation (darwin-rebuild). Authenticates sudo
 # once up front and keeps the credential cache alive in the background for
 # the whole build — nix-darwin's activation runs several separate root

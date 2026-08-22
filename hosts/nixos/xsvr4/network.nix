@@ -9,6 +9,16 @@
   # jail while the routing issue to the main IP was being worked out.
   services.fail2ban.ignoreIP = [ "172.20.3.0/24" ];
 
+  # Shared VM boot media (Talos factory ISO, etc.) — see nix/hosts/nixos/xsvr1/shares.nix.
+  fileSystems."/mnt/xsvr1/distribute/iso" = {
+    device = "xsvr1.lan:/zfs/distribute/iso";
+    fsType = "nfs";
+    options = [
+      "nfsvers=4.2" "ro" "soft" "timeo=30"
+      "noauto" "x-systemd.automount" "x-systemd.idle-timeout=600" "nofail"
+    ];
+  };
+
   systemd.network = {
     enable = true;
     netdevs = {

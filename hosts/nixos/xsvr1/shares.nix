@@ -436,10 +436,13 @@
       chmod 700 /zfs/system/scanopy
 
       # Read-only distribution tree (fonts, wallpaper, etc.) — see exports comment above.
+      # iso/ holds shared VM boot media (e.g. the Talos factory ISO) so new KVM hosts
+      # don't need an ad-hoc scp from whichever host happens to have a copy.
       mkdir -p /zfs/distribute/fonts
       mkdir -p /zfs/distribute/wallpaper
+      mkdir -p /zfs/distribute/iso
       mkdir -p /export/zfs/distribute
-      chmod 755 /zfs/distribute /zfs/distribute/fonts /zfs/distribute/wallpaper
+      chmod 755 /zfs/distribute /zfs/distribute/fonts /zfs/distribute/wallpaper /zfs/distribute/iso
 
       # Ensure ZFS directories exist (created by zfs create, but mkdir -p is a no-op if present)
       mkdir -p /zfs/media/books/fiction
