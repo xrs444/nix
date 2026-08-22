@@ -208,7 +208,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xts2, xpbx1, xlt1-t-vnixos, vocibuild]
+        host: [xsvr1, xsvr2, xsvr3, xcomm1, xlabmgmt, xts1, xidm1, xpbx1, xlt1-t-vnixos, vocibuild]
       fail-fast: false
       max-parallel: 3
     steps:
@@ -271,7 +271,7 @@ jobs:
             Automated flake.lock update.
 
             All 9 hosts built and cached successfully on xsvr1:
-            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xts2 xpbx1 xlt1-t-vnixos`
+            `xsvr1 xsvr2 xsvr3 xcomm1 xlabmgmt xts1 xidm1 xpbx1 xlt1-t-vnixos`
           labels: |
             dependencies
             automated

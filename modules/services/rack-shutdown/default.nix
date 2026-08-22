@@ -21,7 +21,7 @@ let
     "xsvr4"
     "xpbx1"
     "xts1"
-    "xts2"
+    "xidm1"
   ];
   isRackHost = builtins.elem hostname rackHosts;
 
