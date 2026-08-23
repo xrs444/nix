@@ -345,7 +345,14 @@ jobs:
 
             echo "$(ts) Deploying $host..."
             START=$(date +%s)
-            if nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
+            # 40m circuit breaker: deploy-rs's nix copy/ssh transfer can stall
+            # indefinitely mid-transfer with zero output (confirmed 2026-08-22:
+            # xsvr3 hung 6.5h until GitHub's own 360m job timeout finally killed
+            # the whole run, silently blocking every host queued after it —
+            # xcomm1, xidm1, etc. never got a deploy attempt at all). Mirrors the
+            # build step's timeout so one stuck host degrades to a normal
+            # per-host failure instead of taking down the rest of the fleet.
+            if timeout 40m nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
               DURATION=$(( $(date +%s) - START ))
               printf 'deploy_last_success_timestamp_seconds{host="%s"} %s\ndeploy_duration_seconds{host="%s"} %s\ndeploy_git_revision_info{host="%s",revision="%s"} 1\ndeploy_total{host="%s",result="success"} 1\n' \
                 "$host" "$(date +%s)" \
@@ -355,7 +362,11 @@ jobs:
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
               echo "$(ts) $host: DEPLOY OK (${DURATION}s)"
             else
+              DEPLOY_RC=$?
               DEPLOY_FAILED+=("$host")
+              if [ "$DEPLOY_RC" -eq 124 ]; then
+                echo "$(ts) $host: DEPLOY TIMED OUT after 40m (stuck transfer or unreachable host)"
+              fi
               printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true
               echo "$(ts) $host: DEPLOY FAILED"
