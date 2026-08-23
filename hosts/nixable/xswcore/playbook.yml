@@ -301,6 +301,19 @@
            spanning-tree 802-1w
            spanning-tree 802-1w priority 4096
 
+    # Drift found+fixed on-device (2026-08-22): despite this file already declaring
+    # `untagged lag 1 to 4` under vlan 20 below, lag 4 (xsvr4) was still untagged in
+    # vlan 19 (provisioning) live — it never actually migrated when lag 4 was created,
+    # since this task's config text has no lag-4 reference to remove and cli_config is
+    # additive-only (bug-492), so a plain playbook run could never have caught or fixed
+    # this. Symptom: xsvr4's bond0 pulled a 172.18.9.x (provisioning) DHCP lease instead
+    # of the 172.20.1.x range the other servers get. Fixed with a manual one-shot
+    # `no untagged lag 4` under `vlan 19`, then `untagged lag 4` under `vlan 20`
+    # (Brocade only allows a port/LAG to be untagged in one VLAN at a time — adding it to
+    # the new VLAN without removing the old one first fails with "already untagged member
+    # of non default VLAN 19"). No task-level change needed here since the desired state
+    # below was already correct; this is a log of what running it alone couldn't fix.
+
     # ethe 2/1/45 added (2026-08-21): xidm1 (formerly xts2), same one-shot-then-declarative
     # caveat as the VLAN 10 removal above — run `untagged ethe 2/1/45` under `vlan 20`
     # on-device first, this task alone won't apply it live.
