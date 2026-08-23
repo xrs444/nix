@@ -230,7 +230,16 @@ let
           pkgs.libvirt
           pkgs.gawk
         ];
-        after = [ "libvirtd.service" ];
+        # First-boot race (bug-676): the sibling libvirt-vm-<name>.service
+        # (mkVmConfigService) also virsh-defines this domain. Without this
+        # ordering, both units' PathChanged/wantedBy triggers can fire
+        # concurrently and race to define the same domain, one failing with
+        # "already exists with uuid X".
+        after = [
+          "libvirtd.service"
+          "libvirt-vm-${vm.name}.service"
+        ];
+        wants = [ "libvirt-vm-${vm.name}.service" ];
       };
     };
   };
