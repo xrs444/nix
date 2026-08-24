@@ -42,4 +42,16 @@
 
   # SBC thermals — ondemand is friendlier than performance
   powerManagement.cpuFreqGovernor = lib.mkDefault "ondemand";
+
+  # nixos-configuration-reference-manpage renders docs for the entire merged
+  # option tree, including this flake's own custom modules — it's unique to
+  # this repo's module set and can never be substituted from cache.nixos.org,
+  # so every host must build it from scratch at least once regardless of how
+  # trivial its own config is. Confirmed 2026-08-24: building it locally on
+  # xidm1 (this board, 2GB RAM) SIGKILLed nixos-rebuild — an OOM kill, not a
+  # transient error. CI never hit this because it delegates ARM builds to
+  # vocibuild (much larger) and only copies the result here; it only bites a
+  # build actually run ON this hardware. Same fix already applied to sdImage
+  # hosts in modules/sdImage/custom.nix for the identical reason.
+  documentation.nixos.enable = lib.mkDefault false;
 }
