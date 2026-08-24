@@ -9,8 +9,16 @@
 let
   buildHosts = [
     { name = "xsvr1"; maxJobs = 8; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 7700 — x86_64 only; aarch64 delegated to native builders
-    { name = "xsvr2"; maxJobs = 6; speedFactor = 1; aarch64 = false; native = false; } # Atom C3758 — binfmt unreliable under QEMU aarch64
+    # xsvr2 (Atom C3758) removed from the builder pool 2026-08-24 — weakest node
+    # in the fleet (lowest speedFactor already), the whole reason xsvr4 was
+    # provisioned was to relieve it, and it was the root of a recurring
+    # qemu-sandbox-path GC corruption issue (bug-674/675) that repeatedly broke
+    # every build routed through it. Dropping it from buildHosts also drops
+    # isQemuBuilder for xsvr2 itself, so it no longer carries the fragile
+    # binfmt/QEMU sandbox config at all. xsvr2 still gets its own system built
+    # and deployed as a normal host — it just no longer builds FOR others.
     { name = "xsvr3"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500 — binfmt unreliable under QEMU aarch64
+    { name = "xsvr4"; maxJobs = 4; speedFactor = 2; aarch64 = false; native = false; } # i5-8500, same as xsvr3 — binfmt unreliable under QEMU aarch64
     { name = "xdt1-t"; maxJobs = 4; speedFactor = 4; aarch64 = false; native = false; } # Ryzen 7 9700X — gaming workstation, capped to avoid OOM
     # xlt1-t-vnixos temporarily removed from the builder pool 2026-08-21 — vocibuild
     # covers aarch64-linux alone for now. Re-add when needed:
