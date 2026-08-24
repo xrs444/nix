@@ -12,6 +12,13 @@ default:
 scripts_dir := justfile_directory()
 flake_dir := scripts_dir / ".."
 
+# Talos image (Factory schematic — see Talos/schematic.yaml). Bump talos_version
+# and re-register Talos/schematic.yaml (curl -X POST --data-binary @Talos/schematic.yaml
+# https://factory.talos.dev/schematics) to change talos_schematic.
+talos_version := "v1.13.9"
+talos_schematic := "0f02554d65cc7a1fc9ec4a8a05e78603e2fb6cefdc44a4f9262ba51adcc53e11"
+talos_installer := "factory.talos.dev/installer/" + talos_schematic + ":" + talos_version
+
 # Build Operations
 # ================
 
@@ -54,6 +61,28 @@ build-and-cache-all:
 talos-vm-standup host vm iso="/mnt/xsvr1/distribute/iso/metal-amd64-factory.iso" size="50G":
     ssh -t {{host}}.lan "sudo mkdir -p /vm/{{vm}} && (test -f /vm/{{vm}}/{{vm}}.qcow2 || sudo qemu-img create -f qcow2 /vm/{{vm}}/{{vm}}.qcow2 {{size}}) && virsh -c qemu:///system attach-disk {{vm}} {{iso}} hdc --type cdrom --mode readonly --config && virsh -c qemu:///system start {{vm}}"
     @echo "{{vm}} started on {{host}} — check talosctl for its maintenance-mode IP once it's up"
+
+# Upgrade ONE already-running Talos node to the current factory schematic + version
+# (talos_installer, above). talosctl blocks until the node rejoins healthy before
+# returning. Node = its IP (e.g. 172.20.3.20). See .claude/skills/talos-upgrade.md
+# for the full pre-flight/ordering procedure — don't run this ad hoc against a
+# control-plane node without checking etcd quorum first.
+# Example: just talos-upgrade 172.20.3.20
+talos-upgrade node:
+    talosctl -n {{node}} -e {{node}} upgrade --image {{talos_installer}}
+    @echo "{{node}} upgraded to {{talos_version}} — verify: kubectl get nodes -o wide"
+
+# Roll ALL four cluster nodes to talos_installer sequentially. xsvr1 (172.20.3.10)
+# goes last so the etcd leader is the last to move. Each talosctl upgrade blocks
+# until that node is back and healthy before the loop advances to the next node.
+talos-upgrade-all:
+    #!/usr/bin/env fish
+    for node in 172.20.3.20 172.20.3.30 172.20.3.40 172.20.3.10
+        echo "==> upgrading $node to {{talos_version}}"
+        talosctl -n $node -e $node upgrade --image {{talos_installer}}
+        echo "==> $node back healthy"
+    end
+    echo "All nodes on {{talos_version}}"
 
 # Switch this Mac to a new generation (darwin-rebuild). Authenticates sudo
 # once up front and keeps the credential cache alive in the background for

@@ -75,6 +75,18 @@ in
     };
   };
 
+  # pkgs.qemu is only referenced as a plain string inside nix.custom.conf's
+  # extra-sandbox-paths (below) — that reference alone has proven unreliable
+  # at surviving garbage collection: confirmed 2026-08-22/23 on xsvr2, twice,
+  # the exact same qemu-10.2.4 store path vanished (breaking every sandboxed
+  # build routed there with "getting attributes of path ...: No such file or
+  # directory") even shortly after being explicitly repaired via
+  # `nix-store --repair-path`. system.extraDependencies is the standard
+  # NixOS mechanism for pinning a package that's only referenced indirectly
+  # like this, so the collector can't reclaim it regardless of how the
+  # config-file reference scan behaves.
+  system.extraDependencies = lib.mkIf isQemuBuilder [ pkgs.qemu ];
+
   # Create builders group for local organization
   users.groups.builders = lib.mkIf isBuilder { };
 
