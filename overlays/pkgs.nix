@@ -219,6 +219,19 @@ in
           mesonFlags = (old.mesonFlags or []) ++ [ "-Dtests=false" ];
         })
         else pyprev.pygobject3;
+
+      # curl-cffi 0.14.0: checkInputs pull in fastapi -> bcrypt -> rustc ->
+      # llvm-21.1.8 (confirmed via `nix why-depends
+      # .#nixosConfigurations.<host>.pkgs.python313Packages.curl-cffi
+      # .#nixosConfigurations.<host>.pkgs.llvmPackages_21.llvm --derivation`
+      # on xlt1-t-vnixos, 2026-08-24). curl-cffi is an HTTP client — none of
+      # that chain is a runtime need, only its test suite (spins up a FastAPI
+      # test server). rustc-1.95.0 isn't cached for aarch64-linux, so
+      # bootstrapping it from source drags in a full LLVM build, which OOM-
+      # killed a `nixos-rebuild switch` on xlt1-t-vnixos's 8GB VM. doCheck
+      # removes checkInputs from the build closure entirely (not just skips
+      # running them), so this drops the whole chain.
+      curl-cffi = pyprev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
     })
   ];
 
