@@ -22,6 +22,7 @@ let
     "172.20.3.10"
     "172.20.3.20"
     "172.20.3.30"
+    "172.20.3.40"
   ];
 
   currentNode = if lib.hasAttr hostname nodeConfigs then nodeConfigs.${hostname} else null;
