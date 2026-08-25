@@ -30,9 +30,11 @@
 #   - Every daemon that touches modelsDir first waits for the backing volume
 #     to be mounted. Writing to /Volumes/<name> before mount would create a
 #     plain directory on the internal disk and block the volume from mounting.
-#   - Runs as system daemons (launchd.daemons, root-owned) not user agents,
-#     because they must survive user logout and expose network ports.
-#     Phase B hardening moves them to a dedicated `_llm` user.
+#   - Runs as system daemons (launchd.daemons) not user agents, because they
+#     must survive user logout and expose network ports. Every daemon runs as
+#     the dedicated `_llm` service user (Phase B hardening, plan §S3) rather
+#     than root — these parse untrusted network input (LiteLLM's HTTP API,
+#     Wyoming's audio protocol) with Python/C++ stacks.
 
 {
   config,
@@ -146,6 +148,8 @@ let
       '';
       serviceConfig = {
         Label = "net.xrs444.mlx-lm-${modelName}";
+        UserName = "_llm";
+        GroupName = "_llm";
         KeepAlive = true;
         RunAtLoad = true;
         ThrottleInterval = 30;
@@ -349,6 +353,27 @@ in
   # ── Implementation ───────────────────────────────────────────────────────
 
   config = lib.mkIf cfg.enable {
+    # Dedicated unprivileged service user (plan §S3) — every daemon in this
+    # module runs as `_llm` rather than root. Fixed uid/gid 442: the gap
+    # between macOS's own last system account (`_oahd`, 441) and the first
+    # human account (`xrs444`, 501) on xcog1, confirmed free via `dscl . -list
+    # /Users UniqueID` before picking it. `knownUsers`/`knownGroups` are
+    # required by nix-darwin before it's allowed to manage a user/group via
+    # dscl.
+    users.knownUsers = [ "_llm" ];
+    users.knownGroups = [ "_llm" ];
+    users.groups._llm = {
+      gid = 442;
+      description = "LLM stack service group (MLX/LiteLLM/Wyoming daemons)";
+    };
+    users.users._llm = {
+      uid = 442;
+      gid = 442;
+      home = "/var/empty";
+      shell = "/usr/bin/false";
+      description = "LLM stack service user (MLX/LiteLLM/Wyoming daemons)";
+    };
+
     # Log directory for all daemons in this module. modelsDir is only
     # created here when it's NOT on a separate mounted volume — touching the
     # path before an external volume mounts would shadow the mount point
@@ -356,15 +381,16 @@ in
     # volumes are TCC-blocked for headless writes, so this is the common
     # case), each daemon's own `mkdir -p`/`parents=True` would create it
     # anyway, but doing it once here up front is cheaper and keeps ownership
-    # consistent from the start.
+    # consistent from the start. Owned by `_llm` (not root:wheel) since every
+    # daemon writing here now runs as `_llm` (§S3).
     system.activationScripts.llm-stack-dirs.text = ''
       /bin/mkdir -p /var/log/llm-stack
-      /usr/sbin/chown root:wheel /var/log/llm-stack
+      /usr/sbin/chown _llm:_llm /var/log/llm-stack
       /bin/chmod 755 /var/log/llm-stack
     ''
     + lib.optionalString (cfg.modelsVolume == null) ''
       /bin/mkdir -p ${cfg.modelsDir}
-      /usr/sbin/chown root:wheel ${cfg.modelsDir}
+      /usr/sbin/chown _llm:_llm ${cfg.modelsDir}
       /bin/chmod 755 ${cfg.modelsDir}
     '';
 
@@ -397,6 +423,8 @@ in
           '';
           serviceConfig = {
             Label = "net.xrs444.litellm";
+            UserName = "_llm";
+            GroupName = "_llm";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 15;
@@ -422,6 +450,8 @@ in
           '';
           serviceConfig = {
             Label = "net.xrs444.wyoming-whisper";
+            UserName = "_llm";
+            GroupName = "_llm";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
@@ -441,6 +471,8 @@ in
           '';
           serviceConfig = {
             Label = "net.xrs444.wyoming-piper";
+            UserName = "_llm";
+            GroupName = "_llm";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
@@ -456,6 +488,12 @@ in
           command = "${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort}";
           serviceConfig = {
             Label = "net.xrs444.node-exporter";
+            # Runs unprivileged like every other daemon in this module (§S3)
+            # — loses a couple of root-only host metrics (e.g. some SMART/
+            # process-level detail), acceptable for this host's monitoring
+            # needs (D11: host-up, disk usage).
+            UserName = "_llm";
+            GroupName = "_llm";
             KeepAlive = true;
             RunAtLoad = true;
             StandardErrorPath = "/var/log/llm-stack/node-exporter.stderr";
