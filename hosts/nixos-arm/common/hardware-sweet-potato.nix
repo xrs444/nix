@@ -15,6 +15,17 @@
       efi.canTouchEfiVariables = lib.mkForce false;
       grub.enable = lib.mkForce false;
       generic-extlinux-compatible.enable = lib.mkForce false;
+
+      # canTouchEfiVariables=false makes the installer pass bootctl
+      # --no-variables, but confirmed 2026-08-24 that alone isn't enough:
+      # `bootctl ... update` (as opposed to `install`) still attempted to
+      # write an EFI Boot NVRAM entry and hard-failed with "Read-only file
+      # system" on this board's SPI-flash UEFI firmware, which deploy-rs's
+      # magic-rollback correctly caught and reverted. --graceful is the
+      # option that actually makes bootctl tolerate that failure instead of
+      # erroring — nixpkgs' own option description says only to use it when
+      # systemd-boot otherwise fails to install, which is exactly this case.
+      systemd-boot.graceful = lib.mkForce true;
     };
 
     # Amlogic serial console
