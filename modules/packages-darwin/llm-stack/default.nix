@@ -155,6 +155,11 @@ let
         # import time, unconditionally, and crashes with EX_CONFIG if _llm
         # can't traverse into it).
         WorkingDirectory = "/";
+        # bug-704: _llm's real home (not /var/empty) for HF/tiktoken/rich
+        # caches that assume a writable $HOME.
+        EnvironmentVariables = {
+          HOME = "/var/lib/llm-stack";
+        };
         KeepAlive = true;
         RunAtLoad = true;
         ThrottleInterval = 30;
@@ -374,7 +379,16 @@ in
     users.users._llm = {
       uid = 442;
       gid = 442;
-      home = "/var/empty";
+      # NOT /var/empty (bug-704): deliberately read-only, which works for a
+      # pure no-login system account but breaks any Python ML library that
+      # assumes a writable $HOME/.cache at import or first-use time (rich —
+      # a litellm/httpx dependency — plus huggingface_hub/tiktoken-style
+      # caches used by mlx-lm and the Wyoming voice daemons). Confirmed live:
+      # the exact wrapper script ran fine interactively via `sudo -u _llm`
+      # (which preserves a real, if wrong, $HOME) but crash-looped under
+      # launchd (EX_CONFIG, silently, before any of the daemon's own logging
+      # even starts) until given a real writable home.
+      home = "/var/lib/llm-stack";
       shell = "/usr/bin/false";
       description = "LLM stack service user (MLX/LiteLLM/Wyoming daemons)";
     };
@@ -409,6 +423,9 @@ in
       /bin/mkdir -p /var/log/llm-stack
       /usr/sbin/chown _llm:_llm /var/log/llm-stack
       /bin/chmod 755 /var/log/llm-stack
+      /bin/mkdir -p /var/lib/llm-stack
+      /usr/sbin/chown _llm:_llm /var/lib/llm-stack
+      /bin/chmod 755 /var/lib/llm-stack
     ''
     + lib.optionalString (cfg.modelsVolume == null) ''
       /bin/mkdir -p ${cfg.modelsDir}
@@ -450,6 +467,10 @@ in
             # bug-703: httpx→rich calls os.getcwd() at import time — must
             # not inherit an ambient cwd _llm can't traverse.
             WorkingDirectory = "/";
+            # bug-704: real writable $HOME for HF/tiktoken/rich caches.
+            EnvironmentVariables = {
+              HOME = "/var/lib/llm-stack";
+            };
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 15;
@@ -478,6 +499,9 @@ in
             UserName = "_llm";
             GroupName = "_llm";
             WorkingDirectory = "/";
+            EnvironmentVariables = {
+              HOME = "/var/lib/llm-stack";
+            };
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
@@ -500,6 +524,9 @@ in
             UserName = "_llm";
             GroupName = "_llm";
             WorkingDirectory = "/";
+            EnvironmentVariables = {
+              HOME = "/var/lib/llm-stack";
+            };
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
