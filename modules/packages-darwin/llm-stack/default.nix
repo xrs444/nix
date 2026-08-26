@@ -379,16 +379,18 @@ in
     users.users._llm = {
       uid = 442;
       gid = 442;
-      # NOT /var/empty (bug-704): deliberately read-only, which works for a
-      # pure no-login system account but breaks any Python ML library that
-      # assumes a writable $HOME/.cache at import or first-use time (rich —
-      # a litellm/httpx dependency — plus huggingface_hub/tiktoken-style
-      # caches used by mlx-lm and the Wyoming voice daemons). Confirmed live:
-      # the exact wrapper script ran fine interactively via `sudo -u _llm`
-      # (which preserves a real, if wrong, $HOME) but crash-looped under
-      # launchd (EX_CONFIG, silently, before any of the daemon's own logging
-      # even starts) until given a real writable home.
-      home = "/var/lib/llm-stack";
+      # /var/empty (bug-704): nix-darwin refuses to change an EXISTING
+      # user's home directory declaratively ("nix-darwin does not support
+      # changing the home directory of existing users" — hard-errors the
+      # whole activation rather than applying it), so this can't be fixed by
+      # changing the account's registered home. Instead, every Python-based
+      # daemon below sets EnvironmentVariables.HOME explicitly to a real
+      # writable directory — Python's os.path.expanduser (and most ML
+      # libraries' cache-path resolution: rich, huggingface_hub/tiktoken-
+      # adjacent code in mlx-lm and the Wyoming daemons) reads the $HOME env
+      # var first, before ever consulting the account's actual dscl home, so
+      # this is sufficient without needing to touch this attribute.
+      home = "/var/empty";
       shell = "/usr/bin/false";
       description = "LLM stack service user (MLX/LiteLLM/Wyoming daemons)";
     };
