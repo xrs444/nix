@@ -150,6 +150,11 @@ let
         Label = "net.xrs444.mlx-lm-${modelName}";
         UserName = "_llm";
         GroupName = "_llm";
+        # Always world-traversable — daemons otherwise inherit whatever cwd
+        # they were spawned from (bug-703: httpx→rich calls os.getcwd() at
+        # import time, unconditionally, and crashes with EX_CONFIG if _llm
+        # can't traverse into it).
+        WorkingDirectory = "/";
         KeepAlive = true;
         RunAtLoad = true;
         ThrottleInterval = 30;
@@ -442,6 +447,9 @@ in
             Label = "net.xrs444.litellm";
             UserName = "_llm";
             GroupName = "_llm";
+            # bug-703: httpx→rich calls os.getcwd() at import time — must
+            # not inherit an ambient cwd _llm can't traverse.
+            WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 15;
@@ -469,6 +477,7 @@ in
             Label = "net.xrs444.wyoming-whisper";
             UserName = "_llm";
             GroupName = "_llm";
+            WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
@@ -490,6 +499,7 @@ in
             Label = "net.xrs444.wyoming-piper";
             UserName = "_llm";
             GroupName = "_llm";
+            WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;
             ThrottleInterval = 30;
@@ -511,6 +521,7 @@ in
             # needs (D11: host-up, disk usage).
             UserName = "_llm";
             GroupName = "_llm";
+            WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;
             StandardErrorPath = "/var/log/llm-stack/node-exporter.stderr";
