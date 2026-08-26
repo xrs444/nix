@@ -232,6 +232,12 @@
     # a member here does NOT remove it live — a one-shot `no untagged ethe 2/1/45`
     # under `vlan 10` must be run on-device first; this task only updates the
     # declarative desired-state so future playbook runs don't re-add it.
+    # Confirmed still live-drifted 2026-08-24: xidm1's first successful deploy-rs
+    # activation went through fine at the host level, but `show interfaces ethernet
+    # 2/1/45` showed it was still an untagged member of VLAN 10 with no port-name
+    # applied — this file's declared state had never actually been pushed on-device.
+    # Fixed with the documented one-shot manual command (remove from vlan 10, add to
+    # vlan 20) directly on the switch; declarative state above was already correct.
     - name: Configure VLAN 10 (FW - firewall transit)
       ansible.netcommon.cli_config:
         config: |
