@@ -117,6 +117,17 @@ in
   # aarch64 IPC flakiness above), so left unscoped.
   sdl3 = prev.sdl3.overrideAttrs (_: { doCheck = false; });
 
+  # gtkmm4: tree_model_iterator_test fails with "Gtk-WARNING: Failed to open
+  # display" — needs a real X11/Wayland display, which doesn't exist in the
+  # Nix build sandbox. 7/8 tests pass; the library itself builds and
+  # functions correctly, only this one display-dependent test can't run
+  # headless. Pulled in transitively via pavucontrol. Confirmed via `curl -sI
+  # https://cache.nixos.org/<hash>.narinfo` 404 that gtkmm-4.22.0 isn't on
+  # the binary cache for aarch64-linux at all — genuine from-source build,
+  # not our own overlay forcing an unnecessary rebuild (first hit on
+  # xlt1-t-vnixos, 2026-08-24).
+  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
+
   # webkitgtk_4_1/6_0: OOM-killed (exit 137/SIGKILL) building on xsvr1's
   # remote builder, ~89% through — ninja's setup-hook defaults to
   # `-j$NIX_BUILD_CORES` (all cores), and with WebCore's large unified-source
@@ -264,13 +275,32 @@ in
   # fails fixupPhase with "ModuleNotFoundError: No module named
   # 'elftools'" even though pyelftools is present and correctly linked
   # on disk. python313 doesn't have this defect.
+  #
+  # ripgrep override (2026-08-25): claude-code 2.1.226 wraps `ripgrep` onto
+  # PATH at runtime (USE_BUILTIN_RIPGREP 0) via a plain callPackage arg — not
+  # needed at claude-code's own build time. Left to resolve inside the
+  # isolated nixpkgs-unstable import above, it builds ripgrep from source via
+  # cargo -> rustc-bootstrap-wrapper -> rustc-bootstrap, and rustc-bootstrap's
+  # own autoPatchelfHook step hits the EXACT SAME python3=python314
+  # pyelftools bug described above — meaning the python3=python313 overlay
+  # isn't propagating down through that particular build-time closure (likely
+  # a buildPackages/splicing path the shallow overlay doesn't reach), while
+  # apparently doing its job for claude-code's own direct fixupPhase.
+  # Confirmed via `nix why-depends '.#checks.aarch64-darwin.deploy-activate'
+  # <rustc-bootstrap output> --derivation`: the only path to rustc-bootstrap
+  # is claude-code -> ripgrep -> cargo -> rustc-bootstrap-wrapper. Rather than
+  # chase the splicing gap, just point ripgrep at the main pkgs' cached build
+  # (confirmed via narinfo 200 for aarch64-darwin) — a static CLI binary used
+  # as a subprocess doesn't care which nixpkgs revision built it.
   claude-code = (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
       overlays = [ (cfinal: cprev: { python3 = cfinal.python313; }) ];
     }
-  ).claude-code;
+  ).claude-code.override {
+    ripgrep = final.ripgrep;
+  };
 
   # bitwarden-desktop: pinned nixpkgs' version (2026.5.0) bundles
   # electron_39 (39.8.10), which nixpkgs flags as insecure/EOL —
