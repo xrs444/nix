@@ -383,7 +383,24 @@ in
     # anyway, but doing it once here up front is cheaper and keeps ownership
     # consistent from the start. Owned by `_llm` (not root:wheel) since every
     # daemon writing here now runs as `_llm` (§S3).
-    system.activationScripts.llm-stack-dirs.text = ''
+    #
+    # MUST be wired into `postActivation`, not a made-up custom key
+    # (bug-702): nix-darwin's actual activation script
+    # (modules/system/activation-scripts.nix `system.activationScripts.script.text`)
+    # hardcodes an explicit list of ~24 named slots it interpolates
+    # (preActivation, checks, createRun, extraActivation, groups, users,
+    # applications, pam, patches, openssh, etc, defaults, userDefaults,
+    # launchd, userLaunchd, nix-daemon, time, networking, power, keyboard,
+    # fonts, nvram, homebrew, postActivation) — any OTHER attribute name
+    # under `system.activationScripts.<name>` evaluates fine (the option
+    # type is an open attrsOf) but is silently never executed, since nothing
+    # in the master script references it. `postActivation` is the correct
+    # hook here: it runs dead last (after `users`, so `_llm` exists for the
+    # chown to succeed, and after `launchd`, so even the daemons' very first
+    # KeepAlive load attempt — which may still race ahead of this fix within
+    # the same switch — gets corrected permissions in place well before the
+    # ThrottleInterval retry).
+    system.activationScripts.postActivation.text = ''
       /bin/mkdir -p /var/log/llm-stack
       /usr/sbin/chown _llm:_llm /var/log/llm-stack
       /bin/chmod 755 /var/log/llm-stack
