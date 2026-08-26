@@ -46,6 +46,12 @@
 let
   cfg = config.services.llm-stack;
 
+  # Shell fragment equivalent to nix-darwin's own `/bin/wait4path /nix/store`
+  # guard (see bug-705 below) — inlined into each daemon's own script instead
+  # of relying on nix-darwin's auto-generated `/bin/sh -c "wait4path && exec
+  # ..."` wrapper, which invokes /bin/sh directly as the posix_spawn target.
+  nixStoreGuard = "/bin/wait4path /nix/store";
+
   # Shell fragment: block until the models volume is mounted (no-op when
   # modelsVolume is null, e.g. models on the boot disk).
   mountGuard =
@@ -132,22 +138,38 @@ let
   mkMlxDaemon = modelName: m: {
     name = "mlx-lm-${modelName}";
     value = {
-      command = pkgs.writeShellScript "mlx-lm-${modelName}" ''
-        set -euo pipefail
-        ${mountGuard}
-        dir="${cfg.modelsDir}/${modelName}"
-        if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
-          echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
-          /bin/rm -rf "$dir"
-          export HF_HOME="${cfg.modelsDir}/.hf-cache"
-          export HF_HUB_DISABLE_TELEMETRY=1
-          ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
-          printf '%s' "${m.revision}" > "$dir/.revision"
-        fi
-        exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port}
-      '';
       serviceConfig = {
         Label = "net.xrs444.mlx-lm-${modelName}";
+        # Direct ProgramArguments, not nix-darwin's `command` option (bug-705):
+        # `command` auto-wraps in `/bin/sh -c "wait4path && exec ..."`, and
+        # `/bin/sh` itself carries a macOS Launch Constraint (LWCR, Sequoia
+        # 15.1+ AMFI hardening) that denies posix_spawn when the calling
+        # chain goes through xpcproxy for a non-root UserName daemon —
+        # confirmed via `log show`: "Service could not initialize:
+        # posix_spawn(/bin/sh), error 0xd - Permission denied", identical and
+        # deterministic across every attempt (env, cwd, password hash, and a
+        # full reboot all ruled out first). Invoking the wrapper script
+        # directly (a real Mach-O-independent, directly-executable
+        # #!/nix/store/.../bash script) as the sole ProgramArguments entry
+        # avoids /bin/sh as a posix_spawn target entirely. wait4path is still
+        # run, just from inside this script rather than the outer shell.
+        ProgramArguments = [
+          "${pkgs.writeShellScript "mlx-lm-${modelName}" ''
+            set -euo pipefail
+            ${nixStoreGuard}
+            ${mountGuard}
+            dir="${cfg.modelsDir}/${modelName}"
+            if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
+              echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
+              /bin/rm -rf "$dir"
+              export HF_HOME="${cfg.modelsDir}/.hf-cache"
+              export HF_HUB_DISABLE_TELEMETRY=1
+              ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
+              printf '%s' "${m.revision}" > "$dir/.revision"
+            fi
+            exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port}
+          ''}"
+        ];
         UserName = "_llm";
         GroupName = "_llm";
         # Always world-traversable — daemons otherwise inherit whatever cwd
@@ -451,19 +473,26 @@ in
       # after it. KeepAlive so it survives model daemon restarts.
       {
         litellm = {
-          command = pkgs.writeShellScript "litellm-wrapped" ''
-            set -euo pipefail
-            ${secretGuard cfg.masterKeyFile}
-            export LITELLM_MASTER_KEY="$(/bin/cat ${cfg.masterKeyFile})"
-            ${lib.optionalString cfg.cloudTier.enable ''
-              ${secretGuard cfg.cloudTier.apiKeyFile}
-              export DEEPSEEK_API_KEY="$(/bin/cat ${cfg.cloudTier.apiKeyFile})"
-            ''}
-            exec ${cfg.litellmPackage}/bin/litellm --config ${litellmConfigFile} \
-              --port ${toString cfg.litellmPort} --host 0.0.0.0
-          '';
           serviceConfig = {
             Label = "net.xrs444.litellm";
+            # bug-705: direct ProgramArguments, bypassing nix-darwin's
+            # `command`-derived `/bin/sh -c "wait4path && exec ..."` wrapper
+            # — /bin/sh itself is denied by a macOS Launch Constraint for
+            # this xpcproxy-mediated, non-root-UserName spawn path.
+            ProgramArguments = [
+              "${pkgs.writeShellScript "litellm-wrapped" ''
+                set -euo pipefail
+                ${nixStoreGuard}
+                ${secretGuard cfg.masterKeyFile}
+                export LITELLM_MASTER_KEY="$(/bin/cat ${cfg.masterKeyFile})"
+                ${lib.optionalString cfg.cloudTier.enable ''
+                  ${secretGuard cfg.cloudTier.apiKeyFile}
+                  export DEEPSEEK_API_KEY="$(/bin/cat ${cfg.cloudTier.apiKeyFile})"
+                ''}
+                exec ${cfg.litellmPackage}/bin/litellm --config ${litellmConfigFile} \
+                  --port ${toString cfg.litellmPort} --host 0.0.0.0
+              ''}"
+            ];
             UserName = "_llm";
             GroupName = "_llm";
             # bug-703: httpx→rich calls os.getcwd() at import time — must
@@ -486,18 +515,22 @@ in
       # so they carry the same mount guard as the MLX daemons.
       (lib.mkIf cfg.voice.enable {
         wyoming-whisper = {
-          command = pkgs.writeShellScript "wyoming-whisper" ''
-            set -euo pipefail
-            ${mountGuard}
-            /bin/mkdir -p ${cfg.modelsDir}/whisper
-            exec ${cfg.voice.whisper.package}/bin/wyoming-faster-whisper \
-              --model ${cfg.voice.whisper.model} \
-              --language ${cfg.voice.whisper.language} \
-              --uri tcp://0.0.0.0:${toString cfg.voice.whisper.port} \
-              --data-dir ${cfg.modelsDir}/whisper
-          '';
           serviceConfig = {
             Label = "net.xrs444.wyoming-whisper";
+            # bug-705: direct ProgramArguments (see litellm's comment above).
+            ProgramArguments = [
+              "${pkgs.writeShellScript "wyoming-whisper" ''
+                set -euo pipefail
+                ${nixStoreGuard}
+                ${mountGuard}
+                /bin/mkdir -p ${cfg.modelsDir}/whisper
+                exec ${cfg.voice.whisper.package}/bin/wyoming-faster-whisper \
+                  --model ${cfg.voice.whisper.model} \
+                  --language ${cfg.voice.whisper.language} \
+                  --uri tcp://0.0.0.0:${toString cfg.voice.whisper.port} \
+                  --data-dir ${cfg.modelsDir}/whisper
+              ''}"
+            ];
             UserName = "_llm";
             GroupName = "_llm";
             WorkingDirectory = "/";
@@ -512,17 +545,21 @@ in
           };
         };
         wyoming-piper = {
-          command = pkgs.writeShellScript "wyoming-piper" ''
-            set -euo pipefail
-            ${mountGuard}
-            /bin/mkdir -p ${cfg.modelsDir}/piper
-            exec ${cfg.voice.piper.package}/bin/wyoming-piper \
-              --voice ${cfg.voice.piper.voice} \
-              --uri tcp://0.0.0.0:${toString cfg.voice.piper.port} \
-              --data-dir ${cfg.modelsDir}/piper
-          '';
           serviceConfig = {
             Label = "net.xrs444.wyoming-piper";
+            # bug-705: direct ProgramArguments (see litellm's comment above).
+            ProgramArguments = [
+              "${pkgs.writeShellScript "wyoming-piper" ''
+                set -euo pipefail
+                ${nixStoreGuard}
+                ${mountGuard}
+                /bin/mkdir -p ${cfg.modelsDir}/piper
+                exec ${cfg.voice.piper.package}/bin/wyoming-piper \
+                  --voice ${cfg.voice.piper.voice} \
+                  --uri tcp://0.0.0.0:${toString cfg.voice.piper.port} \
+                  --data-dir ${cfg.modelsDir}/piper
+              ''}"
+            ];
             UserName = "_llm";
             GroupName = "_llm";
             WorkingDirectory = "/";
@@ -541,9 +578,16 @@ in
       # Prometheus node_exporter.
       (lib.mkIf cfg.exporters.enable {
         node-exporter = {
-          command = "${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort}";
           serviceConfig = {
             Label = "net.xrs444.node-exporter";
+            # bug-705: direct ProgramArguments straight at the binary — no
+            # shell/wrapper needed here at all, which also means no /bin/sh
+            # posix_spawn target (see litellm's comment above for why that
+            # matters).
+            ProgramArguments = [
+              "${pkgs.prometheus-node-exporter}/bin/node_exporter"
+              "--web.listen-address=:${toString cfg.exporters.nodeExporterPort}"
+            ];
             # Runs unprivileged like every other daemon in this module (§S3)
             # — loses a couple of root-only host metrics (e.g. some SMART/
             # process-level detail), acceptable for this host's monitoring
