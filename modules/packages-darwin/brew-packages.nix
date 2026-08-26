@@ -50,7 +50,6 @@
       "monarch"
       "sf-symbols"
       "zoom"
-      "bettertouchtool"
       "via"
       "calibre"
       "vlc"
@@ -58,6 +57,10 @@
       "gitkraken"
       "obsidian"
 
+      # bettertouchtool intentionally NOT managed here: it's self-updating
+      # and vendor warns against Homebrew-driven reinstalls invalidating its
+      # Accessibility permission. Installed manually on xdt1-t; use BTT's
+      # own built-in updater, not brew.
     ];
 
     # Mac App Store applications
