@@ -267,8 +267,6 @@ in
           vscode-marketplace.formulahendry.code-runner
           vscode-marketplace.foxundermoon.shell-format
           vscode-marketplace.github.codespaces
-          vscode-marketplace.github.copilot
-          vscode-marketplace.github.copilot-chat
           vscode-marketplace.github.vscode-github-actions
           vscode-marketplace.github.vscode-pull-request-github
           vscode-marketplace.hashicorp.terraform
@@ -307,13 +305,11 @@ in
           vscode-marketplace.tamasfe.even-better-toml
           vscode-marketplace.tetradresearch.vscode-h2o
           vscode-marketplace.timonwong.shellcheck
-          vscode-marketplace.weaveworks.vscode-gitops-tools
           vscode-marketplace.woozy-masta.shell-script-ide
           vscode-marketplace.xshrim.txt-syntax
           vscode-marketplace.zainchen.json
           vscode-marketplace.aaron-bond.better-comments
           vscode-marketplace.alefragnani.project-manager
-          vscode-marketplace.automatalabs.copilot-mcp
           vscode-marketplace.bmalehorn.shell-syntax
           vscode-marketplace.catppuccin.catppuccin-vsc-icons
           vscode-marketplace.codezombiech.gitignore
