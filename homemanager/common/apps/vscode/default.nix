@@ -325,7 +325,6 @@ in
           vscode-marketplace.jeroen-meijer.pubspec-assist
           vscode-marketplace.marp-team.marp-vscode
           vscode-marketplace.mkhl.direnv
-          vscode-marketplace.ms-vscode.cmake-tools
           vscode-marketplace.ms-vscode.hexeditor
           vscode-extensions.ms-vscode-remote.vscode-remote-extensionpack
           vscode-marketplace.nefrob.vscode-just-syntax
