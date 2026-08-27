@@ -170,8 +170,6 @@ let
             exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port}
           ''}"
         ];
-        UserName = "_llm";
-        GroupName = "_llm";
         # Always world-traversable — daemons otherwise inherit whatever cwd
         # they were spawned from (bug-703: httpx→rich calls os.getcwd() at
         # import time, unconditionally, and crashes with EX_CONFIG if _llm
@@ -385,13 +383,26 @@ in
   # ── Implementation ───────────────────────────────────────────────────────
 
   config = lib.mkIf cfg.enable {
-    # Dedicated unprivileged service user (plan §S3) — every daemon in this
-    # module runs as `_llm` rather than root. Fixed uid/gid 442: the gap
-    # between macOS's own last system account (`_oahd`, 441) and the first
-    # human account (`xrs444`, 501) on xcog1, confirmed free via `dscl . -list
-    # /Users UniqueID` before picking it. `knownUsers`/`knownGroups` are
-    # required by nix-darwin before it's allowed to manage a user/group via
-    # dscl.
+    # Dedicated service account, reserved but currently UNUSED by any daemon
+    # (plan §S3 — attempted, reverted; see bug-702 through bug-705 in
+    # buglog.json and the matching cerebrum.md entries for the full
+    # investigation). Running these daemons as `_llm` instead of root hit an
+    # Apple-documented, unfixable limitation: a LaunchDaemon with a non-root
+    # `UserName` runs in a "mixed execution context" (BSD UID/GID switches,
+    # but other macOS security-context components — notably Local Network
+    # access, which LiteLLM's :4000 listener needs — stay in the root/daemon
+    # context), confirmed via Apple DTS on the developer forums, with root
+    # explicitly recommended for daemons needing local network access. Every
+    # daemon in this module was reverted to running as root. Left defined
+    # (rather than removed) because nix-darwin hard-errors an activation that
+    # tries to delete/modify an existing account's core attributes — safer
+    # to leave uid/gid 442 permanently reserved and dormant than risk another
+    # failed switch. Revisit only if Apple changes this behavior upstream.
+    # Fixed uid/gid 442: the gap between macOS's own last system account
+    # (`_oahd`, 441) and the first human account (`xrs444`, 501) on xcog1,
+    # confirmed free via `dscl . -list /Users UniqueID` before picking it.
+    # `knownUsers`/`knownGroups` are required by nix-darwin before it's
+    # allowed to manage a user/group via dscl.
     users.knownUsers = [ "_llm" ];
     users.knownGroups = [ "_llm" ];
     users.groups._llm = {
@@ -445,15 +456,15 @@ in
     # ThrottleInterval retry).
     system.activationScripts.postActivation.text = ''
       /bin/mkdir -p /var/log/llm-stack
-      /usr/sbin/chown _llm:_llm /var/log/llm-stack
+      /usr/sbin/chown root:wheel /var/log/llm-stack
       /bin/chmod 755 /var/log/llm-stack
       /bin/mkdir -p /var/lib/llm-stack
-      /usr/sbin/chown _llm:_llm /var/lib/llm-stack
+      /usr/sbin/chown root:wheel /var/lib/llm-stack
       /bin/chmod 755 /var/lib/llm-stack
     ''
     + lib.optionalString (cfg.modelsVolume == null) ''
       /bin/mkdir -p ${cfg.modelsDir}
-      /usr/sbin/chown _llm:_llm ${cfg.modelsDir}
+      /usr/sbin/chown root:wheel ${cfg.modelsDir}
       /bin/chmod 755 ${cfg.modelsDir}
     '';
 
@@ -493,10 +504,8 @@ in
                   --port ${toString cfg.litellmPort} --host 0.0.0.0
               ''}"
             ];
-            UserName = "_llm";
-            GroupName = "_llm";
             # bug-703: httpx→rich calls os.getcwd() at import time — must
-            # not inherit an ambient cwd _llm can't traverse.
+            # not inherit an ambient cwd it can't traverse.
             WorkingDirectory = "/";
             # bug-704: real writable $HOME for HF/tiktoken/rich caches.
             EnvironmentVariables = {
@@ -531,8 +540,6 @@ in
                   --data-dir ${cfg.modelsDir}/whisper
               ''}"
             ];
-            UserName = "_llm";
-            GroupName = "_llm";
             WorkingDirectory = "/";
             EnvironmentVariables = {
               HOME = "/var/lib/llm-stack";
@@ -560,8 +567,6 @@ in
                   --data-dir ${cfg.modelsDir}/piper
               ''}"
             ];
-            UserName = "_llm";
-            GroupName = "_llm";
             WorkingDirectory = "/";
             EnvironmentVariables = {
               HOME = "/var/lib/llm-stack";
@@ -588,12 +593,6 @@ in
               "${pkgs.prometheus-node-exporter}/bin/node_exporter"
               "--web.listen-address=:${toString cfg.exporters.nodeExporterPort}"
             ];
-            # Runs unprivileged like every other daemon in this module (§S3)
-            # — loses a couple of root-only host metrics (e.g. some SMART/
-            # process-level detail), acceptable for this host's monitoring
-            # needs (D11: host-up, disk usage).
-            UserName = "_llm";
-            GroupName = "_llm";
             WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;

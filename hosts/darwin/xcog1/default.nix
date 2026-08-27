@@ -356,20 +356,16 @@
   # wrappers read them. secrets/llm.yaml: litellm_master_key is real;
   # deepseek_api_key starts as a placeholder — paste the household key via
   # `sops secrets/llm.yaml` before relying on the cloud tier.
-  # owner = "_llm" (not root): every llm-stack daemon runs as the dedicated
-  # `_llm` service user (§S3 hardening) and needs to read these directly —
-  # without this, LiteLLM's wrapper `cat`s a file it can't open and boots
-  # keyless, failing closed on every request.
+  # root-owned (default): daemons run as root — see llm-stack module's §S3
+  # comment for why the `_llm` service-user attempt was reverted.
   sops.secrets."litellm-master-key" = {
     sopsFile = ../../../secrets/llm.yaml;
     key = "litellm_master_key";
-    owner = "_llm";
     mode = "0400";
   };
   sops.secrets."deepseek-api-key" = {
     sopsFile = ../../../secrets/llm.yaml;
     key = "deepseek_api_key";
-    owner = "_llm";
     mode = "0400";
   };
 
