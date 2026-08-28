@@ -25,14 +25,23 @@ jobs:
       - name: Check if flake-lock-update branch has unmerged content
         id: check
         run: |
+          STALE_AFTER_HOURS=336  # 14 days — ~2 weekly cycles of headroom to review/merge before we consider a branch abandoned
+
           if git ls-remote --exit-code origin refs/heads/flake-lock-update 2>/dev/null; then
             git fetch origin flake-lock-update
             if git merge-base --is-ancestor FETCH_HEAD origin/main 2>/dev/null; then
               echo "Branch exists but is already merged — safe to update."
               echo "has_pending=false" >> "$GITHUB_OUTPUT"
             else
-              echo "Pending flake-lock-update branch found with unmerged content."
-              echo "has_pending=true" >> "$GITHUB_OUTPUT"
+              BRANCH_AGE_HOURS=$(( ($(date +%s) - $(git log -1 --format=%ct FETCH_HEAD)) / 3600 ))
+              echo "flake-lock-update branch has unmerged content, last updated ${BRANCH_AGE_HOURS}h ago."
+              if [ "$BRANCH_AGE_HOURS" -gt "$STALE_AFTER_HOURS" ]; then
+                echo "Branch is stale (>${STALE_AFTER_HOURS}h with no merge) — treating as abandoned, safe to overwrite."
+                echo "has_pending=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "Pending flake-lock-update branch found with unmerged content."
+                echo "has_pending=true" >> "$GITHUB_OUTPUT"
+              fi
             fi
           else
             echo "No pending flake-lock-update branch."
@@ -43,7 +52,7 @@ jobs:
     name: Notify Pending Update Blocking
     needs: check-pending
     if: needs.check-pending.outputs.has_pending == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nixos, builder]
     steps:
       - name: Notify pending update is blocking new update
         run: |
@@ -90,8 +99,13 @@ jobs:
           git commit -m "chore: update flake.lock"
           git push --force origin flake-lock-update
 
+  notify-no-changes:
+    name: Notify No Changes
+    needs: update-lock
+    if: always() && needs.update-lock.result == 'success' && needs.update-lock.outputs.changed == 'false'
+    runs-on: [self-hosted, nixos, builder]
+    steps:
       - name: Notify no changes
-        if: steps.changes.outputs.changed == 'false'
         run: |
           curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
@@ -190,8 +204,13 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+  notify-cache-not-ready:
+    name: Notify Cache Not Ready
+    needs: check-cache
+    if: always() && needs.check-cache.result == 'success' && needs.check-cache.outputs.ready == 'false'
+    runs-on: [self-hosted, nixos, builder]
+    steps:
       - name: Notify cache not ready
-        if: steps.check.outputs.ready == 'false'
         run: |
           curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
@@ -239,6 +258,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      all_succeeded: ${{ steps.results.outputs.all_succeeded }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -276,15 +297,21 @@ jobs:
             dependencies
             automated
 
+  notify-build-result:
+    name: Notify Build Result
+    needs: create-pr
+    if: always() && needs.create-pr.result == 'success'
+    runs-on: [self-hosted, nixos, builder]
+    steps:
       - name: Notify build success
-        if: steps.results.outputs.all_succeeded == 'true'
+        if: needs.create-pr.outputs.all_succeeded == 'true'
         run: |
           curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
             -d '{"title":"Flake Update: Build Complete","body":"All 10 hosts built and cached. PR created.","type":"success","tag":"critical-infra"}' || true
 
       - name: Notify build failure
-        if: steps.results.outputs.all_succeeded == 'false'
+        if: needs.create-pr.outputs.all_succeeded == 'false'
         run: |
           curl -f --show-error --http1.1 --max-time 10 -X POST https://apprise.xrs444.net/notify/apprise \
             -H "Content-Type: application/json" \
