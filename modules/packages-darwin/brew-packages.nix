@@ -10,6 +10,7 @@
       "nikitabobko/tap"
       "FelixKratz/formulae"
       "fenio/tap"
+      "peteonrails/voxtype"
     ];
 
     # Packages installed via `brew install`
@@ -56,6 +57,14 @@
       "google-chrome"
       "gitkraken"
       "obsidian"
+      # Push-to-talk voice-to-text (voxtype.io). Installs as a CLI binary,
+      # not an .app bundle — first run needs `voxtype configure` plus an
+      # interactive grant of Microphone + Accessibility permissions, not
+      # something Nix can provision declaratively. Default hotkey: fn
+      # (Globe key). The published DMG is unsigned/unnotarized; the cask's
+      # own postflight strips the quarantine flag so Gatekeeper doesn't
+      # block it — see peteonrails/homebrew-voxtype's Casks/voxtype.rb.
+      "peteonrails/voxtype/voxtype"
 
       # bettertouchtool intentionally NOT managed here: it's self-updating
       # and vendor warns against Homebrew-driven reinstalls invalidating its

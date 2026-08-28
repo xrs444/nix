@@ -16,7 +16,14 @@
       "networkmanager"
       "docker"
       "libvirtd"
-    ];
+    ]
+    # voxtype (homemanager/users/xrs444, xdt1-t only) types transcribed text
+    # via dotool/ydotool's uinput backend as a fallback if wtype's Wayland
+    # virtual-keyboard protocol isn't available. "uinput" only grants
+    # creating a virtual output device — unlike the "input" group, it does
+    # NOT grant reading real keyboard/mouse input, so this stays narrow even
+    # though voxtype's hotkey itself is niri-keybind-triggered, not evdev.
+    ++ lib.optionals (hostname == "xdt1-t") [ "uinput" ];
     shell = pkgs.fish;
     openssh.authorizedKeys.keys = [
       # Replaced 2026-08-07: the previous key here had no matching private
@@ -37,6 +44,11 @@
   };
 
   users.groups.xrs444 = { };
+
+  # See extraGroups comment above — grants /dev/uinput to the "uinput"
+  # group (not the broader "input" group) for voxtype's dotool/ydotool
+  # backend, xdt1-t only.
+  hardware.uinput.enable = lib.mkIf (hostname == "xdt1-t") true;
 
   # Provide thomas-local SSH private key to xrs444 user
   sops.secrets."thomas-local-ssh-key" = {

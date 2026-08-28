@@ -2,13 +2,48 @@
 {
   lib,
   pkgs,
+  inputs,
   desktop ? null,
   ...
 }:
 {
   home.stateVersion = "25.05";
 
-  imports = lib.optional (builtins.isString desktop) ../../common/desktop;
+  imports = lib.optional (builtins.isString desktop) ../../common/desktop
+    ++ [ inputs.voxtype.homeManagerModules.default ];
+
+  # Push-to-talk voice-to-text daemon (voxtype.io). Package comes from
+  # nixpkgs (already wraps wtype/dotool/ydotool/xclip/xdotool into PATH);
+  # only the upstream flake's Home Manager module is used, for the
+  # systemd user service + declarative config.toml/model management.
+  # hotkey.enabled = false: push-to-talk is triggered by the GNOME custom
+  # shortcut below (Super+Shift+V) running `voxtype record toggle`, not
+  # voxtype's own evdev listener — avoids needing to add samantha to the
+  # `input` group (which would let the daemon read every keystroke on the
+  # machine, not just the dictation hotkey).
+  programs.voxtype = lib.mkIf pkgs.stdenv.isLinux {
+    enable = true;
+    package = pkgs.voxtype;
+    engine = "whisper";
+    model.name = "base.en";
+    service.enable = true;
+    settings.hotkey.enabled = false;
+  };
+
+  # GNOME custom shortcut for the voxtype toggle above. Toggle mode (not
+  # separate start/stop bound to press/release) because GNOME's custom
+  # keybinding schema only fires a command on key-press, with no
+  # key-release event to bind a "stop" command to.
+  dconf.settings."org/gnome/settings-daemon/plugins/media-keys" = lib.mkIf pkgs.stdenv.isLinux {
+    custom-keybindings = [
+      "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/voxtype/"
+    ];
+  };
+  dconf.settings."org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/voxtype" = lib.mkIf pkgs.stdenv.isLinux {
+    name = "Voxtype dictation toggle";
+    command = "${pkgs.voxtype}/bin/voxtype record toggle";
+    binding = "<Super><Shift>v";
+  };
 
   # System-wide default font: Dyslexie, served from the read-only fonts share
   # on xsvr1 (nix/hosts/nixos/xlt2-s/fonts.nix mounts it and sets the

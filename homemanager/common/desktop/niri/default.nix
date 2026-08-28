@@ -127,6 +127,12 @@
           Ctrl+Print { screenshot-screen; }
           Alt+Print { screenshot-window; }
 
+          // Voice dictation (voxtype) — press once to start recording, press
+          // again to transcribe and type the result at the cursor. Toggle
+          // mode, not separate start/stop binds, because niri's spawn binds
+          // fire on key-press only (no key-release event to bind stop to).
+          Mod+Shift+V { spawn "voxtype" "record" "toggle"; }
+
           // Session
           Mod+Shift+E { quit; }
           Mod+Shift+Slash { show-hotkey-overlay; }

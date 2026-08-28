@@ -83,6 +83,67 @@ in {
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBAqv4pyiFGSFn91VWEQ4o2buVrGxlFUsFakiNcMJysK thomas-local@xrs444.net"
           ];
         }
+        # Push-to-talk voice-to-text (voxtype.io) via Linuxbrew — xdt3-r is
+        # Bazzite (rpm-ostree, immutable base), not this flake's NixOS/HM
+        # tree, so it gets voxtype from Homebrew instead of nixpkgs, same
+        # as xlt1-t (see modules/packages-darwin/brew-packages.nix). Uses
+        # the peteonrails/voxtype tap's Formula, NOT the Cask — the Cask
+        # downloads a macOS-only .dmg and will not work on Linux. brew
+        # itself refuses to run as root, so these steps run as
+        # thomas-local via become_user, unlike the rest of this play.
+        # NOT YET VERIFIED end-to-end — xdt3-r was offline (gaming PC, not
+        # always powered on) when this was written, and voxtype has no
+        # prebuilt bottle on this third-party tap, so `brew install` below
+        # does a from-source cargo/cmake build (whisper.cpp + Rust
+        # bindgen), which can be slow and has more ways to fail than a
+        # bottled install. Re-run and check for errors once the host is up.
+        {
+          name = "Check for Linuxbrew installation";
+          stat.path = "/home/linuxbrew/.linuxbrew/bin/brew";
+          register = "linuxbrew_installed";
+        }
+        {
+          name = "Create /home/linuxbrew directory owned by thomas-local";
+          file = {
+            path = "/home/linuxbrew";
+            state = "directory";
+            owner = "thomas-local";
+            group = "thomas-local";
+            mode = "0755";
+          };
+          when = "not linuxbrew_installed.stat.exists";
+        }
+        {
+          name = "Install Homebrew (Linuxbrew) as thomas-local";
+          become = true;
+          become_user = "thomas-local";
+          shell = ''NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'';
+          when = "not linuxbrew_installed.stat.exists";
+        }
+        {
+          name = "Add Homebrew shellenv to thomas-local's .bash_profile";
+          become = true;
+          become_user = "thomas-local";
+          lineinfile = {
+            path = "/home/thomas-local/.bash_profile";
+            line = ''eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'';
+            create = true;
+          };
+        }
+        {
+          name = "Tap peteonrails/voxtype";
+          become = true;
+          become_user = "thomas-local";
+          shell = "/home/linuxbrew/.linuxbrew/bin/brew tap peteonrails/voxtype";
+          args.creates = "/home/linuxbrew/.linuxbrew/Library/Taps/peteonrails/homebrew-voxtype";
+        }
+        {
+          name = "Install voxtype via Homebrew";
+          become = true;
+          become_user = "thomas-local";
+          shell = "/home/linuxbrew/.linuxbrew/bin/brew install peteonrails/voxtype/voxtype";
+          args.creates = "/home/linuxbrew/.linuxbrew/bin/voxtype";
+        }
       ];
     }
   ];

@@ -43,6 +43,12 @@
     quickgui.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "https://flakehub.com/f/Mic92/sops-nix/0.1.887.tar.gz";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    # Only used for its homeManagerModules.default (systemd user service +
+    # config.toml generation) — the package itself comes from nixpkgs'
+    # own `voxtype` (already present in this repo's pinned nixos-26.05),
+    # not this flake's package outputs.
+    voxtype.url = "github:peteonrails/voxtype";
+    voxtype.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =

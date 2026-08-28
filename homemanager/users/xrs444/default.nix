@@ -2,6 +2,7 @@
 {
   pkgs,
   lib,
+  inputs,
   stateVersion,
   username,
   hostName ? null,
@@ -13,6 +14,7 @@ let
   # nix/docs/xcog1-llm-deployment-plan.md and the cerebrum Decision Log
   # (2026-08-07) for the core+marginal+diagnostics package split this gates.
   isServer = hostName == "xcog1";
+  isXdt1t = hostName == "xdt1-t";
 in
 {
 
@@ -197,6 +199,25 @@ in
     go.enable = true;
     rbenv.enable = true;
     yt-dlp.enable = true;
+  } // lib.optionalAttrs isXdt1t {
+    # Push-to-talk voice-to-text daemon (voxtype.io). Package comes from
+    # nixpkgs (already wraps wtype/dotool/ydotool/xclip/xdotool into
+    # PATH); only the upstream flake's Home Manager module is used (see
+    # imports below), for the systemd user service + declarative
+    # config.toml/model management. hotkey.enabled = false: push-to-talk
+    # is triggered by a Mod+Shift+V niri keybind running `voxtype record
+    # toggle` (homemanager/common/desktop/niri/default.nix), not voxtype's
+    # own evdev listener — avoids adding xrs444 to the `input` group
+    # (which would let the daemon read every keystroke on the machine,
+    # not just the dictation hotkey).
+    voxtype = {
+      enable = true;
+      package = pkgs.voxtype;
+      engine = "whisper";
+      model.name = "base.en";
+      service.enable = true;
+      settings.hotkey.enabled = false;
+    };
   };
 
   # Apps + desktop (niri/gnome/etc.) when this host has a desktop environment.
@@ -211,9 +232,10 @@ in
   ] ++ [
     ./shell/tmux.nix
     ./shell/fish.nix
-  ] ++ lib.optionals (hostName == "xdt1-t") [
+  ] ++ lib.optionals isXdt1t [
     ./apps/obs.nix
     ./apps/rip.nix
+    inputs.voxtype.homeManagerModules.default
   ]
     ++ lib.optional (builtins.isString desktop) ../../common/desktop;
 
