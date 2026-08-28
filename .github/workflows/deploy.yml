@@ -130,19 +130,42 @@ jobs:
                 done
               fi
 
-              BUILD_LOG=$(mktemp)
-              # 40m circuit breaker: a remote builder (e.g. xlt1-t-vnixos, a laptop VM
-              # that goes offline without closing its connection) can otherwise hang
-              # this step for hours. timeout turns that into a normal build failure
-              # for this host instead of blocking the whole run.
-              timeout 40m nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
-                --log-format bar-with-logs \
-                --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
-                2>&1 | tee "$BUILD_LOG"
-              BUILD_RC=${PIPESTATUS[0]}
-              if [ $BUILD_RC -eq 124 ]; then
-                echo "$(ts) [$group] $host: BUILD TIMED OUT after 40m (builder likely unreachable)"
-              fi
+              # 150m wall-clock backstop + 30m silence watchdog. The 40m flat cap
+              # (pre-2026-08-28) was firing on legitimate cold builds after the
+              # nixpkgs 26.05 bump (xdt1-t/xlt1-t-vnixos/xlt2-s queued 156-413
+              # derivations and were killed mid-build, misreported as an
+              # unreachable builder). --max-silent-time is the real guard for
+              # that original case (bug-502/653: a builder VM suspending
+              # without closing its connection stops producing output) — it
+              # fires on 30m of silence, faster than the old 40m cap, so
+              # raising the wall clock doesn't weaken hang protection.
+              for attempt in 1 2; do
+                BUILD_LOG=$(mktemp)
+                timeout 150m nix build ".#nixosConfigurations.$host.config.system.build.toplevel" --no-link \
+                  --max-silent-time 1800 \
+                  --log-format bar-with-logs \
+                  --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
+                  2>&1 | tee "$BUILD_LOG"
+                BUILD_RC=${PIPESTATUS[0]}
+                if [ $BUILD_RC -eq 124 ]; then
+                  echo "$(ts) [$group] $host: BUILD EXCEEDED 150m WALL CLOCK"
+                fi
+
+                # A remote builder's input-closure push can die mid-transfer,
+                # leaving the remote store missing an input ("path ... is not
+                # valid") — confirmed on vocibuild in run 33146595655 alongside
+                # "unexpected end-of-file" from the SSH copy. That's transient;
+                # retry once, but only for this signature, so a genuine build
+                # failure doesn't just double the runtime.
+                if [ $BUILD_RC -ne 0 ] && [ "$attempt" -eq 1 ] && grep -qE \
+                     'unexpected end-of-file|is not valid|Timeout was reached|kex_exchange_identification' \
+                     "$BUILD_LOG"; then
+                  echo "$(ts) [$group] $host: transient transfer failure — retrying once"
+                  rm -f "$BUILD_LOG"
+                  continue
+                fi
+                break
+              done
 
               if [ $BUILD_RC -ne 0 ]; then
                 # Extract leaf-failing drv paths from Nix's error output and propagate
@@ -170,10 +193,18 @@ jobs:
               # signed hash matches exactly what gets pushed to the remote.
               if [[ " ${REMOTE_HOSTS[*]} " == *" $host "* ]]; then
                 echo "$(ts) [$group] $host: building deploy-rs activatable path..."
-                timeout 40m nix build --no-link \
+                if ! timeout 150m nix build --no-link \
+                  --max-silent-time 1800 \
                   --log-format bar-with-logs \
                   --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
-                  ".#deploy.nodes.$host.profiles.system.path" 2>&1 || true
+                  ".#deploy.nodes.$host.profiles.system.path" 2>&1; then
+                  # Previously swallowed with `|| true`, which hid deploy-rs build
+                  # failures (e.g. F1: crates.io 403) for the ~90 minutes until the
+                  # Deploy remote hosts step failed for the same reason with no
+                  # earlier warning. Keep the run going — the deploy step below
+                  # will surface the real failure — but don't hide it either.
+                  echo "$(ts) [$group] WARNING: $host activatable path failed to build — deploy will likely fail"
+                fi
               fi
             done
 
@@ -223,9 +254,22 @@ jobs:
           # are not part of any NixOS system closure, so the per-host build loop above
           # never covers them. Without a signed narinfo in the file cache, the remote
           # daemon rejects them (require-sigs=true, no trusted-user bypass in modern Nix).
+          #
+          # Build via our own flake's ".#deploy-rs" output, NOT the bare
+          # "deploy-rs#deploy-rs" flake ref (even with --inputs-from). A bare ref
+          # re-resolves deploy-rs's own checked-in flake.lock, which pins its own
+          # unrelated nixpkgs (2025-03-26) — --inputs-from only patches indirect/
+          # registry lookups made *during* evaluation, it does not override a
+          # flake's own already-locked inputs. That stale nixpkgs still fetches
+          # crates from the now-403ing https://crates.io/api/v1/... endpoint.
+          # ".#deploy-rs" (flake.nix) re-exports inputs.deploy-rs.packages.<system>.default,
+          # which correctly inherits THIS flake's deploy-rs.inputs.nixpkgs.follows
+          # fix (routes crate fetches via static.crates.io instead). Confirmed by
+          # direct build: --inputs-from . deploy-rs#deploy-rs still 403'd; the
+          # equivalent inputs.deploy-rs.packages.*.default build succeeded.
           nix build --no-link \
             --post-build-hook "$GITHUB_WORKSPACE/.github/scripts/nix-post-build-hook.sh" \
-            "deploy-rs#deploy-rs" 2>/dev/null \
+            ".#deploy-rs" 2>/dev/null \
             && echo "deploy-rs binary signed and cached" \
             || echo "WARNING: could not build deploy-rs binary — deploy may fail"
 
@@ -356,14 +400,25 @@ jobs:
 
             echo "$(ts) Deploying $host..."
             START=$(date +%s)
-            # 40m circuit breaker: deploy-rs's nix copy/ssh transfer can stall
+            # Run via our own flake's ".#deploy-rs" output, NOT the bare
+            # "deploy-rs#deploy-rs" flake ref (see "Cache deploy-rs binary" step
+            # above for why --inputs-from doesn't fix that form: it re-resolves
+            # deploy-rs's own checked-in flake.lock, bypassing this repo's
+            # deploy-rs.inputs.nixpkgs.follows fix for the crates.io 403). This
+            # was the actual point of failure in run 33146595655 — every
+            # aarch64 host's deploy died building activate-rs on the dead
+            # crates.io/api/v1 endpoint.
+            #
+            # 60m circuit breaker: deploy-rs's nix copy/ssh transfer can stall
             # indefinitely mid-transfer with zero output (confirmed 2026-08-22:
             # xsvr3 hung 6.5h until GitHub's own 360m job timeout finally killed
             # the whole run, silently blocking every host queued after it —
-            # xcomm1, xidm1, etc. never got a deploy attempt at all). Mirrors the
-            # build step's timeout so one stuck host degrades to a normal
-            # per-host failure instead of taking down the rest of the fleet.
-            if timeout 40m nix run --inputs-from . "deploy-rs#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
+            # xcomm1, xidm1, etc. never got a deploy attempt at all). Degrades
+            # a stuck host to a normal per-host failure instead of taking down
+            # the rest of the fleet. Raised from 40m (2026-08-28): xts1/xidm1/
+            # xpbx1 now carry larger cold 26.05 closures to transfer than the
+            # 15-32s typically observed, and 40m gave too little margin.
+            if timeout 60m nix run ".#deploy-rs" -- --skip-checks ".#$host" 2>&1; then
               DURATION=$(( $(date +%s) - START ))
               printf 'deploy_last_success_timestamp_seconds{host="%s"} %s\ndeploy_duration_seconds{host="%s"} %s\ndeploy_git_revision_info{host="%s",revision="%s"} 1\ndeploy_total{host="%s",result="success"} 1\n' \
                 "$host" "$(date +%s)" \
@@ -376,7 +431,7 @@ jobs:
               DEPLOY_RC=$?
               DEPLOY_FAILED+=("$host")
               if [ "$DEPLOY_RC" -eq 124 ]; then
-                echo "$(ts) $host: DEPLOY TIMED OUT after 40m (stuck transfer or unreachable host)"
+                echo "$(ts) $host: DEPLOY TIMED OUT after 60m (stuck transfer or unreachable host)"
               fi
               printf 'deploy_total{host="%s",result="failure"} 1\n' "$host" \
                 | curl --silent --data-binary @- "$PUSHGATEWAY/metrics/job/deploy/instance/$host" || true

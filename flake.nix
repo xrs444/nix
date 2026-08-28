@@ -14,6 +14,15 @@
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     catppuccin.url = "github:catppuccin/nix";
     deploy-rs.url = "github:serokell/deploy-rs";
+    # deploy-rs pins its own nixpkgs (2025-03-26), whose importCargoLock still
+    # fetches crates from https://crates.io/api/v1/... — crates.io now 403s any
+    # User-Agent starting with "curl/", which is exactly what nixpkgs' fetchurl
+    # sends (confirmed live: "curl/8.7.1 Nixpkgs/26.05" -> 403). Our nixpkgs
+    # (26.05) already routes crate fetches via static.crates.io instead
+    # (pkgs/build-support/rust/import-cargo-lock.nix) — follow it here too so
+    # deploy-rs's activate-rs build doesn't hit the dead endpoint (bug: CI run
+    # 33146595655, all 4 aarch64 host deploys failed on this).
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/0";
     fh.url = "https://flakehub.com/f/DeterminateSystems/fh/0";
     home-manager.url = "github:nix-community/home-manager/release-26.05";
@@ -386,6 +395,20 @@
           };
         in
         {
+          # Re-export deploy-rs's own CLI so CI (and anyone else) can invoke it via
+          # `nix run .#deploy-rs -- ...` / `nix build .#deploy-rs` instead of the bare
+          # flake ref `deploy-rs#deploy-rs`. That bare form evaluates deploy-rs's OWN
+          # checked-in flake.lock (which pins its own, unrelated nixpkgs) rather than
+          # our flake.lock's copy — so it does NOT pick up this repo's
+          # `deploy-rs.inputs.nixpkgs.follows = "nixpkgs"` fix for the crates.io 403
+          # (--inputs-from only patches registry/indirect lookups made *during*
+          # evaluation, it doesn't override a flake's own already-locked inputs).
+          # Confirmed empirically: `nix build --inputs-from . deploy-rs#deploy-rs`
+          # still fetched from the dead `crates.io/api/v1` endpoint and 403'd, while
+          # `inputs.deploy-rs.packages.${system}.default` (this) correctly resolved
+          # to static.crates.io and built.
+          deploy-rs = inputs.deploy-rs.packages.${system}.default;
+
           xdt1-t-game = nixible_lib.mkNixibleCli ./hosts/nixable/xdt1-t-game/default.nix;
           xdt2-g = nixible_lib.mkNixibleCli ./hosts/nixable/xdt2-g/default.nix;
           xdt3-r = nixible_lib.mkNixibleCli ./hosts/nixable/xdt3-r/default.nix;

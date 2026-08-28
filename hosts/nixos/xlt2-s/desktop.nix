@@ -20,6 +20,12 @@
     epiphany
     evolution-data-server
     yelp
+    # gnome-maps pulls libshumate, whose meson test suite times out on
+    # 10/16 tests (~715s each) under concurrent builder load — 0 genuine
+    # failures, and libshumate-1.6.3 isn't on cache.nixos.org, so it's a
+    # full from-source build every time. xlt2-s is the only GNOME host in
+    # the fleet (others run niri), so this removes libshumate entirely.
+    gnome-maps
   ];
 
   environment.systemPackages = with pkgs; [
