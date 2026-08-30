@@ -25,6 +25,7 @@
     ./nut
     ./oauth2-proxy
     ./openssh
+    ./printing
     ./rack-shutdown
     ./remotebuilds
     ./reverse-proxy

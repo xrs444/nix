@@ -144,6 +144,29 @@ in {
           shell = "/home/linuxbrew/.linuxbrew/bin/brew install peteonrails/voxtype/voxtype";
           args.creates = "/home/linuxbrew/.linuxbrew/bin/voxtype";
         }
+        # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw).
+        # Driverless IPP Everywhere queue — Bazzite's base image ships CUPS,
+        # so no PPD/hplip package layering is needed.
+        {
+          name = "Ensure CUPS is running";
+          systemd = {
+            name = "cups";
+            enabled = true;
+            state = "started";
+          };
+        }
+        {
+          name = "Check whether the xprn2 print queue exists";
+          command = "lpstat -p xprn2";
+          register = "xprn2_queue";
+          failed_when = false;
+          changed_when = false;
+        }
+        {
+          name = "Add xprn2 print queue";
+          command = "lpadmin -p xprn2 -E -v ipp://xprn2.lan/ipp/print -m everywhere -D 'HP Color LaserJet Pro MFP M281cdw'";
+          when = "xprn2_queue.rc != 0";
+        }
       ];
     }
   ];

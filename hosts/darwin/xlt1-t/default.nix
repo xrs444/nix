@@ -133,6 +133,20 @@
   #   2. Authenticate with xrs444 Samba password, check "Remember in Keychain"
   # After that the activation script runs on every rebuild and is a no-op if
   # the destination is already configured.
+  # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw). Driverless
+  # IPP Everywhere queue — macOS's built-in AirPrint stack needs no PPD.
+  # Idempotent check-then-act, same pattern as the Time Machine block below.
+  system.activationScripts.printer-xprn2.text = ''
+    if /usr/bin/lpstat -p xprn2 >/dev/null 2>&1; then
+      echo "printer xprn2 already configured"
+    else
+      /usr/sbin/lpadmin -p xprn2 -E \
+        -v ipp://xprn2.lan/ipp/print -m everywhere \
+        -D "HP Color LaserJet Pro MFP M281cdw" || true
+      /usr/sbin/lpadmin -d xprn2 || true
+    fi
+  '';
+
   system.activationScripts.timemachine.text = ''
     if /usr/bin/tmutil destinationinfo 2>&1 | /usr/bin/grep -q "tm_xlt1-t"; then
       echo "Time Machine destination already configured"
