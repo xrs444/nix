@@ -21,8 +21,11 @@ lib.mkIf (lib.elem hostname printingHosts) {
   systemd.services.ensure-xprn2 = {
     description = "Ensure xprn2 (HP M281cdw) CUPS queue exists";
     wantedBy = [ "multi-user.target" ];
-    wants = [ "cups.service" ];
-    after = [ "cups.service" ];
+    # network-online.target: without this, a boot-time run can race ahead of
+    # the resolver and fail DNS ("Name or service not known") rather than
+    # ever reaching the printer at all -- confirmed 2026-08-30 on xlt2-s.
+    wants = [ "cups.service" "network-online.target" ];
+    after = [ "cups.service" "network-online.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
