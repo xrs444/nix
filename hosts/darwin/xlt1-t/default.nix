@@ -136,12 +136,16 @@
   # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw). Driverless
   # IPP Everywhere queue — macOS's built-in AirPrint stack needs no PPD.
   # Idempotent check-then-act, same pattern as the Time Machine block below.
+  # Device URI must be the raw IP, not xprn2.lan: the printer's embedded
+  # cupsd validates the HTTP Host header and rejects anything but its own
+  # IP with a generic 400 (confirmed 2026-08-30 -- see nix/modules/services/
+  # printing/default.nix for the full diagnosis).
   system.activationScripts.printer-xprn2.text = ''
     if /usr/bin/lpstat -p xprn2 >/dev/null 2>&1; then
       echo "printer xprn2 already configured"
     else
       /usr/sbin/lpadmin -p xprn2 -E \
-        -v ipp://xprn2.lan/ipp/print -m everywhere \
+        -v ipp://172.18.5.1/ipp/print -m everywhere \
         -D "HP Color LaserJet Pro MFP M281cdw" || true
       /usr/sbin/lpadmin -d xprn2 || true
     fi
