@@ -166,6 +166,10 @@ in {
           name = "Add xprn2 print queue";
           command = "lpadmin -p xprn2 -E -v ipp://xprn2.lan/ipp/print -m everywhere -D 'HP Color LaserJet Pro MFP M281cdw'";
           when = "xprn2_queue.rc != 0";
+          # xprn2 is often asleep and won't answer the IPP query lpadmin -m
+          # everywhere needs; don't let that fail the whole play, just retry
+          # next run (confirmed 2026-08-30 on xlt2-s: same failure mode).
+          failed_when = false;
         }
       ];
     }

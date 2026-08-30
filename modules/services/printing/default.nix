@@ -7,21 +7,32 @@ in
 lib.mkIf (lib.elem hostname printingHosts) {
   services.printing.enable = true;
 
-  hardware.printers.ensureDefaultPrinter = "xprn2";
-  hardware.printers.ensurePrinters = [
-    {
-      name = "xprn2";
-      deviceUri = "ipp://xprn2.lan/ipp/print";
-      model = "everywhere";
-      description = "HP Color LaserJet Pro MFP M281cdw";
-    }
-  ];
-
-  # `lpadmin -m everywhere` builds the PPD from a live Get-Printer-Attributes
-  # query, so ensure-printers.service fails outright when xprn2 is unreachable
-  # (e.g. a laptop away from home). ExecCondition exiting non-zero makes
-  # systemd skip the unit cleanly instead of leaving a failed unit; it retries
-  # on the next boot.
-  systemd.services.ensure-printers.serviceConfig.ExecCondition =
-    "${pkgs.coreutils}/bin/timeout 5 ${pkgs.bash}/bin/bash -c 'exec 3<>/dev/tcp/xprn2.lan/631'";
+  # Not using hardware.printers.ensurePrinters: its generated
+  # ensure-printers.service has no failure tolerance, and xprn2 is often
+  # asleep and won't answer the IPP Get-Printer-Attributes query that
+  # `lpadmin -m everywhere` needs to build a driverless PPD (confirmed
+  # 2026-08-30 on xlt2-s: "lpadmin: Unable to create PPD: No IPP attributes"
+  # even though TCP:631 accepted the connection — a plain port check doesn't
+  # catch this). A hard-failed unit here is fatal to nixos-rebuild switch
+  # itself (nixos-rebuild-ng raises on a failed unit), which would break
+  # every future deploy to a printing host whenever xprn2 happens to be
+  # asleep. So this is a hand-rolled equivalent that always exits 0 and just
+  # retries on the next switch/boot instead.
+  systemd.services.ensure-xprn2 = {
+    description = "Ensure xprn2 (HP M281cdw) CUPS queue exists";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "cups.service" ];
+    after = [ "cups.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.cups}/bin/lpadmin -p xprn2 -E \
+        -v ipp://xprn2.lan/ipp/print -m everywhere \
+        -D "HP Color LaserJet Pro MFP M281cdw" \
+      && ${pkgs.cups}/bin/lpadmin -d xprn2 \
+      || echo "xprn2 unreachable/not answering IPP -- will retry on next switch" >&2
+    '';
+  };
 }
