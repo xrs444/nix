@@ -128,6 +128,19 @@ in
   # xlt1-t-vnixos, 2026-08-24).
   gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
 
+  # gtksourceview5: checkPhase fails immediately with "Fontconfig error: No
+  # writable cache directories" — the meson test suite runs under xvfb-run +
+  # a sandboxed dbus-run-session, and fontconfig's default cache path
+  # (~/.cache/fontconfig) isn't writable in the Nix build sandbox. The
+  # library itself builds and functions correctly, only headless
+  # font-rendering inside the test harness is affected. Pulled in
+  # transitively via desktop.nix's GNOME (gnome-text-editor -> libspelling,
+  # and others), first hit on xlt2-s (CI run 33220096150). Confirmed via
+  # `curl -sI https://cache.nixos.org/<hash>.narinfo` 404 that
+  # gtksourceview-5.20.0 isn't on the binary cache at all — genuine
+  # from-source build, not our own overlay forcing an unnecessary rebuild.
+  gtksourceview5 = prev.gtksourceview5.overrideAttrs (_: { doCheck = false; });
+
   # webkitgtk_4_1/6_0: OOM-killed (exit 137/SIGKILL) building on xsvr1's
   # remote builder, ~89% through — ninja's setup-hook defaults to
   # `-j$NIX_BUILD_CORES` (all cores), and with WebCore's large unified-source

@@ -314,6 +314,15 @@ in
       hostNames = [ "xsvr3.lan" "xsvr3" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE3iLniG9niDNFxK3Z3INcwqc6N6R1+2v/PfD88klFAX";
     };
+    # xsvr4 was added to buildHosts (2026-08-24, relieving xsvr2) but never got
+    # a knownHosts entry — every build routed to it failed host key
+    # verification and silently fell back to another builder for the whole
+    # of run 33220096150 (78 occurrences), contributing zero build capacity.
+    # Not a stale key, just a missing one. Refresh with: ssh-keyscan -t ed25519 xsvr4.lan
+    "xsvr4.lan" = {
+      hostNames = [ "xsvr4.lan" "xsvr4" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOFLFK7JqbleQCC1PbsCISLZtkG5Bf1uLY1SRfjIz+K8";
+    };
     "xdt1-t.lan" = {
       hostNames = [ "xdt1-t.lan" "xdt1-t" ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0";
