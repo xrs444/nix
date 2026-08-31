@@ -77,6 +77,7 @@ lib.mkIf hasRole {
       coreutils
       bash
       openssh
+      wakeonlan
     ];
     serviceOverrides = {
       # Ensure the runner has access to nix daemon

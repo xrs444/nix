@@ -291,7 +291,7 @@ jobs:
             # WiFi NIC wakes it, then wait up to 90s for SSH to become available.
             if [[ "$host" == "xcomm1" ]]; then
               echo "Sending WoWLAN magic packet to xcomm1 (D4:D2:52:A9:5B:4B)..."
-              python3 -c 'import socket; mac=bytes.fromhex("D4D252A95B4B"); pkt=b"\xff"*6+mac*16; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1); s.sendto(pkt,("172.19.112.255",9)); print("Magic packet sent")' || true
+              wakeonlan -i 172.19.112.255 D4:D2:52:A9:5B:4B || true
               echo "Waiting up to 90s for xcomm1 to come online..."
               for i in $(seq 1 18); do
                 if ssh -4 \
@@ -313,7 +313,7 @@ jobs:
             # wakes for deploy, then wait up to 90s for SSH to become available.
             if [[ "$host" == "xlt2-s" ]]; then
               echo "Sending WOL magic packet to xlt2-s (64-C9-01-A7-82-85)..."
-              python3 -c 'import socket; mac=bytes.fromhex("64C901A78285"); pkt=b"\xff"*6+mac*16; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1); s.sendto(pkt,("172.18.100.255",9)); print("Magic packet sent")' || true
+              wakeonlan -i 172.18.100.255 64:C9:01:A7:82:85 || true
               echo "Waiting up to 90s for xlt2-s to come online..."
               for i in $(seq 1 18); do
                 if ssh -4 \

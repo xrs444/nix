@@ -5,6 +5,7 @@
   hostname,
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -154,9 +155,13 @@ in
           rm -f "$UPS_CONF"
           cp "$REAL" "$UPS_CONF"
         fi
-        sed -i \
-          -e "s/@SNMPV3_RW_AUTHPASS@/$(cat ${config.sops.secrets."nut-snmpv3-rw-auth-password".path})/" \
-          -e "s/@SNMPV3_RW_PRIVPASS@/$(cat ${config.sops.secrets."nut-snmpv3-rw-priv-password".path})/" \
+        ${pkgs.replace-secret}/bin/replace-secret \
+          '@SNMPV3_RW_AUTHPASS@' \
+          ${config.sops.secrets."nut-snmpv3-rw-auth-password".path} \
+          "$UPS_CONF"
+        ${pkgs.replace-secret}/bin/replace-secret \
+          '@SNMPV3_RW_PRIVPASS@' \
+          ${config.sops.secrets."nut-snmpv3-rw-priv-password".path} \
           "$UPS_CONF"
         chown root:root "$UPS_CONF"
         chmod 600 "$UPS_CONF"
