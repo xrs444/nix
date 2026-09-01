@@ -1,5 +1,17 @@
 import os
 
+SKIP_DIRS = {'__pycache__'}
+
+
+def is_binary(file_path):
+    try:
+        with open(file_path, 'rb') as f:
+            chunk = f.read(8000)
+        return b'\x00' in chunk
+    except OSError:
+        return False
+
+
 def summarize_content(content, filename):
     """
     Basic summarizer: returns the first non-empty line or a generic message.
@@ -39,12 +51,15 @@ def generate_readme_for_folder(folder):
         readme.write("\n## File Summaries\n\n")
         for f in files:
             file_path = os.path.join(folder, f)
-            try:
-                with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
-                    content = file.read()
-                summary = summarize_content(content, f)
-            except Exception as e:
-                summary = f"Could not read file: {e}"
+            if is_binary(file_path):
+                summary = "Binary file, not summarized."
+            else:
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='replace') as file:
+                        content = file.read()
+                    summary = summarize_content(content, f)
+                except Exception as e:
+                    summary = f"Could not read file: {e}"
             readme.write(f"### {f}\n{summary}\n\n")
         # Folder overview: join summaries for a high-level overview
         readme.write("## Overview\n\n")
@@ -57,8 +72,11 @@ def main():
     # Always walk from repo root, even if run from a subfolder
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     for root, dirs, files in os.walk(repo_root, topdown=True):
-        # Skip .git, .github, and hidden folders
+        # Skip .git, .github, hidden folders, and generated caches
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in SKIP_DIRS]
         if any(part.startswith('.') for part in root.split(os.sep)):
+            continue
+        if os.path.basename(root) in SKIP_DIRS:
             continue
         generate_readme_for_folder(root)
 
