@@ -281,7 +281,7 @@ in
       hugo
       openjdk
       ruby
-      ansible
+      python3Packages.ansible-core
       cilium-cli
       cmctl
       fluxcd
