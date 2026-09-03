@@ -278,8 +278,14 @@ jobs:
           ts() { date '+[%H:%M:%S]'; }
           REVISION=$(git rev-parse HEAD)
           REMOTE_HOSTS=(xsvr2 xsvr3 xsvr4 xcomm1 xts1 xidm1 xpbx1 xlt1-t-vnixos xdt1-t xlt2-s vocibuild)
+          # xlt2-s is a laptop that's only powered on when in use (unlike xcomm1,
+          # which reliably wakes via WoWLAN) — being unreachable here is expected,
+          # not a failure. Hosts in this list get a visible SKIPPED note instead of
+          # counting toward DEPLOY_FAILED / the job's exit code.
+          OPTIONAL_HOSTS=(xlt2-s)
           read -ra FAILED_HOSTS <<< "${BUILD_FAILED_HOSTS:-}"
           DEPLOY_FAILED=()
+          SKIPPED=()
 
           for host in "${REMOTE_HOSTS[@]}"; do
             if [[ " ${FAILED_HOSTS[*]} " == *" $host "* ]]; then
@@ -393,8 +399,13 @@ jobs:
             done
 
             if [[ "$REMOTE_HOSTNAME" != "$host" ]]; then
-              echo "$host: SKIPPED — hostname verification failed (got '${REMOTE_HOSTNAME}', expected '${host}')"
-              DEPLOY_FAILED+=("$host")
+              if [[ " ${OPTIONAL_HOSTS[*]} " == *" $host "* ]]; then
+                echo "$host: SKIPPED — powered off (optional host)"
+                SKIPPED+=("$host")
+              else
+                echo "$host: SKIPPED — hostname verification failed (got '${REMOTE_HOSTNAME}', expected '${host}')"
+                DEPLOY_FAILED+=("$host")
+              fi
               continue
             fi
 
@@ -439,12 +450,14 @@ jobs:
             fi
           done
 
+          echo "DEPLOY_FAILED_HOSTS=${DEPLOY_FAILED[*]}" >> "$GITHUB_ENV"
+          echo "DEPLOY_SKIPPED_HOSTS=${SKIPPED[*]}" >> "$GITHUB_ENV"
+
           ALL_FAILED=("${FAILED_HOSTS[@]}" "${DEPLOY_FAILED[@]}")
           if [ ${#ALL_FAILED[@]} -gt 0 ]; then
-            echo "DEPLOY_FAILED_HOSTS=${DEPLOY_FAILED[*]}" >> "$GITHUB_ENV"
             curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${FAILED_HOSTS[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${FAILED_HOSTS[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none} | Skipped (powered off): ${SKIPPED[*]:-none}\",\"type\":\"warning\",\"tag\":\"critical-infra\"}" || true
           fi
 
       - name: Deploy xsvr1 (self)
@@ -474,15 +487,20 @@ jobs:
           REVISION=$(git rev-parse --short HEAD)
           read -ra BUILD_FAILED <<< "${BUILD_FAILED_HOSTS:-}"
           read -ra DEPLOY_FAILED <<< "${DEPLOY_FAILED_HOSTS:-}"
+          read -ra DEPLOY_SKIPPED <<< "${DEPLOY_SKIPPED_HOSTS:-}"
           ALL_FAILED=("${BUILD_FAILED[@]}" "${DEPLOY_FAILED[@]}")
+          SKIPPED_SUFFIX=""
+          if [ ${#DEPLOY_SKIPPED[@]} -gt 0 ]; then
+            SKIPPED_SUFFIX=" | Skipped (powered off): ${DEPLOY_SKIPPED[*]}"
+          fi
 
           if [ ${#ALL_FAILED[@]} -eq 0 ]; then
             curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)\",\"type\":\"success\",\"tag\":\"critical-infra\"}" || true
+              -d "{\"title\":\"Deploy: Complete\",\"body\":\"All hosts deployed successfully ($REVISION)${SKIPPED_SUFFIX}\",\"type\":\"success\",\"tag\":\"critical-infra\"}" || true
           else
             curl -f --show-error --http1.1 --max-time 10 -X POST "$APPRISE_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${BUILD_FAILED[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none} ($REVISION) — $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
+              -d "{\"title\":\"Deploy: Partial Failure\",\"body\":\"Build failed: ${BUILD_FAILED[*]:-none} | Deploy failed: ${DEPLOY_FAILED[*]:-none}${SKIPPED_SUFFIX} ($REVISION) — $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID\",\"type\":\"failure\",\"tag\":\"critical-infra\"}" || true
             exit 1
           fi

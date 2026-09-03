@@ -132,7 +132,6 @@ jobs:
         id: check
         run: |
           # Check if the actual heavy packages (not wrappers/completions) are in cache
-          # xlabmgmt: webkitgtk_6_0, webkitgtk_4_1, gst-plugins-rs
           # xsvr1: qemu
 
           echo "Checking cache availability for heavy packages..."
@@ -227,7 +226,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        host: [xsvr1, xsvr2, xsvr3, xsvr4, xcomm1, xlabmgmt, xts1, xidm1, xpbx1, xlt1-t-vnixos, vocibuild]
+        host: [xsvr1, xsvr2, xsvr3, xsvr4, xcomm1, xts1, xidm1, xpbx1, xlt1-t-vnixos, vocibuild]
       fail-fast: false
       max-parallel: 3
     steps:
@@ -291,8 +290,8 @@ jobs:
           body: |
             Automated flake.lock update.
 
-            All 10 hosts built and cached successfully on xsvr1:
-            `xsvr1 xsvr2 xsvr3 xsvr4 xcomm1 xlabmgmt xts1 xidm1 xpbx1 xlt1-t-vnixos`
+            All 9 hosts built and cached successfully on xsvr1:
+            `xsvr1 xsvr2 xsvr3 xsvr4 xcomm1 xts1 xidm1 xpbx1 xlt1-t-vnixos`
           labels: |
             dependencies
             automated

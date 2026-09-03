@@ -346,6 +346,28 @@ in
     }
   ).vikunja-desktop;
 
+  # obsidian (xrs444/samantha HM profiles, xdt1-t + xlt1-t-vnixos): same
+  # electron_41.9.1-vs-41.10.3 cache-miss story as bitwarden-desktop and
+  # vikunja-desktop above. The pinned nixpkgs' obsidian-1.13.4 bundles
+  # electron-unwrapped-41.9.1, which has no cache.nixos.org narinfo (404) on
+  # EITHER x86_64-linux or aarch64-linux — forcing a full from-source
+  # Electron/Chromium build (~45k steps) on both xdt1-t and xlt1-t-vnixos.
+  # Confirmed via CI run 33703571901: xdt1-t hit the 150m wall-clock backstop
+  # mid-build; xlt1-t-vnixos has the identical dependency chain
+  # (obsidian -> electron-41.9.1 -> electron-unwrapped-41.9.1), just masked by
+  # an unrelated aarch64 build failure earlier in that run.
+  # nixpkgs-unstable has the same obsidian version (1.13.4) built against
+  # electron_41.10.3 (41.10.3), confirmed cached (narinfo 200) on both
+  # architectures — and it's the exact electron version bitwarden-desktop and
+  # vikunja-desktop already pull above, so this collapses onto the same
+  # shared Electron build instead of adding a third one to the closure.
+  obsidian = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    }
+  ).obsidian;
+
   # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
   # Not in nixpkgs; packaged from GitHub pre-built release binaries.
   # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.
