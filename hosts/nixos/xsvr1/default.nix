@@ -25,6 +25,12 @@
   networking.useNetworkd = true;
 
   boot = {
+    # Cap ZFS ARC at 24GiB (default is ~all RAM). Uncapped, ARC competes with
+    # v-k8s-xsvr1's 24GiB libvirt allocation (vms.nix) for this host's 64GiB —
+    # already seeing zram swap usage under normal load without a cap.
+    extraModprobeConfig = ''
+      options zfs zfs_arc_max=25769803776
+    '';
     initrd = {
       availableKernelModules = [
         "mpt3sas"
