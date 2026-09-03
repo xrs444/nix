@@ -29,6 +29,12 @@
   };
 
   boot = {
+    # Cap ZFS ARC at 32GiB (default is ~all RAM). Uncapped, ARC competes with
+    # the Talos VM's 80GiB libvirt allocation (vms.nix) for this host's 128GiB —
+    # already seeing 100% zram swap utilization under normal load without a cap.
+    extraModprobeConfig = ''
+      options zfs zfs_arc_max=34359738368
+    '';
     initrd = {
       availableKernelModules = [
         "mpt3sas"
