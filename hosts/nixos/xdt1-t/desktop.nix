@@ -1,7 +1,8 @@
 { lib, pkgs, ... }:
 let
-  # Base session script — all per-mode wrappers exec into this.
-  # Kept as a named derivation so mode wrappers can reference it by store path.
+  # Workflow mode (base/OBS/LLM/gaming) is chosen at runtime via the wolf-mode
+  # fuzzel menu (Mod+Shift+M, see homemanager/common/desktop/niri/modes/switcher.nix),
+  # not at login — greetd only needs a single niri session.
   niriSessionFixed = pkgs.writeShellScriptBin "niri-session-fixed" ''
     systemctl --user import-environment \
       DISPLAY \
@@ -9,8 +10,7 @@ let
       XDG_CURRENT_DESKTOP \
       XDG_SESSION_TYPE \
       NIXOS_OZONE_WL \
-      USER \
-      WOLF_MODE
+      USER
 
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd \
       DISPLAY \
@@ -18,74 +18,20 @@ let
       XDG_CURRENT_DESKTOP \
       XDG_SESSION_TYPE \
       NIXOS_OZONE_WL \
-      USER \
-      WOLF_MODE
+      USER
 
     exec ${pkgs.niri}/bin/niri-session
   '';
-
-  # Produces a package with:
-  #   bin/niri-session-<name>          — sets WOLF_MODE, updates active-mode symlink, execs niri-session-fixed
-  #   share/wayland-sessions/niri-<name>.desktop — tuigreet session entry
-  mkModeSession =
-    {
-      name,
-      label,
-      wolfMode,
-    }:
-    let
-      kdlName = if wolfMode == "" then "base" else wolfMode;
-      script = pkgs.writeShellScriptBin "niri-session-${name}" ''
-        export WOLF_MODE="${wolfMode}"
-        kdl="$HOME/.config/niri/modes/${kdlName}.kdl"
-        if [ -f "$kdl" ]; then
-          ln -sfn "$kdl" "$HOME/.config/niri/active-mode.kdl"
-        fi
-        exec ${niriSessionFixed}/bin/niri-session-fixed
-      '';
-      desktop = pkgs.writeTextFile {
-        name = "niri-${name}.desktop";
-        destination = "/share/wayland-sessions/niri-${name}.desktop";
-        text = ''
-          [Desktop Entry]
-          Name=${label}
-          Comment=Niri scrollable-tiling compositor — ${label}
-          Exec=niri-session-${name}
-          Type=Application
-        '';
-      };
-    in
-    pkgs.symlinkJoin {
-      name = "niri-session-${name}-pkg";
-      paths = [
-        script
-        desktop
-      ];
-    };
-
-  niriBase = mkModeSession { name = "base"; label = "Niri"; wolfMode = ""; };
-  niriObs  = mkModeSession { name = "obs";  label = "Niri (OBS)"; wolfMode = "obs"; };
-  niriLlm  = mkModeSession { name = "llm";  label = "Niri (LLM)"; wolfMode = "llm"; };
-
 in
 {
   # Niri - Scrollable-tiling Wayland compositor
   programs.niri.enable = true;
 
-  # Install session .desktop files via environment.etc so they land at a stable path
-  # regardless of pathsToLink behaviour in the current nixpkgs niri module.
-  environment.etc = {
-    "greetd/sessions/niri-base.desktop".source = "${niriBase}/share/wayland-sessions/niri-base.desktop";
-    "greetd/sessions/niri-obs.desktop".source  = "${niriObs}/share/wayland-sessions/niri-obs.desktop";
-    "greetd/sessions/niri-llm.desktop".source  = "${niriLlm}/share/wayland-sessions/niri-llm.desktop";
-  };
-
-  # Display manager — session picker reads /etc/greetd/sessions/ (managed above)
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --sessions /etc/greetd/sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri-session-fixed";
         user = "greeter";
       };
     };
@@ -95,9 +41,6 @@ in
     with pkgs;
     [
       niriSessionFixed
-      niriBase
-      niriObs
-      niriLlm
 
       # Desktop shell (not yet in nixos-25.11 — pull from unstable)
       pkgs.unstable.noctalia-shell

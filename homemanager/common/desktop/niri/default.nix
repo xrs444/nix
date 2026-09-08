@@ -133,6 +133,9 @@
           // fire on key-press only (no key-release event to bind stop to).
           Mod+Shift+V { spawn "voxtype" "record" "toggle"; }
 
+          // Workflow mode switcher (base / OBS / LLM / gaming) — fuzzel menu
+          Mod+Shift+M { spawn "wolf-mode" "menu"; }
+
           // Session
           Mod+Shift+E { quit; }
           Mod+Shift+Slash { show-hotkey-overlay; }
@@ -140,7 +143,8 @@
     '';
     };
 
-    # Mode fragment files — session wrappers symlink active-mode.kdl to one of these.
+    # Mode fragment files — wolf-mode (modes/switcher.nix) copies one of these onto
+    # active-mode.kdl on switch/login.
     "niri/modes/base.kdl" = {
       force = true;
       text = ''
@@ -172,31 +176,51 @@
         }
       '';
     };
+    "niri/modes/gaming.kdl" = {
+      force = true;
+      text = ''
+        // Gaming mode — second monitor off, gamescope gets a dedicated fullscreen slot
+        output "HDMI-A-2" {
+            off
+        }
+        window-rule {
+            match app-id="gamescope"
+            open-fullscreen true
+        }
+      '';
+    };
   };
 
-  # Ensure active-mode.kdl exists on first HM activation so niri's include directive
-  # doesn't fail before the first session wrapper has run.
+  # Ensure active-mode.kdl is a real file (not a symlink) before niri's include
+  # directive is evaluated. It must be a real file so that wolf-mode (modes/switcher.nix)
+  # can overwrite its contents in place on switch — niri watches the file for changes,
+  # but retargeting a symlink does not reliably trigger that watch, and config.kdl
+  # itself is a read-only store symlink so it can't be touched to force a reload.
+  # Only replace it here if it's missing or still the old symlink form from a prior
+  # generation — an existing real file means wolf-mode already recorded a chosen mode,
+  # and a rebuild shouldn't reset that back to base.
   home.activation.initNiriActiveMode = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     target="$HOME/.config/niri/active-mode.kdl"
     base="$HOME/.config/niri/modes/base.kdl"
-    if [ ! -e "$target" ] && [ -e "$base" ]; then
-      ln -sfn "$base" "$target"
+    if [ -L "$target" ] || [ ! -e "$target" ]; then
+      if [ -e "$base" ]; then
+        install -m644 "$base" "$target"
+      fi
     fi
   '';
 
-  # One-shot service that fires after the graphical session starts and activates the
-  # mode target that matches WOLF_MODE (imported into the user service manager by
-  # niri-session-fixed before niri launches).
+  # One-shot service that fires after the graphical session starts and restores
+  # whichever workflow mode was last selected via wolf-mode (modes/switcher.nix).
   systemd.user.services.mode-activate = {
     Unit = {
-      Description = "Activate workflow mode target from WOLF_MODE";
+      Description = "Restore last-selected workflow mode";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c 'mode=\"\${WOLF_MODE:-base}\"; systemctl --user start \"mode-\${mode}.target\"'";
+      ExecStart = "${pkgs.bash}/bin/bash -c 'wolf-mode restore'";
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };
