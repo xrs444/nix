@@ -11,6 +11,7 @@
     ./audio.nix
     ./disks.nix
     ./hardware-nvidia.nix
+    ./gaming.nix
     ./shares.nix
     ../../common
   ];

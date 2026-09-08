@@ -132,11 +132,6 @@ in
       # Image viewer
       imv
 
-      # Gaming utilities
-      mangohud
-      gamemode
-      prismlauncher
-
       # Disc ripping for Romm (bin/cue) — redumper does the actual dump,
       # cuetools verifies/post-processes the resulting cue sheets
       redumper
@@ -160,9 +155,6 @@ in
 
   # GVfs enables thunar to automount USB drives and removable media
   services.gvfs.enable = true;
-
-  # GameMode daemon — lets games request performance governor
-  programs.gamemode.enable = true;
 
   systemd.user.services.polkit-gnome-authentication-agent-1 = {
     description = "polkit-gnome-authentication-agent-1";
