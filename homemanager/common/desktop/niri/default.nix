@@ -78,6 +78,16 @@
             transform "normal"
         }
 
+        // Steam's UI (including the login/QR dialog) runs under XWayland via
+        // xwayland-satellite, and niri has no native XWayland scale support —
+        // fractional output scale (1.5 on DP-5/DP-6) mis-renders those windows,
+        // cropping the bottom. Pin Steam to DP-1, the only scale-1.0 output, so
+        // it never lands on a fractional-scale output in the first place.
+        window-rule {
+            match app-id="steam"
+            open-on-output "DP-1"
+        }
+
         // Per-mode overrides (keybinds, outputs, spawn-at-startup)
         include "~/.config/niri/active-mode.kdl"
 
