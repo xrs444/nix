@@ -54,6 +54,34 @@
             doCheck = false;
           });
 
+          # bug-886: mlx-vlm's own inference is pure MLX (no torch), but
+          # transformers' AutoProcessor infers a video-processor class name
+          # for ANY Qwen-VL-family model by string-replacing "ImageProcessor"
+          # with "VideoProcessor" in the model's image_processor_class (e.g.
+          # "Qwen2VLImageProcessor" -> "Qwen2VLVideoProcessor") and
+          # unconditionally imports it — confirmed live against
+          # transformers/models/auto/video_processing_auto.py, this happens
+          # regardless of which specific Qwen-VL model repo is loaded and
+          # bypasses the library's own is_torchvision_available() guard.
+          # That imported module does an unconditional `import torch` at
+          # module load, so it fails outright without torch installed — not
+          # a model-choice problem, so switching models doesn't avoid it.
+          # Neither torch nor torchvision have an aarch64-darwin binary cache
+          # hit (both 404 on cache.nixos.org, checked 2026-09-08), so this is
+          # a one-time from-source build. doCheck = false on both: per the
+          # overlay-strategy rule (never override widely-used packages'
+          # checks when cached; only skip checks for packages that must be
+          # built from source anyway) — both are being built from source
+          # regardless, and their upstream test suites are large enough to
+          # meaningfully outlast the build itself for a dependency that exists
+          # here purely to satisfy an import.
+          torch = pyprev.torch.overridePythonAttrs (old: {
+            doCheck = false;
+          });
+          torchvision = pyprev.torchvision.overridePythonAttrs (old: {
+            doCheck = false;
+          });
+
           # MACHINE-LOCAL BUILD ONLY (bug-560): this derivation embeds two
           # xcog1-specific absolute paths (/Applications/Xcode.app below, and
           # the Metal Toolchain cryptex mount further down) that only exist
@@ -307,17 +335,17 @@
   # for it. First request after a restart pays a cold-load cost; subsequent
   # requests hit the resident model until the daemon is restarted.
   #
-  # Deliberately Qwen2.5-VL, not Qwen3-VL (bug-886, see buglog): Qwen3-VL's
-  # transformers processor (video_processing_qwen3_vl.py) does an
-  # unconditional `import torch` at module load — not gated behind
-  # is_torch_available() — and transformers' AutoProcessor for the
-  # Qwen3-VL family loads that module even for pure image inference. mlx-vlm
-  # doesn't depend on torch at all (MLX is its own array backend), and
-  # neither torch nor torchvision have aarch64-darwin binary cache hits, so
-  # this would force a from-source PyTorch build on this host just to
-  # satisfy an unused import. Qwen2.5-VL's processor
-  # (processing_qwen2_5_vl.py) has no such file/import — confirmed live
-  # against the transformers repo — so it doesn't hit this at all.
+  # Model is Qwen2.5-VL, not Qwen3-VL, simply because it's an established,
+  # widely-downloaded 4-bit mlx-community quant (bug-886 covers a real, but
+  # since-fixed, torch-dependency incident with this — see llm-stack's
+  # pythonPackagesExtensions overlay below, mlxVlmPackage's option doc, and
+  # buglog bug-886). Model choice does NOT avoid that issue: transformers'
+  # AutoVideoProcessor infers a video-processor class for ANY Qwen-VL model
+  # by string-replacing "ImageProcessor" with "VideoProcessor" in the
+  # model's own image_processor_class and unconditionally imports it,
+  # regardless of which specific repo is loaded — confirmed against
+  # transformers/models/auto/video_processing_auto.py. The actual fix was
+  # adding torch/torchvision to mlxVlmPackage, not switching models.
   # Weights live outside the Nix store (cerebrum Decision Log 2026-08-07),
   # but NOT on the external SSD despite the original plan — bug-528: macOS's
   # kTCCServiceSystemPolicyRemovableVolumes blocks ANY automated/headless

@@ -345,12 +345,18 @@ in
 
     mlxVlmPackage = mkOption {
       type = types.package;
-      default = pkgs.python3.withPackages (ps: [ ps.mlx-vlm ]);
+      default = pkgs.python3.withPackages (ps: [ ps.mlx-vlm ps.torch ps.torchvision ]);
       description = ''
         Python environment providing the mlx_vlm.server entrypoint. Kept as a
         separate python env from mlxLmPackage — mlx-vlm pins its own
         transformers/mlx version floors, and a future pin conflict here
         shouldn't be able to break the working text-model daemons.
+
+        torch/torchvision are NOT used for inference (mlx-vlm runs entirely
+        on MLX) — they're here because transformers' AutoProcessor
+        unconditionally imports a torch-requiring video-processor module for
+        any Qwen-VL-family model, regardless of which specific model is
+        loaded (bug-886). Don't remove these thinking they're dead weight.
       '';
     };
 
