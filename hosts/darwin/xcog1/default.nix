@@ -296,8 +296,16 @@
   # Model port assignments:
   #   qwen3-14b       → 8001 (voice path; hybrid thinking — HA prompt uses /no_think)
   #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
+  #   qwen3-vl-8b     → 8003 (vision/tagging path; lazy-loaded, not resident — see below)
   #
-  # Both models are resident (launchd can't start-on-request — bug-523).
+  # The two text models are resident (launchd can't start-on-request —
+  # bug-523). qwen3-vl-8b deliberately is NOT — occasional-use vision
+  # workloads (Printventory AI-tagging today, Frigate GenAI potentially
+  # later) don't justify keeping ~6-10GB loaded permanently, and
+  # mlx_vlm.server's own lazy-load (no --model flag — see llm-stack's
+  # visionModels option) gives on-demand behaviour without launchd support
+  # for it. First request after a restart pays a cold-load cost; subsequent
+  # requests hit the resident model until the daemon is restarted.
   # Weights live outside the Nix store (cerebrum Decision Log 2026-08-07),
   # but NOT on the external SSD despite the original plan — bug-528: macOS's
   # kTCCServiceSystemPolicyRemovableVolumes blocks ANY automated/headless
@@ -330,6 +338,18 @@
         repo = "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit-DWQ";
         revision = "53bfb233acb2e50f6060c3c5709f23fac547827f";
         port = 8002;
+      };
+    };
+
+    # Printventory AI-tagging (occasional use, from xlt1-t) is the immediate
+    # driver; a generic OpenAI-compatible vision endpoint that Frigate's
+    # GenAI feature could point at later is a bonus, not a commitment — see
+    # nix/docs/ for context if this comment predates such a doc existing.
+    visionModels = {
+      qwen3-vl-8b = {
+        repo = "mlx-community/Qwen3-VL-8B-Instruct-4bit";
+        revision = "defcdea7cc7a4b0858fea563cbbce171d328e457";
+        port = 8003;
       };
     };
 

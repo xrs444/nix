@@ -1,7 +1,10 @@
 # LLM stack module for Darwin — MLX-lm + LiteLLM + Wyoming voice pipeline.
 #
 # Owns:
-#   - one launchd daemon per served MLX model (mlx_lm.server per port)
+#   - one launchd daemon per served MLX text model (mlx_lm.server per port,
+#     resident)
+#   - one launchd daemon per served MLX vision model (mlx_vlm.server per
+#     port, lazy-loaded — see visionModels)
 #   - LiteLLM launchd daemon fronting the MLX ports + upstream cloud tier
 #   - Wyoming faster-whisper (STT) and Piper (TTS) launchd daemons
 #   - Prometheus node_exporter
@@ -99,6 +102,29 @@ let
             api_key = "not-used";
           };
         }) cfg.models)
+        # Local MLX-served vision models. Unlike mlx_lm.server above,
+        # mlx_vlm.server does NOT special-case a literal "default_model" — it
+        # keys its model cache on whatever `model` string arrives and swaps
+        # models on a mismatch (loading fresh from HF if the string isn't a
+        # local path it already has). Forwarding "openai/default_model" here
+        # would hit the bug-530 failure in a new place (mlx_vlm trying to
+        # fetch "default_model" from HuggingFace); omitting `model` entirely
+        # falls through to mlx_vlm's own default,
+        # "mlx-community/nanoLLaVA-1.5-8bit", silently loading the wrong
+        # model. Forwarding the exact on-disk directory the daemon downloads
+        # into (${cfg.modelsDir}/<name>) makes the request-time cache key
+        # match the local weights exactly, so it never touches HF at request
+        # time. Do NOT "simplify" this to match the mlx_lm entries above —
+        # they are deliberately different because the two servers' model
+        # resolution behaves differently.
+        ++ (lib.mapAttrsToList (name: m: {
+          model_name = name;
+          litellm_params = {
+            model = "openai/${cfg.modelsDir}/${name}";
+            api_base = "http://127.0.0.1:${toString m.port}/v1";
+            api_key = "not-used";
+          };
+        }) cfg.visionModels)
         # Cloud fallback tier (DeepSeek) — key injected via env at exec time
         ++ lib.optional cfg.cloudTier.enable {
           model_name = cfg.cloudTier.modelName;
@@ -189,6 +215,54 @@ let
       };
     };
   };
+
+  # launchd daemon for a single mlx_vlm.server serving one vision model.
+  # Near-identical to mkMlxDaemon above (same download wrapper, same
+  # bug-703/704/705 workarounds) with one deliberate difference: no `--model`
+  # flag. mlx_vlm.server starts with nothing loaded and loads a model lazily
+  # on its first request (keyed on the incoming `model` string — see the
+  # litellmConfigFile comment above for why that string must be the on-disk
+  # path). That makes this genuinely on-demand: near-zero RAM at idle, cost
+  # paid only on first use after a restart. KeepAlive still applies so a
+  # crashed/unloaded server relaunches, not so the model stays resident.
+  mkMlxVlmDaemon = modelName: m: {
+    name = "mlx-vlm-${modelName}";
+    value = {
+      serviceConfig = {
+        Label = "net.xrs444.mlx-vlm-${modelName}";
+        # Direct ProgramArguments — same bug-705 rationale as mkMlxDaemon.
+        ProgramArguments = [
+          "${pkgs.writeShellScript "mlx-vlm-${modelName}" ''
+            set -euo pipefail
+            ${nixStoreGuard}
+            ${mountGuard}
+            dir="${cfg.modelsDir}/${modelName}"
+            if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
+              echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
+              /bin/rm -rf "$dir"
+              export HF_HOME="${cfg.modelsDir}/.hf-cache"
+              export HF_HUB_DISABLE_TELEMETRY=1
+              ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
+              printf '%s' "${m.revision}" > "$dir/.revision"
+            fi
+            exec ${cfg.mlxVlmPackage}/bin/mlx_vlm.server --host 127.0.0.1 --port ${toString m.port}
+          ''}"
+        ];
+        # Same bug-703/704 rationale as mkMlxDaemon: always world-traversable
+        # cwd, and a real writable $HOME for HF/tiktoken/rich caches.
+        WorkingDirectory = "/";
+        EnvironmentVariables = {
+          HOME = "/var/lib/llm-stack";
+        };
+        KeepAlive = true;
+        RunAtLoad = true;
+        ThrottleInterval = 30;
+        StandardErrorPath = "/var/log/llm-stack/mlx-vlm-${modelName}.stderr";
+        StandardOutPath = "/var/log/llm-stack/mlx-vlm-${modelName}.stdout";
+        ProcessType = "Adaptive";
+      };
+    };
+  };
 in
 
 {
@@ -264,6 +338,51 @@ in
         MLX models to serve, one resident mlx_lm.server launchd daemon each.
         Which models to include is a host-level RAM decision (all are pinned
         resident; launchd cannot start-on-request — bug-523).
+      '';
+    };
+
+    # ── MLX vision inference ────────────────────────────────────────────────
+
+    mlxVlmPackage = mkOption {
+      type = types.package;
+      default = pkgs.python3.withPackages (ps: [ ps.mlx-vlm ]);
+      description = ''
+        Python environment providing the mlx_vlm.server entrypoint. Kept as a
+        separate python env from mlxLmPackage — mlx-vlm pins its own
+        transformers/mlx version floors, and a future pin conflict here
+        shouldn't be able to break the working text-model daemons.
+      '';
+    };
+
+    visionModels = mkOption {
+      type = types.attrsOf (
+        types.submodule {
+          options = {
+            repo = mkOption {
+              type = types.str;
+              example = "mlx-community/Qwen3-VL-8B-Instruct-4bit";
+              description = "HuggingFace repo path (org/name). Verify existence via the HF API before pinning.";
+            };
+            revision = mkOption {
+              type = types.str;
+              description = "Immutable HF commit SHA. Never a branch name — the wrapper re-downloads on change.";
+            };
+            port = mkOption {
+              type = types.port;
+              description = "Localhost port for this model's mlx_vlm.server.";
+            };
+          };
+        }
+      );
+      default = { };
+      description = ''
+        Vision-capable MLX models to serve, one mlx_vlm.server launchd
+        daemon each. Unlike `models` above, these are deliberately NOT kept
+        resident — the daemon starts with no model loaded and loads lazily on
+        first request (bug-523 still applies: launchd itself can't do
+        start-on-request, but mlx_vlm.server's own lazy-load makes an
+        always-running daemon cost near-zero RAM at idle, which is the right
+        tradeoff for occasional-use vision workloads like AI-tagging tools).
       '';
     };
 
@@ -478,6 +597,9 @@ in
     launchd.daemons = lib.mkMerge [
       # One daemon per MLX-served model.
       (lib.listToAttrs (lib.mapAttrsToList mkMlxDaemon cfg.models))
+
+      # One daemon per MLX-served vision model (lazy-loaded, see visionModels).
+      (lib.listToAttrs (lib.mapAttrsToList mkMlxVlmDaemon cfg.visionModels))
 
       # LiteLLM router — launchd has no ordering primitives; LiteLLM retries
       # its upstream connections by default, so model daemons may come up
