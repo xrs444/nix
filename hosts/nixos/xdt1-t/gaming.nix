@@ -19,6 +19,16 @@
 
   programs.gamemode.enable = true;
 
+  # System-wide gamescope, for wrapping games via Steam launch options
+  # (gamescope -W 3840 -H 2160 -f -- %command%). Not covered by the
+  # `p.gamescope` in Lutris's extraPkgs below — that copy is only on PATH
+  # inside Lutris's own FHS sandbox, not for Steam-launched games. capSysNice
+  # lets gamescope request realtime scheduling for its compositor thread.
+  programs.gamescope = {
+    enable = true;
+    capSysNice = true;
+  };
+
   environment.systemPackages = with pkgs; [
     mangohud
     gamemode

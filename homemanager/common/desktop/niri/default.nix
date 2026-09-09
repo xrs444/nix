@@ -196,6 +196,7 @@
         window-rule {
             match app-id="gamescope"
             open-fullscreen true
+            open-on-output "DP-6"
         }
       '';
     };
