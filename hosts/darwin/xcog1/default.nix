@@ -296,16 +296,28 @@
   # Model port assignments:
   #   qwen3-14b       → 8001 (voice path; hybrid thinking — HA prompt uses /no_think)
   #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
-  #   qwen3-vl-8b     → 8003 (vision/tagging path; lazy-loaded, not resident — see below)
+  #   qwen2-5-vl-7b   → 8003 (vision/tagging path; lazy-loaded, not resident — see below)
   #
   # The two text models are resident (launchd can't start-on-request —
-  # bug-523). qwen3-vl-8b deliberately is NOT — occasional-use vision
+  # bug-523). qwen2-5-vl-7b deliberately is NOT — occasional-use vision
   # workloads (Printventory AI-tagging today, Frigate GenAI potentially
   # later) don't justify keeping ~6-10GB loaded permanently, and
   # mlx_vlm.server's own lazy-load (no --model flag — see llm-stack's
   # visionModels option) gives on-demand behaviour without launchd support
   # for it. First request after a restart pays a cold-load cost; subsequent
   # requests hit the resident model until the daemon is restarted.
+  #
+  # Deliberately Qwen2.5-VL, not Qwen3-VL (bug-886, see buglog): Qwen3-VL's
+  # transformers processor (video_processing_qwen3_vl.py) does an
+  # unconditional `import torch` at module load — not gated behind
+  # is_torch_available() — and transformers' AutoProcessor for the
+  # Qwen3-VL family loads that module even for pure image inference. mlx-vlm
+  # doesn't depend on torch at all (MLX is its own array backend), and
+  # neither torch nor torchvision have aarch64-darwin binary cache hits, so
+  # this would force a from-source PyTorch build on this host just to
+  # satisfy an unused import. Qwen2.5-VL's processor
+  # (processing_qwen2_5_vl.py) has no such file/import — confirmed live
+  # against the transformers repo — so it doesn't hit this at all.
   # Weights live outside the Nix store (cerebrum Decision Log 2026-08-07),
   # but NOT on the external SSD despite the original plan — bug-528: macOS's
   # kTCCServiceSystemPolicyRemovableVolumes blocks ANY automated/headless
@@ -346,9 +358,9 @@
     # GenAI feature could point at later is a bonus, not a commitment — see
     # nix/docs/ for context if this comment predates such a doc existing.
     visionModels = {
-      qwen3-vl-8b = {
-        repo = "mlx-community/Qwen3-VL-8B-Instruct-4bit";
-        revision = "defcdea7cc7a4b0858fea563cbbce171d328e457";
+      qwen2-5-vl-7b = {
+        repo = "mlx-community/Qwen2.5-VL-7B-Instruct-4bit";
+        revision = "fdcc572e8b05ba9daeaf71be8c9e4267c826ff9b";
         port = 8003;
       };
     };

@@ -360,7 +360,7 @@ in
           options = {
             repo = mkOption {
               type = types.str;
-              example = "mlx-community/Qwen3-VL-8B-Instruct-4bit";
+              example = "mlx-community/Qwen2.5-VL-7B-Instruct-4bit";
               description = "HuggingFace repo path (org/name). Verify existence via the HF API before pinning.";
             };
             revision = mkOption {
