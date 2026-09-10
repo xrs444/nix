@@ -210,6 +210,19 @@
             open-fullscreen true
             open-on-output "DP-6"
         }
+
+        // gamescope has a known, unresolved upstream bug (reproduced on KDE too, not
+        // niri-specific — see forum.level1techs.com/t/gamescope-goes-to-the-wrong-
+        // display-when-switching-to-full-screen) where the actual fullscreen commit
+        // (once the game's real resolution is known, after the loading splash) can
+        // retarget to a different output than where it was originally placed, even
+        // though the window opens on the correct output initially. `--display-index`
+        // does not fix this (tried 0-4 on xdt1-t; none reliably landed on DP-6).
+        // No niri-side or gamescope-side fix exists, so this is a manual recovery
+        // bind — press it if the game jumps to the wrong monitor after loading.
+        binds {
+            Mod+Shift+G { move-window-to-monitor "DP-6"; }
+        }
       '';
     };
   };
