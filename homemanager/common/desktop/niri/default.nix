@@ -193,8 +193,19 @@
         output "HDMI-A-2" {
             off
         }
+        // gamescope's nested Wayland toplevel reports app_id: null (confirmed via
+        // `niri msg -j windows`) — its title is just the wrapped game's title, which
+        // varies per game, so neither app-id nor title can reliably match it directly.
+        // niri has no documented matcher for "app-id is unset" (checked the wiki), so
+        // this instead matches every window and excludes the other apps expected to
+        // appear in Gaming mode. Steam already gets pinned to DP-1 by the global rule
+        // above regardless, so excluding it here is just to keep it off DP-6.
         window-rule {
             match app-id="gamescope"
+            match title=".*"
+            exclude app-id="steam"
+            exclude app-id="foot"
+            exclude app-id="fuzzel"
             open-fullscreen true
             open-on-output "DP-6"
         }
