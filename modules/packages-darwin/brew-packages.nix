@@ -57,6 +57,7 @@
       "google-chrome"
       "gitkraken"
       "obsidian"
+      "element"
       "vorssaint"
       # Push-to-talk voice-to-text (voxtype.io). Installs as a CLI binary,
       # not an .app bundle — first run needs `voxtype configure` plus an

@@ -361,6 +361,18 @@ in
   # architectures — and it's the exact electron version bitwarden-desktop and
   # vikunja-desktop already pull above, so this collapses onto the same
   # shared Electron build instead of adding a third one to the closure.
+  # element-desktop (xrs444/samantha HM profiles, xdt1-t + xlt2-s): same
+  # cache-miss story as bitwarden-desktop/vikunja-desktop/obsidian above —
+  # the pinned nixpkgs' element-desktop-1.12.24 has no cache.nixos.org
+  # narinfo (404) on x86_64-linux or aarch64-linux, forcing a from-source
+  # Electron/Chromium build. nixpkgs-unstable has the same version
+  # (1.12.24), confirmed cached (narinfo 200) on both architectures.
+  element-desktop = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+    }
+  ).element-desktop;
+
   obsidian = (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;

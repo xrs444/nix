@@ -75,6 +75,10 @@
     pkgs.insync
     pkgs.insync-nautilus
     pkgs.bitwarden-desktop
+    # Element (Matrix client) — nixpkgs-unstable overlay pin, see
+    # overlays/pkgs.nix for the cache-miss rationale shared with the
+    # other Electron GUI apps above.
+    pkgs.element-desktop
   ];
 
   # vja (Vikunja CLI) server config — non-secret. The API token is decrypted

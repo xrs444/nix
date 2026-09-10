@@ -314,6 +314,15 @@ in
     # this brings xdt1-t to parity so the vault (synced via services.syncthing below) has
     # the same editor available. Unfree — see allowUnfreePredicate in this host's config.
     obsidian
+    # GUI companion to bitwarden-cli above (core tooling block) — same
+    # nixpkgs-unstable/electron_41 overlay pin as vikunja-desktop/obsidian
+    # (overlays/pkgs.nix:327), so it shares that already-cached Electron
+    # build rather than adding a fourth one to the closure.
+    bitwarden-desktop
+    # Element (Matrix client) — nixpkgs-unstable overlay pin, see
+    # overlays/pkgs.nix for the cache-miss rationale shared with the
+    # other Electron GUI apps above.
+    element-desktop
   ]
   # Google Drive sync for xrs444's own account. Unfree (allowUnfree already
   # set in hosts/nixos/xdt1-t/default.nix). No Nautilus extension here —
