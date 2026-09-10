@@ -69,8 +69,10 @@ def generate_readme_for_folder(folder):
             readme.write("This folder is currently empty.\n")
 
 def main():
-    # Always walk from repo root, even if run from a subfolder
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    # Always walk from repo root, even if run from a subfolder.
+    # This script lives at <repo_root>/.github/scripts/, so repo root is 2 levels up
+    # (not 3 — that off-by-one escaped into the parent of the repo, see bug-861).
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     for root, dirs, files in os.walk(repo_root, topdown=True):
         # Skip .git, .github, hidden folders, and generated caches
         dirs[:] = [d for d in dirs if not d.startswith('.') and d not in SKIP_DIRS]
