@@ -250,15 +250,16 @@ in
               # Do NOT set automatic_refresh on primary
             };
             # 3rd replica (xidm1, Sweet Potato SBC on the server VLAN) — last-resort
-            # idm VIP member, added 2026-08-21 (bootstrap in progress).
-            # INTENTIONALLY NOT YET ADDED HERE: this is the live SSO primary — an
-            # unverified/malformed partner_cert string risks a kanidm config-parse
-            # failure fleet-wide (~25 OAuth2 clients + PAM logins), so the entry is
-            # deferred to Phase B, once xidm1 has been deployed and
-            # `kanidmd show-replication-certificate` run on it to get its real cert.
-            # Add a "repl://xidm1.xrs444.net:8444" block here (same shape as xsvr2's
-            # above, no automatic_refresh) with that real value before xidm1 can
-            # replicate.
+            # idm VIP member. Cert captured via `kanidmd show-replication-certificate`
+            # on xidm1 (2026-09-10, Phase B of kanidm-replace-xts2-with-xidm1 plan).
+            # SAN is "idm.xrs444.net" rather than "xidm1.xrs444.net" (unlike xsvr2's
+            # cert below) — replication trust is exact-cert pinning, not hostname
+            # verification, so this is cosmetic, not a blocker.
+            "repl://xidm1.xrs444.net:8444" = {
+              type = "mutual-pull";
+              partner_cert = "MIIB1jCCAXygAwIBAgIRATykuyPppEIpo8EhMjNX0-IwCgYIKoZIzj0EAwIwTDEtMCsGA1UEAwwkM2NhNGJiMjMtZTlhNC00MjI5LWEzYzEtMjEzMjMzNTdkM2UyMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24wHhcNMjYwODI1MjIwMDU0WhcNMzAwODI1MjIwMDU0WjBMMS0wKwYDVQQDDCQzY2E0YmIyMy1lOWE0LTQyMjktYTNjMS0yMTMyMzM1N2QzZTIxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABD4sWc2GrpoycxJ4d_z_W1AET0DtcU1eI7GWfgqCYxnbxFJ_itKfRMLRUgVsipy8GVJsz5D6fhpMRAwDTHsMBoujPzA9MCAGA1UdJQEB_wQWMBQGCCsGAQUFBwMCBggrBgEFBQcDATAZBgNVHREEEjAQgg5pZG0ueHJzNDQ0Lm5ldDAKBggqhkjOPQQDAgNIADBFAiAbwYi4rbzFRE8sRHKjoSBqt9Hh70y8mWBdjsVAzNu4BAIhAJS0Del9ilOSUjmWpBt6NfYWYHlta5mr9sr10zJKL1kU";
+              # Do NOT set automatic_refresh on primary
+            };
           };
         };
         client.settings = {
