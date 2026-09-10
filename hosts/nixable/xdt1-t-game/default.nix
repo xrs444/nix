@@ -10,7 +10,10 @@ in {
     all = {
       hosts = {
         xdt1-t-game = {
-          ansible_host = "xdt1-t-game";
+          # Bazzite self-reports "xdt1-t-game" as its hostname, but that only resolves via
+          # mDNS (xdt1-t-game.local) — the static DNS/DHCP reservation for this physical
+          # box (shared with its NixOS boot) is xdt1-t.lan. Use that so ansible can connect.
+          ansible_host = "xdt1-t.lan";
           ansible_connection = "ssh";
           ansible_user = "ansible";
         };
