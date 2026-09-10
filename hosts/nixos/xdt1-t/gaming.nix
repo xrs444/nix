@@ -22,12 +22,19 @@
   # System-wide gamescope, for wrapping games via Steam launch options
   # (gamescope -W 3840 -H 2160 -f -- %command%). Not covered by the
   # `p.gamescope` in Lutris's extraPkgs below — that copy is only on PATH
-  # inside Lutris's own FHS sandbox, not for Steam-launched games. capSysNice
-  # lets gamescope request realtime scheduling for its compositor thread.
-  programs.gamescope = {
-    enable = true;
-    capSysNice = true;
-  };
+  # inside Lutris's own FHS sandbox, not for Steam-launched games.
+  #
+  # capSysNice is deliberately left off (default false). With it on, the
+  # setcap wrapper's file capabilities make Steam's bwrap/pressure-vessel FHS
+  # sandbox refuse the process ("bwrap: Unexpected capabilities but not
+  # setuid, old file caps config?"), which gamescope surfaces as "failed to
+  # inherit capabilities: Operation not permitted" and exits immediately —
+  # Steam shows the Play button bounce from loading back to Ready with no
+  # window ever appearing. This is a known, still-open upstream nixpkgs/bwrap
+  # interaction (nixpkgs#351516) with no real fix, only this workaround.
+  # Without capSysNice, gamescope just logs "No CAP_SYS_NICE, falling back to
+  # regular-priority compute and threads" and launches normally.
+  programs.gamescope.enable = true;
 
   environment.systemPackages = with pkgs; [
     mangohud
