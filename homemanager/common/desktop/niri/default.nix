@@ -205,6 +205,7 @@
             match title=".*"
             exclude app-id="steam"
             exclude app-id="foot"
+            exclude app-id="org.wezfurlong.wezterm"
             exclude app-id="fuzzel"
             open-fullscreen true
             open-on-output "DP-6"
