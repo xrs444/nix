@@ -53,7 +53,7 @@ in
         nodejs
         openjdk
         ruby
-        ansible
+        python3Packages.ansible-core
 
         # Kubernetes & Cloud Native
         cilium-cli
