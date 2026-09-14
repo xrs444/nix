@@ -6,12 +6,6 @@
   ...
 }:
 {
-  # IP forwarding — required for Tailscale exit node / subnet router / iprouting
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
-  };
-
   # ethtool offload settings recommended by Tailscale for exit nodes (kernel 6.2+, Tailscale 1.54+)
   # Dynamically detects the default-route interface so this works across both xts1 (end0) and xts2
   systemd.services.tailscale-ethtool = {

@@ -136,6 +136,11 @@
         networkConfig = {
           DHCP = "yes";
           IPv6AcceptRA = true;
+          # iprouting sets all.forwarding=1 which propagates to bond0.forwarding=1,
+          # causing the kernel to silently set accept_ra=0 on bond0. Setting
+          # IPv6Forwarding=false here scopes forwarding off for this uplink interface
+          # so the kernel permits RA acceptance and SLAAC from the Firewalla.
+          IPv6Forwarding = false;
         };
         vlan = [
           "bond0.21"
@@ -158,7 +163,6 @@
         matchConfig.Name = "bond0.22";
         networkConfig = {
           Bridge = "bridge22";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -220,10 +224,14 @@
       };
       "90-bridge22" = {
         matchConfig.Name = "bridge22";
-        address = [ "172.20.3.204/24"];
+        # fd66:150f:7361:0016::/64 is VLAN 22's ULA subnet (see docs/ipv6-addressing.md) —
+        # k8s/BGP infra gets a stable address here since VLAN 22 is ULA-role, not GUA.
+        address = [
+          "172.20.3.204/24"
+          "fd66:150f:7361:0016::204/64"
+        ];
         bridgeConfig = {};
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {

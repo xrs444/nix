@@ -263,10 +263,21 @@ else
 
       # Open required ports in firewall for VRRP
       networking.firewall = {
+        # extraCommands is a shell script (not iptables-only), so v6 rules via ip6tables
+        # live in the same string — there is no separate extraCommands6 option.
         extraCommands = ''
           # Allow VRRP multicast
           iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
           iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
+
+          # v4-only VRRP instances today (see nodeConfigs/vrrpInstances above) — deny the v6
+          # VRRP multicast group explicitly rather than leaving it unfiltered by omission, now
+          # that role-assigned VLANs (bridge21/22 etc.) are gaining real IPv6 connectivity.
+          # ff02::12 is the VRRP-for-IPv6 link-local multicast group (RFC 5798), the v6
+          # equivalent of 224.0.0.18. When a real v6 VRRP instance is added (see the ULA VIP
+          # plan for bridge22), replace this deny with the matching ip6tables ACCEPT pair.
+          ip6tables -A INPUT -d ff02::12 -j DROP
+          ip6tables -A OUTPUT -d ff02::12 -j DROP
         '';
       };
     }
