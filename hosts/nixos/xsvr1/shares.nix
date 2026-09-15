@@ -104,6 +104,11 @@
       # writes. Export the parent so future subfolders under /zfs/distribute
       # don't each need their own export line.
       /export/zfs/distribute 172.21.0.0/24(ro,sync,no_subtree_check,root_squash) 172.20.0.0/16(ro,sync,no_subtree_check,root_squash) 100.64.0.0/10(ro,sync,no_subtree_check,root_squash)
+      # samba-tool AD backup tarballs, written by the samba-dc CronJob in the
+      # cluster. no_root_squash: the samba-dc pod runs privileged (as root) and
+      # writes the backup tar as root — root_squash would map that to "nobody"
+      # and break the write, same reasoning as scanopy above.
+      /export/zfs/systembackups/samba-dc 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
     '';
   };
 
@@ -229,6 +234,15 @@
     {
       what = "/zfs/systembackups/crafty";
       where = "/export/zfs/systembackups/crafty";
+      type = "none";
+      options = "bind";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "zfs-mount.service" ];
+      requires = [ "zfs-mount.service" ];
+    }
+    {
+      what = "/zfs/systembackups/samba-dc";
+      where = "/export/zfs/systembackups/samba-dc";
       type = "none";
       options = "bind";
       wantedBy = [ "multi-user.target" ];
@@ -400,6 +414,10 @@
       mkdir -p /zfs/systembackups/longhorn
       chown longhorn:longhorn /zfs/systembackups/longhorn
       chmod 755 /zfs/systembackups/longhorn
+      # samba-dc pod writes here as root (no_root_squash) — see export comment above
+      mkdir -p /zfs/systembackups/samba-dc
+      chown root:root /zfs/systembackups/samba-dc
+      chmod 755 /zfs/systembackups/samba-dc
       mkdir -p /export/zfs/devicebackups
       mkdir -p /export/zfs/documents/manyfold
       mkdir -p /export/zfs/documents/photos
@@ -416,6 +434,7 @@
       chown 10001:10001 /zfs/system/loki
       chmod 755 /zfs/system/loki
       mkdir -p /export/zfs/systembackups/crafty
+      mkdir -p /export/zfs/systembackups/samba-dc
       mkdir -p /export/zfs/media/books/fiction
       mkdir -p /export/zfs/media/books/nonfiction
       mkdir -p /export/zfs/media/books/adult
