@@ -44,6 +44,14 @@ let
       fullNode = true;
       runsKanidm = false;
     };
+    xsvr4 = {
+      ip = "172.20.3.204";
+      keepalivedState = "BACKUP";
+      keepalivedPriority = 98;
+      interface = "bond0";
+      fullNode = true;
+      runsKanidm = false; # same as xsvr3 — no kanidm role in flake.nix
+    };
     xidm1 = {
       ip = "172.20.1.111";
       keepalivedState = "BACKUP";

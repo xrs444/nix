@@ -26,6 +26,14 @@ jobs:
             accept-flake-config = true
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
       - uses: DeterminateSystems/flake-checker-action@v13
+      - name: Check overlay overrides against binary cache
+        run: |
+          # Catches overlay overrides (nix/overlays/*.nix) that changed a
+          # package's hash for a reason that no longer holds — the vanilla
+          # package is now cached upstream but ours isn't, so every CI/deploy
+          # run pays for an unnecessary from-source rebuild of that package's
+          # whole reverse-dependency cone. See nix/scripts/check-overlay-cache.sh.
+          bash scripts/check-overlay-cache.sh x86_64-linux aarch64-linux
 
   notify:
     name: Notify Result

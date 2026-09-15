@@ -11,6 +11,7 @@ let
     xsvr1 = { routerId = "172.20.3.201"; };
     xsvr2 = { routerId = "172.20.3.202"; };
     xsvr3 = { routerId = "172.20.3.203"; };
+    xsvr4 = { routerId = "172.20.3.204"; };
   };
 
   localASN = 65000;

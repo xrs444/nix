@@ -51,18 +51,26 @@ except ImportError:
   });
 in
 {
-  # yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle' which requires
-  # network access unavailable in the nix sandbox. Strip it from yt-dlp's
-  # dependencies so it is never built.
-  # Overridden at the top level (not via python3.packageOverrides) so that
-  # python3's derivation hash stays identical to upstream nixpkgs — allowing
-  # all 200+ python packages to be fetched from cache.nixos.org rather than
-  # rebuilt locally. Only yt-dlp's own hash changes; cascade impact is zero.
-  yt-dlp = prev.yt-dlp.overrideAttrs (old: {
-    propagatedBuildInputs = builtins.filter
-      (x: (x.pname or "") != "yt-dlp-ejs")
-      (old.propagatedBuildInputs or [ ]);
-  });
+  # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
+  # vanilla yt-dlp at this pin is cached (narinfo 200); ours was not (404).
+  # Whether yt-dlp-ejs's network-requiring hatch_build.py is still a problem
+  # at the current pinned version is unverified — if a build failure
+  # resurfaces, re-check with `just check-overlay-cache` before restoring;
+  # cascade impact was documented as zero, so this is cheap to bring back
+  # scoped exactly as before if actually needed.)
+  #
+  # Original comment: yt-dlp-ejs-0.8.0 hatch_build.py runs 'pnpm run bundle'
+  # which requires network access unavailable in the nix sandbox. Strip it
+  # from yt-dlp's dependencies so it is never built. Overridden at the top
+  # level (not via python3.packageOverrides) so that python3's derivation
+  # hash stays identical to upstream nixpkgs — allowing all 200+ python
+  # packages to be fetched from cache.nixos.org rather than rebuilt
+  # locally. Only yt-dlp's own hash changes; cascade impact is zero.
+  # yt-dlp = prev.yt-dlp.overrideAttrs (old: {
+  #   propagatedBuildInputs = builtins.filter
+  #     (x: (x.pname or "") != "yt-dlp-ejs")
+  #     (old.propagatedBuildInputs or [ ]);
+  # });
 
   # NOTE (2026-07-07): the aarch64 gobject-introspection/GIR overlay block that
   # used to live here (gobject-introspection-unwrapped, gobject-introspection,
@@ -85,79 +93,136 @@ in
   # documented live failure reproduced in an actual CI run (see
   # .claude/plans/for-now-ignore-mutable-haven.md), not just inferred.
 
-  # libxkbcommon: python-tests:tool-option-parsing fails on aarch64 (exit 1).
-  # The library itself builds and functions correctly.
-  libxkbcommon = if final.stdenv.hostPlatform.isAarch64
-    then prev.libxkbcommon.overrideAttrs (_: { doCheck = false; })
-    else prev.libxkbcommon;
+  # QUARANTINED 2026-09-15 (bug-940: this was the aarch64 root cause of the
+  # Build-and-Deploy workflow running 6.5h+/timing out. Diffing gtk3's direct
+  # build inputs ours-vs-vanilla returned exactly two entries —
+  # libxkbcommon and tinysparql below — and nothing else; from there the
+  # cone is the entire aarch64 desktop stack: gtk3/gtk4/libadwaita, all of
+  # Qt5+Qt6, mesa (via libdisplay-info → v4l-utils → qtbase),
+  # firefox-unwrapped, flatpak, ostree, niri, nautilus,
+  # gnome-settings-daemon, webkitgtk — 251 packages on xlt1-t-vnixos alone.
+  # Vanilla libxkbcommon at this pin is cached (narinfo 200); ours (doCheck
+  # = false) was not (404), i.e. the override itself was the only reason
+  # this fell out of cache, tests aside. If the aarch64
+  # python-tests:tool-option-parsing failure resurfaces, re-check with
+  # `just check-overlay-cache` before restoring — a stale nixpkgs pin (this
+  # was true when written, is not true now) is a much smaller cost than a
+  # 251-package cache miss.
+  #
+  # Original comment: libxkbcommon: python-tests:tool-option-parsing fails on
+  # aarch64 (exit 1). The library itself builds and functions correctly.
+  # libxkbcommon = if final.stdenv.hostPlatform.isAarch64
+  #   then prev.libxkbcommon.overrideAttrs (_: { doCheck = false; })
+  #   else prev.libxkbcommon;
 
-  # libsecret: test-collection flakes (SIGABRT — "Message recipient
-  # disconnected from message bus without replying" from the sandboxed D-Bus
-  # session used by the test). 23/24 tests pass; the library itself builds and
-  # functions correctly, only the mock D-Bus IPC timing in the test sandbox is
-  # unreliable. Originally scoped to aarch64 only (first seen on xlt1-t-vnixos);
-  # confirmed 2026-08-22 the identical failure also hits x86_64-linux
-  # (xcomm1, built on xdt1-t.lan) — the D-Bus mock timing flake isn't
-  # architecture-specific, so the fix is now unconditional. Confirmed this
-  # exact output isn't on cache.nixos.org (curl 404) on both platforms, so
-  # this is a genuine from-source build, not an unnecessary cache-bypassing
-  # rebuild — see the note above this block before extending doCheck=false
-  # to anything that IS cached.
-  libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
+  # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
+  # vanilla libsecret at this pin is cached (narinfo 200); ours was not
+  # (404) — the D-Bus mock timing flake this doCheck=false worked around
+  # either no longer reproduces at the current pinned version or Hydra's
+  # own builders don't hit it either way; either way it's cached now. If
+  # the flake resurfaces, re-check with `just check-overlay-cache` before
+  # restoring.)
+  #
+  # Original comment: libsecret: test-collection flakes (SIGABRT — "Message
+  # recipient disconnected from message bus without replying" from the
+  # sandboxed D-Bus session used by the test). 23/24 tests pass; the library
+  # itself builds and functions correctly, only the mock D-Bus IPC timing in
+  # the test sandbox is unreliable. Originally scoped to aarch64 only (first
+  # seen on xlt1-t-vnixos); confirmed 2026-08-22 the identical failure also
+  # hits x86_64-linux (xcomm1, built on xdt1-t.lan) — the D-Bus mock timing
+  # flake isn't architecture-specific, so the fix is now unconditional.
+  # Confirmed this exact output isn't on cache.nixos.org (curl 404) on both
+  # platforms, so this is a genuine from-source build, not an unnecessary
+  # cache-bypassing rebuild — see the note above this block before
+  # extending doCheck=false to anything that IS cached.
+  # libsecret = prev.libsecret.overrideAttrs (_: { doCheck = false; });
 
-  # sdl3: testprocess (SDL_CreateProcess IPC test) times out under the Nix
-  # build sandbox (exit code 8 = ctest timeout) on the x86_64-linux remote
-  # builder (xsvr1) — 24/25 tests otherwise pass; the library itself builds
-  # and functions correctly. Pulled in transitively via desktop.nix's GNOME
-  # (gnome-remote-desktop -> gtk-frdp -> freerdp/sdl3-image/sdl3-ttf -> sdl3),
-  # first hit while bringing up xlt2-s. Confirmed via `curl -sI
-  # https://cache.nixos.org/<hash>.narinfo` 404 that sdl3-3.4.8 isn't on the
-  # binary cache at all — genuine from-source build, not our own overlay
-  # forcing an unnecessary rebuild. Not architecture-specific (unlike the
-  # aarch64 IPC flakiness above), so left unscoped.
-  sdl3 = prev.sdl3.overrideAttrs (_: { doCheck = false; });
+  # QUARANTINED 2026-09-15 (bug-940: this was also a contributor to the
+  # x86_64 ffmpeg-headless cone above — pipewire → ffmpeg-headless → sdl3 —
+  # and independently confirmed uncached-by-us: vanilla sdl3 at this pin is
+  # cached (narinfo 200), ours was not (404). The SDL_CreateProcess ctest
+  # timeout this worked around was tied to sdl3-3.4.8; current pin is
+  # 3.4.10 and evidently passes on Hydra's builders. Re-check with `just
+  # check-overlay-cache` before restoring if the timeout resurfaces.)
+  #
+  # Original comment: sdl3: testprocess (SDL_CreateProcess IPC test) times
+  # out under the Nix build sandbox (exit code 8 = ctest timeout) on the
+  # x86_64-linux remote builder (xsvr1) — 24/25 tests otherwise pass; the
+  # library itself builds and functions correctly. Pulled in transitively
+  # via desktop.nix's GNOME (gnome-remote-desktop -> gtk-frdp ->
+  # freerdp/sdl3-image/sdl3-ttf -> sdl3), first hit while bringing up
+  # xlt2-s. Confirmed via `curl -sI https://cache.nixos.org/<hash>.narinfo`
+  # 404 that sdl3-3.4.8 isn't on the binary cache at all — genuine
+  # from-source build, not our own overlay forcing an unnecessary rebuild.
+  # Not architecture-specific (unlike the aarch64 IPC flakiness above), so
+  # left unscoped.
+  # sdl3 = prev.sdl3.overrideAttrs (_: { doCheck = false; });
 
-  # gtkmm4: tree_model_iterator_test fails with "Gtk-WARNING: Failed to open
-  # display" — needs a real X11/Wayland display, which doesn't exist in the
-  # Nix build sandbox. 7/8 tests pass; the library itself builds and
-  # functions correctly, only this one display-dependent test can't run
-  # headless. Pulled in transitively via pavucontrol. Confirmed via `curl -sI
+  # QUARANTINED 2026-09-15 (bug-940: vanilla gtkmm4 at this pin is cached
+  # (narinfo 200); ours was not (404). Re-check with `just
+  # check-overlay-cache` before restoring if the display-dependent test
+  # failure resurfaces.)
+  #
+  # Original comment: gtkmm4: tree_model_iterator_test fails with
+  # "Gtk-WARNING: Failed to open display" — needs a real X11/Wayland
+  # display, which doesn't exist in the Nix build sandbox. 7/8 tests pass;
+  # the library itself builds and functions correctly, only this one
+  # display-dependent test can't run headless. Pulled in transitively via
+  # pavucontrol. Confirmed via `curl -sI
   # https://cache.nixos.org/<hash>.narinfo` 404 that gtkmm-4.22.0 isn't on
   # the binary cache for aarch64-linux at all — genuine from-source build,
   # not our own overlay forcing an unnecessary rebuild (first hit on
   # xlt1-t-vnixos, 2026-08-24).
-  gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
+  # gtkmm4 = prev.gtkmm4.overrideAttrs (_: { doCheck = false; });
 
-  # gtksourceview5: checkPhase fails immediately with "Fontconfig error: No
-  # writable cache directories" — the meson test suite runs under xvfb-run +
-  # a sandboxed dbus-run-session, and fontconfig's default cache path
-  # (~/.cache/fontconfig) isn't writable in the Nix build sandbox. The
-  # library itself builds and functions correctly, only headless
-  # font-rendering inside the test harness is affected. Pulled in
-  # transitively via desktop.nix's GNOME (gnome-text-editor -> libspelling,
-  # and others), first hit on xlt2-s (CI run 33220096150). Confirmed via
-  # `curl -sI https://cache.nixos.org/<hash>.narinfo` 404 that
-  # gtksourceview-5.20.0 isn't on the binary cache at all — genuine
-  # from-source build, not our own overlay forcing an unnecessary rebuild.
-  gtksourceview5 = prev.gtksourceview5.overrideAttrs (_: { doCheck = false; });
+  # QUARANTINED 2026-09-15 (bug-940: vanilla gtksourceview5 at this pin is
+  # cached (narinfo 200); ours was not (404). Re-check with `just
+  # check-overlay-cache` before restoring if the fontconfig test failure
+  # resurfaces.)
+  #
+  # Original comment: gtksourceview5: checkPhase fails immediately with
+  # "Fontconfig error: No writable cache directories" — the meson test
+  # suite runs under xvfb-run + a sandboxed dbus-run-session, and
+  # fontconfig's default cache path (~/.cache/fontconfig) isn't writable in
+  # the Nix build sandbox. The library itself builds and functions
+  # correctly, only headless font-rendering inside the test harness is
+  # affected. Pulled in transitively via desktop.nix's GNOME
+  # (gnome-text-editor -> libspelling, and others), first hit on xlt2-s (CI
+  # run 33220096150). Confirmed via `curl -sI
+  # https://cache.nixos.org/<hash>.narinfo` 404 that gtksourceview-5.20.0
+  # isn't on the binary cache at all — genuine from-source build, not our
+  # own overlay forcing an unnecessary rebuild.
+  # gtksourceview5 = prev.gtksourceview5.overrideAttrs (_: { doCheck = false; });
 
-  # webkitgtk_4_1/6_0: OOM-killed (exit 137/SIGKILL) building on xsvr1's
-  # remote builder, ~89% through — ninja's setup-hook defaults to
-  # `-j$NIX_BUILD_CORES` (all cores), and with WebCore's large unified-source
-  # translation units that spikes peak RSS past available RAM once other
-  # concurrent builds are also contending for it on the shared builder.
-  # `ninjaFlags` is appended after the default `-j` flag by the setup hook
-  # and ninja takes the last `-j` seen, so this reliably caps webkitgtk's own
-  # parallelism without touching NIX_BUILD_CORES (which the Nix daemon may
-  # re-inject) or any other package. Neither ABI variant nor their
-  # downstream consumers (gnome-shell itself — unavoidable, evolution-data-server,
-  # sushi) are on the binary cache at this nixpkgs revision (confirmed via
-  # narinfo 404), so this is a genuine from-source build. First hit bringing
-  # up xlt2-s (the first host in this repo to actually enable full GNOME via
-  # services.desktopManager.gnome — xcomm1's flake `desktop = "gnome"` label
-  # is misleading, its actual desktop.nix uses Niri).
-  webkitgtk_4_1 = prev.webkitgtk_4_1.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
-  webkitgtk_6_0 = prev.webkitgtk_6_0.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
+  # QUARANTINED 2026-09-15 (bug-940: vanilla webkitgtk_4_1/6_0 at this pin
+  # are cached (narinfo 200); ours were not (404) — webkitgtk roots the
+  # gnome-shell/evolution-data-server/sushi cone, so this alone was a large
+  # chunk of the xlt2-s/xts1 build time. The OOM this ninjaFlags cap worked
+  # around was a property of OUR builder's contention (multiple concurrent
+  # builds sharing xsvr1's RAM), not of webkitgtk itself — Hydra's own
+  # builders clearly complete it fine. If an OOM resurfaces on our
+  # builders specifically, prefer capping xsvr1's overall concurrent build
+  # count over re-forcing this package out of the cache; re-check with
+  # `just check-overlay-cache` either way.)
+  #
+  # Original comment: webkitgtk_4_1/6_0: OOM-killed (exit 137/SIGKILL)
+  # building on xsvr1's remote builder, ~89% through — ninja's setup-hook
+  # defaults to `-j$NIX_BUILD_CORES` (all cores), and with WebCore's large
+  # unified-source translation units that spikes peak RSS past available
+  # RAM once other concurrent builds are also contending for it on the
+  # shared builder. `ninjaFlags` is appended after the default `-j` flag by
+  # the setup hook and ninja takes the last `-j` seen, so this reliably caps
+  # webkitgtk's own parallelism without touching NIX_BUILD_CORES (which the
+  # Nix daemon may re-inject) or any other package. Neither ABI variant nor
+  # their downstream consumers (gnome-shell itself — unavoidable,
+  # evolution-data-server, sushi) are on the binary cache at this nixpkgs
+  # revision (confirmed via narinfo 404), so this is a genuine from-source
+  # build. First hit bringing up xlt2-s (the first host in this repo to
+  # actually enable full GNOME via services.desktopManager.gnome —
+  # xcomm1's flake `desktop = "gnome"` label is misleading, its actual
+  # desktop.nix uses Niri).
+  # webkitgtk_4_1 = prev.webkitgtk_4_1.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
+  # webkitgtk_6_0 = prev.webkitgtk_6_0.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
 
   # gcr: giscanner/utils.py has an unconditional top-level `import
   # distutils.cygwinccompiler` (only actually used on Windows/cygwin
@@ -190,38 +255,69 @@ in
     then useGiscannerDistutilsFix prev.gcr
     else prev.gcr;
 
-  # aarch64-linux equivalent of the Darwin fix above, scoped per-package (see
-  # the note above gobject-introspection-unwrapped for why). Confirmed via
-  # `curl -sI .../<hash>.narinfo` 404 that libnice/gtk-layer-shell/gnome-autoar
-  # are genuinely uncached on aarch64-linux, not just victims of our own
-  # cascading overrideAttrs.
-  libnice = if final.stdenv.hostPlatform.isAarch64
-    then useGiscannerDistutilsFix prev.libnice
-    else prev.libnice;
-  gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
-    then useGiscannerDistutilsFix prev.gtk-layer-shell
-    else prev.gtk-layer-shell;
-  gnome-autoar = if final.stdenv.hostPlatform.isAarch64
-    then useGiscannerDistutilsFix prev.gnome-autoar
-    else prev.gnome-autoar;
-
-  # tinysparql (upstream rename of GNOME Tracker/localsearch, pulled in
-  # transitively via nautilus in the GNOME desktop stack since the
-  # 2026-08-11 flake.lock bump): identical g-ir-scanner distutils crash as
-  # libnice/gtk-layer-shell/gnome-autoar above. Confirmed via
-  # `curl -sI .../<hash>.narinfo` 404 that it's genuinely uncached for
-  # aarch64-linux, not our own overlay forcing an unnecessary rebuild.
-  tinysparql = if final.stdenv.hostPlatform.isAarch64
-    then useGiscannerDistutilsFix prev.tinysparql
-    else prev.tinysparql;
-
-  # django 5.2.x: bash_completion test calls external bash completion
-  # infrastructure that doesn't exist in the Nix sandbox — gets [''] instead
-  # of ['--list']. 1 test out of 18154 fails; package itself is fine.
-  # Tests run in installCheckPhase; doInstallCheck=false skips them.
+  # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
+  # vanilla libnice/gtk-layer-shell/gnome-autoar at this pin are all cached
+  # (narinfo 200); ours were not (404). Same story as libxkbcommon/
+  # tinysparql above: whatever g-ir-scanner distutils crash this addressed,
+  # Hydra's build at the current pin doesn't hit it (or nixpkgs fixed it
+  # upstream). `gcr` below is now the ONLY remaining caller of
+  # useGiscannerDistutilsFix — keep the helper for that. If a NEW g-ir-scanner
+  # distutils crash appears on aarch64-linux, check `just check-overlay-cache`
+  # first before reaching for this fix again.
   #
-  # Separately, doCheck's own checkPhase test suite (~2200s/36min on xlt1-t)
-  # includes test_crafted_xml_performance, a TIMING-based assertion that XML
+  # Original comment: aarch64-linux equivalent of the Darwin fix above,
+  # scoped per-package (see the note above gobject-introspection-unwrapped
+  # for why). Confirmed via `curl -sI .../<hash>.narinfo` 404 that
+  # libnice/gtk-layer-shell/gnome-autoar are genuinely uncached on
+  # aarch64-linux, not just victims of our own cascading overrideAttrs.
+  # libnice = if final.stdenv.hostPlatform.isAarch64
+  #   then useGiscannerDistutilsFix prev.libnice
+  #   else prev.libnice;
+  # gtk-layer-shell = if final.stdenv.hostPlatform.isAarch64
+  #   then useGiscannerDistutilsFix prev.gtk-layer-shell
+  #   else prev.gtk-layer-shell;
+  # gnome-autoar = if final.stdenv.hostPlatform.isAarch64
+  #   then useGiscannerDistutilsFix prev.gnome-autoar
+  #   else prev.gnome-autoar;
+
+  # QUARANTINED 2026-09-15 (bug-940: the second half of the aarch64 root
+  # cause, alongside libxkbcommon above — see that entry for the full
+  # 251-package blast radius. Vanilla tinysparql at this pin is cached
+  # (narinfo 200); ours (useGiscannerDistutilsFix) was not (404). The
+  # underlying g-ir-scanner distutils crash this fix addresses may or may
+  # not still be present upstream — nixpkgs/Hydra evidently builds this
+  # fine at the current pin either way. If it resurfaces, re-check with
+  # `just check-overlay-cache` before restoring.
+  #
+  # Original comment: tinysparql (upstream rename of GNOME Tracker/
+  # localsearch, pulled in transitively via nautilus in the GNOME desktop
+  # stack since the 2026-08-11 flake.lock bump): identical g-ir-scanner
+  # distutils crash as libnice/gtk-layer-shell/gnome-autoar above. Confirmed
+  # via `curl -sI .../<hash>.narinfo` 404 that it's genuinely uncached for
+  # aarch64-linux, not our own overlay forcing an unnecessary rebuild.
+  # tinysparql = if final.stdenv.hostPlatform.isAarch64
+  #   then useGiscannerDistutilsFix prev.tinysparql
+  #   else prev.tinysparql;
+
+  # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
+  # vanilla django, pygobject3 (aarch64), and curl-cffi (both arches, incl.
+  # the rustc/LLVM concern below) are ALL cached at the current pin (narinfo
+  # 200); ours were not (404). django alone feeds python3.13-ansible and
+  # other home.packages tools, so this was a meaningful chunk of every
+  # aarch64 host's build. If any of these three fail again — the django
+  # timing-flake, pygobject3's GIR subproject build, or curl-cffi dragging
+  # in rustc-from-source on aarch64 — re-check with `just
+  # check-overlay-cache` before restoring; each entry below documents
+  # exactly what broke and how it was fixed, so restoring one in isolation
+  # (rather than the whole block) is straightforward.
+  #
+  # Original comment (django): django 5.2.x: bash_completion test calls
+  # external bash completion infrastructure that doesn't exist in the Nix
+  # sandbox — gets [''] instead of ['--list']. 1 test out of 18154 fails;
+  # package itself is fine. Tests run in installCheckPhase;
+  # doInstallCheck=false skips them. Separately, doCheck's own checkPhase
+  # test suite (~2200s/36min on xlt1-t) includes
+  # test_crafted_xml_performance, a TIMING-based assertion that XML
   # deserialization scales sub-quadratically (measured factor must be <= 2).
   # Measured 5.38 on xlt1-t under real build load — a build-hardware-timing
   # flake, not a functional defect (the other 18151 tests pass). Timing
@@ -229,35 +325,37 @@ in
   # machines; disabling the whole checkPhase also saves ~36min on every
   # future rebuild touching this dependency (django feeds python3.13-ansible
   # and other tools pulled in transitively via home.packages).
-  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-    (_: pyprev: {
-      django = pyprev.django.overridePythonAttrs (_: { doCheck = false; doInstallCheck = false; });
-
-      # pygobject3: builds gobject-introspection test subprojects (libutility,
-      # libwarnlib) and generates GIR for them during the BUILD phase. doCheck
-      # alone only skips meson test; the subprojects are compiled in buildPhase.
-      # Explicitly pass -Dtests=false so meson skips the subproject entirely.
-      pygobject3 = if final.stdenv.hostPlatform.isAarch64
-        then pyprev.pygobject3.overridePythonAttrs (old: {
-          doCheck = false;
-          mesonFlags = (old.mesonFlags or []) ++ [ "-Dtests=false" ];
-        })
-        else pyprev.pygobject3;
-
-      # curl-cffi 0.14.0: checkInputs pull in fastapi -> bcrypt -> rustc ->
-      # llvm-21.1.8 (confirmed via `nix why-depends
-      # .#nixosConfigurations.<host>.pkgs.python313Packages.curl-cffi
-      # .#nixosConfigurations.<host>.pkgs.llvmPackages_21.llvm --derivation`
-      # on xlt1-t-vnixos, 2026-08-24). curl-cffi is an HTTP client — none of
-      # that chain is a runtime need, only its test suite (spins up a FastAPI
-      # test server). rustc-1.95.0 isn't cached for aarch64-linux, so
-      # bootstrapping it from source drags in a full LLVM build, which OOM-
-      # killed a `nixos-rebuild switch` on xlt1-t-vnixos's 8GB VM. doCheck
-      # removes checkInputs from the build closure entirely (not just skips
-      # running them), so this drops the whole chain.
-      curl-cffi = pyprev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
-    })
-  ];
+  #
+  # Original comment (pygobject3): builds gobject-introspection test
+  # subprojects (libutility, libwarnlib) and generates GIR for them during
+  # the BUILD phase. doCheck alone only skips meson test; the subprojects
+  # are compiled in buildPhase. Explicitly pass -Dtests=false so meson
+  # skips the subproject entirely.
+  #
+  # Original comment (curl-cffi): curl-cffi 0.14.0: checkInputs pull in
+  # fastapi -> bcrypt -> rustc -> llvm-21.1.8 (confirmed via `nix why-depends
+  # .#nixosConfigurations.<host>.pkgs.python313Packages.curl-cffi
+  # .#nixosConfigurations.<host>.pkgs.llvmPackages_21.llvm --derivation`
+  # on xlt1-t-vnixos, 2026-08-24). curl-cffi is an HTTP client — none of
+  # that chain is a runtime need, only its test suite (spins up a FastAPI
+  # test server). rustc-1.95.0 isn't cached for aarch64-linux, so
+  # bootstrapping it from source drags in a full LLVM build, which OOM-
+  # killed a `nixos-rebuild switch` on xlt1-t-vnixos's 8GB VM. doCheck
+  # removes checkInputs from the build closure entirely (not just skips
+  # running them), so this drops the whole chain.
+  #
+  # pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+  #   (_: pyprev: {
+  #     django = pyprev.django.overridePythonAttrs (_: { doCheck = false; doInstallCheck = false; });
+  #     pygobject3 = if final.stdenv.hostPlatform.isAarch64
+  #       then pyprev.pygobject3.overridePythonAttrs (old: {
+  #         doCheck = false;
+  #         mesonFlags = (old.mesonFlags or []) ++ [ "-Dtests=false" ];
+  #       })
+  #       else pyprev.pygobject3;
+  #     curl-cffi = pyprev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
+  #   })
+  # ];
 
   # pipx 1.8.0: test_package_specifier assertions expect old PEP 508 format
   # (no space before @, e.g. "black@ https://...") but Python 3.13's specifier
@@ -276,10 +374,12 @@ in
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
   #
-  # Force python3 = python313 in this isolated pkgs set (mirrors the
-  # python3 = python313 pin in python-no-tests.nix for the main overlay
-  # chain). Upstream nixpkgs-unstable's default python3 = python314 as of
-  # 2026-08: python314's python3.withPackages envs produce a bin/python3
+  # Force python3 = python313 in this isolated pkgs set (the main overlay
+  # chain's own pkgs.python3 is already 3.13 at the pinned nixos-26.05
+  # revision, so no separate pin is needed there — this isolated
+  # nixpkgs-unstable import is the only place that needs one). Upstream
+  # nixpkgs-unstable's default python3 = python314 as of 2026-08:
+  # python314's python3.withPackages envs produce a bin/python3
   # that readlink -f resolves straight through to the bare interpreter,
   # bypassing the env's own site-packages entirely (confirmed live on
   # xsvr1: sys.path never includes it, PYTHONPATH override fixes the
@@ -464,15 +564,28 @@ DESKTOP
   # the override to bring back (`prev.librsvg.override { withPixbufLoader =
   # false; }`, scoped to isDarwin).
 
-  # ffmpeg-headless in nixos-26.05 enables withPlacebo and withVulkan by
-  # default, pulling vulkan-loader into any closure that uses matplotlib
-  # (via matplotlib → ffmpeg-headless for animation support). Headless servers
-  # and matplotlib animations don't need GPU video rendering; strip it out so
-  # aarch64 servers (xts1/xts2/xpbx1/vocibuild) don't need to build
-  # vulkan-loader from source when it isn't in the binary cache.
-  ffmpeg-headless = prev.ffmpeg-headless.override {
-    withPlacebo = false;
-    withVulkan = false;
-  };
+  # QUARANTINED 2026-09-15 (bug-940: this override was the x86_64 root cause
+  # of the Build-and-Deploy workflow running 6.5h+/timing out — confirmed via
+  # `nix why-depends`: pipewire, sdl3, ffmpeg, opencv, libvlc, chromaprint,
+  # gtk4, zenity, qemu, gamescope, openal-soft all transitively depend on
+  # ffmpeg-headless, and this override was the ONLY reason any of them fell
+  # out of the binary cache — vanilla ffmpeg-headless at this pin is cached
+  # (narinfo 200), ours (withPlacebo/withVulkan=false) was not (404). If
+  # vulkan-loader-from-source resurfaces as a real problem on a headless
+  # aarch64 server, re-add this scoped to `final.stdenv.hostPlatform.isAarch64
+  # && !final.stdenv.hostPlatform.isDarwin` (or similar) rather than
+  # unconditionally — check with `just check-overlay-cache` first.
+  #
+  # Original comment: ffmpeg-headless in nixos-26.05 enables withPlacebo and
+  # withVulkan by default, pulling vulkan-loader into any closure that uses
+  # matplotlib (via matplotlib → ffmpeg-headless for animation support).
+  # Headless servers and matplotlib animations don't need GPU video
+  # rendering; strip it out so aarch64 servers (xts1/xts2/xpbx1/vocibuild)
+  # don't need to build vulkan-loader from source when it isn't in the
+  # binary cache.
+  # ffmpeg-headless = prev.ffmpeg-headless.override {
+  #   withPlacebo = false;
+  #   withVulkan = false;
+  # };
 
 })

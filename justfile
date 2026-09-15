@@ -225,6 +225,13 @@ validate:
     @echo "Validating flake configuration..."
     nix flake check
 
+# Check overlay-touched packages against vanilla nixpkgs — flags any override
+# that forces an otherwise-cached package (and its reverse-dep cone) out of
+# the binary cache. Run after every flake.lock bump; see
+# scripts/check-overlay-cache.sh for the full story.
+check-overlay-cache *systems:
+    @scripts/check-overlay-cache.sh {{systems}}
+
 # Update flake inputs
 update:
     @echo "Updating flake inputs..."

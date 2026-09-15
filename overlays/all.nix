@@ -9,5 +9,11 @@
   (import ./kanidm.nix { inherit inputs; })
   (import ./unstable.nix { inherit inputs; })
   (import ./unfree.nix { inherit inputs; })
-  (import ./gjs-fix.nix { inherit inputs; })
+  # gjs-fix.nix removed 2026-09-15 (bug-940): worked around gjs-1.86.0 meson
+  # build failures with a from-source override; current pin builds gjs-1.88.0
+  # and vanilla is cached (narinfo 200) — the override was the only reason
+  # ours wasn't. If a NEW gjs meson failure appears, check `just
+  # check-overlay-cache` first; if a from-source build really is needed, the
+  # old file's full analysis is recoverable from git history
+  # (nix/overlays/gjs-fix.nix, removed in this commit).
 ]

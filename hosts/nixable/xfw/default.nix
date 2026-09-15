@@ -366,10 +366,21 @@ in {
                     # authoritative: TS_EXTRA_ARGS always fully replaces
                     # whatever was previously set, matching how this file is
                     # meant to be used (declarative, not incremental).
+                    # The IPv6 route was 2600:8800:218d:9a00::/56 (the Cox-delegated GUA
+                    # prefix at the time this was first written). That prefix renumbered
+                    # at least once since — confirmed live 2026-09-13, with no CPE reboot
+                    # in between — silently going stale with no warning, the exact failure
+                    # mode a renumbering GUA route always risks. Replaced with the ULA /48
+                    # (fd66:150f:7361::/48, see docs/ipv6-addressing.md) adopted as this
+                    # environment's stable internal prefix: it never renumbers, and gives
+                    # Tailscale clients real reachability into the ULA-role infra VLANs
+                    # (k8s=22, management=14, etc.) as they come online, not just the v4
+                    # LAN. Re-approve routes in the admin console after applying — don't
+                    # assume the new advertisement is accepted automatically.
                     TS_EXTRA_ARGS: >-
                       --reset
                       --advertise-exit-node
-                      --advertise-routes=172.16.0.0/12,2600:8800:218d:9a00::/56
+                      --advertise-routes=172.16.0.0/12,fd66:150f:7361::/48
                       --accept-dns=false
                   volumes:
                     - ${tailscaleStateDir}:/var/lib/tailscale
