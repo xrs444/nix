@@ -37,13 +37,17 @@
 
   # Longhorn backup service account — exists only for Samba authentication
   # (replaces the former guest access to the longhorn-backups share)
+  # uid/gid pinned: unpinned system users can be reassigned on rebuild if the
+  # allocation order shifts, silently breaking ownership of the on-disk
+  # backup tree the same way bug-969 did.
   users.users.longhorn = {
     isSystemUser = true;
+    uid = 974;
     group = "longhorn";
     shell = "${pkgs.shadow}/bin/nologin";
     description = "Longhorn backup SMB service account";
   };
-  users.groups.longhorn = {};
+  users.groups.longhorn.gid = 965;
 
   # Avahi (mDNS) — required for Samba to advertise the Time Machine share over Bonjour.
   # Without this, macOS won't discover tm_xlt1-t as a Time Machine destination.
