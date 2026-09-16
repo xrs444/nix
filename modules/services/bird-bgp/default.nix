@@ -59,7 +59,22 @@ else
           };
         }
 
-        # Shared settings for all Cilium peers
+        protocol kernel {
+          ipv6 {
+            export all;
+            import none;
+          };
+        }
+
+        # Shared settings for all Cilium peers. Sessions stay on IPv4 transport
+        # (local/neighbor addresses below are unchanged) — the ipv6 channel adds
+        # multiprotocol BGP capability (RFC 4760/5549) to carry IPv6 NLRI over
+        # that same session, rather than standing up a second v6-transport
+        # session. This is deliberately scoped to "bird is ready," not "v6
+        # routes actually flow yet" — Cilium's own BGP peer config still needs
+        # its ipv6/unicast family added (flux side) and Cilium's IPv6 datapath
+        # (enableIPv6) is still off, so there is no v6 CIDR for Cilium to
+        # advertise yet regardless. See docs/ipv6-addressing.md Phase 7.
         template bgp cilium_template {
           local ${vipAddress} as ${toString localASN};
           passive;
@@ -69,6 +84,10 @@ else
           graceful restart;
 
           ipv4 {
+            import all;
+            export all;
+          };
+          ipv6 {
             import all;
             export all;
           };
