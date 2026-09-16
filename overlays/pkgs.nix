@@ -480,6 +480,30 @@ in
     }
   ).obsidian;
 
+  # catppuccin-whiskers (bug-950, 2026-09-16): pulled in transitively via
+  # inputs.catppuccin's theme-generation tooling on hosts with GNOME/GTK
+  # theming enabled (first hit on xlt1-t-vnixos). catppuccin-whiskers-2.9.0
+  # and its cargoHash vendor-staging derivation are both genuinely uncached
+  # at the pinned nixpkgs rev (narinfo 404 on both) — this isn't an overlay
+  # regression, it's the first cargoHash-vendored Rust package this fleet
+  # has needed to build from source on aarch64-linux. The from-source build
+  # itself fails on an unrelated, unfixable-here upstream nixpkgs bug: the
+  # vendor step's Python helper (fetch-cargo-vendor-util, wrapped via
+  # writers.writePython3Bin) is cached (narinfo 200) but was built against
+  # python3-3.14.6-env even though this pkgs set's own pkgs.python3 is
+  # 3.13.14 — the same python3.14 `withPackages` site-packages-bypass defect
+  # documented in the claude-code/ripgrep override above, just hit via a
+  # different call path (`import requests` fails at runtime even though
+  # python3Packages.requests itself evaluates and builds fine). nixpkgs-
+  # unstable's build of the same version (2.9.0) is confirmed cached
+  # (narinfo 200) for aarch64-linux — same "pull from unstable" pattern as
+  # bitwarden-desktop/vikunja-desktop/obsidian/element-desktop above.
+  catppuccin-whiskers = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+    }
+  ).catppuccin-whiskers;
+
   # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
   # Not in nixpkgs; packaged from GitHub pre-built release binaries.
   # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.
