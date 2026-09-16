@@ -366,8 +366,10 @@ in {
                     # authoritative: TS_EXTRA_ARGS always fully replaces
                     # whatever was previously set, matching how this file is
                     # meant to be used (declarative, not incremental).
-                    # The IPv6 route was 2600:8800:218d:9a00::/56 (the Cox-delegated GUA
-                    # prefix at the time this was first written). That prefix renumbered
+                    # The IPv6 route was a Cox-delegated GUA /56 (the specific block
+                    # is intentionally not repeated here — see the no-hardcoded-GUA-
+                    # literals rule enforced by scripts/check-ipv6-literals.sh). That
+                    # prefix renumbered
                     # at least once since — confirmed live 2026-09-13, with no CPE reboot
                     # in between — silently going stale with no warning, the exact failure
                     # mode a renumbering GUA route always risks. Replaced with the ULA /48

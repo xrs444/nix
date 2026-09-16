@@ -1,0 +1,19 @@
+name: Check IPv6 Literals
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-ipv6-literals:
+    name: No hardcoded GUA literals outside docs/
+    # Deliberately NOT self-hosted: a plain grep needs no fleet access, and
+    # this must also run on pull_request (self-hosted runners here don't).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/check-ipv6-literals.sh
