@@ -133,6 +133,12 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
+        # fd66:150f:7361:0014::/64 is VLAN 20's ULA subnet (server-core, see
+        # docs/ipv6-addressing.md) — this is the untagged native VLAN on bond0.
+        # v4 stays DHCP-assigned; the ULA suffix follows the host-number
+        # convention used everywhere else (xsvr4 = ::40), independent of
+        # whatever v4 lease DHCP happens to hand out.
+        address = [ "fd66:150f:7361:0014::40/64" ];
         networkConfig = {
           DHCP = "yes";
           IPv6AcceptRA = true;
@@ -153,7 +159,6 @@
         matchConfig.Name = "bond0.21";
         networkConfig = {
           Bridge = "bridge21";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -173,7 +178,6 @@
         matchConfig.Name = "bond0.17";
         networkConfig = {
           Bridge = "bridge17";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -183,7 +187,6 @@
         matchConfig.Name = "bond0.16";
         networkConfig = {
           Bridge = "bridge16";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -193,7 +196,6 @@
         matchConfig.Name = "bridge21";
         bridgeConfig = {};
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -204,7 +206,6 @@
         matchConfig.Name = "bridge16";
         bridgeConfig = {};
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -215,7 +216,6 @@
         matchConfig.Name = "bridge17";
         bridgeConfig = {};
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {

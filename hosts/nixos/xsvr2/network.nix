@@ -125,7 +125,12 @@
       };
       "50-bond0" = {
         matchConfig.Name = "bond0";
-        address = [ "172.20.1.20/24" ];
+        # fd66:150f:7361:0014::/64 is VLAN 20's ULA subnet (server-core, see
+        # docs/ipv6-addressing.md) — this is the untagged native VLAN on bond0.
+        address = [
+          "172.20.1.20/24"
+          "fd66:150f:7361:0014::20/64"
+        ];
         gateway = [ "172.20.1.250" ];
         dns = [ "172.20.1.250" ];
         networkConfig = {
@@ -149,7 +154,6 @@
         matchConfig.Name = "bond0.21";
         networkConfig = {
           Bridge = "bridge21";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -169,7 +173,6 @@
         matchConfig.Name = "bond0.17";
         networkConfig = {
           Bridge = "bridge17";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -179,7 +182,6 @@
         matchConfig.Name = "bond0.16";
         networkConfig = {
           Bridge = "bridge16";
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -188,7 +190,6 @@
       "68-bond0.10" = {
         matchConfig.Name = "bond0.10";
         networkConfig = {
-          LinkLocalAddressing = "no";
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -198,7 +199,6 @@
         matchConfig.Name = "bridge21";
         bridgeConfig = { };
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -209,7 +209,6 @@
         matchConfig.Name = "bridge16";
         bridgeConfig = { };
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {
@@ -220,7 +219,6 @@
         matchConfig.Name = "bridge17";
         bridgeConfig = { };
         networkConfig = {
-          LinkLocalAddressing = "no";
           IPMasquerade = "no";
         };
         linkConfig = {
