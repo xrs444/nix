@@ -59,15 +59,48 @@
       sshKey = "/Users/xrs444/.ssh/builder_key";
       systems = [
         "x86_64-linux"
-        "aarch64-linux"
-        # xsvr1 advertises i686-linux via extra-platforms (native execution on its
-        # x86_64 kernel, no QEMU needed) — required for xdt1-t's 32-bit NVIDIA/
-        # EGL-Wayland driver closure (pulls in an i686 moreutils build). See
-        # modules/services/remotebuilds/default.nix's isQemuBuilder block.
+        # aarch64-linux removed 2026-09-16: xsvr1's QEMU emulation
+        # (modules/services/remotebuilds/default.nix's isQemuBuilder) was
+        # disabled fleet-wide to force all aarch64-linux building onto
+        # vocibuild exclusively (see that file's 2026-09-16 comment) — xsvr1
+        # no longer advertises aarch64-linux at all, so leaving it here just
+        # produces "failed to start SSH master connection" / "Failed to find
+        # a machine for remote build" for anything needing it (confirmed via
+        # `nix flake check`: checks.aarch64-darwin.deploy-activate/
+        # deploy-schema, which actually build an aarch64-linux artifact,
+        # not just evaluate one). vocibuild (below) now covers this.
+        #
+        # i686-linux still comes from xsvr1 via extra-platforms (native
+        # execution on its x86_64 kernel, no QEMU needed) — required for
+        # xdt1-t's 32-bit NVIDIA/EGL-Wayland driver closure (pulls in an
+        # i686 moreutils build).
         "i686-linux"
       ];
       maxJobs = 8;
       speedFactor = 2;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+    }
+    {
+      # vocibuild: Oracle Cloud A1 Flex (4 OCPUs, Neoverse N1), native
+      # aarch64-linux, no QEMU. Added 2026-09-16 alongside disabling xsvr1's
+      # QEMU aarch64 emulation (see xsvr1 entry above and
+      # modules/services/remotebuilds/default.nix) — this Mac's own
+      # `builder_key` already authenticates against vocibuild's `builder`
+      # user (same key deployed fleet-wide via
+      # modules/services/remotebuilds/default.nix's builder_private_key
+      # secret), confirmed directly via `ssh -i builder_key
+      # builder@vocibuild.xrs444.net`.
+      hostName = "vocibuild.xrs444.net";
+      sshUser = "builder";
+      sshKey = "/Users/xrs444/.ssh/builder_key";
+      systems = [ "aarch64-linux" ];
+      maxJobs = 4;
+      speedFactor = 6;
       supportedFeatures = [
         "nixos-test"
         "benchmark"
