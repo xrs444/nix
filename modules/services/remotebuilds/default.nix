@@ -28,7 +28,30 @@ let
   isBuilder = lib.elem config.networking.hostName (map (b: b.name) buildHosts);
   thisHost = lib.findFirst (b: b.name == config.networking.hostName) { native = false; } buildHosts;
   # Native builders (real aarch64 hardware/VMs) don't need binfmt/QEMU setup.
-  isQemuBuilder = isBuilder && !thisHost.native;
+  # EXPERIMENT 2026-09-16: forced to false fleet-wide to restrict ALL
+  # aarch64-linux building to vocibuild (the sole native=true builder)
+  # exclusively. Previously xsvr1/xsvr3/xsvr4/xdt1-t each also advertised
+  # local QEMU-emulated aarch64-linux capability (extra-platforms in their
+  # own nix.custom.conf) alongside vocibuild as a remote builder — Nix's
+  # distributed-build scheduler used both in parallel, and once vocibuild's
+  # maxJobs=4 filled up, overflow work landed on local QEMU emulation on
+  # whichever x86 host was evaluating (confirmed live on xsvr1 during a CI
+  # run: VSCode extension .vsix unpacking and other aarch64-linux
+  # derivations running under /run/binfmt/aarch64-linux while a separate
+  # `ssh builder@vocibuild ... nix-store --serve --write` was ALSO active).
+  # QEMU user-mode emulation is markedly slower per-derivation than
+  # vocibuild's native Neoverse N1 cores, and xsvr3/xsvr4's binfmt was
+  # already flagged unreliable (see their buildHosts comments above).
+  # Setting this to false disables boot.binfmt.emulatedSystems/registrations,
+  # the qemu system.extraDependencies pin, filter-syscalls=false, and the
+  # aarch64-linux/i686-linux extra-platforms entry in nix.custom.conf for
+  # every currently-QEMU host — none of them will report themselves capable
+  # of running aarch64-linux locally anymore, forcing 100% delegation to
+  # vocibuild. Trade-off: if vocibuild is ever unreachable, aarch64-linux
+  # builds fail outright rather than slowly falling back to QEMU. Revert to
+  # `isBuilder && !thisHost.native` if that turns out to matter more than
+  # the speedup.
+  isQemuBuilder = false;
   isNativeBuilder = isBuilder && thisHost.native;
 
   # vocibuild is on Oracle Cloud — reachable via vocibuild.xrs444.net (Cloudflare DNS, not .lan)
