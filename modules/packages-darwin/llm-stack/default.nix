@@ -166,21 +166,34 @@ let
     value = {
       serviceConfig = {
         Label = "net.xrs444.mlx-lm-${modelName}";
-        # Direct ProgramArguments, not nix-darwin's `command` option (bug-705):
-        # `command` auto-wraps in `/bin/sh -c "wait4path && exec ..."`, and
-        # `/bin/sh` itself carries a macOS Launch Constraint (LWCR, Sequoia
-        # 15.1+ AMFI hardening) that denies posix_spawn when the calling
-        # chain goes through xpcproxy for a non-root UserName daemon —
-        # confirmed via `log show`: "Service could not initialize:
-        # posix_spawn(/bin/sh), error 0xd - Permission denied", identical and
-        # deterministic across every attempt (env, cwd, password hash, and a
-        # full reboot all ruled out first). Invoking the wrapper script
-        # directly (a real Mach-O-independent, directly-executable
-        # #!/nix/store/.../bash script) as the sole ProgramArguments entry
-        # avoids /bin/sh as a posix_spawn target entirely. wait4path is still
-        # run, just from inside this script rather than the outer shell.
+        # bug-989 (2026-09-21) reverses bug-705's direct-ProgramArguments fix:
+        # after a UPS-triggered unclean shutdown/reboot, every daemon in this
+        # module started failing every boot with `last exit code = 78:
+        # EX_CONFIG`, deterministically, with the exact wrapper script (an
+        # ad-hoc/linker-signed, non-Apple-signed Mach-O-independent
+        # #!/nix/store/.../bash script) as ProgramArguments[0]. Exhaustively
+        # ruled out first: resource exhaustion, a wedged launchd, a corrupted
+        # Gatekeeper ExecPolicy DB (rebuilt it — no change), a stale `_llm`
+        # UserName reference (plists confirmed root-owned, no UserName key),
+        # BTM disallowed (`sfltool dumpbtm` showed `allowed` for every one of
+        # these jobs), missing/broken log dirs, and XProtect BehaviorService
+        # "bastion violation" log lines (confirmed via research to be
+        # non-blocking telemetry). The actual, confirmed-live fix: put
+        # `/bin/sh` (Apple-signed) back as the literal ProgramArguments[0]
+        # spawn target, reaching the real ad-hoc-signed script only via
+        # `exec` from inside it. This does NOT reintroduce bug-705's original
+        # problem — that was `/bin/sh` denied via LWCR specifically for a
+        # non-root `UserName` daemon on the xpcproxy path; these daemons are
+        # root-owned with no `UserName` set. Whatever changed appears to
+        # require the *direct* spawn target to be Apple-signed, independent
+        # of bug-705's UserName-scoped mechanism. Root cause of what flipped
+        # after this particular reboot (vs. weeks of this exact ad-hoc-signed
+        # direct-binary setup working fine before it) is still not fully
+        # confirmed — flagged as a real gap, not silently worked around.
         ProgramArguments = [
-          "${pkgs.writeShellScript "mlx-lm-${modelName}" ''
+          "/bin/sh"
+          "-c"
+          "exec ${pkgs.writeShellScript "mlx-lm-${modelName}" ''
             set -euo pipefail
             ${nixStoreGuard}
             ${mountGuard}
@@ -230,9 +243,11 @@ let
     value = {
       serviceConfig = {
         Label = "net.xrs444.mlx-vlm-${modelName}";
-        # Direct ProgramArguments — same bug-705 rationale as mkMlxDaemon.
+        # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon above.
         ProgramArguments = [
-          "${pkgs.writeShellScript "mlx-vlm-${modelName}" ''
+          "/bin/sh"
+          "-c"
+          "exec ${pkgs.writeShellScript "mlx-vlm-${modelName}" ''
             set -euo pipefail
             ${nixStoreGuard}
             ${mountGuard}
@@ -614,12 +629,16 @@ in
         litellm = {
           serviceConfig = {
             Label = "net.xrs444.litellm";
-            # bug-705: direct ProgramArguments, bypassing nix-darwin's
-            # `command`-derived `/bin/sh -c "wait4path && exec ..."` wrapper
-            # — /bin/sh itself is denied by a macOS Launch Constraint for
-            # this xpcproxy-mediated, non-root-UserName spawn path.
+            # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon's
+            # comment above for the full incident (bug-705's direct-binary
+            # fix started failing every boot with EX_CONFIG 78 after a
+            # UPS-triggered unclean shutdown; this does not reintroduce
+            # bug-705's UserName-scoped LWCR problem since these are
+            # root-owned daemons with no UserName set).
             ProgramArguments = [
-              "${pkgs.writeShellScript "litellm-wrapped" ''
+              "/bin/sh"
+              "-c"
+              "exec ${pkgs.writeShellScript "litellm-wrapped" ''
                 set -euo pipefail
                 ${nixStoreGuard}
                 ${secretGuard cfg.masterKeyFile}
@@ -654,9 +673,12 @@ in
         wyoming-whisper = {
           serviceConfig = {
             Label = "net.xrs444.wyoming-whisper";
-            # bug-705: direct ProgramArguments (see litellm's comment above).
+            # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon's
+            # comment above.
             ProgramArguments = [
-              "${pkgs.writeShellScript "wyoming-whisper" ''
+              "/bin/sh"
+              "-c"
+              "exec ${pkgs.writeShellScript "wyoming-whisper" ''
                 set -euo pipefail
                 ${nixStoreGuard}
                 ${mountGuard}
@@ -682,9 +704,12 @@ in
         wyoming-piper = {
           serviceConfig = {
             Label = "net.xrs444.wyoming-piper";
-            # bug-705: direct ProgramArguments (see litellm's comment above).
+            # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon's
+            # comment above.
             ProgramArguments = [
-              "${pkgs.writeShellScript "wyoming-piper" ''
+              "/bin/sh"
+              "-c"
+              "exec ${pkgs.writeShellScript "wyoming-piper" ''
                 set -euo pipefail
                 ${nixStoreGuard}
                 ${mountGuard}
@@ -713,13 +738,17 @@ in
         node-exporter = {
           serviceConfig = {
             Label = "net.xrs444.node-exporter";
-            # bug-705: direct ProgramArguments straight at the binary — no
-            # shell/wrapper needed here at all, which also means no /bin/sh
-            # posix_spawn target (see litellm's comment above for why that
-            # matters).
+            # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon's
+            # comment above. node-exporter previously needed no wrapper at
+            # all (bug-705's fix pointed straight at the binary); now even
+            # this simplest possible daemon — a single static, dependency-free
+            # Go binary, no script, no env, no secrets — got EX_CONFIG 78
+            # until wrapped, which is what ruled out anything specific to the
+            # *content* of the other 6 daemons' wrapper scripts.
             ProgramArguments = [
-              "${pkgs.prometheus-node-exporter}/bin/node_exporter"
-              "--web.listen-address=:${toString cfg.exporters.nodeExporterPort}"
+              "/bin/sh"
+              "-c"
+              "exec ${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort}"
             ];
             WorkingDirectory = "/";
             KeepAlive = true;
