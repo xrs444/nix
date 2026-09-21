@@ -378,6 +378,16 @@
         repo = "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit-DWQ";
         revision = "53bfb233acb2e50f6060c3c5709f23fac547827f";
         port = 8002;
+        # bug-991 (2026-09-21): this daemon, and only this one, was OOM-
+        # crash-looping (Metal "Insufficient Memory") roughly every 4-16min
+        # under normal hermes-t/s/k traffic — mlx_lm.server's prompt cache
+        # and prefill/decode concurrency were both unbounded by default.
+        # 3 = one slot per hermes identity (t/s/k), the realistic max
+        # distinct concurrent conversations this daemon actually serves.
+        promptCacheSize = 3;
+        promptCacheBytes = "8G";
+        promptConcurrency = 2;
+        decodeConcurrency = 4;
       };
     };
 

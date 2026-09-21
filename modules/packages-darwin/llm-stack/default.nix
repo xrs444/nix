@@ -161,72 +161,89 @@ let
   # downloads the pinned revision into modelsDir on first start (or after a
   # revision bump) and is a fast no-op otherwise. KeepAlive + ThrottleInterval
   # make an interrupted download self-retry without hammering HuggingFace.
-  mkMlxDaemon = modelName: m: {
-    name = "mlx-lm-${modelName}";
-    value = {
-      serviceConfig = {
-        Label = "net.xrs444.mlx-lm-${modelName}";
-        # bug-989 (2026-09-21) reverses bug-705's direct-ProgramArguments fix:
-        # after a UPS-triggered unclean shutdown/reboot, every daemon in this
-        # module started failing every boot with `last exit code = 78:
-        # EX_CONFIG`, deterministically, with the exact wrapper script (an
-        # ad-hoc/linker-signed, non-Apple-signed Mach-O-independent
-        # #!/nix/store/.../bash script) as ProgramArguments[0]. Exhaustively
-        # ruled out first: resource exhaustion, a wedged launchd, a corrupted
-        # Gatekeeper ExecPolicy DB (rebuilt it — no change), a stale `_llm`
-        # UserName reference (plists confirmed root-owned, no UserName key),
-        # BTM disallowed (`sfltool dumpbtm` showed `allowed` for every one of
-        # these jobs), missing/broken log dirs, and XProtect BehaviorService
-        # "bastion violation" log lines (confirmed via research to be
-        # non-blocking telemetry). The actual, confirmed-live fix: put
-        # `/bin/sh` (Apple-signed) back as the literal ProgramArguments[0]
-        # spawn target, reaching the real ad-hoc-signed script only via
-        # `exec` from inside it. This does NOT reintroduce bug-705's original
-        # problem — that was `/bin/sh` denied via LWCR specifically for a
-        # non-root `UserName` daemon on the xpcproxy path; these daemons are
-        # root-owned with no `UserName` set. Whatever changed appears to
-        # require the *direct* spawn target to be Apple-signed, independent
-        # of bug-705's UserName-scoped mechanism. Root cause of what flipped
-        # after this particular reboot (vs. weeks of this exact ad-hoc-signed
-        # direct-binary setup working fine before it) is still not fully
-        # confirmed — flagged as a real gap, not silently worked around.
-        ProgramArguments = [
-          "/bin/sh"
-          "-c"
-          "exec ${pkgs.writeShellScript "mlx-lm-${modelName}" ''
-            set -euo pipefail
-            ${nixStoreGuard}
-            ${mountGuard}
-            dir="${cfg.modelsDir}/${modelName}"
-            if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
-              echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
-              /bin/rm -rf "$dir"
-              export HF_HOME="${cfg.modelsDir}/.hf-cache"
-              export HF_HUB_DISABLE_TELEMETRY=1
-              ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
-              printf '%s' "${m.revision}" > "$dir/.revision"
-            fi
-            exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port}
-          ''}"
-        ];
-        # Always world-traversable — daemons otherwise inherit whatever cwd
-        # they were spawned from (bug-703: httpx→rich calls os.getcwd() at
-        # import time, unconditionally, and crashes with EX_CONFIG if _llm
-        # can't traverse into it).
-        WorkingDirectory = "/";
-        # bug-704: _llm's real home (not /var/empty) for HF/tiktoken/rich
-        # caches that assume a writable $HOME.
-        EnvironmentVariables = {
-          HOME = "/var/lib/llm-stack";
+  mkMlxDaemon = modelName: m:
+    let
+      # bug-991: mlx_lm.server has no CLI flag to lower its own Metal wired-
+      # memory ceiling (it unconditionally claims device_info()'s
+      # max_recommended_working_set_size — sized for one process owning the
+      # whole machine — regardless of other resident daemons), but it DOES
+      # expose flags to bound the actual runaway growth vector: an unbounded
+      # multi-conversation prompt/KV cache plus unthrottled prefill/decode
+      # concurrency. Only set per-model via host config; null here means
+      # "omit the flag, use mlx_lm.server's own default" (unchanged behavior).
+      extraArgs = lib.concatStringsSep " " (
+        lib.optional (m.promptCacheBytes != null) "--prompt-cache-bytes ${m.promptCacheBytes}"
+        ++ lib.optional (m.promptCacheSize != null) "--prompt-cache-size ${toString m.promptCacheSize}"
+        ++ lib.optional (m.promptConcurrency != null) "--prompt-concurrency ${toString m.promptConcurrency}"
+        ++ lib.optional (m.decodeConcurrency != null) "--decode-concurrency ${toString m.decodeConcurrency}"
+      );
+    in
+    {
+      name = "mlx-lm-${modelName}";
+      value = {
+        serviceConfig = {
+          Label = "net.xrs444.mlx-lm-${modelName}";
+          # bug-989 (2026-09-21) reverses bug-705's direct-ProgramArguments fix:
+          # after a UPS-triggered unclean shutdown/reboot, every daemon in this
+          # module started failing every boot with `last exit code = 78:
+          # EX_CONFIG`, deterministically, with the exact wrapper script (an
+          # ad-hoc/linker-signed, non-Apple-signed Mach-O-independent
+          # #!/nix/store/.../bash script) as ProgramArguments[0]. Exhaustively
+          # ruled out first: resource exhaustion, a wedged launchd, a corrupted
+          # Gatekeeper ExecPolicy DB (rebuilt it — no change), a stale `_llm`
+          # UserName reference (plists confirmed root-owned, no UserName key),
+          # BTM disallowed (`sfltool dumpbtm` showed `allowed` for every one of
+          # these jobs), missing/broken log dirs, and XProtect BehaviorService
+          # "bastion violation" log lines (confirmed via research to be
+          # non-blocking telemetry). The actual, confirmed-live fix: put
+          # `/bin/sh` (Apple-signed) back as the literal ProgramArguments[0]
+          # spawn target, reaching the real ad-hoc-signed script only via
+          # `exec` from inside it. This does NOT reintroduce bug-705's original
+          # problem — that was `/bin/sh` denied via LWCR specifically for a
+          # non-root `UserName` daemon on the xpcproxy path; these daemons are
+          # root-owned with no `UserName` set. Whatever changed appears to
+          # require the *direct* spawn target to be Apple-signed, independent
+          # of bug-705's UserName-scoped mechanism. Root cause of what flipped
+          # after this particular reboot (vs. weeks of this exact ad-hoc-signed
+          # direct-binary setup working fine before it) is still not fully
+          # confirmed — flagged as a real gap, not silently worked around.
+          ProgramArguments = [
+            "/bin/sh"
+            "-c"
+            "exec ${pkgs.writeShellScript "mlx-lm-${modelName}" ''
+              set -euo pipefail
+              ${nixStoreGuard}
+              ${mountGuard}
+              dir="${cfg.modelsDir}/${modelName}"
+              if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
+                echo "llm-stack: fetching ${m.repo} @ ${m.revision}" >&2
+                /bin/rm -rf "$dir"
+                export HF_HOME="${cfg.modelsDir}/.hf-cache"
+                export HF_HUB_DISABLE_TELEMETRY=1
+                ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
+                printf '%s' "${m.revision}" > "$dir/.revision"
+              fi
+              exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port} ${extraArgs}
+            ''}"
+          ];
+          # Always world-traversable — daemons otherwise inherit whatever cwd
+          # they were spawned from (bug-703: httpx→rich calls os.getcwd() at
+          # import time, unconditionally, and crashes with EX_CONFIG if _llm
+          # can't traverse into it).
+          WorkingDirectory = "/";
+          # bug-704: _llm's real home (not /var/empty) for HF/tiktoken/rich
+          # caches that assume a writable $HOME.
+          EnvironmentVariables = {
+            HOME = "/var/lib/llm-stack";
+          };
+          KeepAlive = true;
+          RunAtLoad = true;
+          ThrottleInterval = 30;
+          StandardErrorPath = "/var/log/llm-stack/mlx-lm-${modelName}.stderr";
+          StandardOutPath = "/var/log/llm-stack/mlx-lm-${modelName}.stdout";
+          ProcessType = "Adaptive"; # macOS scheduler hint: not a background-only task
         };
-        KeepAlive = true;
-        RunAtLoad = true;
-        ThrottleInterval = 30;
-        StandardErrorPath = "/var/log/llm-stack/mlx-lm-${modelName}.stderr";
-        StandardOutPath = "/var/log/llm-stack/mlx-lm-${modelName}.stdout";
-        ProcessType = "Adaptive"; # macOS scheduler hint: not a background-only task
       };
-    };
   };
 
   # launchd daemon for a single mlx_vlm.server serving one vision model.
@@ -344,6 +361,47 @@ in
             port = mkOption {
               type = types.port;
               description = "Localhost port for this model's mlx_lm.server.";
+            };
+            promptCacheBytes = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              example = "8G";
+              description = ''
+                Passed as mlx_lm.server's `--prompt-cache-bytes` (accepts
+                "<N>", "<N>M"/"MB", or "<N>G"/"GB"). Bounds total KV-cache
+                memory across all cached conversations; unset leaves it
+                unbounded (mlx_lm.server's own default — bug-991: this let a
+                resident model's cache grow without limit under concurrent
+                multi-conversation traffic until the process hit a real
+                Metal OOM).
+              '';
+            };
+            promptCacheSize = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              description = ''
+                Passed as mlx_lm.server's `--prompt-cache-size`: max number
+                of distinct conversation KV caches held at once (its own
+                default is 10). Unset leaves the mlx_lm.server default.
+              '';
+            };
+            promptConcurrency = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              description = ''
+                Passed as mlx_lm.server's `--prompt-concurrency`: how many
+                prompts it will prefill in parallel when batchable (its own
+                default is 8). Unset leaves the mlx_lm.server default.
+              '';
+            };
+            decodeConcurrency = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              description = ''
+                Passed as mlx_lm.server's `--decode-concurrency`: how many
+                requests it will decode in parallel when batchable (its own
+                default is 32). Unset leaves the mlx_lm.server default.
+              '';
             };
           };
         }
