@@ -386,7 +386,16 @@
         # distinct concurrent conversations this daemon actually serves.
         promptCacheSize = 3;
         promptCacheBytes = "8G";
-        promptConcurrency = 2;
+        # promptConcurrency=2 (first attempt) still crashed 4x in ~1h of
+        # real hermes-t traffic: every crash showed TWO large (12k-64k
+        # token) prefills running concurrently. --prompt-cache-bytes only
+        # bounds the IDLE KV cache between requests — it does nothing for
+        # the transient working memory a single huge prefill needs while
+        # actively running, so two large concurrent prefills could still
+        # blow the ceiling regardless of the cache cap. Serialize prefill
+        # entirely (1) to remove that specific failure mode; costs some
+        # queuing latency when two big requests land close together.
+        promptConcurrency = 1;
         decodeConcurrency = 4;
       };
     };
