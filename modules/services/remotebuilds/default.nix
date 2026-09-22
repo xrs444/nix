@@ -221,6 +221,19 @@ in
   # these settings. Both builder and client hosts need this file — without it, Determinate
   # Nix daemons have no xsvr1.lan-1 key trusted and reject signed paths from the binary cache.
   environment.etc."nix/nix.custom.conf" = lib.mkMerge [
+    # Any builder host needs this regardless of QEMU/native status — without it,
+    # remote clients delegating builds here hit "you are not privileged to build
+    # input-addressed derivations" (nix.settings.trusted-users is silently ignored
+    # by Determinate Nix; only this file's setting takes effect). Split out from the
+    # isQemuBuilder/isNativeBuilder blocks below on 2026-09-22 after the 2026-09-16
+    # `isQemuBuilder = false` fleet-wide change left non-native builders (xsvr1,
+    # xsvr3, xsvr4, xdt1-t) matching neither branch and silently losing this line —
+    # broke distributed builds for every builder except vocibuild (the one native=true host).
+    (lib.mkIf isBuilder {
+      text = ''
+        trusted-users = root builder
+      '';
+    })
     (lib.mkIf isQemuBuilder {
       text = ''
         # Custom Nix configuration for QEMU (x86) builder
@@ -232,7 +245,6 @@ in
         secret-key-files = /run/secrets/nixcache_signing_key
         filter-syscalls = false
         system-features = nixos-test benchmark big-parallel kvm
-        trusted-users = root builder
       '';
     })
     (lib.mkIf isNativeBuilder {
@@ -254,7 +266,6 @@ in
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
         system-features = nixos-test benchmark big-parallel
-        trusted-users = root builder
       '';
     })
     (lib.mkIf (!isBuilder) {
