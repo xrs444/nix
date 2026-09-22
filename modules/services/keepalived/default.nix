@@ -63,6 +63,12 @@ let
   };
 
   vipAddress = "172.20.3.200";
+  # IPv6 rollout Phase 6 (docs/ipv6-addressing.md) — ULA VIP on bridge22 for the new
+  # v6-only Cilium BGP session (nix/modules/services/bird-bgp/default.nix). Suffix ::200
+  # mirrors vipAddress's .200, per the host-suffix convention. A separate VRRP instance
+  # is required, not a second VIP on k8s-gateway — VRRPv3 rejects mixed address families
+  # within one instance ("address family must match").
+  vipAddressV6 = "fd66:150f:7361:16::200";
   gatewayVipAddress = "172.20.1.101";
   kanidmVipAddress = "172.20.1.110";
   kanidmClusterVipAddress = "172.20.3.110";
@@ -134,6 +140,22 @@ else
                   auth_type PASS
                   auth_pass k8svip
                 }
+                track_script {
+                  check_tailscale_subnet
+                }
+                notify_master "/run/current-system/systemd/bin/systemctl restart bird"
+              '';
+            };
+            k8s-gateway-v6 = {
+              state = currentNode.keepalivedState;
+              interface = "bridge22";
+              virtualRouterId = 61;
+              priority = currentNode.keepalivedPriority;
+              virtualIps = [
+                { addr = "${vipAddressV6}/64"; }
+              ];
+              extraConfig = ''
+                version 3;
                 track_script {
                   check_tailscale_subnet
                 }
@@ -278,14 +300,12 @@ else
           iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
           iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
 
-          # v4-only VRRP instances today (see nodeConfigs/vrrpInstances above) — deny the v6
-          # VRRP multicast group explicitly rather than leaving it unfiltered by omission, now
-          # that role-assigned VLANs (bridge21/22 etc.) are gaining real IPv6 connectivity.
           # ff02::12 is the VRRP-for-IPv6 link-local multicast group (RFC 5798), the v6
-          # equivalent of 224.0.0.18. When a real v6 VRRP instance is added (see the ULA VIP
-          # plan for bridge22), replace this deny with the matching ip6tables ACCEPT pair.
-          ip6tables -A INPUT -d ff02::12 -j DROP
-          ip6tables -A OUTPUT -d ff02::12 -j DROP
+          # equivalent of 224.0.0.18. k8s-gateway-v6 (IPv6 rollout Phase 6, VRID 61 on
+          # bridge22) is a real v6 VRRP instance now, so this must ACCEPT, not DROP —
+          # was a deny-by-default placeholder before this instance existed.
+          ip6tables -A INPUT -d ff02::12 -j ACCEPT
+          ip6tables -A OUTPUT -d ff02::12 -j ACCEPT
         '';
       };
     }
