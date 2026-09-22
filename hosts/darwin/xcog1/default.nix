@@ -326,14 +326,26 @@
   #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
   #   qwen2-5-vl-7b   → 8003 (vision/tagging path; lazy-loaded, not resident — see below)
   #
-  # The two text models are resident (launchd can't start-on-request —
-  # bug-523). qwen2-5-vl-7b deliberately is NOT — occasional-use vision
-  # workloads (Printventory AI-tagging today, Frigate GenAI potentially
-  # later) don't justify keeping ~6-10GB loaded permanently, and
-  # mlx_vlm.server's own lazy-load (no --model flag — see llm-stack's
-  # visionModels option) gives on-demand behaviour without launchd support
-  # for it. First request after a restart pays a cold-load cost; subsequent
-  # requests hit the resident model until the daemon is restarted.
+  # Both text-model daemons run continuously (launchd can't start-on-request
+  # — bug-523), but as of bug-991 (2026-09-21) only qwen3-30b-a3b keeps its
+  # weights resident by default. qwen3-14b is `lazy = true`: same on-demand
+  # loading trick qwen2-5-vl-7b already used (mlx_lm.server's own
+  # ModelProvider loads on first request and persists — see llm-stack's
+  # `models.<name>.lazy` option doc), applied to a text model for the first
+  # time here. Root cause: even after bounding qwen3-30b-a3b's own prompt
+  # cache and concurrency, a single large-context request (the recurring
+  # ~60-65K-token kanban-card-creation prompt via hermes-t) could still hit
+  # a real Metal OOM — the machine was already sitting at ~32-39GB wired
+  # system-wide with BOTH text models permanently resident, leaving too
+  # little headroom for that one request's own ~6GB KV-cache growth. Freeing
+  # qwen3-14b's ~7.8GB fixed footprint gives 30B real slack for exactly this
+  # case, at the cost of a cold-load delay on 14b's first voice request
+  # after an idle period. qwen2-5-vl-7b deliberately stays lazy too —
+  # occasional-use vision workloads (Printventory AI-tagging today, Frigate
+  # GenAI potentially later) don't justify keeping ~6-10GB loaded
+  # permanently either. First request after a restart/idle-unload pays a
+  # cold-load cost; subsequent requests hit the resident weights until the
+  # daemon restarts.
   #
   # Model is Qwen2.5-VL, not Qwen3-VL, simply because it's an established,
   # widely-downloaded 4-bit mlx-community quant (bug-886 covers a real, but
@@ -360,9 +372,7 @@
   # — both disproportionate for this), or the internal disk. User chose
   # internal (830GB free there) over accepting either tradeoff.
   # Revisions are immutable HF commit SHAs verified via the HF API (bug-522:
-  # repo names must be checked — anonymous 401 = not found). If this box
-  # turns out to have 24GB RAM, drop qwen3-14b and let the 30B MoE serve the
-  # voice path too (plan §D9).
+  # repo names must be checked — anonymous 401 = not found).
   services.llm-stack = {
     enable = true;
     # modelsDir/modelsVolume left at the module defaults (/var/models on the
@@ -373,6 +383,10 @@
         repo = "mlx-community/Qwen3-14B-4bit";
         revision = "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4";
         port = 8001;
+        # bug-991 follow-up: lazy-load to free ~7.8GB of permanent headroom
+        # for qwen3-30b-a3b's large-context requests — see the block comment
+        # above this services.llm-stack section for the full rationale.
+        lazy = true;
       };
       qwen3-30b-a3b = {
         repo = "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit-DWQ";

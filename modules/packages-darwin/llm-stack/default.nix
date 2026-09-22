@@ -27,9 +27,14 @@
 # Design notes:
 #   - MLX-lm has no single-daemon model registry (unlike Ollama); one launchd
 #     unit per served model on a distinct port. LiteLLM routes between them by
-#     model name. All models are resident (KeepAlive) — launchd cannot do
+#     model name. KeepAlive daemons are always running — launchd cannot do
 #     start-on-request without socket activation, which mlx_lm.server does not
-#     support (bug-523). Residency is a RAM decision made in the host config.
+#     support (bug-523) — but each is independently resident-by-default
+#     (models.<name>.lazy = false) or lazy-loaded within that always-running
+#     process (models.<name>.lazy = true, bug-991: mlx_lm.server's own
+#     ModelProvider already loads on demand and persists, the same mechanism
+#     visionModels below always uses). Residency is a per-model RAM/latency
+#     tradeoff made in the host config, not an all-or-nothing module default.
 #   - Every daemon that touches modelsDir first waits for the backing volume
 #     to be mounted. Writing to /Volumes/<name> before mount would create a
 #     plain directory on the internal disk and block the volume from mounting.
@@ -89,15 +94,27 @@ let
         (lib.mapAttrsToList (name: m: {
           # model_name is the consumer-facing alias LiteLLM routes on
           # (picks which api_base/port to hit). The forwarded litellm_params
-          # `model` value is deliberately NOT this name: mlx_lm.server only
-          # recognizes the literal string "default_model" for its single
-          # CLI-loaded model (its _model_map has no other alias) — any other
-          # value falls through and mlx_lm.server tries to fetch it fresh
-          # from HuggingFace as a bare repo id (bug-530, found live: it
-          # attempted "https://huggingface.co/api/models/qwen3-30b-a3b/...").
+          # `model` value is deliberately NOT this name for an eagerly-loaded
+          # (non-lazy) model: mlx_lm.server only recognizes the literal
+          # string "default_model" for its single CLI-`--model`-loaded model
+          # (its _model_map has no other alias) — any other value falls
+          # through and mlx_lm.server tries to fetch it fresh from
+          # HuggingFace as a bare repo id (bug-530, found live: it attempted
+          # "https://huggingface.co/api/models/qwen3-30b-a3b/...").
+          #
+          # For a `lazy = true` model (bug-991 follow-up), mkMlxDaemon omits
+          # --model entirely, so "default_model" maps to nothing and would
+          # hit the same bug-530 failure the OTHER way. Forward the exact
+          # on-disk path instead (${cfg.modelsDir}/<name>) — confirmed live
+          # by reading mlx_lm/server.py: ModelProvider.load() does
+          # `self._model_map.get(model_path, model_path)`, i.e. any string
+          # not in the map (which only has "default_model") is used AS the
+          # load path directly. This is the exact same mechanism the vision
+          # daemons below already rely on for their own lazy loading.
           model_name = name;
           litellm_params = {
-            model = "openai/default_model";
+            model =
+              if m.lazy then "openai/${cfg.modelsDir}/${name}" else "openai/default_model";
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
           };
@@ -223,7 +240,7 @@ let
                 ${cfg.hfPackage}/bin/hf download ${m.repo} --revision ${m.revision} --local-dir "$dir"
                 printf '%s' "${m.revision}" > "$dir/.revision"
               fi
-              exec ${cfg.mlxLmPackage}/bin/mlx_lm.server --model "$dir" --host 127.0.0.1 --port ${toString m.port} ${extraArgs}
+              exec ${cfg.mlxLmPackage}/bin/mlx_lm.server ${lib.optionalString (!m.lazy) ''--model "$dir"''} --host 127.0.0.1 --port ${toString m.port} ${extraArgs}
             ''}"
           ];
           # Always world-traversable — daemons otherwise inherit whatever cwd
@@ -361,6 +378,28 @@ in
             port = mkOption {
               type = types.port;
               description = "Localhost port for this model's mlx_lm.server.";
+            };
+            lazy = mkOption {
+              type = types.bool;
+              default = false;
+              description = ''
+                bug-991 follow-up (2026-09-21): if true, mkMlxDaemon omits
+                --model entirely (same trick as visionModels below) — the
+                daemon starts with nothing loaded and loads on the first
+                request that names it (mlx_lm.server's own ModelProvider is
+                already a "load on demand, persist" design; confirmed live
+                by reading mlx_lm/server.py). Weights still get downloaded
+                to modelsDir at daemon start either way, only whether
+                they're loaded into memory changes. Set true to recover this
+                model's static RAM footprint as headroom for OTHER resident
+                daemons: on xcog1, keeping both qwen3-14b and qwen3-30b-a3b
+                permanently resident left too little slack for a single
+                large-context request on the 30B model to avoid a real
+                Metal OOM (bug-991), even after bounding its own prompt
+                cache/concurrency — freeing 14b's ~7.8GB fixed footprint
+                trades a few seconds of cold-load latency on 14b's first
+                request after an idle period for that headroom back.
+              '';
             };
             promptCacheBytes = mkOption {
               type = types.nullOr types.str;
