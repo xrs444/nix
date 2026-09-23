@@ -279,6 +279,19 @@ in
     })
   ];
 
+  # nix-daemon does NOT automatically restart when a `nixos-rebuild switch` activates a new
+  # nix.custom.conf — environment.etc changes just rewrite the file, they aren't wired to a
+  # service restart by default. Without this, an already-running daemon keeps serving whatever
+  # trusted-users/settings were in memory at its last start, indefinitely, no matter how many
+  # times the fix is redeployed. Confirmed 2026-09-23: xsvr1, xdt1-t, and xsvr3 each
+  # independently needed a manual `kill -9 <nix-daemon pid>` after a nix.custom.conf change
+  # before "you are not privileged to build input-addressed derivations" actually went away —
+  # switch-to-configuration alone never restarted their daemons. This trigger closes that gap
+  # for every future nix.custom.conf change, on both builder and client hosts.
+  systemd.services.nix-daemon.restartTriggers = [
+    config.environment.etc."nix/nix.custom.conf".text
+  ];
+
   # Deploy builder SSH key on all non-builder hosts AND on xsvr1.
   # xsvr1 is a builder itself but also acts as the CI runner; it needs
   # id_builder to SSH to xsvr2/xsvr3/xdt1-t/vocibuild for distributed builds.
