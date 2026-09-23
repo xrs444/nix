@@ -410,7 +410,38 @@
         # entirely (1) to remove that specific failure mode; costs some
         # queuing latency when two big requests land close together.
         promptConcurrency = 1;
-        decodeConcurrency = 4;
+        # bug-991 third follow-up (2026-09-22): promptConcurrency=1 alone
+        # eliminated concurrent-prefill crashes but NOT a residual pattern of
+        # crashes landing exactly at 100% of a solo prefill (14910/14910,
+        # 20536/20536, 61003/61003, etc.), independent of size/concurrency.
+        # Root cause, confirmed by reading mlx_lm/generate.py's
+        # BatchGenerator._next() directly on xcog1 (mlx-lm 0.31.3): it sets
+        # completion_batch_size = max(decodeConcurrency, promptConcurrency),
+        # and the ONLY guard against adding new prefill work is
+        # `len(generation_batch) >= completion_batch_size`. With
+        # decodeConcurrency=4, that guard only blocks once 4 requests are
+        # simultaneously decoding — effectively never, with 3 hermes
+        # identities — so a brand-new large prefill was free to start the
+        # instant a previous request finished ITS prefill and dropped into
+        # decode, stacking the new prefill's transient memory on top of the
+        # still-live decode KV cache. That's the exact "started 3s after a
+        # previous request began decoding" pattern flagged as an unconfirmed
+        # hypothesis in the prior round — this is the confirmation.
+        # decodeConcurrency=1 makes completion_batch_size=max(1,1)=1, so the
+        # guard fires whenever ANYTHING is mid-decode, fully serializing new
+        # prefill against in-flight decode (not just against other
+        # prefills). Trade-off, accepted deliberately: this also serializes
+        # *generation* across hermes-t/s/k — two identities mid-conversation
+        # at once will no longer interleave, the second's response won't
+        # start generating until the first's finishes entirely. Given the
+        # failure mode is a hard crash + empty response to the user, that
+        # latency cost was judged worth it. Time-since-restart data pulled
+        # from macOS's own crash-reporter .ips reports (captureTime vs.
+        # procLaunch across all 27 crashes to date) ruled out Metal
+        # allocator fragmentation as an alternative explanation — crashes
+        # repeatedly hit within 2-9 minutes of a FRESH daemon restart, so a
+        # scheduled periodic restart would not have helped.
+        decodeConcurrency = 1;
       };
     };
 

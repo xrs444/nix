@@ -170,6 +170,19 @@ let
       litellm_settings = {
         set_verbose = false;
         json_logs = true;
+        # bug-991 (2026-09-22): confirmed via this same file that neither
+        # request_timeout nor num_retries nor fallbacks were ever set, so a
+        # crashed local-MLX request always surfaced as an immediate 500 with
+        # zero server-side cushion — cloudTier's DeepSeek entry is a
+        # separately-named model a client must explicitly request, NOT an
+        # automatic fallback for a failed local one (confirmed: no
+        # `fallbacks` config exists anywhere in this file). A retry here
+        # gives a request one more shot after launchd's KeepAlive has
+        # already respawned the crashed daemon (ThrottleInterval=30 in
+        # mkMlxDaemon, so the daemon is back within ~30s) instead of
+        # surfacing the crash to the caller immediately. Independent of
+        # actually fixing the OOM — softens how bad a residual crash looks.
+        num_retries = 2;
       };
     }
   );
