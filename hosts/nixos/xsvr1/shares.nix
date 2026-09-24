@@ -65,7 +65,7 @@
     enable = true;
     createMountPoints = lib.mkForce false;
     exports = ''
-      /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt)
+      /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.18.100.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt)
       /export/zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
       /export/zfs/devicebackups 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
       /export/zfs/documents/manyfold 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
@@ -86,14 +86,14 @@
       /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
       /export/zfs/users/syncthing 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
       /export/zfs/media/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/ebooks 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/documents 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/3dmodels 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/games 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,no_root_squash)
-      /export/zfs/ingest/movies 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/scan/scans 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/ebooks 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/documents 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/3dmodels 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/games 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,no_root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,no_root_squash)
+      /export/zfs/ingest/movies 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/ingest/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
+      /export/zfs/scan/scans 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
       # Scanopy daemon config (identity/API key), mounted by the privileged
       # host-network container on xfw (Firewalla) — nix/hosts/nixable/xfw/.
       # no_root_squash: the daemon process runs as root inside its container
