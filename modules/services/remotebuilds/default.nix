@@ -268,6 +268,27 @@ in
         system-features = nixos-test benchmark big-parallel
       '';
     })
+    (lib.mkIf (isBuilder && !isQemuBuilder && !isNativeBuilder) {
+      text = ''
+        # Custom Nix configuration for a plain x86_64 builder (not QEMU, not native
+        # aarch64) — currently xsvr1, xsvr3, xsvr4, xdt1-t. Without this branch these
+        # hosts had NO substituters/trusted-public-keys in nix.custom.conf at all (the
+        # only other isBuilder-scoped text sets trusted-users). builders-use-substitutes
+        # = true on every delegating client tells a remote builder to fetch its own
+        # build inputs from a substituter, but with none configured here the daemon
+        # couldn't, so Nix fell back to streaming every input NAR serially over the
+        # calling client's SSH nix-store --serve channel instead of parallel HTTP from
+        # nixcache.xrs444.net — the actual cause of "copying from xsvr1 is incredibly
+        # slow" (bug-1017), not a network/hardware problem. Mirrors the isNativeBuilder
+        # block above; file:///zfs/nixcache/cache is only meaningful on xsvr1 itself
+        # (where the cache actually lives on disk) but harmless elsewhere.
+        extra-substituters = http://nixcache.xrs444.net
+        extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
+        extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+        require-sigs = true
+        secret-key-files = /run/secrets/nixcache_signing_key
+      '';
+    })
     (lib.mkIf (!isBuilder) {
       text = ''
         # Determinate Nix ignores nix.conf for these settings — must be set here so the
