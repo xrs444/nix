@@ -13,6 +13,307 @@ let
       "${config.home.homeDirectory}/Library/Application Support/Code/User"
     else
       throw "Unsupported platform";
+
+  # Shared settings, applied to every profile.
+  commonSettings = {
+    # Common settings for all platforms
+    "editor.fontFamily" = "'SpaceMono Nerd Font Mono', Menlo, Monaco, 'Courier New', monospace";
+    "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
+    "git.enableSmartCommit" = true;
+    "git.confirmSync" = false;
+    "workbench.colorTheme" = "Catppuccin Mocha";
+    "catppuccin-icons.hidesExplorerArrows" = false;
+    "catppuccin-icons.specificFolders" = true;
+    "catppuccin-icons.monochrome" = false;
+    "files.autoSave" = "afterDelay";
+    "files.autoSaveDelay" = 60000;
+    "chat.mcp.autostart" = "newAndOutdated";
+    "chat.mcp.discovery.enabled" = {
+      "claude-desktop" = true;
+      "windsurf" = true;
+      "cursor-global" = true;
+      "cursor-workspace" = true;
+    };
+    "chat.mcp.enabled" = true;
+    "cSpell.diagnosticLevel" = "Hint";
+    "dart.updateDevTools" = false;
+    "dart.checkForSdkUpdates" = false;
+    "editor.bracketPairColorization.independentColorPoolPerBracketType" = true;
+    "editor.fontSize" = 16;
+    "editor.fontLigatures" = true;
+    "editor.fontWeight" = "400";
+    "editor.guides.bracketPairs" = true;
+    "editor.guides.bracketPairsHorizontal" = true;
+    "editor.inlineSuggest.enabled" = true;
+    "editor.renderWhitespace" = "all";
+    "editor.rulers" = [
+      80
+      88
+    ];
+    "editor.semanticHighlighting.enabled" = true;
+    "explorer.confirmDragAndDrop" = false;
+    "extensions.ignoreRecommendations" = true;
+    "[dart]"."editor.formatOnSave" = true;
+    "[dart]"."editor.formatOnType" = true;
+    "[dart]"."editor.rulers" = [ 80 ];
+    "[dart]"."editor.selectionHighlight" = false;
+    "[dart]"."editor.suggest.snippetsPreventQuickSuggestions" = false;
+    "[dart]"."editor.suggestSelection" = "first";
+    "[dart]"."editor.tabCompletion" = "onlySnippets";
+    "[dart]"."editor.wordBasedSuggestions" = "off";
+    "[dockerfile]"."editor.quickSuggestions.strings" = true;
+    "[nix]"."editor.defaultFormatter" = "jnoortheen.nix-ide";
+    "[nix]"."editor.formatOnSave" = true;
+    "[nix]"."editor.tabSize" = 2;
+    "[python]"."editor.formatOnType" = true;
+    "[xml]"."editor.defaultFormatter" = "DotJoshJohnson.xml";
+    "files.insertFinalNewline" = true;
+    "files.trimTrailingWhitespace" = true;
+    "git.openRepositoryInParentFolders" = "always";
+    "github.copilot.chat.agent.thinkingTool" = true;
+    "github.copilot.chat.codesearch.enabled" = true;
+    "githubPullRequests.pullBranch" = "never";
+    "markdown.preview.breaks" = true;
+    "nix.enableLanguageServer" = true;
+    "nix.serverPath" = "nil";
+    "nix.serverSettings" = {
+      "nil" = {
+        "formatting" = {
+          "command" = [ "nixfmt" ];
+        };
+      };
+    };
+    "partialDiff.enableTelemetry" = false;
+    "projectManager.git" = {
+      baseFolders = [
+        "~/Chainguard"
+        "~/Development"
+        "~/Websites"
+        "~/Zero"
+      ];
+      maxDepthRecursion = 5;
+    };
+    "redhat.telemetry.enabled" = false;
+    "security.workspace.trust.untrustedFiles" = "open";
+    "shellcheck.run" = "onSave";
+    "shellformat.useEditorConfig" = true;
+    "telemetry.feedback.enabled" = false;
+    "telemetry.telemetryLevel" = "off";
+    "extensions.autoCheckUpdates" = false;
+    "update.mode" = "none";
+    "vsicons.dontShowNewVersionMessage" = true;
+    "workbench.iconTheme" = "vscode-icons";
+    "workbench.tree.indent" = 20;
+    "workbench.startupEditor" = "none";
+    "workbench.editor.empty.hint" = "hidden";
+    # Kubernetes settings
+    "vs-kubernetes.crd-code-completion" = "enabled";
+    # Claude Code specific settings
+    "claudeCode.selectedModel" = "sonnet";
+    "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
+      You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
+
+                Commits must follow the Conventional Commits 1.0.0 specification and be further refined using the rules outlined below.
+
+                The commit message must include the following fields: "type", "description", "body".
+                The commit message must be in the format:
+                <type>([optional scope]): <description>
+
+                [body]
+
+                [optional footer(s)]
+
+                - "type": Choose one of the following:
+                  - feat: MUST be used when commits that introduce new features or functionalities to the project (this correlates with MINOR in Semantic Versioning)
+                  - fix: MUST be used when commits address bug fixes or resolve issues in the project (this correlates with PATCH in Semantic Versioning)
+                  - types other than feat: and fix: can be used in your commit messages:
+                    - build: Used when a commit affects the build system or external dependencies. It includes changes to build scripts, build configurations, or build tools used in the project
+                    - chore: Typically used for routine or miscellaneous tasks related to the project, such as code reformatting, updating dependencies, or making general project maintenance
+                    - ci: CI stands for continuous integration. This type is used for changes to the project's continuous integration or deployment configurations, scripts, or infrastructure
+                    - docs: Documentation plays a vital role in software projects. The docs type is used for commits that update or add documentation, including readme files, API documentation, user guides or code comments that act as documentation
+                    - i18n: This type is used for commits that involve changes related to internationalization or localization. It includes changes to localization files, translations, or internationalization-related configurations.
+                    - perf: Short for performance, this type is used when a commit improves the performance of the code or optimizes certain functionalities
+                    - refactor: Commits typed as refactor involve making changes to the codebase that neither fix a bug nor add a new feature. Refactoring aims to improve code structure, organization, or efficiency without changing external behavior
+                    - revert: Commits typed as revert are used to undo previous commits. They are typically used to reverse changes made in previous commits
+                    - style: The style type is used for commits that focus on code style changes, such as formatting, indentation, or whitespace modifications. These commits do not affect the functionality of the code but improve its readability and maintainability
+                    - test: Used for changes that add or modify test cases, test frameworks, or other related testing infrastructure.
+                - "description": A very brief summary line (max 72 characters). Do not end with a period. Use imperative mood (e.g., 'add feature' not 'added feature').
+                - "body": A more detailed explanation of the changes, focusing on what problem this commit solves and why this change was necessary. Small changes can be a concise, specific sentence. Larger changes should be a bulleted list of concise, specific changes. Include optional footers like BREAKING CHANGE here.
+
+                Guidelines for writing the commit message:
+                - The <description> must be in English
+                - The [optional scope] must be in English
+                - The <description> must be imperative mood
+                - The <description> must avoid capitalization
+                - The <description> will not have a period at the end
+                - The <description> will have a maximum of 72 characters including any spaces or special characters
+                - The <description> must avoid using the <type> as the first word
+                - Follow the <description> with a blank line, then the [body].
+                - The [body] must be in English
+                - The [body] should provide a more detailed explanation. Small changes as one sentence, larger changes as a bulleted list.
+                - The [body] should explain what and why
+                - The [body] will be objective
+                - Bullet points in the [body] start with "-"
+                - The [optional footer(s)] can be used for things like referencing issues or indicating breaking changes.
+
+                Specification for Conventional Commits:
+                - Commits MUST be prefixed with a type, which consists of a noun, feat, fix, etc., followed by the OPTIONAL scope, OPTIONAL !, and REQUIRED terminal colon and space.
+                - A scope MAY be provided after a type. A scope MUST consist of a noun describing a section of the codebase surrounded by parenthesis, e.g., fix(parser):
+                - A description MUST immediately follow the colon and space after the type/scope prefix. The description is a short summary of the code changes, e.g., fix: array parsing issue when multiple spaces were contained in string.
+                - A longer commit body MAY be provided after the short description, providing additional contextual information about the code changes. The body MUST begin one blank line after the description.
+                - A commit body is free-form and MAY consist of any number of newline separated paragraphs.
+                - One or more footers MAY be provided one blank line after the body. Each footer MUST consist of a word token, followed by either a :<space> or <space># separator, followed by a string value (this is inspired by the git trailer convention).
+                - A footer's token MUST use - in place of whitespace characters, e.g., Acked-by (this helps differentiate the footer section from a multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY also be used as a token.
+                - A footer's value MAY contain spaces and newlines, and parsing MUST terminate when the next valid footer token/separator pair is observed.
+                - Breaking changes MUST be indicated in the type/scope prefix of a commit, or as an entry in the footer.
+                - If included as a footer, a breaking change MUST consist of the uppercase text BREAKING CHANGE, followed by a colon, space, and description, e.g., BREAKING CHANGE: environment variables now take precedence over config files.
+                - If included in the type/scope prefix, breaking changes MUST be indicated by a ! immediately before the :. If ! is used, BREAKING CHANGE: MAY be omitted from the footer section, and the commit description SHALL be used to describe the breaking change.
+                - The units of information that make up Conventional Commits MUST NOT be treated as case sensitive by implementors, with the exception of BREAKING CHANGE which MUST be uppercase.
+                - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
+    '';
+  };
+
+  # Settings shared by every profile: common settings plus per-platform overrides.
+  settings =
+    commonSettings
+    // lib.optionalAttrs isDarwin {
+      "terminal.integrated.defaultProfile.osx" = "fish";
+      "terminal.integrated.env.osx" = { };
+      "cline.chromeExecutablePath" = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+      "window.controlsStyle" = "native";
+    }
+    // lib.optionalAttrs isLinux {
+      "terminal.integrated.env.linux" = { };
+      "cline.chromeExecutablePath" = "/usr/bin/google-chrome-stable";
+      "window.controlsStyle" =
+        if config.wayland.windowManager.hyprland.enable then "hidden" else "native";
+    };
+
+  # Extensions installed in every profile: theming, git, remote access, Claude Code,
+  # and small single-purpose utilities cheap enough to always have loaded.
+  baseExtensions = with pkgs; [
+    vscode-marketplace.anthropic.claude-code
+    vscode-marketplace.pawelhuryn.claude-usage-phuryn
+    vscode-marketplace-release.eamodio.gitlens
+    vscode-marketplace.codezombiech.gitignore
+    vscode-marketplace.alefragnani.project-manager
+    vscode-marketplace.s3anmorrow.openwithkraken
+    vscode-marketplace.github.vscode-pull-request-github
+    vscode-marketplace.github.codespaces
+    vscode-marketplace.catppuccin.catppuccin-vsc
+    vscode-marketplace.catppuccin.catppuccin-vsc-icons
+    vscode-marketplace.vscode-icons-team.vscode-icons
+    vscode-marketplace.pkief.material-product-icons
+    vscode-marketplace.evan-buss.font-switcher
+    vscode-marketplace.editorconfig.editorconfig
+    vscode-marketplace.streetsidesoftware.code-spell-checker
+    vscode-marketplace.aaron-bond.better-comments
+    vscode-marketplace.esbenp.prettier-vscode
+    vscode-marketplace.formulahendry.code-runner
+    vscode-marketplace.ms-vscode-remote.remote-ssh
+    vscode-marketplace.ms-vscode-remote.remote-ssh-edit
+    vscode-marketplace.ms-vscode-remote.remote-wsl
+    vscode-marketplace.ms-vscode.remote-explorer
+    vscode-extensions.ms-vscode-remote.vscode-remote-extensionpack
+    vscode-marketplace.zainchen.json
+    vscode-marketplace.dotjoshjohnson.xml
+    vscode-marketplace.tamasfe.even-better-toml
+    vscode-marketplace.mindaro-dev.file-downloader
+    vscode-marketplace.moshfeu.compare-folders
+    vscode-marketplace.pdconsec.vscode-print
+    vscode-marketplace.ryu1kn.partial-diff
+    vscode-marketplace.ms-vscode.hexeditor
+    vscode-marketplace.jeroen-meijer.pubspec-assist
+    vscode-marketplace.tetradresearch.vscode-h2o
+  ];
+
+  # Nix / Ansible / Terraform / Kubernetes / systemd tooling.
+  infraExtensions = with pkgs; [
+    vscode-marketplace.jnoortheen.nix-ide
+    vscode-marketplace.jeff-hykin.better-nix-syntax
+    vscode-marketplace.redhat.ansible
+    vscode-marketplace.dhoeric.ansible-vault
+    vscode-marketplace.redhat.vscode-commons
+    vscode-marketplace.redhat.vscode-yaml
+    vscode-marketplace.hashicorp.terraform
+    vscode-marketplace.ms-kubernetes-tools.vscode-kubernetes-tools
+    vscode-marketplace.coolbear.systemd-unit-file
+    vscode-marketplace.mkhl.direnv
+    vscode-marketplace.nefrob.vscode-just-syntax
+    vscode-marketplace.tobiashochguertel.just-formatter
+    vscode-marketplace.fill-labs.dependi
+    vscode-marketplace.nico-castell.linux-desktop-file
+    vscode-marketplace.github.vscode-github-actions
+    vscode-marketplace.sanjulaganepola.github-local-actions
+  ];
+
+  # Docker / container tooling.
+  containerExtensions = with pkgs; [
+    vscode-marketplace.docker.docker
+    vscode-marketplace.ms-azuretools.vscode-docker
+    vscode-marketplace.ms-azuretools.vscode-containers
+    vscode-marketplace.ms-vscode-remote.remote-containers
+    vscode-marketplace.jeff-hykin.better-dockerfile-syntax
+  ];
+
+  # Python language tooling.
+  pythonExtensions = with pkgs; [
+    vscode-marketplace.ms-python.python
+    vscode-marketplace.ms-python.debugpy
+    vscode-marketplace.ms-python.vscode-pylance
+    vscode-marketplace.ms-python.vscode-python-envs
+  ];
+
+  # Shell scripting (bash/fish/powershell).
+  shellExtensions = with pkgs; [
+    vscode-marketplace.bmalehorn.vscode-fish
+    vscode-marketplace.bmalehorn.shell-syntax
+    vscode-marketplace.foxundermoon.shell-format
+    vscode-marketplace.mads-hartmann.bash-ide-vscode
+    vscode-marketplace.timonwong.shellcheck
+    vscode-marketplace.rogalmic.bash-debug
+    vscode-marketplace.woozy-masta.shell-script-ide
+    vscode-marketplace.jeff-hykin.better-shellscript-syntax
+    vscode-marketplace.remisa.shellman
+    vscode-marketplace.ryu1kn.edit-with-shell
+    vscode-marketplace.meronz.manpages
+    vscode-marketplace.ms-vscode.powershell
+  ];
+
+  # Docs/writing (markdown, mdx, hugo, csv).
+  docsExtensions = with pkgs; [
+    vscode-marketplace.unifiedjs.vscode-mdx
+    vscode-marketplace.xyc.vscode-mdx-preview
+    vscode-marketplace.yzhang.markdown-all-in-one
+    vscode-marketplace.davidanson.vscode-markdownlint
+    vscode-marketplace.marp-team.marp-vscode
+    vscode-marketplace.budparr.language-hugo-vscode
+    vscode-marketplace.rusnasonov.vscode-hugo
+    vscode-marketplace.viktorzetterstrom.non-breaking-space-highlighter
+    vscode-marketplace.xshrim.txt-syntax
+    vscode-marketplace.mechatroner.rainbow-csv
+    vscode-marketplace.janisdd.vscode-edit-csv
+    vscode-marketplace.jeff-hykin.better-csv-syntax
+    vscode-marketplace.griimick.vhs
+    vscode-marketplace.jeff-hykin.polacode-2019
+  ];
+
+  # Native C/C++ debugging + pairing, Linux only (matches prior gating).
+  nativeDevExtensions = with pkgs; [
+    vscode-extensions.ms-vscode.cpptools-extension-pack
+    vscode-extensions.ms-vsliveshare.vsliveshare
+    vscode-extensions.vadimcn.vscode-lldb
+  ];
+
+  # Common profile shape: shared settings + base extensions + task-specific extras.
+  # enableExtensionUpdateCheck/enableUpdateCheck are only honored on the
+  # "default" profile by home-manager; commonSettings already sets the
+  # equivalent "extensions.autoCheckUpdates"/"update.mode" keys directly so
+  # every profile gets the same effect without the module's per-profile warning.
+  mkProfile = extraExtensions: {
+    userSettings = settings;
+    extensions = baseExtensions ++ extraExtensions;
+  };
 in
 {
 
@@ -81,274 +382,21 @@ in
 
   programs.vscode = {
     enable = true;
-    profiles.default = {
-      enableExtensionUpdateCheck = false;
-      enableUpdateCheck = false;
-      userSettings = {
-        # Common settings for all platforms
-        "editor.fontFamily" = "'SpaceMono Nerd Font Mono', Menlo, Monaco, 'Courier New', monospace";
-        "workbench.settings.applyToAllProfiles" = [ "editor.fontFamily" ];
-        "git.enableSmartCommit" = true;
-        "git.confirmSync" = false;
-        "workbench.colorTheme" = "Catppuccin Mocha";
-        "catppuccin-icons.hidesExplorerArrows" = false;
-        "catppuccin-icons.specificFolders" = true;
-        "catppuccin-icons.monochrome" = false;
-        "files.autoSave" = "afterDelay";
-        "files.autoSaveDelay" = 60000;
-        "chat.mcp.autostart" = "newAndOutdated";
-        "chat.mcp.discovery.enabled" = {
-          "claude-desktop" = true;
-          "windsurf" = true;
-          "cursor-global" = true;
-          "cursor-workspace" = true;
-        };
-        "chat.mcp.enabled" = true;
-        "cSpell.diagnosticLevel" = "Hint";
-        "dart.updateDevTools" = false;
-        "dart.checkForSdkUpdates" = false;
-        "editor.bracketPairColorization.independentColorPoolPerBracketType" = true;
-        "editor.fontSize" = 16;
-        "editor.fontLigatures" = true;
-        "editor.fontWeight" = "400";
-        "editor.guides.bracketPairs" = true;
-        "editor.guides.bracketPairsHorizontal" = true;
-        "editor.inlineSuggest.enabled" = true;
-        "editor.renderWhitespace" = "all";
-        "editor.rulers" = [
-          80
-          88
-        ];
-        "editor.semanticHighlighting.enabled" = true;
-        "explorer.confirmDragAndDrop" = false;
-        "extensions.ignoreRecommendations" = true;
-        "[dart]"."editor.formatOnSave" = true;
-        "[dart]"."editor.formatOnType" = true;
-        "[dart]"."editor.rulers" = [ 80 ];
-        "[dart]"."editor.selectionHighlight" = false;
-        "[dart]"."editor.suggest.snippetsPreventQuickSuggestions" = false;
-        "[dart]"."editor.suggestSelection" = "first";
-        "[dart]"."editor.tabCompletion" = "onlySnippets";
-        "[dart]"."editor.wordBasedSuggestions" = "off";
-        "[dockerfile]"."editor.quickSuggestions.strings" = true;
-        "[nix]"."editor.defaultFormatter" = "jnoortheen.nix-ide";
-        "[nix]"."editor.formatOnSave" = true;
-        "[nix]"."editor.tabSize" = 2;
-        "[python]"."editor.formatOnType" = true;
-        "[xml]"."editor.defaultFormatter" = "DotJoshJohnson.xml";
-        "files.insertFinalNewline" = true;
-        "files.trimTrailingWhitespace" = true;
-        "git.openRepositoryInParentFolders" = "always";
-        "github.copilot.chat.agent.thinkingTool" = true;
-        "github.copilot.chat.codesearch.enabled" = true;
-        "githubPullRequests.pullBranch" = "never";
-        "markdown.preview.breaks" = true;
-        "nix.enableLanguageServer" = true;
-        "nix.serverPath" = "nil";
-        "nix.serverSettings" = {
-          "nil" = {
-            "formatting" = {
-              "command" = [ "nixfmt" ];
-            };
-          };
-        };
-        "partialDiff.enableTelemetry" = false;
-        "projectManager.git" = {
-          baseFolders = [
-            "~/Chainguard"
-            "~/Development"
-            "~/Websites"
-            "~/Zero"
-          ];
-          maxDepthRecursion = 5;
-        };
-        "redhat.telemetry.enabled" = false;
-        "security.workspace.trust.untrustedFiles" = "open";
-        "shellcheck.run" = "onSave";
-        "shellformat.useEditorConfig" = true;
-        "telemetry.feedback.enabled" = false;
-        "telemetry.telemetryLevel" = "off";
-        "extensions.autoCheckUpdates" = false;
-        "update.mode" = "none";
-        "vsicons.dontShowNewVersionMessage" = true;
-        "workbench.iconTheme" = "vscode-icons";
-        "workbench.tree.indent" = 20;
-        "workbench.startupEditor" = "none";
-        "workbench.editor.empty.hint" = "hidden";
-        # Kubernetes settings
-        "vs-kubernetes.crd-code-completion" = "enabled";
-        # Claude Code specific settings
-        "claudeCode.selectedModel" = "sonnet";
-        "github.copilot.chat.commitMessageGeneration.instructions.text" = ''
-          You will act as a git commit message generator. When receiving a git diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
-
-                    Commits must follow the Conventional Commits 1.0.0 specification and be further refined using the rules outlined below.
-
-                    The commit message must include the following fields: "type", "description", "body".
-                    The commit message must be in the format:
-                    <type>([optional scope]): <description>
-
-                    [body]
-
-                    [optional footer(s)]
-
-                    - "type": Choose one of the following:
-                      - feat: MUST be used when commits that introduce new features or functionalities to the project (this correlates with MINOR in Semantic Versioning)
-                      - fix: MUST be used when commits address bug fixes or resolve issues in the project (this correlates with PATCH in Semantic Versioning)
-                      - types other than feat: and fix: can be used in your commit messages:
-                        - build: Used when a commit affects the build system or external dependencies. It includes changes to build scripts, build configurations, or build tools used in the project
-                        - chore: Typically used for routine or miscellaneous tasks related to the project, such as code reformatting, updating dependencies, or making general project maintenance
-                        - ci: CI stands for continuous integration. This type is used for changes to the project's continuous integration or deployment configurations, scripts, or infrastructure
-                        - docs: Documentation plays a vital role in software projects. The docs type is used for commits that update or add documentation, including readme files, API documentation, user guides or code comments that act as documentation
-                        - i18n: This type is used for commits that involve changes related to internationalization or localization. It includes changes to localization files, translations, or internationalization-related configurations.
-                        - perf: Short for performance, this type is used when a commit improves the performance of the code or optimizes certain functionalities
-                        - refactor: Commits typed as refactor involve making changes to the codebase that neither fix a bug nor add a new feature. Refactoring aims to improve code structure, organization, or efficiency without changing external behavior
-                        - revert: Commits typed as revert are used to undo previous commits. They are typically used to reverse changes made in previous commits
-                        - style: The style type is used for commits that focus on code style changes, such as formatting, indentation, or whitespace modifications. These commits do not affect the functionality of the code but improve its readability and maintainability
-                        - test: Used for changes that add or modify test cases, test frameworks, or other related testing infrastructure.
-                    - "description": A very brief summary line (max 72 characters). Do not end with a period. Use imperative mood (e.g., 'add feature' not 'added feature').
-                    - "body": A more detailed explanation of the changes, focusing on what problem this commit solves and why this change was necessary. Small changes can be a concise, specific sentence. Larger changes should be a bulleted list of concise, specific changes. Include optional footers like BREAKING CHANGE here.
-
-                    Guidelines for writing the commit message:
-                    - The <description> must be in English
-                    - The [optional scope] must be in English
-                    - The <description> must be imperative mood
-                    - The <description> must avoid capitalization
-                    - The <description> will not have a period at the end
-                    - The <description> will have a maximum of 72 characters including any spaces or special characters
-                    - The <description> must avoid using the <type> as the first word
-                    - Follow the <description> with a blank line, then the [body].
-                    - The [body] must be in English
-                    - The [body] should provide a more detailed explanation. Small changes as one sentence, larger changes as a bulleted list.
-                    - The [body] should explain what and why
-                    - The [body] will be objective
-                    - Bullet points in the [body] start with "-"
-                    - The [optional footer(s)] can be used for things like referencing issues or indicating breaking changes.
-
-                    Specification for Conventional Commits:
-                    - Commits MUST be prefixed with a type, which consists of a noun, feat, fix, etc., followed by the OPTIONAL scope, OPTIONAL !, and REQUIRED terminal colon and space.
-                    - A scope MAY be provided after a type. A scope MUST consist of a noun describing a section of the codebase surrounded by parenthesis, e.g., fix(parser):
-                    - A description MUST immediately follow the colon and space after the type/scope prefix. The description is a short summary of the code changes, e.g., fix: array parsing issue when multiple spaces were contained in string.
-                    - A longer commit body MAY be provided after the short description, providing additional contextual information about the code changes. The body MUST begin one blank line after the description.
-                    - A commit body is free-form and MAY consist of any number of newline separated paragraphs.
-                    - One or more footers MAY be provided one blank line after the body. Each footer MUST consist of a word token, followed by either a :<space> or <space># separator, followed by a string value (this is inspired by the git trailer convention).
-                    - A footer's token MUST use - in place of whitespace characters, e.g., Acked-by (this helps differentiate the footer section from a multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY also be used as a token.
-                    - A footer's value MAY contain spaces and newlines, and parsing MUST terminate when the next valid footer token/separator pair is observed.
-                    - Breaking changes MUST be indicated in the type/scope prefix of a commit, or as an entry in the footer.
-                    - If included as a footer, a breaking change MUST consist of the uppercase text BREAKING CHANGE, followed by a colon, space, and description, e.g., BREAKING CHANGE: environment variables now take precedence over config files.
-                    - If included in the type/scope prefix, breaking changes MUST be indicated by a ! immediately before the :. If ! is used, BREAKING CHANGE: MAY be omitted from the footer section, and the commit description SHALL be used to describe the breaking change.
-                    - The units of information that make up Conventional Commits MUST NOT be treated as case sensitive by implementors, with the exception of BREAKING CHANGE which MUST be uppercase.
-                    - BREAKING-CHANGE MUST be synonymous with BREAKING CHANGE, when used as a token in a footer.
-        '';
-      }
-      // lib.optionalAttrs isDarwin {
-        "terminal.integrated.defaultProfile.osx" = "fish";
-        "terminal.integrated.env.osx" = { };
-        "cline.chromeExecutablePath" = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-        "window.controlsStyle" = "native";
-      }
-      // lib.optionalAttrs isLinux {
-        "terminal.integrated.env.linux" = { };
-        "cline.chromeExecutablePath" = "/usr/bin/google-chrome-stable";
-        "window.controlsStyle" =
-          if config.wayland.windowManager.hyprland.enable then "hidden" else "native";
-      };
-      extensions =
-        with pkgs;
-        [
-          vscode-marketplace.bmalehorn.vscode-fish
-          vscode-marketplace.budparr.language-hugo-vscode
-          vscode-marketplace.catppuccin.catppuccin-vsc
-          vscode-marketplace.davidanson.vscode-markdownlint
-          vscode-marketplace.dhoeric.ansible-vault
-          vscode-marketplace.docker.docker
-          vscode-marketplace-release.eamodio.gitlens
-          vscode-marketplace.esbenp.prettier-vscode
-          vscode-marketplace.formulahendry.code-runner
-          vscode-marketplace.foxundermoon.shell-format
-          vscode-marketplace.github.codespaces
-          vscode-marketplace.github.vscode-github-actions
-          vscode-marketplace.github.vscode-pull-request-github
-          vscode-marketplace.hashicorp.terraform
-          vscode-marketplace.janisdd.vscode-edit-csv
-          vscode-marketplace.anthropic.claude-code
-          vscode-marketplace.jeff-hykin.better-dockerfile-syntax
-          vscode-marketplace.jeff-hykin.better-shellscript-syntax
-          vscode-marketplace.jnoortheen.nix-ide
-          vscode-marketplace.mads-hartmann.bash-ide-vscode
-          vscode-marketplace.mechatroner.rainbow-csv
-          vscode-marketplace.meronz.manpages
-          vscode-marketplace.mindaro-dev.file-downloader
-          vscode-marketplace.moshfeu.compare-folders
-          vscode-marketplace.ms-azuretools.vscode-containers
-          vscode-marketplace.ms-azuretools.vscode-docker
-          vscode-marketplace.ms-kubernetes-tools.vscode-kubernetes-tools
-          vscode-marketplace.ms-python.debugpy
-          vscode-marketplace.ms-python.python
-          vscode-marketplace.ms-python.vscode-pylance
-          vscode-marketplace.ms-python.vscode-python-envs
-          vscode-marketplace.ms-vscode-remote.remote-containers
-          vscode-marketplace.ms-vscode-remote.remote-ssh
-          vscode-marketplace.ms-vscode-remote.remote-ssh-edit
-          vscode-marketplace.ms-vscode-remote.remote-wsl
-          vscode-marketplace.ms-vscode.powershell
-          vscode-marketplace.ms-vscode.remote-explorer
-          vscode-marketplace.pdconsec.vscode-print
-          vscode-marketplace.redhat.ansible
-          vscode-marketplace.redhat.vscode-commons
-          vscode-marketplace.redhat.vscode-yaml
-          vscode-marketplace.remisa.shellman
-          vscode-marketplace.rogalmic.bash-debug
-          vscode-marketplace.rusnasonov.vscode-hugo
-          vscode-marketplace.ryu1kn.edit-with-shell
-          vscode-marketplace.streetsidesoftware.code-spell-checker
-          vscode-marketplace.tamasfe.even-better-toml
-          vscode-marketplace.tetradresearch.vscode-h2o
-          vscode-marketplace.timonwong.shellcheck
-          vscode-marketplace.woozy-masta.shell-script-ide
-          vscode-marketplace.xshrim.txt-syntax
-          vscode-marketplace.zainchen.json
-          vscode-marketplace.aaron-bond.better-comments
-          vscode-marketplace.alefragnani.project-manager
-          vscode-marketplace.bmalehorn.shell-syntax
-          vscode-marketplace.catppuccin.catppuccin-vsc-icons
-          vscode-marketplace.codezombiech.gitignore
-          vscode-marketplace.coolbear.systemd-unit-file
-          vscode-marketplace.dotjoshjohnson.xml
-          vscode-marketplace.editorconfig.editorconfig
-          vscode-marketplace.evan-buss.font-switcher
-          vscode-marketplace.fill-labs.dependi
-          vscode-marketplace.griimick.vhs
-          vscode-marketplace.jeff-hykin.better-csv-syntax
-          vscode-marketplace.jeff-hykin.better-nix-syntax
-          vscode-marketplace.jeff-hykin.polacode-2019
-          vscode-marketplace.jeroen-meijer.pubspec-assist
-          vscode-marketplace.marp-team.marp-vscode
-          vscode-marketplace.mkhl.direnv
-          vscode-marketplace.ms-vscode.hexeditor
-          vscode-extensions.ms-vscode-remote.vscode-remote-extensionpack
-          vscode-marketplace.nefrob.vscode-just-syntax
-          vscode-marketplace.nico-castell.linux-desktop-file
-          vscode-marketplace.pawelhuryn.claude-usage-phuryn
-          vscode-marketplace.pkief.material-product-icons
-          vscode-marketplace.ryu1kn.partial-diff
-          vscode-marketplace.s3anmorrow.openwithkraken
-          vscode-marketplace.sanjulaganepola.github-local-actions
-          vscode-marketplace.tobiashochguertel.just-formatter
-          vscode-marketplace.unifiedjs.vscode-mdx
-          vscode-marketplace.viktorzetterstrom.non-breaking-space-highlighter
-          vscode-marketplace.vscode-icons-team.vscode-icons
-          vscode-marketplace.xyc.vscode-mdx-preview
-          vscode-marketplace.yzhang.markdown-all-in-one
-        ]
-        ++ lib.optionals isLinux [
-          vscode-extensions.ms-vscode.cpptools-extension-pack
-          vscode-extensions.ms-vsliveshare.vsliveshare
-          vscode-extensions.vadimcn.vscode-lldb
-        ];
-
+    profiles = {
+      # Lightweight default: theming, git, remote access, Claude Code — no
+      # task-specific language servers, so this is what VS Code opens with.
+      default = mkProfile [ ];
+      infra = mkProfile infraExtensions;
+      containers = mkProfile containerExtensions;
+      python = mkProfile pythonExtensions;
+      shell = mkProfile shellExtensions;
+      docs = mkProfile docsExtensions;
+    }
+    // lib.optionalAttrs isLinux {
+      native-dev = mkProfile nativeDevExtensions;
     };
-    mutableExtensionsDir = true;
+    # mutableExtensionsDir only has an effect when "default" is the sole
+    # profile, per the home-manager module — moot now that we declare more.
     package = pkgs.unstable.vscode;
   };
 
