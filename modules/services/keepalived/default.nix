@@ -116,6 +116,19 @@ else
       # Define the script for keepalived to reference
       services.keepalived = {
         enable = true;
+        # Found 2026-09-23 (bug-1005): keepalived refuses to run ANY script (track_script
+        # AND notify_master/notify_backup) without this, logging "SECURITY VIOLATION -
+        # scripts are being executed but script_security not enabled" and silently
+        # skipping the invocation. This was never set, so every notify_master hook below
+        # (bird restart, kanidm restart, setup-vip-routing.sh) has been silently failing
+        # on every VRRP state transition, not just for the new k8s-gateway-v6 instance
+        # that surfaced it. script_user root is required alongside enableScriptSecurity
+        # for notify_master/notify_backup specifically, since they're inline commands
+        # with no per-instance user field (unlike vrrpScripts.<name>.user below).
+        enableScriptSecurity = true;
+        extraGlobalDefs = ''
+          script_user root
+        '';
         vrrpScripts = lib.mkIf currentNode.fullNode {
           check_tailscale_subnet = {
             script = "/etc/check-tailscale-subnet.sh";
@@ -123,6 +136,7 @@ else
             weight = -2;
             fall = 3;
             rise = 2;
+            user = "root";
           };
         };
         vrrpInstances = lib.mkMerge [
@@ -295,16 +309,32 @@ else
       networking.firewall = {
         # extraCommands is a shell script (not iptables-only), so v6 rules via ip6tables
         # live in the same string — there is no separate extraCommands6 option.
+        # extraCommands re-runs this whole script on every activation and only ever
+        # appends (-A) — it never removes a rule from a PRIOR activation. Found 2026-09-23
+        # (bug-1005): changing the ff02::12 target from DROP to ACCEPT here left the old
+        # DROP rule live (first match wins in iptables), silently shadowing the new
+        # ACCEPT and breaking IPv6 VRRP send entirely — a live split-brain across all 4
+        # xsvr hosts (VRRP couldn't send adverts, so every node assumed MASTER).
+        # Delete-then-add (matching setup-vip-routing.sh's existing `ip rule del ... ||
+        # true` idiom) makes every rule here idempotent across activations, whatever its
+        # target, so a future value change can't strand a stale rule the same way again.
         extraCommands = ''
           # Allow VRRP multicast
+          iptables -D INPUT -d 224.0.0.18/32 -j ACCEPT 2>/dev/null || true
           iptables -A INPUT -d 224.0.0.18/32 -j ACCEPT
+          iptables -D OUTPUT -d 224.0.0.18/32 -j ACCEPT 2>/dev/null || true
           iptables -A OUTPUT -d 224.0.0.18/32 -j ACCEPT
 
           # ff02::12 is the VRRP-for-IPv6 link-local multicast group (RFC 5798), the v6
           # equivalent of 224.0.0.18. k8s-gateway-v6 (IPv6 rollout Phase 6, VRID 61 on
           # bridge22) is a real v6 VRRP instance now, so this must ACCEPT, not DROP —
-          # was a deny-by-default placeholder before this instance existed.
+          # was a deny-by-default placeholder before this instance existed. Delete both
+          # possible prior targets before adding, since either could be stale.
+          ip6tables -D INPUT -d ff02::12 -j DROP 2>/dev/null || true
+          ip6tables -D INPUT -d ff02::12 -j ACCEPT 2>/dev/null || true
           ip6tables -A INPUT -d ff02::12 -j ACCEPT
+          ip6tables -D OUTPUT -d ff02::12 -j DROP 2>/dev/null || true
+          ip6tables -D OUTPUT -d ff02::12 -j ACCEPT 2>/dev/null || true
           ip6tables -A OUTPUT -d ff02::12 -j ACCEPT
         '';
       };
