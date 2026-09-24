@@ -47,11 +47,17 @@
 
         spawn-at-startup "noctalia-shell"
 
-        // Monitor layout (xdt1-t). Positions are in logical pixels.
-        // DP-1: 1600x1200 scale 1.0 → logical 1600×1200
-        // DP-5: 4K portrait (2160×3840 after 270° rotation) scale 1.5 → logical 1440×2560
-        // DP-6: 4K landscape scale 1.5 → logical 2560×1440
-        // HDMI-A-2: 1920×1080 scale 1.0 → logical 1920×1080
+        // Monitor layout (xdt1-t). Positions are in logical pixels. All outputs
+        // run at scale 1.0 (no fractional scaling) — xwayland-satellite has no
+        // native XWayland scale support, so any fractional output scale mis-
+        // renders XWayland windows (previously hit both Steam's own UI and
+        // Minecraft: cropped rendering / cursor-to-UI misalignment on DP-5/DP-6
+        // when they were scale 1.5). Scale 1.0 everywhere removes the bug at
+        // the root instead of pinning individual apps to a scale-1.0 output.
+        // DP-1: 1600x1200 → logical 1600×1200
+        // DP-5: 4K portrait (2160×3840 after 270° rotation) → logical 2160×3840
+        // DP-6: 4K landscape (3840×2160) → logical 3840×2160
+        // HDMI-A-2: 1920×1080 → logical 1920×1080
         output "DP-1" {
             // Far left — 1600×1200, top edge aligns with DP-5
             position x=0 y=0
@@ -61,40 +67,19 @@
             // Centre — 4K portrait; x = DP-1 logical width (1600)
             position x=1600 y=0
             transform "270"
-            scale 1.5
         }
         output "DP-6" {
             // Far right — 4K landscape, centred on DP-5
-            // x = 1600 + DP-5 logical width (2160/1.5 = 1440) = 3040
-            // y = (DP-5 logical height − DP-6 logical height) / 2 = (2560 − 1440) / 2 = 560
-            position x=3040 y=560
+            // x = 1600 + DP-5 logical width (2160) = 3760
+            // y = (DP-5 logical height − DP-6 logical height) / 2 = (3840 − 2160) / 2 = 840
+            position x=3760 y=840
             transform "normal"
-            scale 1.5
         }
         output "HDMI-A-2" {
             // OBS output — below DP-1, bottom edge aligns with DP-5
-            // y = DP-5 logical height − HDMI-A-2 logical height = 2560 − 1080 = 1480
-            position x=0 y=1480
+            // y = DP-5 logical height − HDMI-A-2 logical height = 3840 − 1080 = 2760
+            position x=0 y=2760
             transform "normal"
-        }
-
-        // Steam's UI (including the login/QR dialog) runs under XWayland via
-        // xwayland-satellite, and niri has no native XWayland scale support —
-        // fractional output scale (1.5 on DP-5/DP-6) mis-renders those windows,
-        // cropping the bottom. Pin Steam to DP-1, the only scale-1.0 output, so
-        // it never lands on a fractional-scale output in the first place.
-        window-rule {
-            match app-id="steam"
-            open-on-output "DP-1"
-        }
-
-        // Same XWayland/fractional-scale issue as Steam above — Minecraft's window
-        // app-id/title is "Minecraft <version>" (e.g. "Minecraft 26.2"), so match on
-        // the "Minecraft" prefix to cover every version without updating this rule
-        // per-launch.
-        window-rule {
-            match app-id="^Minecraft"
-            open-on-output "DP-1"
         }
 
         // Per-mode overrides (keybinds, outputs, spawn-at-startup)
