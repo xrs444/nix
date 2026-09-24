@@ -413,9 +413,18 @@ in
   # for the backupFileExtension path (guarded by [[ ! -L ]]), causing an unconditional
   # "would be clobbered" error. Fix: remove these rewritten symlinks before checkLinkTargets
   # so linkGeneration can recreate them cleanly (pointing through home-manager-files).
+  #
+  # Only applies when $ext_dir is itself a real (non-symlink) directory containing one
+  # symlink per extension — the model under mutableExtensionsDir=true with a single
+  # "default" profile. With multiple profiles declared (as here), mutableExtensionsDir is
+  # a no-op and home-manager instead symlinks $ext_dir itself straight into a merged
+  # nix-store extensions directory; iterating into that immutable store path and trying to
+  # rm entries inside it fails with "Read-only file system" (not a permissions error —
+  # genuinely nothing to clean up in that model, since $ext_dir is already one clean
+  # symlink). Skip entirely when $ext_dir is a symlink.
   home.activation.cleanRewrittenVSCodeExtensions = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
     ext_dir="$HOME/.vscode/extensions"
-    if [ -d "$ext_dir" ]; then
+    if [ -d "$ext_dir" ] && [ ! -L "$ext_dir" ]; then
       for link in "$ext_dir"/*/; do
         link="''${link%/}"
         if [ -L "$link" ]; then
