@@ -88,6 +88,15 @@
             open-on-output "DP-1"
         }
 
+        // Same XWayland/fractional-scale issue as Steam above — Minecraft's window
+        // app-id/title is "Minecraft <version>" (e.g. "Minecraft 26.2"), so match on
+        // the "Minecraft" prefix to cover every version without updating this rule
+        // per-launch.
+        window-rule {
+            match app-id="^Minecraft"
+            open-on-output "DP-1"
+        }
+
         // Per-mode overrides (keybinds, outputs, spawn-at-startup)
         include "~/.config/niri/active-mode.kdl"
 
