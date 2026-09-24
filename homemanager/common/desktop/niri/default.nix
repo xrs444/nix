@@ -65,15 +65,20 @@
         }
         output "DP-5" {
             // Centre — 4K portrait; x = DP-1 logical width (1600)
+            // Explicit scale 1.0 required — niri auto-picks ~1.5 for this 27" 4K
+            // panel's DPI when no scale is set, it does NOT default to 1.0.
             position x=1600 y=0
             transform "270"
+            scale 1.0
         }
         output "DP-6" {
             // Far right — 4K landscape, centred on DP-5
             // x = 1600 + DP-5 logical width (2160) = 3760
             // y = (DP-5 logical height − DP-6 logical height) / 2 = (3840 − 2160) / 2 = 840
+            // Explicit scale 1.0 required — see DP-5 above.
             position x=3760 y=840
             transform "normal"
+            scale 1.0
         }
         output "HDMI-A-2" {
             // OBS output — below DP-1, bottom edge aligns with DP-5
