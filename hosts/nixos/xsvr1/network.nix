@@ -5,6 +5,17 @@
   # jail while the routing issue to the main IP was being worked out.
   services.fail2ban.ignoreIP = [ "172.20.3.0/24" ];
 
+  # Same Termix source as above: its host-status poll opens and closes a TCP
+  # connection to :22 every ~65s without authenticating (confirmed via
+  # journalctl -u sshd — connects from 172.20.3.10, the Talos node the Termix
+  # pod is scheduled on, since pod egress SNATs to the node IP). OpenSSH >=9.8's
+  # PerSourcePenalties logs this as a deferred 1s srclimit penalty every cycle
+  # (never enforced — below the 15s `min` — but floods the sshd journal).
+  # bug-1023 (2026-09-24): investigated as a possible cause of CI deploy
+  # failures; it wasn't (that was a corrupted nix.custom.conf, unrelated) but
+  # the noise is real, so exempt the k8s node bridge from the penalty.
+  services.openssh.settings.PerSourcePenaltyExemptList = "172.20.3.0/24";
+
   systemd.network = {
     enable = true;
     netdevs = {

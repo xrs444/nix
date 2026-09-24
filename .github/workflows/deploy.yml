@@ -273,6 +273,54 @@ jobs:
             && echo "deploy-rs binary signed and cached" \
             || echo "WARNING: could not build deploy-rs binary — deploy may fail"
 
+      - name: Verify managed /etc symlinks are intact
+        run: |
+          # bug-1023: on 2026-09-23 xsvr4's /etc/nix/nix.custom.conf was hand-edited
+          # with nano, which silently replaces NixOS's managed symlink
+          # (/etc/nix/nix.custom.conf -> /etc/static/nix/nix.custom.conf) with a
+          # plain regular file. `nixos-rebuild switch` never fixes an unmanaged
+          # regular file sitting at a managed /etc path, so the corruption is
+          # permanent until someone notices. The symptom was misleading: nix copy's
+          # remote `nix-store --serve` parses the broken file and aborts, which nix
+          # then reports as the generic "error: cannot connect to 'deploy@HOST'" —
+          # indistinguishable from a real SSH outage, and a plain `ssh deploy@HOST`
+          # repro succeeds fine, so it looked "intermittent". Check every remote
+          # host's nix.custom.conf is still the real symlink *before* attempting any
+          # deploys, so a corrupted host fails loudly here instead of surfacing as a
+          # confusing deploy-rs SSH error.
+          CHECK_HOSTS=(xsvr2 xsvr3 xsvr4 xcomm1 xts1 xidm1 xpbx1 xlt1-t-vnixos xdt1-t xlt2-s vocibuild)
+          BROKEN=()
+          for host in "${CHECK_HOSTS[@]}"; do
+            result=$(timeout 15 ssh -4 \
+              -i /run/secrets/deploy_private_key \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=10 \
+              -o BatchMode=yes \
+              deploy@"$host".lan '
+                if [ ! -e /etc/nix/nix.custom.conf ]; then
+                  echo absent
+                elif [ -L /etc/nix/nix.custom.conf ]; then
+                  echo ok
+                else
+                  echo broken
+                fi
+              ' 2>/dev/null) || { echo "$host: unreachable pre-flight, skipping (deploy step will handle/report)"; continue; }
+              case "$result" in
+                ok) echo "$host: nix.custom.conf symlink OK" ;;
+                absent) echo "$host: no nix.custom.conf present, nothing to check" ;;
+                broken)
+                  echo "$host: /etc/nix/nix.custom.conf is a plain file, not the NixOS-managed symlink to /etc/static/nix/nix.custom.conf"
+                  BROKEN+=("$host")
+                  ;;
+                *) echo "$host: unexpected pre-flight result '$result', ignoring" ;;
+              esac
+          done
+          if [ ${#BROKEN[@]} -gt 0 ]; then
+            echo "::error::Managed /etc symlink broken on: ${BROKEN[*]} — nix copy will fail on these hosts (bug-1023). Fix by hand: back up any content needed from the current file, then 'sudo ln -sfn /etc/static/nix/nix.custom.conf /etc/nix/nix.custom.conf' on the affected host(s), then re-run this workflow."
+            exit 1
+          fi
+
       - name: Deploy remote hosts
         run: |
           ts() { date '+[%H:%M:%S]'; }
