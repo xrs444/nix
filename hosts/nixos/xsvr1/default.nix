@@ -25,11 +25,21 @@
   networking.useNetworkd = true;
 
   boot = {
-    # Cap ZFS ARC at 24GiB (default is ~all RAM). Uncapped, ARC competes with
+    # Cap ZFS ARC at 16GiB (default is ~all RAM). Uncapped, ARC competes with
     # v-k8s-xsvr1's 24GiB libvirt allocation (vms.nix) for this host's 64GiB —
     # already seeing zram swap usage under normal load without a cap.
+    #
+    # GOTCHA (bug logged 2026-09-24): this option only binds when the zfs
+    # kernel module is *loaded* -- a `nixos-rebuild switch` writes the new
+    # value to /etc/modprobe.d but can't reload zfs while the pool is
+    # imported, so it silently has no effect on a running host. The original
+    # 24GiB cap committed 2026-09-02 sat unapplied for 22 days (c_max stayed
+    # at ~all RAM) until this was caught. After changing this value, also set
+    # it live via `echo <bytes> | sudo tee /sys/module/zfs/parameters/zfs_arc_max`
+    # (runtime-writable on zfs 2.4.3) -- the config change alone only takes
+    # effect on next reboot.
     extraModprobeConfig = ''
-      options zfs zfs_arc_max=25769803776
+      options zfs zfs_arc_max=17179869184
     '';
     initrd = {
       availableKernelModules = [
