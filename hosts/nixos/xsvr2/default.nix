@@ -32,6 +32,16 @@
     # Cap ZFS ARC at 32GiB (default is ~all RAM). Uncapped, ARC competes with
     # the Talos VM's 80GiB libvirt allocation (vms.nix) for this host's 128GiB —
     # already seeing 100% zram swap utilization under normal load without a cap.
+    #
+    # GOTCHA (bug-1036, same issue found on xsvr1): this option only binds
+    # when the zfs kernel module is *loaded* -- a `nixos-rebuild switch`
+    # writes the new value to /etc/modprobe.d but can't reload zfs while the
+    # pool is imported, so it silently has no effect on a running host. This
+    # cap sat unapplied for xsvr2's entire 66+ day uptime (c_max stayed at
+    # ~all RAM) until caught 2026-09-25. After changing this value, also set
+    # it live via `echo <bytes> | sudo tee /sys/module/zfs/parameters/zfs_arc_max`
+    # (runtime-writable on zfs 2.4.3) -- the config change alone only takes
+    # effect on next reboot.
     extraModprobeConfig = ''
       options zfs zfs_arc_max=34359738368
     '';
