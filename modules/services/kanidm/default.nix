@@ -306,6 +306,14 @@ in
         ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
+        # StartLimitIntervalSec/StartLimitBurst are [Unit]-section keys, not
+        # [Service] — nixos-rebuild logs "Unknown key 'StartLimitIntervalSec'
+        # in section [Service], ignoring" if they're left inside serviceConfig
+        # (see bug-1049). Harmless in practice since RestartSec (15s) already
+        # exceeds systemd's default 10s rate-limit window, but set explicitly
+        # here so the intended 15-retries-per-600s budget actually applies.
+        startLimitIntervalSec = 600;
+        startLimitBurst = 15;
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
@@ -315,8 +323,6 @@ in
           # which silently skipped retries and required a manual restart to apply.
           Restart = "on-failure";
           RestartSec = "15s";
-          StartLimitIntervalSec = 600;
-          StartLimitBurst = 15;
         };
         path = [
           pkgs.curl
