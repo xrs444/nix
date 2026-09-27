@@ -26,11 +26,17 @@ in
     };
 
     nix.settings.secret-key-files = [ config.sops.secrets.nixcache_signing_key.path ];
-    # Create the cache directories on ZFS with builder ownership, nginx in builder group for read access
+    # Create the cache directories with builder ownership, nginx in builder group for read access.
+    # cache/ lives on the root SSD RAID1 (/var/lib) rather than ZFS — zpool-xsvr1-main is a
+    # 7200rpm HDD mirror with no SLOG and is small-file-random-I/O bound (confirmed 3-11MB/s
+    # substituting cached paths, see .wolf/cerebrum/hardware-hosts.md bug-1036), which is exactly
+    # the workload a binary cache full of small NAR/narinfo files creates. builds/ (github-runner's
+    # CI workdir) stays on ZFS — out of scope for this move. Migrated 2026-09-26.
     systemd.tmpfiles.rules = [
       "d /zfs/nixcache 0755 root root -"
-      "d /zfs/nixcache/cache 0775 builder builder -"
       "d /zfs/nixcache/builds 0775 builder builder -"
+      "d /var/lib/nixcache 0755 root root -"
+      "d /var/lib/nixcache/cache 0775 builder builder -"
       "d /tmp/pkgcache 0755 nginx nginx -"
     ];
 
@@ -44,7 +50,7 @@ in
         Type = "oneshot";
         ExecStart = "${pkgs.writeShellScript "nixcache-cleanup" ''
           set -euo pipefail
-          CACHE_DIR="/zfs/nixcache/cache"
+          CACHE_DIR="/var/lib/nixcache/cache"
           BUILDS_DIR="/zfs/nixcache/builds"
           MAX_AGE_DAYS=30
           MAX_SIZE_GB=100
@@ -112,7 +118,7 @@ in
       virtualHosts."xsvr1.lan" = {
         serverAliases = [ "nixcache.xrs444.net" ];
         locations."/" = {
-          root = "/zfs/nixcache/cache";
+          root = "/var/lib/nixcache/cache";
           extraConfig = ''
             expires max;
             add_header Cache-Control $cache_header always;

@@ -236,7 +236,7 @@ jobs:
 
       - name: Build and cache ${{ matrix.host }}
         run: |
-          CACHE_URL="file:///zfs/nixcache/cache"
+          CACHE_URL="file:///var/lib/nixcache/cache"
 
           echo "Building ${{ matrix.host }}..."
           nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \

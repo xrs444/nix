@@ -168,7 +168,7 @@ in
         # builder must be a trusted-user so it can build input-addressed derivations
         # sent by remote clients (nix-store --serve --write requires this privilege).
         trusted-users = [ "root" "builder" ];
-        trusted-substituters = [ "file:///zfs/nixcache/cache" ];
+        trusted-substituters = [ "file:///var/lib/nixcache/cache" ];
       };
     })
 
@@ -239,7 +239,7 @@ in
         # Custom Nix configuration for QEMU (x86) builder
         extra-platforms = aarch64-linux i686-linux
         extra-sandbox-paths = /run/binfmt ${pkgs.qemu}
-        extra-trusted-substituters = file:///zfs/nixcache/cache
+        extra-trusted-substituters = file:///var/lib/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
@@ -258,10 +258,10 @@ in
         # 913071df, 2026-08-04) was accidentally reverted the same day with no explanation and
         # stayed dormant for two weeks — the CI outage this restores was bug-500's original
         # failure mode recurring because the fix was never actually live. Restored 2026-08-20.
-        # file:///zfs/nixcache/cache is a no-op here (local-filesystem path, meaningless off xsvr1)
+        # file:///var/lib/nixcache/cache is a no-op here (local-filesystem path, meaningless off xsvr1)
         # but harmless to leave for parity with the QEMU-builder block above.
         extra-substituters = http://nixcache.xrs444.net
-        extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
+        extra-trusted-substituters = http://nixcache.xrs444.net file:///var/lib/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key
@@ -280,10 +280,10 @@ in
         # calling client's SSH nix-store --serve channel instead of parallel HTTP from
         # nixcache.xrs444.net — the actual cause of "copying from xsvr1 is incredibly
         # slow" (bug-1017), not a network/hardware problem. Mirrors the isNativeBuilder
-        # block above; file:///zfs/nixcache/cache is only meaningful on xsvr1 itself
+        # block above; file:///var/lib/nixcache/cache is only meaningful on xsvr1 itself
         # (where the cache actually lives on disk) but harmless elsewhere.
         extra-substituters = http://nixcache.xrs444.net
-        extra-trusted-substituters = http://nixcache.xrs444.net file:///zfs/nixcache/cache
+        extra-trusted-substituters = http://nixcache.xrs444.net file:///var/lib/nixcache/cache
         extra-trusted-public-keys = xsvr1.lan-1:zYWtshSYClLIckawdxzJEuy82yifQX2pbultumrToKI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
         require-sigs = true
         secret-key-files = /run/secrets/nixcache_signing_key

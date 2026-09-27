@@ -19,7 +19,7 @@ nix store sign --key-file /run/secrets/nixcache_signing_key "$@"
 # nix copy regenerates them with the signature we just applied.
 for path in "$@"; do
   hash=$(basename "$path" | cut -d- -f1)
-  narinfo="/zfs/nixcache/cache/${hash}.narinfo"
+  narinfo="/var/lib/nixcache/cache/${hash}.narinfo"
   if [ -f "$narinfo" ] && \
      ! grep -q "Sig: xsvr1.lan-1:" "$narinfo" && \
      ! grep -q "Sig: cache.nixos.org-1:" "$narinfo"; then
@@ -27,4 +27,4 @@ for path in "$@"; do
   fi
 done
 
-nix copy --to "file:///zfs/nixcache/cache" "$@"
+nix copy --to "file:///var/lib/nixcache/cache" "$@"

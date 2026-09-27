@@ -244,7 +244,7 @@ jobs:
               ".#nixosConfigurations.$host.config.system.build.toplevel" 2>/dev/null) || continue
             nix-store --query --requisites "$toplevel" 2>/dev/null \
               | xargs -r nix store sign --key-file /run/secrets/nixcache_signing_key || true
-            nix copy --to "file:///zfs/nixcache/cache" "$toplevel" 2>/dev/null || true
+            nix copy --to "file:///var/lib/nixcache/cache" "$toplevel" 2>/dev/null || true
           done
 
       - name: Cache deploy-rs binary

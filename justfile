@@ -36,7 +36,7 @@ build host:
 build-and-cache-all:
     #!/usr/bin/env fish
     set -l hosts xsvr1 xsvr2 xsvr3 xsvr4 xcomm1 xlt1-t-vnixos xts1 xidm1 cmrpi1 xpbx1
-    set -l cache_url "file:///zfs/nixcache/cache"
+    set -l cache_url "file:///var/lib/nixcache/cache"
 
     echo "Building all hosts in parallel..."
     for host in $hosts
