@@ -398,8 +398,37 @@
         # and prefill/decode concurrency were both unbounded by default.
         # 3 = one slot per hermes identity (t/s/k), the realistic max
         # distinct concurrent conversations this daemon actually serves.
+        # promptCacheSize stays at 3 even after the 8G->2G cut below — once
+        # the byte budget can't hold a large sequence anyway, this only
+        # governs how many small/medium conversations fit under it, and
+        # dropping it would just cost the other two hermes identities a
+        # full re-prefill for ~no memory saved.
         promptCacheSize = 3;
-        promptCacheBytes = "8G";
+        # bug-991 fourth follow-up (2026-09-28): confirmed by reading
+        # mlx_lm/server.py's request-insert path (mlx-lm 0.31.3) that
+        # --prompt-cache-bytes is a SHARED idle+active budget, sampled only
+        # at insert time BEFORE prefill runs:
+        #   if prompt_cache_bytes is not None:
+        #       active = batch_generator.prompt_cache_nbytes
+        #       self.prompt_cache.trim_to(n_bytes=prompt_cache_bytes - active)
+        # For a solo request arriving with nothing else active, active≈0, so
+        # trim_to(8G) trims nothing and the idle cache (observed steady at
+        # ~7.5GB) stays fully resident while the new sequence prefills. That
+        # explains why the "residual crash at 100% of a solo prefill" from
+        # the third follow-up below was never actually fixed by serializing
+        # concurrency: 19.1GB resident weights + 7.5GB idle cache + ~6.2GB
+        # for a 64.5k-token request's own KV already totals ~32.8GB against
+        # the ~37.4GB Metal ceiling, leaving only ~4.6GB for the prefill's
+        # own transient working memory (attention score matrices,
+        # activations) — which --prompt-cache-bytes was never able to bound
+        # in the first place, since that term isn't part of the retained
+        # cache it trims. This value had never actually been lowered from
+        # its round-1 default (confirmed via `git log -p --follow` on this
+        # file) — rounds 2-4 only ever touched concurrency and `lazy`.
+        # Cutting it to 2G trades some re-prefill latency for ~5.5GB of real
+        # headroom back for the transient term. See also prefillStepSize
+        # below, which bounds that transient term directly.
+        promptCacheBytes = "2G";
         # promptConcurrency=2 (first attempt) still crashed 4x in ~1h of
         # real hermes-t traffic: every crash showed TWO large (12k-64k
         # token) prefills running concurrently. --prompt-cache-bytes only
@@ -442,6 +471,25 @@
         # repeatedly hit within 2-9 minutes of a FRESH daemon restart, so a
         # scheduled periodic restart would not have helped.
         decodeConcurrency = 1;
+        # bug-991 fourth follow-up (2026-09-28): the only exposed knob that
+        # bounds a single prefill's TRANSIENT working memory directly
+        # (confirmed present in mlx-lm 0.31.3's server.py argparse — unlike
+        # --kv-bits/--kv-group-size/--quantized-kv-start, added upstream by
+        # PR #1832 on 2026-09-09, which this pinned version predates).
+        # Default is 2048; smaller chunks trade prefill throughput for a
+        # roughly proportionally smaller peak working set per step.
+        prefillStepSize = 512;
+        # Crash-only backstop, not a cap on real traffic: the ~60-65K-token
+        # kanban-card-creation prompt is a confirmed recurring workload (see
+        # the block comment above this section), and promptCacheBytes +
+        # prefillStepSize above are what's meant to make THAT survive. This
+        # sits comfortably above it and well below the point where a single
+        # request's own KV cache alone would approach the Metal ceiling —
+        # it exists to fail oversized requests cleanly (LiteLLM
+        # ContextWindowExceededError, not retried) rather than let a genuine
+        # outlier crash the shared daemon. LiteLLM counts tokens with its
+        # own tokenizer, not Qwen's, so treat this as approximate.
+        maxInputTokens = 98304;
       };
     };
 

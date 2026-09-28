@@ -88,7 +88,7 @@ let
   # config (JSON is valid YAML). Secrets arrive via os.environ/ references —
   # no key material in the nix store.
   litellmConfigFile = pkgs.writeText "litellm-config.yaml" (
-    builtins.toJSON {
+    builtins.toJSON ({
       model_list =
         # Local MLX-served models
         (lib.mapAttrsToList (name: m: {
@@ -118,6 +118,8 @@ let
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
           };
+        } // lib.optionalAttrs (m.maxInputTokens != null) {
+          model_info.max_input_tokens = m.maxInputTokens;
         }) cfg.models)
         # Local MLX-served vision models. Unlike mlx_lm.server above,
         # mlx_vlm.server does NOT special-case a literal "default_model" — it
@@ -184,7 +186,15 @@ let
         # actually fixing the OOM — softens how bad a residual crash looks.
         num_retries = 2;
       };
-    }
+    } // lib.optionalAttrs
+      (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models))
+      {
+        # Only enable_pre_call_checks actually enforces model_info's
+        # max_input_tokens (see the maxInputTokens option doc above) — omit
+        # this block entirely when no model sets it, so an unused feature
+        # isn't silently turned on for every deployment.
+        router_settings.enable_pre_call_checks = true;
+      })
   );
 
   # launchd daemon for a single mlx_lm.server serving one model. The wrapper
@@ -206,6 +216,7 @@ let
         ++ lib.optional (m.promptCacheSize != null) "--prompt-cache-size ${toString m.promptCacheSize}"
         ++ lib.optional (m.promptConcurrency != null) "--prompt-concurrency ${toString m.promptConcurrency}"
         ++ lib.optional (m.decodeConcurrency != null) "--decode-concurrency ${toString m.decodeConcurrency}"
+        ++ lib.optional (m.prefillStepSize != null) "--prefill-step-size ${toString m.prefillStepSize}"
       );
     in
     {
@@ -453,6 +464,38 @@ in
                 Passed as mlx_lm.server's `--decode-concurrency`: how many
                 requests it will decode in parallel when batchable (its own
                 default is 32). Unset leaves the mlx_lm.server default.
+              '';
+            };
+            prefillStepSize = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              example = 512;
+              description = ''
+                Passed as mlx_lm.server's `--prefill-step-size` (its own
+                default is 2048): tokens processed per prefill chunk.
+                bug-991 refinement (2026-09-28): confirmed by reading
+                mlx_lm/server.py that --prompt-cache-bytes/--prompt-cache-size
+                bound only the RETAINED KV cache, sampled once at request
+                insert time before prefill runs — they do nothing for the
+                TRANSIENT working memory (attention score matrices,
+                activations) a single large prefill needs while actively
+                computing. This is the only exposed knob that bounds that
+                transient term. Unset leaves the mlx_lm.server default.
+              '';
+            };
+            maxInputTokens = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              description = ''
+                Emitted as this model's `model_info.max_input_tokens` in
+                litellmConfigFile, and only enforced because setting it also
+                turns on `router_settings.enable_pre_call_checks` (LiteLLM
+                gates the check on that flag — the field alone is inert
+                metadata). An oversized request is rejected with a clean
+                ContextWindowExceededError (400) instead of ever reaching the
+                daemon; litellm_settings.num_retries does NOT retry it (that
+                error subclasses BadRequestError). Unset leaves requests
+                unbounded.
               '';
             };
           };
