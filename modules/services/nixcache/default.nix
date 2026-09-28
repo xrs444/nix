@@ -101,6 +101,18 @@ in
       };
     };
 
+    # nginx, github-runner-xsvr1-builder, and nix-daemon are all siblings under
+    # system.slice with default (100) CPU/IO weight. Under a CI build, the runner's
+    # nix builds contend with nginx for CPU/disk and narinfo requests from other
+    # hosts start timing out (15s) even though nginx itself is healthy — confirmed
+    # 2026-09-28 while xcog1's darwin-switch coincided with a running CI build.
+    # Boost nginx's weight so it wins that contention regardless of which other
+    # service on the box is busy, without having to throttle each one individually.
+    systemd.services.nginx.serviceConfig = {
+      CPUWeight = 400;
+      IOWeight = 400;
+    };
+
     services.nginx = {
       enable = true;
       appendHttpConfig = ''
