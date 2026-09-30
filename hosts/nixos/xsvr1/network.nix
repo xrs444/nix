@@ -38,20 +38,6 @@
         };
         vlanConfig.Id = 21;
       };
-      "15-bond0.16" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "bond0.16";
-        };
-        vlanConfig.Id = 16;
-      };
-      "20-bond0.17" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "bond0.17";
-        };
-        vlanConfig.Id = 17;
-      };
       "21-bond0.22" = {
         netdevConfig = {
           Kind = "vlan";
@@ -70,30 +56,6 @@
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge21";
-        };
-        bridgeConfig = {
-          ForwardDelaySec = 0;
-          HelloTimeSec = 2;
-          AgeingTimeSec = 300;
-          STP = false;
-        };
-      };
-      "30-bridge16" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge16";
-        };
-        bridgeConfig = {
-          ForwardDelaySec = 0;
-          HelloTimeSec = 2;
-          AgeingTimeSec = 300;
-          STP = false;
-        };
-      };
-      "35-bridge17" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge17";
         };
         bridgeConfig = {
           ForwardDelaySec = 0;
@@ -145,8 +107,6 @@
         };
         vlan = [
           "bond0.21"
-          "bond0.16"
-          "bond0.17"
           "bond0.22"
           "bond0.10"
         ];
@@ -170,24 +130,6 @@
           Promiscuous = true;
         };
       };
-      "60-bond0.17" = {
-        matchConfig.Name = "bond0.17";
-        networkConfig = {
-          Bridge = "bridge17";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "65-bond0.16" = {
-        matchConfig.Name = "bond0.16";
-        networkConfig = {
-          Bridge = "bridge16";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
       "68-bond0.10" = {
         matchConfig.Name = "bond0.10";
         networkConfig = {
@@ -198,26 +140,6 @@
       };
       "70-bridge21" = {
         matchConfig.Name = "bridge21";
-        bridgeConfig = { };
-        networkConfig = {
-          IPMasquerade = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "75-bridge16" = {
-        matchConfig.Name = "bridge16";
-        bridgeConfig = { };
-        networkConfig = {
-          IPMasquerade = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "80-bridge17" = {
-        matchConfig.Name = "bridge17";
         bridgeConfig = { };
         networkConfig = {
           IPMasquerade = "no";
