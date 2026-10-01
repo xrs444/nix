@@ -158,6 +158,13 @@
         networkConfig = {
           IPMasquerade = "no";
         };
+        # ULA-role VLAN (fd66:150f:7361:0015::/64) — same dead-end-default-route issue
+        # bond0 had (bug-1063/1066): RA still advertises a route here even though
+        # there's no real internet IPv6 behind it. bond0.10 is the only interface that
+        # should carry the IPv6 default route.
+        ipv6AcceptRAConfig = {
+          UseGateway = false;
+        };
         linkConfig = {
           RequiredForOnline = "carrier";
         };
@@ -173,6 +180,12 @@
         bridgeConfig = { };
         networkConfig = {
           IPMasquerade = "no";
+        };
+        # Same dead-end-default-route issue as bond0/bridge21 above (bug-1063/1066) —
+        # UseGateway=false keeps the static ULA address and on-link behavior (BGP/VRRP
+        # still work, both same-VLAN) without claiming this is a route to the internet.
+        ipv6AcceptRAConfig = {
+          UseGateway = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
