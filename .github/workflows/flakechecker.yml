@@ -25,7 +25,7 @@ jobs:
             lazy-trees = true
             accept-flake-config = true
 #      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/flake-checker-action@v13
+      - uses: DeterminateSystems/flake-checker-action@v14
       - name: Check overlay overrides against binary cache
         run: |
           # Catches overlay overrides (nix/overlays/*.nix) that changed a
