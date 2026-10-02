@@ -239,10 +239,14 @@
     # Fixed with the documented one-shot manual command (remove from vlan 10, add to
     # vlan 20) directly on the switch; declarative state above was already correct.
     - name: Configure VLAN 10 (FW - firewall transit)
+      # lag 3/4 (xsvr3/xsvr4) added 2026-10-02 alongside bond0.10 in each host's
+      # network.nix (bug-1063/1066: give ULA-only VLAN-20 hosts a real internet-routable
+      # IPv6 default route via VLAN 10 instead of the Firewalla's phantom RA on VLAN 20).
+      # Purely additive — lag 1/2 (xsvr1/xsvr2) were already tagged here.
       ansible.netcommon.cli_config:
         config: |
           vlan 10 name FW by port
-           tagged lag 1 to 2 lag 10
+           tagged lag 1 to 4 lag 10
            untagged ethe 1/1/37 ethe 1/1/45
            spanning-tree 802-1w
            spanning-tree 802-1w priority 4096

@@ -48,20 +48,6 @@
         };
         vlanConfig.Id = 21;
       };
-      "15-bond0.16" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "bond0.16";
-        };
-        vlanConfig.Id = 16;
-      };
-      "20-bond0.17" = {
-        netdevConfig = {
-          Kind = "vlan";
-          Name = "bond0.17";
-        };
-        vlanConfig.Id = 17;
-      };
       "21-bond0.22" = {
         netdevConfig = {
           Kind = "vlan";
@@ -80,30 +66,6 @@
         netdevConfig = {
           Kind = "bridge";
           Name = "bridge21";
-        };
-        bridgeConfig = {
-          ForwardDelaySec = 0;
-          HelloTimeSec = 2;
-          AgeingTimeSec = 300;
-          STP = false;
-        };
-      };
-      "30-bridge16" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge16";
-        };
-        bridgeConfig = {
-          ForwardDelaySec = 0;
-          HelloTimeSec = 2;
-          AgeingTimeSec = 300;
-          STP = false;
-        };
-      };
-      "35-bridge17" = {
-        netdevConfig = {
-          Kind = "bridge";
-          Name = "bridge17";
         };
         bridgeConfig = {
           ForwardDelaySec = 0;
@@ -153,10 +115,16 @@
           # so the kernel permits RA acceptance and SLAAC from the Firewalla.
           IPv6Forwarding = false;
         };
+        # This VLAN is ULA-only (fd66:150f:7361:0014::/64, see docs/ipv6-addressing.md) —
+        # there is no real internet-routable IPv6 behind it. UseGateway=false keeps
+        # on-link prefix learning from RA (harmless) but stops bond0 from installing a
+        # default route it can't actually deliver on. bond0.10 (below) is the sole
+        # interface meant to carry the IPv6 default route — see bug-1063/1066.
+        ipv6AcceptRAConfig = {
+          UseGateway = false;
+        };
         vlan = [
           "bond0.21"
-          "bond0.16"
-          "bond0.17"
           "bond0.22"
           "bond0.10"
         ];
@@ -180,27 +148,15 @@
           Promiscuous = true;
         };
       };
-      "60-bond0.17" = {
-        matchConfig.Name = "bond0.17";
-        networkConfig = {
-          Bridge = "bridge17";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "65-bond0.16" = {
-        matchConfig.Name = "bond0.16";
-        networkConfig = {
-          Bridge = "bridge16";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
       "68-bond0.10" = {
         matchConfig.Name = "bond0.10";
+        # VLAN 10 (172.18.10.0/24) is GUA-role on the Firewalla (stateless DHCPv6,
+        # see docs/ipv6-addressing.md) — IPv6-only here, deliberately no address/DHCP
+        # for v4: v4 egress already works fine via bond0's static gateway. This is the
+        # one interface meant to carry the real internet-routable IPv6 default route
+        # for an otherwise ULA-only host (bug-1063/1066).
         networkConfig = {
+          IPv6AcceptRA = true;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -212,25 +168,12 @@
         networkConfig = {
           IPMasquerade = "no";
         };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "75-bridge16" = {
-        matchConfig.Name = "bridge16";
-        bridgeConfig = { };
-        networkConfig = {
-          IPMasquerade = "no";
-        };
-        linkConfig = {
-          RequiredForOnline = "carrier";
-        };
-      };
-      "80-bridge17" = {
-        matchConfig.Name = "bridge17";
-        bridgeConfig = { };
-        networkConfig = {
-          IPMasquerade = "no";
+        # ULA-role VLAN (fd66:150f:7361:0015::/64) — same dead-end-default-route issue
+        # bond0 had (bug-1063/1066): RA still advertises a route here even though
+        # there's no real internet IPv6 behind it. bond0.10 is the only interface that
+        # should carry the IPv6 default route.
+        ipv6AcceptRAConfig = {
+          UseGateway = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
@@ -247,6 +190,12 @@
         bridgeConfig = { };
         networkConfig = {
           IPMasquerade = "no";
+        };
+        # Same dead-end-default-route issue as bond0/bridge21 above (bug-1063/1066) —
+        # UseGateway=false keeps the static ULA address and on-link behavior (BGP/VRRP
+        # still work, both same-VLAN) without claiming this is a route to the internet.
+        ipv6AcceptRAConfig = {
+          UseGateway = false;
         };
         linkConfig = {
           RequiredForOnline = "carrier";
