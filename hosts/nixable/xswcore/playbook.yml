@@ -240,13 +240,18 @@
     # vlan 20) directly on the switch; declarative state above was already correct.
     - name: Configure VLAN 10 (FW - firewall transit)
       # lag 3/4 (xsvr3/xsvr4) added 2026-10-02 alongside bond0.10 in each host's
-      # network.nix (bug-1063/1066: give ULA-only VLAN-20 hosts a real internet-routable
-      # IPv6 default route via VLAN 10 instead of the Firewalla's phantom RA on VLAN 20).
-      # Purely additive — lag 1/2 (xsvr1/xsvr2) were already tagged here.
+      # network.nix; ethe 2/1/45 (xidm1) added same day alongside its own VLAN-10
+      # tagged interface (bug-1063/1066: give ULA-only VLAN-20 hosts a real
+      # internet-routable IPv6 default route via VLAN 10 instead of the Firewalla's
+      # phantom RA on VLAN 20). xcog1 (ethe 1/1/3) was briefly added here too the same
+      # day, then reverted in favor of its own dedicated VLAN 23 (172.20.4.0/24,
+      # GUA-role) instead of dual-homing — see "Configure VLAN 23" below. Purely
+      # additive — lag 1/2 (xsvr1/xsvr2) were already tagged here, and this doesn't
+      # touch any port's existing untagged/native VLAN 20 membership.
       ansible.netcommon.cli_config:
         config: |
           vlan 10 name FW by port
-           tagged lag 1 to 4 lag 10
+           tagged lag 1 to 4 lag 10 ethe 2/1/45
            untagged ethe 1/1/37 ethe 1/1/45
            spanning-tree 802-1w
            spanning-tree 802-1w priority 4096
@@ -327,12 +332,21 @@
     # ethe 2/1/45 added (2026-08-21): xidm1 (formerly xts2), same one-shot-then-declarative
     # caveat as the VLAN 10 removal above — run `untagged ethe 2/1/45` under `vlan 20`
     # on-device first, this task alone won't apply it live.
+    # ethe 1/1/3 (xcog1) removed from untagged membership here 2026-10-02: xcog1 is
+    # moving to its own dedicated VLAN 23 (172.20.4.0/24, GUA-role) instead of staying
+    # on ULA-only VLAN 20 — see "Configure VLAN 23" below. Same one-shot-then-declarative
+    # caveat as every other VLAN-20 membership change in this file's history
+    # (xidm1/xsvr4 above): cli_config is additive-only, so this task alone cannot
+    # remove ethe 1/1/3's live untagged membership — the user runs `no untagged ethe
+    # 1/1/3` under `vlan 20` on-device first. Brocade only allows a port to be
+    # untagged in one VLAN at a time, so VLAN 23's `untagged ethe 1/1/3` will fail
+    # until that manual removal happens.
     - name: Configure VLAN 20
       ansible.netcommon.cli_config:
         config: |
           vlan 20 by port
            tagged lag 10
-           untagged lag 1 to 4 ethe 1/1/3 ethe 2/1/45
+           untagged lag 1 to 4 ethe 2/1/45
            spanning-tree 802-1w
            spanning-tree 802-1w priority 4096
 
@@ -350,6 +364,23 @@
           vlan 22 name k8s by port
            tagged lag 1 to 4 lag 10
            untagged ethe 2/1/36
+           spanning-tree 802-1w
+           spanning-tree 802-1w priority 4096
+
+    # New 2026-10-02 (bug-1063/1066): dedicated GUA-role VLAN for xcog1 instead of
+    # dual-homing it onto VLAN 10 like xidm1/xsvr1-4 — avoids needing a macOS
+    # equivalent of systemd-networkd's UseGateway=false (no clean per-interface
+    # route-suppression knob found there) by giving xcog1 a single native connection
+    # with real internet-routable IPv6 from the start, no ULA-only leg at all.
+    # `untagged ethe 1/1/3` will fail until xcog1's VLAN 20 untagged membership is
+    # manually cleared first (see "Configure VLAN 20" above) — Brocade only allows a
+    # port to be untagged in one VLAN at a time.
+    - name: Configure VLAN 23 (cognition)
+      ansible.netcommon.cli_config:
+        config: |
+          vlan 23 name cognition by port
+           tagged lag 10
+           untagged ethe 1/1/3
            spanning-tree 802-1w
            spanning-tree 802-1w priority 4096
 
