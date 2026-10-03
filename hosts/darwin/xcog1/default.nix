@@ -5,6 +5,7 @@
 
 {
   hostname,
+  lib,
   pkgs,
   ...
 }:
@@ -17,6 +18,60 @@
   networking.hostName = hostname;
   networking.computerName = hostname;
   system.primaryUser = "xrs444";
+
+  # ── thomas-local — fleet-wide break-glass admin account ──────────────────
+  # Every NixOS host has this user (modules/users/thomas-local.nix); the two
+  # Darwin hosts never did — xrs444 is system.primaryUser above and
+  # thomas-local only existed as an SSH *identity file* in xrs444's own home
+  # (hosts/darwin/default.nix's ssh-thomas-local secret), not a real local
+  # account, so `ssh thomas-local@xcog1.lan` had nothing to authenticate
+  # against. nix-darwin's users.users module (unlike NixOS) only supports
+  # `uid`/`gid` as the PRIMARY group and has no extraGroups/openssh.authorizedKeys
+  # options at all (modules/users/user.nix upstream) — admin-group membership
+  # and the authorized_keys file both have to be done by hand in an
+  # activation script below. uid 502 confirmed free via `dscl . -list /Users
+  # UniqueID` on xcog1 (xrs444 is 501, the highest assigned normal-user uid;
+  # everything else is nixbld/_oahd/_llm system accounts under 450).
+  users.knownUsers = [ "thomas-local" ];
+  users.users.thomas-local = {
+    uid = 502;
+    description = "thomas-local user";
+    home = "/Users/thomas-local";
+    createHome = true;
+    shell = pkgs.fish;
+  };
+
+  # gid defaults to 20 (staff), matching xrs444's own primary group — admin
+  # membership (for sudo, via macOS's default `%admin ALL=(ALL) ALL`) is
+  # supplementary, added below the same way xrs444 already has it.
+  # Runs in nix-darwin's fixed `postActivation` hook (confirmed by reading
+  # nix-darwin's modules/system/activation-scripts.nix: only a fixed list of
+  # named activationScripts — preActivation/checks/createRun/extraActivation/
+  # groups/users/.../postActivation — actually gets spliced into the real
+  # activation script; any other top-level activationScripts name, like this
+  # host's pre-existing `printer-xprn2`/`timemachine`/`signNixBinaries` on
+  # xlt1-t and xcog1, is silently never run. postActivation fires after the
+  # `users` script that creates the account, so `thomas-local` is guaranteed
+  # to exist here). Password is set only once (guarded by the sentinel file)
+  # so a later manual password change on the box survives future switches —
+  # same "changeme" break-glass default the NixOS module uses.
+  system.activationScripts.postActivation.text = lib.mkAfter ''
+    echo "configuring thomas-local..." >&2
+
+    if ! dseditgroup -o checkmember -m thomas-local admin >/dev/null 2>&1; then
+      dseditgroup -o edit -a thomas-local -t user admin
+    fi
+
+    install -d -m 700 -o thomas-local -g staff /Users/thomas-local/.ssh
+    printf '%s\n' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBAqv4pyiFGSFn91VWEQ4o2buVrGxlFUsFakiNcMJysK thomas-local@xrs444.net' > /Users/thomas-local/.ssh/authorized_keys
+    chmod 600 /Users/thomas-local/.ssh/authorized_keys
+    chown thomas-local:staff /Users/thomas-local/.ssh/authorized_keys
+
+    if [ ! -e /var/db/.thomas-local-password-initialized ]; then
+      dscl . -passwd /Users/thomas-local changeme
+      touch /var/db/.thomas-local-password-initialized
+    fi
+  '';
 
   # Dedicated minimal Homebrew (not the shared brew-packages.nix, which this
   # host's packages-darwin import skips entirely) — Firefox for diagnostics
@@ -490,6 +545,55 @@
         # outlier crash the shared daemon. LiteLLM counts tokens with its
         # own tokenizer, not Qwen's, so treat this as approximate.
         maxInputTokens = 98304;
+        # bug-991 fifth follow-up (2026-10-02): the fourth follow-up's
+        # prefillStepSize + promptCacheBytes cut measurably helped (multiple
+        # real 30-40K-token requests now complete cleanly where even
+        # moderate sizes used to crash reliably) but did NOT eliminate the
+        # crash — confirmed live: a fresh crash with the EXACT
+        # kIOGPUCommandBufferCallbackErrorOutOfMemory signature hit at
+        # 44099/44100 of a solo prefill, ~1.5h after this exact config
+        # deployed, with the idle prompt cache at 0.00GB (completely empty)
+        # at the moment of the crash — ruling out promptCacheBytes as the
+        # binding constraint for THIS crash, since there was no idle cache
+        # competing for memory at all.
+        #
+        # Checked whether smaller prefillStepSize chunks should still help
+        # by reading mlx_lm's actual attention implementation
+        # (models/base.py, models/qwen3_moe.py in the same v0.31.3 tag):
+        # the non-quantized path uses mx.fast.scaled_dot_product_attention,
+        # MLX's fused/flash-attention-style kernel — it does NOT materialize
+        # a dense O(chunk_size × cumulative_context) score matrix the way a
+        # naive implementation would, so "the score matrix grows with
+        # context even at a small step size" is NOT the mechanism here.
+        #
+        # This is a confirmed, OPEN, unresolved upstream mlx-lm/Metal
+        # limitation, not a config mistake: ml-explore/mlx-lm issue #1480
+        # reports the identical signature on a different MoE model
+        # (Qwen3.6-35B-A3B) at long-context prefill with ample system RAM
+        # free and a near-empty idle cache (0.27GB) — the reporter's own
+        # analysis, unconfirmed by any maintainer and with NO accepted fix:
+        # "transient Metal memory, prefill workspace allocation, command
+        # buffer size, kernel scheduling, or insufficient prefill chunking
+        # rather than final KV-cache size." Issue #1390 reports the same
+        # crash signature on an unrelated 4B model. Both open, no fix, no
+        # maintainer-confirmed root cause, as of 2026-10-02.
+        #
+        # Decision: accept the residual crash risk rather than chase a
+        # shrinking threshold with no evidence further tuning closes it —
+        # see llm-stack's litellmRetryAfterSeconds option (set below) for
+        # the actual mitigation, which makes the existing crash+respawn
+        # cushion (num_retries) actually effective instead of firing and
+        # giving up before the daemon comes back. Escalation path if this
+        # proves insufficient, most to least preferred: lower
+        # prefillStepSize further (512->256, modest throughput cost, NOT
+        # guaranteed to help given the finding above); fall back to
+        # qwen3-14b for text/agent traffic (qwen3-14b has never crashed on
+        # this host through the entire incident — real capability downgrade
+        # but removes the risk class entirely); hand-package a post-PR-#1832
+        # mlx-lm for --kv-bits once it's available in nixpkgs (does not
+        # obviously fix THIS failure mode either, since the open issues
+        # above are about transient prefill allocation, not retained
+        # KV-cache size, which is what --kv-bits actually bounds).
       };
     };
 
@@ -506,6 +610,15 @@
     };
 
     litellmPort = 4000;
+
+    # bug-991 fifth follow-up (2026-10-02): the open upstream mlx-lm/Metal
+    # issue below means qwen3-30b-a3b can still crash+respawn occasionally
+    # on long-context prefill even with the mitigations above — this makes
+    # the retry that already existed (num_retries, raised to 3 alongside
+    # this) actually useful against that residual risk, instead of firing
+    # and giving up before the daemon is back. 15s floor comfortably spans
+    # the observed ~13s crash-to-serving-again gap with margin.
+    litellmRetryAfterSeconds = 15;
 
     cloudTier = {
       enable = true;

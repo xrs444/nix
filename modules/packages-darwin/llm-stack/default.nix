@@ -184,16 +184,29 @@ let
         # mkMlxDaemon, so the daemon is back within ~30s) instead of
         # surfacing the crash to the caller immediately. Independent of
         # actually fixing the OOM — softens how bad a residual crash looks.
-        num_retries = 2;
+        # bug-991 fifth follow-up (2026-10-02): 2 was never enough on its
+        # own — see litellmRetryAfterSeconds below for why the default
+        # backoff timing made these retries close to useless against a
+        # crash/respawn cycle specifically. Bumped to 3 for a bit more
+        # margin once the backoff floor actually gives retries a real
+        # chance to land.
+        num_retries = 3;
       };
     } // lib.optionalAttrs
-      (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models))
+      (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models)
+        || cfg.litellmRetryAfterSeconds != null)
       {
-        # Only enable_pre_call_checks actually enforces model_info's
-        # max_input_tokens (see the maxInputTokens option doc above) — omit
-        # this block entirely when no model sets it, so an unused feature
-        # isn't silently turned on for every deployment.
-        router_settings.enable_pre_call_checks = true;
+        router_settings =
+          # Only enable_pre_call_checks actually enforces model_info's
+          # max_input_tokens (see the maxInputTokens option doc above) —
+          # omit when no model sets it, so an unused feature isn't silently
+          # turned on for every deployment.
+          lib.optionalAttrs (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models)) {
+            enable_pre_call_checks = true;
+          }
+          // lib.optionalAttrs (cfg.litellmRetryAfterSeconds != null) {
+            retry_after = cfg.litellmRetryAfterSeconds;
+          };
       })
   );
 
@@ -574,6 +587,37 @@ in
       type = types.port;
       default = 4000;
       description = "Port LiteLLM exposes on the LAN (hermes, HA, and app-to-LLM integrations all point here).";
+    };
+
+    litellmRetryAfterSeconds = mkOption {
+      type = types.nullOr types.ints.positive;
+      default = null;
+      example = 15;
+      description = ''
+        Emitted as router_settings.retry_after (a real litellm.Router
+        constructor kwarg, confirmed via proxy_server.py's router_settings
+        validation against Router.get_valid_args()). Sets a MINIMUM floor on
+        every retry's backoff delay.
+        bug-991 fifth follow-up (2026-10-02): with a single deployment per
+        model (our exact setup — one local daemon, no replicas), LiteLLM's
+        Router does NOT take the instant-retry path (that only applies with
+        multiple healthy deployments or fallbacks); it computes real
+        exponential backoff via _calculate_retry_after, starting at
+        INITIAL_RETRY_DELAY=0.5s and doubling — with num_retries=2 that's
+        roughly 1s then 2s, a few seconds total across both retries. A
+        crashed local mlx_lm.server daemon takes several seconds to
+        multiple tens of seconds to respawn and start serving again
+        (launchd KeepAlive + ThrottleInterval=30, plus the time to actually
+        reopen its listener) — confirmed live: crash at 22:12:35, still
+        down through two default-backoff retries, serving again by
+        22:12:48 (13s later). The default backoff was finishing and giving
+        up on the caller well before the daemon could possibly be back,
+        making retries against THIS failure mode close to useless. Setting
+        a floor here that's long enough to span a typical respawn gives a
+        retry an actual chance to land after the daemon is back, instead of
+        retrying into the same dead window every time. Unset leaves
+        LiteLLM's own default (no floor, i.e. the fast backoff above).
+      '';
     };
 
     masterKeyFile = mkOption {
