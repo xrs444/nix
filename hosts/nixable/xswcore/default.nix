@@ -650,7 +650,17 @@ in {
                legacy-inline-power
             '';
           };
-          loop = ["1/1/35" "1/1/45"];
+          loop = ["1/1/1" "1/1/35" "1/1/45"];
+        }
+
+        {
+          name = "Configure inline power limit on atlas (1/1/1)";
+          "ansible.netcommon.cli_config" = {
+            config = ''
+              interface ethernet 1/1/1
+               inline power power-limit 4000
+            '';
+          };
         }
 
         {
