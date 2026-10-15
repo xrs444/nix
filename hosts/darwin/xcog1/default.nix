@@ -534,17 +534,36 @@
         # Default is 2048; smaller chunks trade prefill throughput for a
         # roughly proportionally smaller peak working set per step.
         prefillStepSize = 512;
-        # Crash-only backstop, not a cap on real traffic: the ~60-65K-token
-        # kanban-card-creation prompt is a confirmed recurring workload (see
-        # the block comment above this section), and promptCacheBytes +
-        # prefillStepSize above are what's meant to make THAT survive. This
-        # sits comfortably above it and well below the point where a single
-        # request's own KV cache alone would approach the Metal ceiling —
-        # it exists to fail oversized requests cleanly (LiteLLM
-        # ContextWindowExceededError, not retried) rather than let a genuine
-        # outlier crash the shared daemon. LiteLLM counts tokens with its
-        # own tokenizer, not Qwen's, so treat this as approximate.
-        maxInputTokens = 98304;
+        # bug-991 sixth follow-up (2026-10-14): this was 98304 — set well
+        # ABOVE the ~60-65K kanban-card-creation workload on the theory that
+        # promptCacheBytes/prefillStepSize/decodeConcurrency above made that
+        # workload survive locally, with this ceiling only there to catch
+        # genuine outliers. Live-reproduced via real hermes-t traffic
+        # (--query-file prompts at ~trivial/~9K/~45K/~63K tokens through the
+        # actual pod -> litellm -> mlx_lm.server path, log-tailed
+        # throughout, not synthetic curl): trivial and ~9K were clean every
+        # time; EVERY attempt at ~40K+ tokens crashed at least once within a
+        # single session, including a SOLO 62984-token prefill crashing one
+        # token from its own completion (62983/62984) with no concurrency
+        # involved at all. That theory is therefore wrong — the motivating
+        # workload itself is not safe to run locally at this size, 98304 was
+        # never actually protecting anything, and the user-visible result
+        # was "No reply ... even after retries" after a 35-minute session
+        # (litellmRetryAfterSeconds below can't save a retry of the exact
+        # prompt whose own size triggers the crash). See buglog bug-1087 for
+        # the full reproduction.
+        #
+        # Lowered to comfortably inside the one range confirmed clean today
+        # (trivial/~9K) with real margin below the ~40-44K zone where solo
+        # crashes have now been observed twice (44099/44100 fifth
+        # follow-up; 62983/62984 today) — NOT proven safe up to this exact
+        # number, just the most defensible line given current evidence.
+        # Paired with cloudTier.contextWindowFallbackFor below so the real
+        # ~60-65K kanban workload still gets answered (via deepseek-hard,
+        # off this Mac's Metal memory entirely) instead of either crashing
+        # or landing a clean-but-empty rejection. LiteLLM counts tokens with
+        # its own tokenizer, not Qwen's, so treat this as approximate.
+        maxInputTokens = 32768;
         # bug-991 fifth follow-up (2026-10-02): the fourth follow-up's
         # prefillStepSize + promptCacheBytes cut measurably helped (multiple
         # real 30-40K-token requests now complete cleanly where even
@@ -625,6 +644,14 @@
       modelName = "deepseek-hard";
       upstreamModel = "deepseek/deepseek-chat";
       apiBase = "https://api.deepseek.com";
+      # bug-991 sixth follow-up (2026-10-14): pairs with qwen3-30b-a3b's
+      # maxInputTokens cut above — a request over that ceiling gets a clean
+      # litellm.ContextWindowExceededError instead of ever reaching the
+      # crash-prone local daemon, and this makes that specifically the one
+      # error type that routes to deepseek-hard instead of just failing the
+      # caller. Costs real API spend + egress for oversized requests only;
+      # everything under the ceiling is unaffected and stays fully local.
+      contextWindowFallbackFor = [ "qwen3-30b-a3b" ];
     };
 
     voice = {

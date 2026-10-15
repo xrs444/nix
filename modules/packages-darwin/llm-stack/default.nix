@@ -194,7 +194,8 @@ let
       };
     } // lib.optionalAttrs
       (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models)
-        || cfg.litellmRetryAfterSeconds != null)
+        || cfg.litellmRetryAfterSeconds != null
+        || cfg.cloudTier.contextWindowFallbackFor != [ ])
       {
         router_settings =
           # Only enable_pre_call_checks actually enforces model_info's
@@ -206,6 +207,11 @@ let
           }
           // lib.optionalAttrs (cfg.litellmRetryAfterSeconds != null) {
             retry_after = cfg.litellmRetryAfterSeconds;
+          }
+          // lib.optionalAttrs (cfg.cloudTier.contextWindowFallbackFor != [ ]) {
+            context_window_fallbacks = map (m: {
+              ${m} = [ cfg.cloudTier.modelName ];
+            }) cfg.cloudTier.contextWindowFallbackFor;
           };
       })
   );
@@ -650,6 +656,31 @@ in
         type = types.str;
         default = "/run/secrets/deepseek-api-key";
         description = "File containing the DeepSeek API key (sops-delivered).";
+      };
+      contextWindowFallbackFor = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "qwen3-30b-a3b" ];
+        description = ''
+          model_names (from `models`) that should automatically fall back to
+          this cloud tier when a request is rejected for exceeding that
+          model's own `maxInputTokens`. Emitted as
+          `router_settings.context_window_fallbacks`, a real litellm.Router
+          feature confirmed by reading router.py directly on xcog1 (1.86.0):
+          `_pre_call_checks` raises `litellm.ContextWindowExceededError` when
+          every deployment in a model group fails the `max_input_tokens`
+          check (single-deployment groups like ours always fail all-of-them
+          when oversized), and `context_window_fallbacks` is specifically
+          what `async_function_with_fallbacks` checks for on that exact
+          exception type to pick a replacement model group — unrelated to
+          the generic `fallbacks` list, which only fires on other error
+          classes. A model listed here only makes sense alongside its own
+          `maxInputTokens` being set below the point where it's actually
+          unsafe to run locally (see bug-991's sixth follow-up) — the ceiling
+          existing on its own just turns an OOM crash into a clean rejection
+          with no reply; pairing it with a cloud fallback here means the
+          caller still gets an answer instead of either outcome.
+        '';
       };
     };
 
