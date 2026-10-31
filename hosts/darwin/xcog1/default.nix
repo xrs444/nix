@@ -378,24 +378,37 @@
   #
   # Model port assignments:
   #   qwen3-14b       → 8001 (voice path; hybrid thinking — HA prompt uses /no_think)
-  #   qwen3-30b-a3b   → 8002 (text/agent path; non-thinking 2507 MoE)
+  #   qwen3-30b-a3b   → 8102 (text/agent path; non-thinking 2507 MoE, served by
+  #                     llama.cpp — see llamaCppModels below, bug-1106)
   #   qwen2-5-vl-7b   → 8003 (vision/tagging path; lazy-loaded, not resident — see below)
   #
+  # qwen3-30b-a3b was served by mlx_lm.server on port 8002 until 2026-10-31
+  # (bug-991 through bug-1106): a confirmed, open, unresolved upstream
+  # mlx-lm/Metal bug (ml-explore/mlx-lm issues #1480/#1390) made long-context
+  # requests (~44K+ tokens) crash the daemon with a Metal OOM, regardless of
+  # how aggressively its prompt cache/concurrency were bounded — full
+  # incident history in buglog.json (bug-991 and its six follow-ups) and
+  # cerebrum/hermes-matrix-windmill.md, not reproduced here since the config
+  # that history describes no longer exists. Migrated to llama-server
+  # (llama.cpp) instead: live-tested at the exact sizes that crashed
+  # mlx_lm.server (44K/63K tokens), both standalone and through the real
+  # LiteLLM path, with zero crashes — see llamaCppModels' own comment below
+  # for why (a structurally different, fixed-upfront KV-cache allocation
+  # instead of mlx_lm.server's grow-during-prefill one). Port 8002 is now
+  # free; left unused rather than reassigned, to avoid any chance of
+  # confusing it with the retired mlx daemon in old logs/dashboards.
+  #
   # Both text-model daemons run continuously (launchd can't start-on-request
-  # — bug-523), but as of bug-991 (2026-09-21) only qwen3-30b-a3b keeps its
-  # weights resident by default. qwen3-14b is `lazy = true`: same on-demand
-  # loading trick qwen2-5-vl-7b already used (mlx_lm.server's own
-  # ModelProvider loads on first request and persists — see llm-stack's
-  # `models.<name>.lazy` option doc), applied to a text model for the first
-  # time here. Root cause: even after bounding qwen3-30b-a3b's own prompt
-  # cache and concurrency, a single large-context request (the recurring
-  # ~60-65K-token kanban-card-creation prompt via hermes-t) could still hit
-  # a real Metal OOM — the machine was already sitting at ~32-39GB wired
-  # system-wide with BOTH text models permanently resident, leaving too
-  # little headroom for that one request's own ~6GB KV-cache growth. Freeing
-  # qwen3-14b's ~7.8GB fixed footprint gives 30B real slack for exactly this
-  # case, at the cost of a cold-load delay on 14b's first voice request
-  # after an idle period. qwen2-5-vl-7b deliberately stays lazy too —
+  # — bug-523), but qwen3-30b-a3b (now ~24GB resident between weights and its
+  # pre-allocated KV-cache buffer) keeps its weights resident by default.
+  # qwen3-14b is `lazy = true`: same on-demand loading trick qwen2-5-vl-7b
+  # already used (mlx_lm.server's own ModelProvider loads on first request
+  # and persists — see llm-stack's `models.<name>.lazy` option doc), applied
+  # to a text model for the first time during the original bug-991 incident.
+  # Freeing qwen3-14b's ~7.8GB fixed footprint still buys real headroom
+  # alongside qwen3-30b-a3b's resident footprint today, at the cost of a
+  # cold-load delay on 14b's first voice request after an idle period.
+  # qwen2-5-vl-7b deliberately stays lazy too —
   # occasional-use vision workloads (Printventory AI-tagging today, Frigate
   # GenAI potentially later) don't justify keeping ~6-10GB loaded
   # permanently either. First request after a restart/idle-unload pays a
@@ -439,180 +452,11 @@
         revision = "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4";
         port = 8001;
         # bug-991 follow-up: lazy-load to free ~7.8GB of permanent headroom
-        # for qwen3-30b-a3b's large-context requests — see the block comment
-        # above this services.llm-stack section for the full rationale.
+        # alongside qwen3-30b-a3b's resident footprint — see the block
+        # comment above this services.llm-stack section for the full
+        # rationale (qwen3-30b-a3b itself moved to llamaCppModels below,
+        # bug-1106, but this still buys the same real headroom).
         lazy = true;
-      };
-      qwen3-30b-a3b = {
-        repo = "mlx-community/Qwen3-30B-A3B-Instruct-2507-4bit-DWQ";
-        revision = "53bfb233acb2e50f6060c3c5709f23fac547827f";
-        port = 8002;
-        # bug-991 (2026-09-21): this daemon, and only this one, was OOM-
-        # crash-looping (Metal "Insufficient Memory") roughly every 4-16min
-        # under normal hermes-t/s/k traffic — mlx_lm.server's prompt cache
-        # and prefill/decode concurrency were both unbounded by default.
-        # 3 = one slot per hermes identity (t/s/k), the realistic max
-        # distinct concurrent conversations this daemon actually serves.
-        # promptCacheSize stays at 3 even after the 8G->2G cut below — once
-        # the byte budget can't hold a large sequence anyway, this only
-        # governs how many small/medium conversations fit under it, and
-        # dropping it would just cost the other two hermes identities a
-        # full re-prefill for ~no memory saved.
-        promptCacheSize = 3;
-        # bug-991 fourth follow-up (2026-09-28): confirmed by reading
-        # mlx_lm/server.py's request-insert path (mlx-lm 0.31.3) that
-        # --prompt-cache-bytes is a SHARED idle+active budget, sampled only
-        # at insert time BEFORE prefill runs:
-        #   if prompt_cache_bytes is not None:
-        #       active = batch_generator.prompt_cache_nbytes
-        #       self.prompt_cache.trim_to(n_bytes=prompt_cache_bytes - active)
-        # For a solo request arriving with nothing else active, active≈0, so
-        # trim_to(8G) trims nothing and the idle cache (observed steady at
-        # ~7.5GB) stays fully resident while the new sequence prefills. That
-        # explains why the "residual crash at 100% of a solo prefill" from
-        # the third follow-up below was never actually fixed by serializing
-        # concurrency: 19.1GB resident weights + 7.5GB idle cache + ~6.2GB
-        # for a 64.5k-token request's own KV already totals ~32.8GB against
-        # the ~37.4GB Metal ceiling, leaving only ~4.6GB for the prefill's
-        # own transient working memory (attention score matrices,
-        # activations) — which --prompt-cache-bytes was never able to bound
-        # in the first place, since that term isn't part of the retained
-        # cache it trims. This value had never actually been lowered from
-        # its round-1 default (confirmed via `git log -p --follow` on this
-        # file) — rounds 2-4 only ever touched concurrency and `lazy`.
-        # Cutting it to 2G trades some re-prefill latency for ~5.5GB of real
-        # headroom back for the transient term. See also prefillStepSize
-        # below, which bounds that transient term directly.
-        promptCacheBytes = "2G";
-        # promptConcurrency=2 (first attempt) still crashed 4x in ~1h of
-        # real hermes-t traffic: every crash showed TWO large (12k-64k
-        # token) prefills running concurrently. --prompt-cache-bytes only
-        # bounds the IDLE KV cache between requests — it does nothing for
-        # the transient working memory a single huge prefill needs while
-        # actively running, so two large concurrent prefills could still
-        # blow the ceiling regardless of the cache cap. Serialize prefill
-        # entirely (1) to remove that specific failure mode; costs some
-        # queuing latency when two big requests land close together.
-        promptConcurrency = 1;
-        # bug-991 third follow-up (2026-09-22): promptConcurrency=1 alone
-        # eliminated concurrent-prefill crashes but NOT a residual pattern of
-        # crashes landing exactly at 100% of a solo prefill (14910/14910,
-        # 20536/20536, 61003/61003, etc.), independent of size/concurrency.
-        # Root cause, confirmed by reading mlx_lm/generate.py's
-        # BatchGenerator._next() directly on xcog1 (mlx-lm 0.31.3): it sets
-        # completion_batch_size = max(decodeConcurrency, promptConcurrency),
-        # and the ONLY guard against adding new prefill work is
-        # `len(generation_batch) >= completion_batch_size`. With
-        # decodeConcurrency=4, that guard only blocks once 4 requests are
-        # simultaneously decoding — effectively never, with 3 hermes
-        # identities — so a brand-new large prefill was free to start the
-        # instant a previous request finished ITS prefill and dropped into
-        # decode, stacking the new prefill's transient memory on top of the
-        # still-live decode KV cache. That's the exact "started 3s after a
-        # previous request began decoding" pattern flagged as an unconfirmed
-        # hypothesis in the prior round — this is the confirmation.
-        # decodeConcurrency=1 makes completion_batch_size=max(1,1)=1, so the
-        # guard fires whenever ANYTHING is mid-decode, fully serializing new
-        # prefill against in-flight decode (not just against other
-        # prefills). Trade-off, accepted deliberately: this also serializes
-        # *generation* across hermes-t/s/k — two identities mid-conversation
-        # at once will no longer interleave, the second's response won't
-        # start generating until the first's finishes entirely. Given the
-        # failure mode is a hard crash + empty response to the user, that
-        # latency cost was judged worth it. Time-since-restart data pulled
-        # from macOS's own crash-reporter .ips reports (captureTime vs.
-        # procLaunch across all 27 crashes to date) ruled out Metal
-        # allocator fragmentation as an alternative explanation — crashes
-        # repeatedly hit within 2-9 minutes of a FRESH daemon restart, so a
-        # scheduled periodic restart would not have helped.
-        decodeConcurrency = 1;
-        # bug-991 fourth follow-up (2026-09-28): the only exposed knob that
-        # bounds a single prefill's TRANSIENT working memory directly
-        # (confirmed present in mlx-lm 0.31.3's server.py argparse — unlike
-        # --kv-bits/--kv-group-size/--quantized-kv-start, added upstream by
-        # PR #1832 on 2026-09-09, which this pinned version predates).
-        # Default is 2048; smaller chunks trade prefill throughput for a
-        # roughly proportionally smaller peak working set per step.
-        prefillStepSize = 512;
-        # bug-991 sixth follow-up (2026-10-14): this was 98304 — set well
-        # ABOVE the ~60-65K kanban-card-creation workload on the theory that
-        # promptCacheBytes/prefillStepSize/decodeConcurrency above made that
-        # workload survive locally, with this ceiling only there to catch
-        # genuine outliers. Live-reproduced via real hermes-t traffic
-        # (--query-file prompts at ~trivial/~9K/~45K/~63K tokens through the
-        # actual pod -> litellm -> mlx_lm.server path, log-tailed
-        # throughout, not synthetic curl): trivial and ~9K were clean every
-        # time; EVERY attempt at ~40K+ tokens crashed at least once within a
-        # single session, including a SOLO 62984-token prefill crashing one
-        # token from its own completion (62983/62984) with no concurrency
-        # involved at all. That theory is therefore wrong — the motivating
-        # workload itself is not safe to run locally at this size, 98304 was
-        # never actually protecting anything, and the user-visible result
-        # was "No reply ... even after retries" after a 35-minute session
-        # (litellmRetryAfterSeconds below can't save a retry of the exact
-        # prompt whose own size triggers the crash). See buglog bug-1087 for
-        # the full reproduction.
-        #
-        # Lowered to comfortably inside the one range confirmed clean today
-        # (trivial/~9K) with real margin below the ~40-44K zone where solo
-        # crashes have now been observed twice (44099/44100 fifth
-        # follow-up; 62983/62984 today) — NOT proven safe up to this exact
-        # number, just the most defensible line given current evidence.
-        # Paired with cloudTier.contextWindowFallbackFor below so the real
-        # ~60-65K kanban workload still gets answered (via deepseek-hard,
-        # off this Mac's Metal memory entirely) instead of either crashing
-        # or landing a clean-but-empty rejection. LiteLLM counts tokens with
-        # its own tokenizer, not Qwen's, so treat this as approximate.
-        maxInputTokens = 32768;
-        # bug-991 fifth follow-up (2026-10-02): the fourth follow-up's
-        # prefillStepSize + promptCacheBytes cut measurably helped (multiple
-        # real 30-40K-token requests now complete cleanly where even
-        # moderate sizes used to crash reliably) but did NOT eliminate the
-        # crash — confirmed live: a fresh crash with the EXACT
-        # kIOGPUCommandBufferCallbackErrorOutOfMemory signature hit at
-        # 44099/44100 of a solo prefill, ~1.5h after this exact config
-        # deployed, with the idle prompt cache at 0.00GB (completely empty)
-        # at the moment of the crash — ruling out promptCacheBytes as the
-        # binding constraint for THIS crash, since there was no idle cache
-        # competing for memory at all.
-        #
-        # Checked whether smaller prefillStepSize chunks should still help
-        # by reading mlx_lm's actual attention implementation
-        # (models/base.py, models/qwen3_moe.py in the same v0.31.3 tag):
-        # the non-quantized path uses mx.fast.scaled_dot_product_attention,
-        # MLX's fused/flash-attention-style kernel — it does NOT materialize
-        # a dense O(chunk_size × cumulative_context) score matrix the way a
-        # naive implementation would, so "the score matrix grows with
-        # context even at a small step size" is NOT the mechanism here.
-        #
-        # This is a confirmed, OPEN, unresolved upstream mlx-lm/Metal
-        # limitation, not a config mistake: ml-explore/mlx-lm issue #1480
-        # reports the identical signature on a different MoE model
-        # (Qwen3.6-35B-A3B) at long-context prefill with ample system RAM
-        # free and a near-empty idle cache (0.27GB) — the reporter's own
-        # analysis, unconfirmed by any maintainer and with NO accepted fix:
-        # "transient Metal memory, prefill workspace allocation, command
-        # buffer size, kernel scheduling, or insufficient prefill chunking
-        # rather than final KV-cache size." Issue #1390 reports the same
-        # crash signature on an unrelated 4B model. Both open, no fix, no
-        # maintainer-confirmed root cause, as of 2026-10-02.
-        #
-        # Decision: accept the residual crash risk rather than chase a
-        # shrinking threshold with no evidence further tuning closes it —
-        # see llm-stack's litellmRetryAfterSeconds option (set below) for
-        # the actual mitigation, which makes the existing crash+respawn
-        # cushion (num_retries) actually effective instead of firing and
-        # giving up before the daemon comes back. Escalation path if this
-        # proves insufficient, most to least preferred: lower
-        # prefillStepSize further (512->256, modest throughput cost, NOT
-        # guaranteed to help given the finding above); fall back to
-        # qwen3-14b for text/agent traffic (qwen3-14b has never crashed on
-        # this host through the entire incident — real capability downgrade
-        # but removes the risk class entirely); hand-package a post-PR-#1832
-        # mlx-lm for --kv-bits once it's available in nixpkgs (does not
-        # obviously fix THIS failure mode either, since the open issues
-        # above are about transient prefill allocation, not retained
-        # KV-cache size, which is what --kv-bits actually bounds).
       };
     };
 
@@ -628,28 +472,26 @@
       };
     };
 
-    # llama.cpp alternative backend for qwen3-30b-a3b (bug-1106 follow-up,
-    # 2026-10-30). Live-tested standalone against this exact hardware with
-    # the MLX daemon on port 8002 paused to free RAM: trivial (600 tok),
-    # ~9.5K, ~44.2K, and ~61.7K-token prompts via llama-server's raw
-    # /completion endpoint all completed cleanly (HTTP 200, server healthy
-    # afterward, RSS flat at ~24-25GB throughout) — the ~44K/~62K sizes are
-    # the exact range where mlx_lm.server reliably crashes with a Metal OOM
-    # (bug-991's fifth/sixth follow-ups: solo crashes at 44099/44100 and
-    # 62983/62984). contextSize below (70000) matches what was actually
-    # tested, not the model's full advertised window — see contextSize's
-    # own option doc for why that distinction matters.
+    # llama.cpp backend for qwen3-30b-a3b (bug-1106, migrated 2026-10-31 from
+    # mlx_lm.server — see the top-of-section comment above for the full
+    # mlx-991-through-1106 history). Reuses the SAME LiteLLM model name
+    # (`qwen3-30b-a3b`) the retired mlx entry used, so this is a pure
+    # backend swap — hermes-t/s/k's `model.default: qwen3-30b-a3b` needed no
+    # changes at all. contextSize below (70000) matches what was actually
+    # live-tested, not the model's full advertised window (262144 per the
+    # base model's own config.json) — see contextSize's own option doc for
+    # why that distinction matters; don't raise it without live-testing the
+    # new value first, the same way this one was.
     #
-    # Deliberately NOT yet wired into Hermes: this is a new, additional
-    # LiteLLM model (`qwen3-30b-a3b-llamacpp`, its own port) alongside the
-    # existing mlx-served `qwen3-30b-a3b`, which is untouched by this block.
-    # Promoting it (switching hermes-t/s/k's `model.default`, retiring the
-    # mlx daemon, raising maxInputTokens/context_length) is a separate,
-    # later decision — this block only makes the alternative backend
-    # available to test through the real LiteLLM path (not yet done; only
-    # llama-server's own raw endpoint has been live-tested so far).
+    # Validated end-to-end before promotion: trivial/~9.5K/~44.2K/~61.7K-
+    # token prompts all completed cleanly (HTTP 200, server healthy
+    # afterward) through BOTH llama-server's raw /completion endpoint AND
+    # the real LiteLLM /v1/chat/completions path with real master-key auth —
+    # the exact request shape hermes-t/s/k actually use. The ~44K/~62K sizes
+    # are precisely where mlx_lm.server used to crash (bug-991 fifth/sixth
+    # follow-ups: solo crashes at 44099/44100 and 62983/62984).
     llamaCppModels = {
-      qwen3-30b-a3b-llamacpp = {
+      qwen3-30b-a3b = {
         repo = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF";
         file = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf";
         revision = "eea7b2be5805a5f151f8847ede8e5f9a9284bf77";
@@ -661,13 +503,14 @@
 
     litellmPort = 4000;
 
-    # bug-991 fifth follow-up (2026-10-02): the open upstream mlx-lm/Metal
-    # issue below means qwen3-30b-a3b can still crash+respawn occasionally
-    # on long-context prefill even with the mitigations above — this makes
-    # the retry that already existed (num_retries, raised to 3 alongside
-    # this) actually useful against that residual risk, instead of firing
-    # and giving up before the daemon is back. 15s floor comfortably spans
-    # the observed ~13s crash-to-serving-again gap with margin.
+    # Floor on retry backoff after a crashed/respawning local daemon.
+    # Originally added (bug-991 fifth follow-up) specifically for
+    # mlx_lm.server's crash+respawn cycle; llama-server hasn't shown that
+    # failure pattern in any live test to date, but this is a cheap,
+    # harmless general precaution against ANY daemon hiccup (crash for an
+    # unrelated reason, a deploy-triggered restart, etc.) and costs nothing
+    # to keep. 15s comfortably spans the kind of respawn gap observed during
+    # the original incident.
     litellmRetryAfterSeconds = 15;
 
     cloudTier = {
@@ -675,14 +518,14 @@
       modelName = "deepseek-hard";
       upstreamModel = "deepseek/deepseek-chat";
       apiBase = "https://api.deepseek.com";
-      # bug-991 sixth follow-up (2026-10-14): pairs with qwen3-30b-a3b's
-      # maxInputTokens cut above — a request over that ceiling gets a clean
-      # litellm.ContextWindowExceededError instead of ever reaching the
-      # crash-prone local daemon, and this makes that specifically the one
-      # error type that routes to deepseek-hard instead of just failing the
-      # caller. Costs real API spend + egress for oversized requests only;
-      # everything under the ceiling is unaffected and stays fully local.
-      contextWindowFallbackFor = [ "qwen3-30b-a3b" ];
+      # contextWindowFallbackFor deliberately left empty: it existed only to
+      # pair with mlx_lm.server's artificially-low maxInputTokens safety cap
+      # (bug-991 sixth follow-up), routing oversized requests to this cloud
+      # tier instead of the crash-prone local daemon. qwen3-30b-a3b's
+      # llama.cpp backend above sets no maxInputTokens — it doesn't need an
+      # artificial ceiling — so there's nothing for this to pair with
+      # anymore. deepseek-hard stays available as a manually-selectable
+      # model for anything that wants it regardless.
     };
 
     voice = {
