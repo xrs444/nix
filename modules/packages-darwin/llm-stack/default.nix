@@ -5,7 +5,17 @@
 #     resident)
 #   - one launchd daemon per served MLX vision model (mlx_vlm.server per
 #     port, lazy-loaded — see visionModels)
-#   - LiteLLM launchd daemon fronting the MLX ports + upstream cloud tier
+#   - one launchd daemon per served llama.cpp (GGUF) text model
+#     (llama-server per port, resident) — an alternative backend to the MLX
+#     models above, added 2026-10-30 (bug-1106 follow-up) after live-testing
+#     showed it survives the exact prompt sizes (44K/63K tokens) that
+#     reliably crash mlx_lm.server on this hardware (bug-991): llama-server
+#     pre-allocates its whole KV cache as one fixed-size buffer at model
+#     load (--ctx-size), rather than growing it during prefill the way
+#     mlx_lm.server does, so there's no transient-growth term to overrun the
+#     Metal ceiling. See llamaCppModels below.
+#   - LiteLLM launchd daemon fronting the MLX + llama.cpp ports + upstream
+#     cloud tier
 #   - Wyoming faster-whisper (STT) and Piper (TTS) launchd daemons
 #   - Prometheus node_exporter
 #
@@ -144,6 +154,23 @@ let
             api_key = "not-used";
           };
         }) cfg.visionModels)
+        # Local llama.cpp-served models (added 2026-10-30, bug-1106
+        # follow-up). Unlike mlx_lm.server, llama-server is a genuinely
+        # single-model-per-process server with no model-name registry to
+        # match against — its OpenAI-compatible endpoint accepts any string
+        # in the request's `model` field without validating it (there is
+        # nothing else it could possibly serve). That means none of the
+        # mlx_lm "default_model" sentinel/bug-530 handling above applies
+        # here: forwarding the model's own litellm `model_name` straight
+        # through is safe and simplest.
+        ++ (lib.mapAttrsToList (name: m: {
+          model_name = name;
+          litellm_params = {
+            model = "openai/${name}";
+            api_base = "http://127.0.0.1:${toString m.port}/v1";
+            api_key = "not-used";
+          };
+        }) cfg.llamaCppModels)
         # Cloud fallback tier (DeepSeek) — key injected via env at exec time
         ++ lib.optional cfg.cloudTier.enable {
           model_name = cfg.cloudTier.modelName;
@@ -367,6 +394,64 @@ let
       };
     };
   };
+
+  # launchd daemon for a single llama-server (llama.cpp) serving one GGUF
+  # model. Added 2026-10-30 (bug-1106 follow-up) as an alternative backend
+  # to mkMlxDaemon above. Two deliberate differences from the MLX download
+  # wrapper: (1) a GGUF HF repo typically hosts many quantizations of the
+  # same model as separate files (e.g. Q4_K_M, Q8_0, ...) at many GB each —
+  # downloading the whole repo the way mkMlxDaemon does would be wasteful,
+  # so this passes the exact filename positionally to `hf download` (live-
+  # verified via `hf download --help`: `hf download REPO [FILENAMES]...`
+  # downloads only the named file(s), not the full repo). (2) llama-server
+  # itself gets `-m` pointed at that one file directly, not a directory.
+  mkLlamaCppDaemon = modelName: m:
+    let
+      extraArgs = lib.concatStringsSep " " (
+        lib.optional (m.ubatchSize != null) "-ub ${toString m.ubatchSize}"
+      );
+    in
+    {
+      name = "llama-cpp-${modelName}";
+      value = {
+        serviceConfig = {
+          Label = "net.xrs444.llama-cpp-${modelName}";
+          # bug-989: /bin/sh back as ProgramArguments[0] — see mkMlxDaemon's
+          # comment above for the full incident this works around.
+          ProgramArguments = [
+            "/bin/sh"
+            "-c"
+            "exec ${pkgs.writeShellScript "llama-cpp-${modelName}" ''
+              set -euo pipefail
+              ${nixStoreGuard}
+              ${mountGuard}
+              dir="${cfg.modelsDir}/${modelName}"
+              file="$dir/${m.file}"
+              if [ ! -f "$dir/.revision" ] || [ "$(/bin/cat "$dir/.revision")" != "${m.revision}" ]; then
+                echo "llm-stack: fetching ${m.repo}/${m.file} @ ${m.revision}" >&2
+                /bin/rm -rf "$dir"
+                /bin/mkdir -p "$dir"
+                export HF_HOME="${cfg.modelsDir}/.hf-cache"
+                export HF_HUB_DISABLE_TELEMETRY=1
+                ${cfg.hfPackage}/bin/hf download ${m.repo} ${m.file} --revision ${m.revision} --local-dir "$dir"
+                printf '%s' "${m.revision}" > "$dir/.revision"
+              fi
+              exec ${cfg.llamaCppPackage}/bin/llama-server -m "$file" --host 127.0.0.1 --port ${toString m.port} -c ${toString m.contextSize} -ngl ${toString m.gpuLayers} --parallel ${toString m.parallel} ${extraArgs}
+            ''}"
+          ];
+          WorkingDirectory = "/";
+          EnvironmentVariables = {
+            HOME = "/var/lib/llm-stack";
+          };
+          KeepAlive = true;
+          RunAtLoad = true;
+          ThrottleInterval = 30;
+          StandardErrorPath = "/var/log/llm-stack/llama-cpp-${modelName}.stderr";
+          StandardOutPath = "/var/log/llm-stack/llama-cpp-${modelName}.stdout";
+          ProcessType = "Adaptive";
+        };
+      };
+  };
 in
 
 {
@@ -588,6 +673,121 @@ in
         start-on-request, but mlx_vlm.server's own lazy-load makes an
         always-running daemon cost near-zero RAM at idle, which is the right
         tradeoff for occasional-use vision workloads like AI-tagging tools).
+      '';
+    };
+
+    # ── llama.cpp inference ─────────────────────────────────────────────────
+    # Added 2026-10-30 (bug-1106 follow-up): an alternative backend to the
+    # MLX models above, for the same GGUF-format quantized model files
+    # llama.cpp's wider ecosystem publishes. See mkLlamaCppDaemon's own
+    # comment for why this exists and what was live-tested before adding it.
+
+    llamaCppPackage = mkOption {
+      type = types.package;
+      default = pkgs.llama-cpp;
+      description = ''
+        Package providing the llama-server entrypoint. nixpkgs builds this
+        with Metal GPU support on by default for Darwin
+        (metalSupport = stdenv.hostPlatform.isDarwin in nixpkgs' own
+        pkgs/by-name/ll/llama-cpp/package.nix) — no overlay needed, unlike
+        mlx's MLX_BUILD_METAL overlay in this host's own config.
+      '';
+    };
+
+    llamaCppModels = mkOption {
+      type = types.attrsOf (
+        types.submodule {
+          options = {
+            repo = mkOption {
+              type = types.str;
+              example = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF";
+              description = ''
+                HuggingFace repo path (org/name) hosting the GGUF file.
+                Unlike the MLX `models`/`visionModels` repos above, a GGUF
+                repo commonly bundles many quantizations of the same model
+                as separate multi-GB files — `file` below picks exactly one.
+              '';
+            };
+            file = mkOption {
+              type = types.str;
+              example = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf";
+              description = "Exact GGUF filename within `repo` to download (passed positionally to `hf download`, which fetches only the named file).";
+            };
+            revision = mkOption {
+              type = types.str;
+              description = "Immutable HF commit SHA. Never a branch name — the wrapper re-downloads on change.";
+            };
+            port = mkOption {
+              type = types.port;
+              description = "Localhost port for this model's llama-server.";
+            };
+            contextSize = mkOption {
+              type = types.ints.positive;
+              default = 4096;
+              description = ''
+                Passed as llama-server's `--ctx-size`. With `parallel = 1`
+                (the default below), the whole value is pre-allocated as
+                ONE fixed-size KV-cache buffer at model load time — unlike
+                mlx_lm.server, which grows its KV cache during prefill.
+                That fixed-upfront allocation is why llama-server survived
+                live tests at 44K/63K-token prompts (2026-10-30) that
+                reliably crash mlx_lm.server with a Metal OOM on this same
+                hardware (bug-991): there's no transient growth term during
+                prefill for the Metal ceiling to catch it mid-request. Only
+                raise this to a value actually live-tested at that size —
+                pre-allocating a much larger buffer than has been tested
+                (e.g. jumping straight to the model's full advertised
+                context window) is an unverified extrapolation, not a
+                proven-safe one.
+              '';
+            };
+            gpuLayers = mkOption {
+              type = types.ints.positive;
+              default = 999;
+              description = ''
+                Passed as llama-server's `-ngl`/`--n-gpu-layers`: number of
+                model layers to offload to Metal. 999 offloads every layer
+                regardless of the model's real layer count (llama.cpp clamps
+                it) — omitting this risks a CPU-only build/run path on some
+                setups, which would make an already-slow prefill far worse.
+              '';
+            };
+            parallel = mkOption {
+              type = types.ints.positive;
+              default = 1;
+              description = ''
+                Passed as llama-server's `--parallel`: number of concurrent
+                request slots, each getting `contextSize / parallel` tokens
+                of KV cache. Defaults to 1, matching the full serialization
+                bug-991 already forced on the MLX models
+                (promptConcurrency = decodeConcurrency = 1) — raising this
+                changes what `contextSize` actually buys each request and
+                should be live-tested before trusting it, the same way the
+                current `contextSize` default here was.
+              '';
+            };
+            ubatchSize = mkOption {
+              type = types.nullOr types.ints.positive;
+              default = null;
+              example = 512;
+              description = ''
+                Passed as llama-server's `-ub`/`--ubatch-size` when set
+                (its own default is 512): the physical batch size used
+                during prefill. Rough llama.cpp analogue of mlx_lm's
+                prefillStepSize. Unset leaves llama-server's own default.
+              '';
+            };
+          };
+        }
+      );
+      default = { };
+      description = ''
+        GGUF models to serve via llama-server (llama.cpp), one resident
+        daemon each — an alternative backend to `models` above. Which
+        models to include is a host-level decision; nothing here replaces
+        or depends on anything in `models`, so both backends can run the
+        same underlying model side by side under different LiteLLM model
+        names while one is being validated against the other.
       '';
     };
 
@@ -861,6 +1061,9 @@ in
 
       # One daemon per MLX-served vision model (lazy-loaded, see visionModels).
       (lib.listToAttrs (lib.mapAttrsToList mkMlxVlmDaemon cfg.visionModels))
+
+      # One daemon per llama.cpp-served (GGUF) model.
+      (lib.listToAttrs (lib.mapAttrsToList mkLlamaCppDaemon cfg.llamaCppModels))
 
       # LiteLLM router — launchd has no ordering primitives; LiteLLM retries
       # its upstream connections by default, so model daemons may come up

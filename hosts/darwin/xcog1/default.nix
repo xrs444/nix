@@ -628,6 +628,37 @@
       };
     };
 
+    # llama.cpp alternative backend for qwen3-30b-a3b (bug-1106 follow-up,
+    # 2026-10-30). Live-tested standalone against this exact hardware with
+    # the MLX daemon on port 8002 paused to free RAM: trivial (600 tok),
+    # ~9.5K, ~44.2K, and ~61.7K-token prompts via llama-server's raw
+    # /completion endpoint all completed cleanly (HTTP 200, server healthy
+    # afterward, RSS flat at ~24-25GB throughout) — the ~44K/~62K sizes are
+    # the exact range where mlx_lm.server reliably crashes with a Metal OOM
+    # (bug-991's fifth/sixth follow-ups: solo crashes at 44099/44100 and
+    # 62983/62984). contextSize below (70000) matches what was actually
+    # tested, not the model's full advertised window — see contextSize's
+    # own option doc for why that distinction matters.
+    #
+    # Deliberately NOT yet wired into Hermes: this is a new, additional
+    # LiteLLM model (`qwen3-30b-a3b-llamacpp`, its own port) alongside the
+    # existing mlx-served `qwen3-30b-a3b`, which is untouched by this block.
+    # Promoting it (switching hermes-t/s/k's `model.default`, retiring the
+    # mlx daemon, raising maxInputTokens/context_length) is a separate,
+    # later decision — this block only makes the alternative backend
+    # available to test through the real LiteLLM path (not yet done; only
+    # llama-server's own raw endpoint has been live-tested so far).
+    llamaCppModels = {
+      qwen3-30b-a3b-llamacpp = {
+        repo = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF";
+        file = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf";
+        revision = "eea7b2be5805a5f151f8847ede8e5f9a9284bf77";
+        port = 8102;
+        contextSize = 70000;
+        parallel = 1;
+      };
+    };
+
     litellmPort = 4000;
 
     # bug-991 fifth follow-up (2026-10-02): the open upstream mlx-lm/Metal
