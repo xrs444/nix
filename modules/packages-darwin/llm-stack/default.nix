@@ -191,6 +191,18 @@ let
         # margin once the backoff floor actually gives retries a real
         # chance to land.
         num_retries = 3;
+        # drop_params (2026-10-30, cosmetic): hermes-agent's auxiliary
+        # title-generation call sends `reasoning_effort` on every request
+        # regardless of backend; mlx_lm.server's OpenAI-compat surface (routed
+        # here as litellm_provider "openai") doesn't accept it, so every one
+        # of those calls logged a litellm.UnsupportedParamsError before
+        # hermes's own client silently retried without the param (confirmed
+        # live in hermes-t's agent.log — functionally harmless, pure log
+        # noise). This is exactly the scenario LiteLLM's own docs name
+        # drop_params for: silently strip params a backend doesn't support
+        # instead of erroring, rather than every caller needing its own
+        # retry-without-it fallback.
+        drop_params = true;
       };
     } // lib.optionalAttrs
       (lib.any (m: m.maxInputTokens != null) (lib.attrValues cfg.models)
