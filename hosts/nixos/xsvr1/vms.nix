@@ -5,7 +5,14 @@ let
     {
       name = "v-k8s-xsvr1";
       vcpu = "10"; # Increased from 8 - running at 140% CPU, heavily utilized
-      memory = "24"; # Increased from 16 GiB - node needs full allocation
+      # Increased 24->32 GiB (2026-10-31) after a second xsvr1 OOM-loop
+      # recurrence despite the flux-side resource-limit fixes from the first
+      # incident (2026-10-29) — real VM RSS was 21.6GB against the 24GB cap,
+      # with only 25GB host headroom otherwise unused. ZFS ARC is already
+      # capped at 16GiB (see default.nix boot.extraModprobeConfig) and
+      # confirmed live at ~9.4GB resident, well under its cap — not the
+      # driver here, no change needed on that side.
+      memory = "32";
       nicType = "bridge"; # or "bridge"
       hostNic = "bridge22";
       mac = "52:54:00:8d:2e:ef";
