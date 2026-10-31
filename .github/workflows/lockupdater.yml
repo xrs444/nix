@@ -238,11 +238,36 @@ jobs:
         run: |
           CACHE_URL="file:///var/lib/nixcache/cache"
 
+          # bug-859/1003: nix's git-fetcher cache on this runner can be left
+          # corrupted by an unrelated earlier job (e.g. deploy.yml's concurrent
+          # build fork) — it's a persistent dir, not job-scoped, so a solo build
+          # here can still inherit "error: opening Git repository ... tarball-cache
+          # ... could not find repository" with no concurrency of its own. Self-heal:
+          # clear it (owned by this runner's own `builder` user, no sudo needed)
+          # and retry once.
           echo "Building ${{ matrix.host }}..."
-          nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
-            --no-link \
-            --max-jobs 2 \
-            --cores 4
+          for attempt in 1 2; do
+            BUILD_LOG=$(mktemp)
+            nix build ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel" \
+              --no-link \
+              --max-jobs 2 \
+              --cores 4 \
+              2>&1 | tee "$BUILD_LOG"
+            BUILD_RC=${PIPESTATUS[0]}
+            if [ $BUILD_RC -ne 0 ] && [ "$attempt" -eq 1 ] && grep -q \
+                 'opening Git repository.*tarball-cache.*could not find repository' \
+                 "$BUILD_LOG"; then
+              echo "${{ matrix.host }}: tarball-cache corrupted — clearing and retrying once"
+              rm -rf "$HOME/.cache/nix/tarball-cache"
+              rm -f "$BUILD_LOG"
+              continue
+            fi
+            rm -f "$BUILD_LOG"
+            break
+          done
+          if [ $BUILD_RC -ne 0 ]; then
+            exit $BUILD_RC
+          fi
 
           echo "Copying ${{ matrix.host }} to cache..."
           nix copy --to "$CACHE_URL" ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel"

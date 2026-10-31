@@ -51,7 +51,6 @@ ATTRS=(
   gnome-autoar
   tinysparql
   ffmpeg-headless
-  pipx
   python313Packages.django
   python313Packages.rich
   python313Packages.curl-cffi

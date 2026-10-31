@@ -53,6 +53,42 @@ jobs:
           echo "==========================="
           chmod +x .github/scripts/nix-post-build-hook.sh
 
+      - name: Warm flake input cache
+        run: |
+          # bug-859/1003: nix's git-fetcher cache (~/.cache/nix/tarball-cache on this
+          # runner) isn't safe for concurrent first-time initialization. The build step
+          # below forks a 4-way `nix eval` fan-out and then two concurrent build_group
+          # subshells (x64/arm), all sharing this runner's $HOME — if a flake input
+          # (e.g. disko) needs its first-ever git fetch at that point, multiple
+          # processes race to create the bare clone and corrupt it, failing every
+          # host with "error: opening Git repository ... could not find repository".
+          # Once corrupted it stays broken for every later job on this runner (not
+          # just this one) until manually cleared. Fetching every input serially,
+          # once, here — before anything forks — means later concurrent readers only
+          # ever see an already-populated cache.
+          #
+          # Self-heal: if the cache is already corrupted (e.g. left over from a
+          # prior race before this step existed), clear it and retry once —
+          # owned by this runner's own `builder` user, no sudo needed.
+          for attempt in 1 2; do
+            WARM_LOG=$(mktemp)
+            if nix flake metadata --no-write-lock-file >"$WARM_LOG" 2>&1; then
+              rm -f "$WARM_LOG"
+              break
+            fi
+            if [ "$attempt" -eq 1 ] && grep -q \
+                 'opening Git repository.*tarball-cache.*could not find repository' \
+                 "$WARM_LOG"; then
+              echo "tarball-cache corrupted — clearing and retrying once"
+              rm -rf "$HOME/.cache/nix/tarball-cache"
+              rm -f "$WARM_LOG"
+              continue
+            fi
+            cat "$WARM_LOG"
+            rm -f "$WARM_LOG"
+            exit 1
+          done
+
       - name: Build and cache all hosts
         run: |
           ts() { date '+[%H:%M:%S]'; }
@@ -161,6 +197,20 @@ jobs:
                      'unexpected end-of-file|is not valid|Timeout was reached|kex_exchange_identification' \
                      "$BUILD_LOG"; then
                   echo "$(ts) [$group] $host: transient transfer failure — retrying once"
+                  rm -f "$BUILD_LOG"
+                  continue
+                fi
+
+                # bug-859/1003: the "Warm flake input cache" step above should
+                # prevent this, but self-heal if it still happens (e.g. the
+                # cache got corrupted by something else between steps) — this
+                # dir is owned by the runner's own `builder` user, so clearing
+                # it needs no sudo/human intervention.
+                if [ $BUILD_RC -ne 0 ] && [ "$attempt" -eq 1 ] && grep -q \
+                     'opening Git repository.*tarball-cache.*could not find repository' \
+                     "$BUILD_LOG"; then
+                  echo "$(ts) [$group] $host: tarball-cache corrupted — clearing and retrying once"
+                  rm -rf "$HOME/.cache/nix/tarball-cache"
                   rm -f "$BUILD_LOG"
                   continue
                 fi
