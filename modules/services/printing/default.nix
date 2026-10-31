@@ -12,11 +12,13 @@ let
   # the HTTP Host header and rejects anything but its own IP with a generic
   # 400 "Bad Request - CUPS vX.Y.Z" (confirmed 2026-08-30 -- a byte-correct
   # IPP POST with Host: xprn2.lan:631 was rejected identically regardless of
-  # resource path or operation; the identical request with Host: 172.18.5.1
+  # resource path or operation; the identical request with Host: <its IP>
   # got a valid 200 IPP response). This is the same Host-header validation
   # class of bug (CVE-2014-2856 mitigation) flagged in the k8s cups app
   # earlier, except here it's embedded firmware with no ServerAlias to fix.
-  xprn2Uri = "ipp://172.18.5.1/ipp/print";
+  # Moved from 172.18.5.1 to 172.18.100.160 (2026-10-31, same 172.18.100.0
+  # subnet as xswoffice) -- update this again if the printer moves subnets.
+  xprn2Uri = "ipp://172.18.100.160/ipp/print";
 in
 lib.mkMerge [
   (lib.mkIf isHplipClient {
