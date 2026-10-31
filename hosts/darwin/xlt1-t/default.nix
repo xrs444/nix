@@ -1,6 +1,7 @@
 {
   hostname,
   pkgs,
+  lib,
   ...
 }:
 {
@@ -166,14 +167,22 @@
   #   2. Authenticate with xrs444 Samba password, check "Remember in Keychain"
   # After that the activation script runs on every rebuild and is a no-op if
   # the destination is already configured.
-  # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw). Driverless
-  # IPP Everywhere queue — macOS's built-in AirPrint stack needs no PPD.
-  # Idempotent check-then-act, same pattern as the Time Machine block below.
-  # Device URI must be the raw IP, not xprn2.lan: the printer's embedded
-  # cupsd validates the HTTP Host header and rejects anything but its own
-  # IP with a generic 400 (confirmed 2026-08-30 -- see nix/modules/services/
-  # printing/default.nix for the full diagnosis).
-  system.activationScripts.printer-xprn2.text = ''
+  # printer-xprn2 and timemachine used to be their own named
+  # system.activationScripts.<name> entries, but activation-scripts.nix only
+  # splices a fixed list of names into the real activation script (bug-1060)
+  # -- an unlisted name like these type-checks and shows up under
+  # config.system.activationScripts, but darwin-rebuild switch silently never
+  # runs it. Folded into postActivation (via mkAfter, matching every upstream
+  # nix-darwin module's own extension pattern) so they actually execute. Same
+  # fix already applied to xcog1's printer-xprn2/timemachine/signNixBinaries.
+  system.activationScripts.postActivation.text = lib.mkAfter ''
+    # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw). Driverless
+    # IPP Everywhere queue — macOS's built-in AirPrint stack needs no PPD.
+    # Idempotent check-then-act, same pattern as the Time Machine block below.
+    # Device URI must be the raw IP, not xprn2.lan: the printer's embedded
+    # cupsd validates the HTTP Host header and rejects anything but its own
+    # IP with a generic 400 (confirmed 2026-08-30 -- see nix/modules/services/
+    # printing/default.nix for the full diagnosis).
     if /usr/bin/lpstat -p xprn2 >/dev/null 2>&1; then
       echo "printer xprn2 already configured"
     else
@@ -182,9 +191,7 @@
         -D "HP Color LaserJet Pro MFP M281cdw" || true
       /usr/sbin/lpadmin -d xprn2 || true
     fi
-  '';
 
-  system.activationScripts.timemachine.text = ''
     if /usr/bin/tmutil destinationinfo 2>&1 | /usr/bin/grep -q "tm_xlt1-t"; then
       echo "Time Machine destination already configured"
     else
