@@ -1,8 +1,13 @@
 # Summary: CUPS client and the xprn2 network print queue (HP Color LaserJet
-# Pro MFP M281cdw) for workstation hosts.
+# Pro MFP M281cdw) for workstation hosts, plus HPLIP for all xdt/xlt clients.
 { hostname, lib, pkgs, ... }:
 let
-  printingHosts = [ "xdt1-t" "xlt2-s" ];
+  printingHosts = [ "xdt1-t" "xlt2-s" "xcomm1" ];
+  # Desktop/laptop client naming convention (xd*=desktop, xl*=laptop — see
+  # feedback_host_naming_convention memory): any current or future xdt*/xlt*
+  # NixOS host gets the HPLIP driver/scanner stack, independent of whether
+  # it's also in printingHosts for the xprn2 queue itself.
+  isHplipClient = lib.hasPrefix "xdt" hostname || lib.hasPrefix "xlt" hostname;
   # Must be the raw IP, not xprn2.lan: the printer's embedded cupsd validates
   # the HTTP Host header and rejects anything but its own IP with a generic
   # 400 "Bad Request - CUPS vX.Y.Z" (confirmed 2026-08-30 -- a byte-correct
@@ -13,38 +18,57 @@ let
   # earlier, except here it's embedded firmware with no ServerAlias to fix.
   xprn2Uri = "ipp://172.18.5.1/ipp/print";
 in
-lib.mkIf (lib.elem hostname printingHosts) {
-  services.printing.enable = true;
+lib.mkMerge [
+  (lib.mkIf isHplipClient {
+    environment.systemPackages = [ pkgs.hplip ];
+  })
+  (lib.mkIf (lib.elem hostname printingHosts) {
+    services.printing.enable = true;
 
-  # Not using hardware.printers.ensurePrinters: its generated
-  # ensure-printers.service has no failure tolerance, and `lpadmin -m
-  # everywhere` can fail for reasons outside our control (printer asleep,
-  # or -- as confirmed 2026-08-30 -- rejected by the printer's Host-header
-  # validation until the deviceUri was switched to its raw IP, see xprn2Uri
-  # above). A hard-failed unit here is fatal to nixos-rebuild switch itself
-  # (nixos-rebuild-ng raises on a failed unit), which would break every
-  # future deploy to a printing host whenever the queue can't be created.
-  # So this is a hand-rolled equivalent that always exits 0 and just retries
-  # on the next switch/boot instead -- kept even after the Host-header fix,
-  # since the printer being genuinely powered off is still a real case.
-  systemd.services.ensure-xprn2 = {
-    description = "Ensure xprn2 (HP M281cdw) CUPS queue exists";
-    wantedBy = [ "multi-user.target" ];
-    # network-online.target: without this, a boot-time run can race ahead of
-    # the resolver and fail DNS ("Name or service not known") rather than
-    # ever reaching the printer at all -- confirmed 2026-08-30 on xlt2-s.
-    wants = [ "cups.service" "network-online.target" ];
-    after = [ "cups.service" "network-online.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
+    # cups-browsed (and the avahi it depends on) auto-discovers xprn2 over
+    # mDNS and creates its OWN local queue for it, independent of and racing
+    # the queue ensure-xprn2 creates below. Confirmed on xlt2-s (2026-10-30):
+    # GNOME's desktop module (services.desktopManager.gnome.enable) sets both
+    # services.avahi.enable and services.printing.browsed.enable to true by
+    # default, which neither this module nor the host config ever asked for.
+    # The result was two visible queues -- the browsed one showing the real
+    # model name but a null device URI (it never resolves past the printer's
+    # Host-header validation, see xprn2Uri comment below) and a second,
+    # generic-driver one that prints but without color. Disabling browsed
+    # here makes ensure-xprn2's queue the only one, on every printingHosts
+    # entry regardless of desktop environment.
+    services.printing.browsed.enable = false;
+
+    # Not using hardware.printers.ensurePrinters: its generated
+    # ensure-printers.service has no failure tolerance, and `lpadmin -m
+    # everywhere` can fail for reasons outside our control (printer asleep,
+    # or -- as confirmed 2026-08-30 -- rejected by the printer's Host-header
+    # validation until the deviceUri was switched to its raw IP, see xprn2Uri
+    # above). A hard-failed unit here is fatal to nixos-rebuild switch itself
+    # (nixos-rebuild-ng raises on a failed unit), which would break every
+    # future deploy to a printing host whenever the queue can't be created.
+    # So this is a hand-rolled equivalent that always exits 0 and just retries
+    # on the next switch/boot instead -- kept even after the Host-header fix,
+    # since the printer being genuinely powered off is still a real case.
+    systemd.services.ensure-xprn2 = {
+      description = "Ensure xprn2 (HP M281cdw) CUPS queue exists";
+      wantedBy = [ "multi-user.target" ];
+      # network-online.target: without this, a boot-time run can race ahead of
+      # the resolver and fail DNS ("Name or service not known") rather than
+      # ever reaching the printer at all -- confirmed 2026-08-30 on xlt2-s.
+      wants = [ "cups.service" "network-online.target" ];
+      after = [ "cups.service" "network-online.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        ${pkgs.cups}/bin/lpadmin -p xprn2 -E \
+          -v ${xprn2Uri} -m everywhere \
+          -D "HP Color LaserJet Pro MFP M281cdw" \
+        && ${pkgs.cups}/bin/lpadmin -d xprn2 \
+        || echo "xprn2 unreachable/not answering IPP -- will retry on next switch" >&2
+      '';
     };
-    script = ''
-      ${pkgs.cups}/bin/lpadmin -p xprn2 -E \
-        -v ${xprn2Uri} -m everywhere \
-        -D "HP Color LaserJet Pro MFP M281cdw" \
-      && ${pkgs.cups}/bin/lpadmin -d xprn2 \
-      || echo "xprn2 unreachable/not answering IPP -- will retry on next switch" >&2
-    '';
-  };
-}
+  })
+]
