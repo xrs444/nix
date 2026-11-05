@@ -80,8 +80,10 @@
     # Image viewer
     imv # Wayland image viewer
 
-    # Desktop shell (not yet in nixos-25.11 — pull from unstable)
-    pkgs.unstable.noctalia-shell
+    # Desktop shell (not yet in nixos-25.11 — pull from unstable).
+    # nixpkgs renamed noctalia-shell -> noctalia (v5) 2026-10-22; the old
+    # attr now throws (see bug log).
+    pkgs.unstable.noctalia
   ];
 
   # Enable polkit for authentication

@@ -171,7 +171,7 @@
           user = "thomas-local";
           platform = "x86_64-linux";
           type = "nixos";
-          desktop = "gnome";
+          desktop = "niri-xcomm1";
           roles = [
             "letsencrypt-host"
             "monitoring-client"

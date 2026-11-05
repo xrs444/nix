@@ -45,7 +45,9 @@
             NOCTALIA_PAM_SERVICE "swaylock"
         }
 
-        spawn-at-startup "noctalia-shell"
+        // Binary renamed noctalia-shell -> noctalia with the nixpkgs v5 rename
+        // (2026-10-22); update this alongside the package attr in desktop.nix.
+        spawn-at-startup "noctalia"
 
         // Monitor layout (xdt1-t). Positions are in logical pixels. All outputs
         // run at scale 1.0 (no fractional scaling) — xwayland-satellite has no

@@ -20,7 +20,10 @@
           NOCTALIA_PAM_SERVICE "swaylock"
       }
 
-      spawn-at-startup "noctalia-shell"
+      // Binary renamed noctalia-shell -> noctalia with the nixpkgs v5 rename
+      // (2026-10-22); update this alongside the package attr in each
+      // consuming host's desktop.nix.
+      spawn-at-startup "noctalia"
 
       binds {
           Mod+T { spawn "foot"; }

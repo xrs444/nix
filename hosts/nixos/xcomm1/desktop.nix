@@ -42,6 +42,11 @@
     # Essential Wayland desktop components
     fuzzel            # App launcher (Super+D or configure in Niri)
     waybar            # Status bar
+    # Desktop shell — bar/launcher/notifications/lock-screen widgets.
+    # nixpkgs renamed noctalia-shell -> noctalia (v5) 2026-10-22, so pull the
+    # current attr straight from unstable (not yet in the nixos-26.05
+    # channel this host pins).
+    pkgs.unstable.noctalia
     # Browsers
     google-chrome
 
