@@ -123,16 +123,15 @@ in
 
   # The builder user is now defined globally in modules/users/builder.nix
 
-  # Additional sudo rules specific to build server
-  security.sudo.extraRules = lib.optional isBuilder {
-    users = [ "builder" ];
-    commands = [
-      {
-        command = "ALL";
-        options = [ "NOPASSWD" ];
-      }
-    ];
-  };
+  # Passwordless `sudo ALL` for the builder account was removed (2026-11-07, P1 security
+  # review) — a broad privilege-escalation path with nothing demonstrably needing it.
+  # Grepped CI workflows (deploy.yml, lockupdater.yml, flakechecker.yml), the justfile, and
+  # flake.nix: no automated step runs `sudo` as `builder` anywhere. nix-daemon's own
+  # trusted-users setting (above) is what gives builder the privilege it actually needs —
+  # to accept input-addressed derivations from remote clients — and that's unrelated to
+  # shell-level sudo entirely. If a real need for scoped root access on a builder host
+  # turns up (e.g. a specific nix-store maintenance command), add a narrowly-targeted
+  # security.sudo.extraRules entry for that exact command then, not a blanket grant now.
 
   # Deploy the deploy SSH private key on the builder so CI can push to target hosts.
   # Key lives at /run/secrets/deploy_private_key (default sops path) so the github
