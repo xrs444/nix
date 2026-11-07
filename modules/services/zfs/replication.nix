@@ -16,6 +16,11 @@
 let
   cfg = config.services.zfsReplication;
   sshKeyPath = "/var/lib/syncoid/.ssh/id_ed25519";
+  knownHostsPath = "/var/lib/syncoid/.ssh/known_hosts";
+  sshStrictOpts = [
+    "UserKnownHostsFile=${knownHostsPath}"
+    "StrictHostKeyChecking=yes"
+  ];
 
   # Collect all source datasets across all jobs for ZFS permission grants
   allSourceDatasets = lib.concatMap (job: job.sourceDatasets) (lib.attrValues cfg.jobs);
@@ -43,6 +48,7 @@ let
       ${pkgs.sanoid}/bin/syncoid \
         --no-privilege-elevation \
         --sshkey ${sshKeyPath} \
+        ${lib.concatMapStringsSep " " (opt: "--sshoption '${opt}'") sshStrictOpts} \
         --recursive \
         --force-delete \
         ${dataset} \
@@ -58,6 +64,7 @@ let
         "network-online.target"
         "zfs.target"
         "syncoid-ssh-keygen.service"
+        "syncoid-known-hosts.service"
         "syncoid-zfs-permissions.service"
       ];
       wants = [ "network-online.target" ];
@@ -86,7 +93,7 @@ let
 
         echo "Testing SSH connection to ${job.targetUser}@${job.targetHost}..."
         ${pkgs.openssh}/bin/ssh -i ${sshKeyPath} \
-          -o StrictHostKeyChecking=no \
+          ${lib.concatMapStringsSep " " (opt: "-o '${opt}'") sshStrictOpts} \
           -o BatchMode=yes \
           ${job.targetUser}@${job.targetHost} \
           "echo 'SSH connection successful'" || {
@@ -166,6 +173,22 @@ in
       default = null;
       description = "SSH public key to authorize on this host for incoming syncoid connections (target side)";
     };
+
+    targetHostKeys = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        SSH host public keys for replication targets (source side), keyed by the
+        hostname used as a job's `targetHost`. Pinned into the syncoid user's
+        known_hosts so replication can run with StrictHostKeyChecking=yes instead
+        of disabling verification — without this, syncoid's SSH connection is
+        unauthenticated against the server it's talking to, allowing MITM during
+        automated backup replication. Fetch with `ssh-keyscan -t ed25519 <host>`.
+      '';
+      example = {
+        "xsvr2.lan" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILqV1INQL4xXMLnypfJQrB/R/i+xl4UR4dWdYTa8Ghae";
+      };
+    };
   };
 
   config = lib.mkMerge [
@@ -202,6 +225,26 @@ in
               chmod 600 ${sshKeyPath}
               chmod 644 ${sshKeyPath}.pub
             fi
+          '';
+        };
+
+        # Pin target host keys so replication can run with StrictHostKeyChecking=yes.
+        syncoid-known-hosts = {
+          description = "Write known_hosts for Syncoid replication targets";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            User = "syncoid";
+            Group = "syncoid";
+            RemainAfterExit = true;
+          };
+          script = ''
+            mkdir -p $(dirname ${knownHostsPath})
+            : > ${knownHostsPath}
+            ${lib.concatMapStringsSep "\n" (line: "echo '${line}' >> ${knownHostsPath}") (
+              lib.mapAttrsToList (host: key: "${host} ${key}") cfg.targetHostKeys
+            )}
+            chmod 644 ${knownHostsPath}
           '';
         };
 

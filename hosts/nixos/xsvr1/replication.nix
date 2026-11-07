@@ -47,6 +47,12 @@
   services.zfsReplication = {
     enable = true;
 
+    # Pinned via `ssh-keyscan -t ed25519 xsvr2.lan`, matches the value already
+    # trusted in ../../../modules/services/remotebuilds/default.nix's knownHosts.
+    targetHostKeys = {
+      "xsvr2.lan" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILqV1INQL4xXMLnypfJQrB/R/i+xl4UR4dWdYTa8Ghae";
+    };
+
     jobs = {
       critical = {
         sourceDatasets = [
