@@ -796,9 +796,23 @@ in
     litellmPackage = mkOption {
       type = types.package;
       default = pkgs.python3.withPackages (
-        ps: [ ps.litellm ] ++ ps.litellm.optional-dependencies.proxy
+        ps: [ ps.litellm ps.prisma ] ++ ps.litellm.optional-dependencies.proxy
       );
-      description = "Python environment providing the litellm proxy CLI (needs the proxy extras).";
+      description = ''
+        Python environment providing the litellm proxy CLI (needs the proxy extras).
+        `prisma` is included even though this deployment runs DB-less
+        (store_model_in_db = false, no Postgres) — litellm's own
+        user_api_key_auth exception-handling path unconditionally imports it
+        to check whether an auth failure was caused by a database connection
+        problem. Without it installed, that check itself crashes with
+        ModuleNotFoundError, masking the REAL underlying auth exception
+        behind a generic unhandled-exception 500 — confirmed live via
+        litellm.stdout's uvicorn.error traceback (bug-1116 follow-up,
+        2026-11-04): the original exception was a real
+        litellm.proxy._types.ProxyException from user_api_key_auth, not a
+        server crash. This package is never used to actually connect to a
+        database.
+      '';
     };
 
     litellmPort = mkOption {
