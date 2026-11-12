@@ -164,7 +164,13 @@
             "kanidm-replica"
             "letsencrypt-host"
             "monitoring-client"
-            "auto-upgrade"
+            # Deliberately no "auto-upgrade": this is a 1.9GB-RAM/SD-card ARM
+            # SBC. Its local auto-upgrade timer evaluating the full ~18-host
+            # flake plus occasionally falling back to local compilation (not
+            # every derivation always sits in the nixcache substituter) pushed
+            # load avg past 9 and left it swapping/IO-starved for extended
+            # periods, which made CI's deploy-rs push see it as UNREACHABLE —
+            # explaining ~6 weeks stuck on one generation. Push-only from here.
           ];
         };
         xcomm1 = {
