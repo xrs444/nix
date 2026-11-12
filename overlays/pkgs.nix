@@ -362,6 +362,22 @@ in
     hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
   });
 
+  # tzdata-2026e: checkTarget "check" runs now.ck, whose checknow.awk
+  # compares a live zdump of each zone's current UTC offset against
+  # zonenow.tab's offset snapshot taken at 2026e's 2026-09-30 release. DST
+  # transitions since then make that snapshot stale, so the check fails
+  # deterministically on any from-source build done today (confirmed same
+  # failure on both xcog1 and xlt1-t) — it's a release-time-relative sanity
+  # check, not a defect in the zoneinfo data itself. Confirmed via narinfo
+  # (curl 404 on all 4 outputs against cache.nixos.org, 2026-11-11) that
+  # vanilla tzdata-2026e has zero aarch64-darwin cache coverage already, so
+  # this doesn't push anything out of cache — `nix build
+  # .#darwinConfigurations.xcog1.system --dry-run` shows 371 other packages
+  # (pytorch, scikit-learn, etc.) already building from source on this host
+  # regardless. Safe to drop once nixpkgs backports 2026f (fresher
+  # zonenow.tab) to nixos-26.05 — check with `just check-overlay-cache`.
+  tzdata = prev.tzdata.overrideAttrs (_: { doCheck = false; });
+
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
   #
