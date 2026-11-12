@@ -51,7 +51,12 @@ in
       };
     })
     (lib.mkIf isReplicaServer {
-      services.kanidm.package = lib.mkForce pkgs.kanidm;
+      # Kanidm requires sequential minor-version upgrades (no skipping,
+      # e.g. 1.10 -> 1.12 directly is unsupported) — see
+      # https://kanidm.github.io/kanidm/stable/server_updates.html.
+      # Step 1 of 2: 1.10.5 -> 1.11.2 (kanidm_1_11). Bump again to
+      # kanidm_1_12 (1.12.0) once this hop is deployed and verified.
+      services.kanidm.package = lib.mkForce pkgs.kanidm_1_11;
     })
 
     # Primary server configuration (xsvr1)
@@ -219,7 +224,9 @@ in
         mode = "0400";
       };
 
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning;
+      # Step 1 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
+      # comment on the replica's package override above.
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_11;
       services.kanidm = {
         server.enable = true;
         unix.enable = lib.mkForce true;
