@@ -412,11 +412,24 @@ in
   # chase the splicing gap, just point ripgrep at the main pkgs' cached build
   # (confirmed via narinfo 200 for aarch64-darwin) — a static CLI binary used
   # as a subprocess doesn't care which nixpkgs revision built it.
+  #
+  # Same splicing gap hits tzdata: claude-code -> procps -> top -> ninja ->
+  # python3 -> tzdata all resolve inside this isolated nixpkgs-unstable
+  # import, so the main overlay's tzdata doCheck=false fix (bug-1148, below)
+  # never reaches it and now.ck fails here too. Unlike ripgrep, tzdata isn't
+  # a direct override arg of claude-code -- it's buried in python3's own
+  # build inputs -- so it has to be fixed in this import's own overlay list
+  # instead of via `.override`.
   claude-code = (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
-      overlays = [ (cfinal: cprev: { python3 = cfinal.python313; }) ];
+      overlays = [
+        (cfinal: cprev: {
+          python3 = cfinal.python313;
+          tzdata = cprev.tzdata.overrideAttrs (_: { doCheck = false; });
+        })
+      ];
     }
   ).claude-code.override {
     ripgrep = final.ripgrep;
