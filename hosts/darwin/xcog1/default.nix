@@ -137,6 +137,22 @@
             doCheck = false;
           });
 
+          # tornado (pulled in via litellm/jupyter-client/apscheduler etc.)
+          # has zero aarch64-darwin cache coverage at this pin (404 on both
+          # outputs, checked 2026-11-12) -- built from source regardless, so
+          # disabling its one flaky test doesn't newly exclude anything from
+          # cache (same "already building from source" rationale as
+          # torch/torchvision above). test_linear_performance in
+          # httputil_test.py asserts HTTPHeaders.add() scales linearly by
+          # timing it directly -- inherently flaky under nix's sandboxed,
+          # often CPU-contended build environment, not a real regression
+          # (1166/1167 other tests passed). Deselect just that one test via
+          # pytestCheckHook's disabledTests, not doCheck=false, to keep the
+          # rest of the suite's coverage.
+          tornado = pyprev.tornado.overridePythonAttrs (old: {
+            disabledTests = (old.disabledTests or [ ]) ++ [ "test_linear_performance" ];
+          });
+
           # MACHINE-LOCAL BUILD ONLY (bug-560): this derivation embeds two
           # xcog1-specific absolute paths (/Applications/Xcode.app below, and
           # the Metal Toolchain cryptex mount further down) that only exist
