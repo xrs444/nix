@@ -495,6 +495,50 @@ in
     }
   ).catppuccin-whiskers;
 
+  # openscad (2026-11-11): the pinned nixpkgs' `openscad` package is
+  # stuck on the 2021.01 stable release — confirmed identical on both
+  # nixos-26.05 and nixpkgs-unstable's search index, since nixpkgs' CMake
+  # rewrite transition has kept the "stable" openscad derivation frozen there
+  # for years — which predates the Manifold CSG backend entirely. nixpkgs'
+  # separate `openscad-unstable` package builds OpenSCAD off a 2026-07-20
+  # git-master snapshot with `-DEXPERIMENTAL=ON` and `manifold` in
+  # buildInputs, which is what actually ships the Manifold backend (Edit >
+  # Preferences > Advanced > Manifold toggle, and `--backend=manifold`).
+  # Confirmed cached for aarch64-darwin (xlt1-t) via narinfo 200, so this
+  # substitutes rather than building Qt5/CGAL from source. Its own Darwin
+  # postInstall symlinks the .app's binary as `$out/bin/openscad-unstable`
+  # (not `openscad`, so it can coexist with the stable package in nixpkgs
+  # itself) — re-add the `openscad` symlink name here so every existing
+  # `pkgs.openscad` reference in this repo (packages-darwin/default.nix,
+  # homemanager/users/xrs444/default.nix) keeps working unchanged.
+  openscad = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+    }
+  ).openscad-unstable.overrideAttrs (old: {
+    postInstall = (old.postInstall or "") + prev.lib.optionalString final.stdenv.hostPlatform.isDarwin ''
+      ln -sf $out/bin/openscad-unstable $out/bin/openscad
+    '';
+  });
+
+  # BOSL2 (Belfry OpenSCAD Library v2): pulled from the same nixpkgs-unstable
+  # import as openscad above, for version consistency. Deliberately NOT wired
+  # up via nixpkgs' own `openscad.withPackages` wrapper — that wrapper
+  # hardcodes `${openscad}/bin/openscad` internally, which doesn't exist on
+  # openscad-unstable's own derivation (see the symlink fix above), so it
+  # can't wrap it directly. Exposed as a plain attribute instead;
+  # homemanager/users/xrs444/default.nix symlinks its
+  # share/openscad/libraries/BOSL2 into ~/Documents/OpenSCAD/libraries/BOSL2
+  # (OpenSCAD's macOS user-library path), so `include <BOSL2/std.scad>`
+  # resolves for both the GUI and the CLI without relying on OPENSCADPATH —
+  # a macOS .app launched outside a shell (Finder/Spotlight) won't inherit a
+  # home-manager session variable anyway.
+  openscad-bosl2 = (
+    import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+    }
+  ).openscadPackages.bosl2;
+
   # OpenRSAT: cross-platform RSAT alternative for managing Samba/Windows AD.
   # Not in nixpkgs; packaged from GitHub pre-built release binaries.
   # macOS: DMG containing a signed .app bundle (arm64); bundled libssl/libcrypto.

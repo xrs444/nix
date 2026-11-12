@@ -350,6 +350,15 @@ in
       ];
     };
 
+  # BOSL2 (Belfry OpenSCAD Library v2) — symlinked into OpenSCAD's macOS
+  # user-library folder so `include <BOSL2/std.scad>` resolves for both the
+  # GUI app and the `openscad` CLI. See overlays/pkgs.nix's openscad-bosl2
+  # entry for why this isn't wired up via OPENSCADPATH instead. Scoped to
+  # Darwin + !isServer to match where openscad itself is installed above.
+  home.file."Documents/OpenSCAD/libraries/BOSL2" = lib.mkIf (pkgs.stdenv.isDarwin && !isServer) {
+    source = "${pkgs.openscad-bosl2}/share/openscad/libraries/BOSL2";
+  };
+
   # SOPS config for ~/.claude secrets (kept separate from project secrets)
   home.file.".claude/.sops.yaml".text = ''
     creation_rules:
