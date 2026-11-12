@@ -127,6 +127,22 @@ let
               if m.lazy then "openai/${cfg.modelsDir}/${name}" else "openai/default_model";
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
+            # additional_drop_params, not litellm_settings.drop_params
+            # (bug-1144 follow-up, 2026-11-11): hermes-agent's provider:custom
+            # path unconditionally emits a top-level reasoning_effort on
+            # every request since v0.21.5 (upstream NousResearch/hermes-agent
+            # issue #72649, confirmed against our own exact setup — LiteLLM
+            # 1.86.0 fronting a local model, same error text, same version
+            # boundary). litellm_settings.drop_params = true (below) was
+            # already set and does NOT stop this — matches known open litellm
+            # bugs (BerriAI/litellm #5501, #16090, #19700) where the global
+            # proxy-level flag doesn't reliably reach this exact
+            # get_optional_params/_check_valid_arg call path. The per-model
+            # additional_drop_params key is a different, more specific code
+            # path that the issue thread confirmed live (0 failures across
+            # 270 real requests after setting it, versus 400s on every
+            # request without it) — mirror that exact fix here.
+            additional_drop_params = [ "reasoning_effort" ];
           };
         } // lib.optionalAttrs (m.maxInputTokens != null) {
           model_info.max_input_tokens = m.maxInputTokens;
@@ -152,6 +168,9 @@ let
             model = "openai/${cfg.modelsDir}/${name}";
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
+            # See additional_drop_params comment on the MLX text models above
+            # (bug-1144 follow-up) — same hermes-agent behavior, same fix.
+            additional_drop_params = [ "reasoning_effort" ];
           };
         }) cfg.visionModels)
         # Local llama.cpp-served models (added 2026-10-30, bug-1106
@@ -169,6 +188,10 @@ let
             model = "openai/${name}";
             api_base = "http://127.0.0.1:${toString m.port}/v1";
             api_key = "not-used";
+            # See additional_drop_params comment on the MLX text models above
+            # (bug-1144 follow-up) — same hermes-agent behavior, same fix.
+            # This is the entry actually hit live by qwen3-30b-a3b today.
+            additional_drop_params = [ "reasoning_effort" ];
           };
         }) cfg.llamaCppModels)
         # Cloud fallback tier (DeepSeek) — key injected via env at exec time
