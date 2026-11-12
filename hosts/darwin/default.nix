@@ -6,6 +6,48 @@
   username,
   ...
 }:
+let
+  # Pushes every locally-built derivation (xlt1-t/xcog1 build aarch64-darwin
+  # packages locally — no remote aarch64-darwin builder exists) back into the
+  # shared nixcache.xrs444.net cache, so the same package isn't compiled
+  # separately on each Mac. Unlike nix-post-build-hook.sh (which runs ON
+  # xsvr1 for CI builds and writes straight to /var/lib/nixcache/cache), this
+  # Mac has no filesystem access to that directory — it goes over the
+  # existing `builder` SSH identity this host already uses for
+  # nix.buildMachines delegation to xsvr1.lan, in two hops: land the paths in
+  # xsvr1's own /nix/store (it can store/serve aarch64-darwin NARs even
+  # though it can't run them), then sign+copy from there into the actual
+  # HTTP-served cache dir — the exact two commands nix-post-build-hook.sh
+  # runs locally on xsvr1. No new secrets needed: `builder` is already in
+  # xsvr1's "builders" group, which can read the signing key
+  # (modules/services/nixcache/default.nix).
+  #
+  # Best-effort: every step is non-fatal so an unreachable/off-LAN xsvr1
+  # never breaks a local darwin-rebuild switch.
+  #
+  # The Nix daemon (and therefore this hook) runs as root, not ${username} —
+  # so it does NOT see ${username}'s home-manager-generated ~/.ssh/config
+  # (the "builder@xsvr1.lan xsvr1-builder" alias there is only readable by
+  # that user's own $HOME). Every ssh/nix-copy invocation below must
+  # therefore name the key and host explicitly rather than relying on any
+  # ambient ssh config, and root has no existing known_hosts entry for
+  # xsvr1.lan either.
+  cachePushHook = pkgs.writeShellScript "nix-darwin-cache-push-hook" ''
+    set -u
+    set -f; set -- $OUT_PATHS; set +f
+
+    KEY=/Users/${username}/.ssh/builder_key
+    SSH_OPTS="-i $KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 -o BatchMode=yes"
+
+    NIX_SSHOPTS="$SSH_OPTS" nix copy --to "ssh://builder@xsvr1.lan?ssh-key=$KEY" "$@" 2>/dev/null || exit 0
+
+    ssh $SSH_OPTS builder@xsvr1.lan \
+      "nix store sign --key-file /run/secrets/nixcache_signing_key $* && nix copy --to file:///var/lib/nixcache/cache $*" \
+      2>/dev/null || exit 0
+
+    exit 0
+  '';
+in
 {
   imports = [
     ../../modules/packages-common/default.nix
@@ -166,6 +208,7 @@
     extra-experimental-features = nix-command flakes
     download-buffer-size = 134217728
     builders-use-substitutes = true
+    post-build-hook = ${cachePushHook}
   '';
 
   # Configure nixpkgs
