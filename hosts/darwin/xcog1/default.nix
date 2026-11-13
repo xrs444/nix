@@ -155,6 +155,24 @@
             doCheck = false;
           });
 
+          # rq's test suite (background job worker, heavy multiprocessing/
+          # fork usage) hung indefinitely during darwin-rebuild -- ~12
+          # hours at 0% CPU, confirmed via `ps`/process tree on xcog1: the
+          # pytest process and its spawned multiprocessing worker were both
+          # sitting idle, a classic macOS spawn-vs-fork worker deadlock, not
+          # a slow test. nixpkgs already excludes 2 other darwin-specific
+          # flaky rq tests (test_deleted_jobs_arent_executed,
+          # test_suspend_worker_execution) via disabledTests, but whatever
+          # hung here wasn't one of those two. Given a hang (unlike a quick
+          # failure) burns unbounded wall-clock time rather than failing
+          # fast, doCheck=false here rather than hunting for the exact
+          # flaky case. Zero aarch64-darwin cache coverage already (404 on
+          # cache.nixos.org, checked 2026-11-13), so this doesn't push
+          # anything out of cache.
+          rq = pyprev.rq.overridePythonAttrs (old: {
+            doCheck = false;
+          });
+
           # tornado (pulled in via litellm/jupyter-client/apscheduler etc.)
           # has zero aarch64-darwin cache coverage at this pin (404 on both
           # outputs, checked 2026-11-12) -- built from source regardless, so
