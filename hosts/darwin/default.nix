@@ -237,6 +237,20 @@ in
             doCheck = false;
             propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [ python-prev.pytest ];
           });
+
+          # pytest-retry (pulled in by debugpy -> VS Code's ms-python
+          # extension -> home-manager) failed its own
+          # test_configuration_by_pyproject_toml_file: `assert 0.93 < 0.7`,
+          # a wall-clock timing assertion on its own retry-delay machinery.
+          # Flaky by construction under sustained CPU load from this host's
+          # concurrent from-scratch rebuild (44/48 other tests passed, and
+          # pytest-retry's own built-in retry already gave it a second
+          # attempt before failing for good). Deselect just that one test
+          # via pytestCheckHook's disabledTests, not doCheck=false, to keep
+          # the rest of the suite's coverage.
+          pytest-retry = python-prev.pytest-retry.overridePythonAttrs (old: {
+            disabledTests = (old.disabledTests or [ ]) ++ [ "test_configuration_by_pyproject_toml_file" ];
+          });
         })
       ];
     };
