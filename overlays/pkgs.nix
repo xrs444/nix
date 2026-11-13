@@ -378,6 +378,22 @@ in
   # zonenow.tab) to nixos-26.05 — check with `just check-overlay-cache`.
   tzdata = prev.tzdata.overrideAttrs (_: { doCheck = false; });
 
+  # Haskell's network-3.2.8.0 (pulled in by shellcheck/pandoc/cabal-install
+  # via haskellPackages, confirmed identical failure on both xcog1 and
+  # xlt1-t) fails one hspec example out of 85: SocketSpec's "connect fails
+  # to connect and throws an IOException" expects a specific connection
+  # failure that doesn't manifest the same way inside nix's sandboxed
+  # build network environment. No equivalent to pytestCheckHook's
+  # disabledTests exists for this cabal/hspec test runner, so (matching
+  # the torch/torchvision/django_5 precedent above for suites that can't
+  # be scoped to just the flaky case) disable the whole suite rather than
+  # patch around one sandbox-environment-dependent networking assertion.
+  haskellPackages = prev.haskellPackages.override {
+    overrides = hfinal: hprev: {
+      network = final.haskell.lib.dontCheck hprev.network;
+    };
+  };
+
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
   #
