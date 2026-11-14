@@ -54,9 +54,10 @@ in
       # Kanidm requires sequential minor-version upgrades (no skipping,
       # e.g. 1.10 -> 1.12 directly is unsupported) — see
       # https://kanidm.github.io/kanidm/stable/server_updates.html.
-      # Step 1 of 2: 1.10.5 -> 1.11.2 (kanidm_1_11). Bump again to
-      # kanidm_1_12 (1.12.0) once this hop is deployed and verified.
-      services.kanidm.package = lib.mkForce pkgs.kanidm_1_11;
+      # Step 2 of 2: 1.11.2 -> 1.12.0 (kanidm_1_12), the latest version
+      # packaged in nixpkgs-unstable. Step 1 (1.10.5 -> 1.11.2) was
+      # deployed and verified across all three hosts (commit 9eb1d4cb).
+      services.kanidm.package = lib.mkForce pkgs.kanidm_1_12;
     })
 
     # Primary server configuration (xsvr1)
@@ -224,9 +225,9 @@ in
         mode = "0400";
       };
 
-      # Step 1 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
+      # Step 2 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
       # comment on the replica's package override above.
-      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_11;
+      services.kanidm.package = lib.mkForce pkgs.kanidmWithSecretProvisioning_1_12;
       services.kanidm = {
         server.enable = true;
         unix.enable = lib.mkForce true;

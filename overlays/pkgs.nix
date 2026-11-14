@@ -387,6 +387,31 @@ in
     then prev.tzdata.overrideAttrs (_: { doCheck = false; })
     else prev.tzdata;
 
+  # protobuf-cpp's MapImplTest.RandomOrdering: asserts two map instances
+  # iterate in *different* orders across separate randomized hash seeds --
+  # a statistical property, not a correctness one, and inherently flaky
+  # under nix's sandboxed darwin build environment where seed entropy can
+  # be thin (only ever observed failing on xcog1/xlt1-t, never reported on
+  # linux). Hits every protobuf version pulled in anywhere in the closure:
+  # the generic `protobuf` (34.1, via arrow-cpp -> pyarrow on xcog1) and
+  # the separately-pinned `protobuf_33` (33.6, via bind -> protobuf-c on
+  # both hosts) both carry the same test, originally fixed xcog1-only on
+  # just `protobuf` before `protobuf_33` surfaced identically on xlt1-t.
+  # Exclude via GTEST_FILTER rather than doCheck=false, to keep the rest of
+  # protobuf's test coverage. Scoped to isDarwin matching where it's
+  # actually been observed (bug-1149's lesson: don't apply a
+  # platform-specific justification unconditionally).
+  protobuf = if final.stdenv.hostPlatform.isDarwin
+    then prev.protobuf.overrideAttrs (old: {
+      env = (old.env or { }) // { GTEST_FILTER = "*-MapImplTest.RandomOrdering"; };
+    })
+    else prev.protobuf;
+  protobuf_33 = if final.stdenv.hostPlatform.isDarwin
+    then prev.protobuf_33.overrideAttrs (old: {
+      env = (old.env or { }) // { GTEST_FILTER = "*-MapImplTest.RandomOrdering"; };
+    })
+    else prev.protobuf_33;
+
   # Haskell's network-3.2.8.0 (pulled in by shellcheck/pandoc/cabal-install
   # via haskellPackages, confirmed identical failure on both xcog1 and
   # xlt1-t) fails one hspec example out of 85: SocketSpec's "connect fails
