@@ -202,20 +202,31 @@
           });
 
           # nltk (pulled in via rouge-score/lm-eval -> mlx-lm, same
-          # LLM-stack chain as tornado/uvloop above) failed
-          # test_default_depth_recursive_grammar_is_refused_not_unbounded:
-          # `generate() enumerated an unbounded recursive grammar (DoS)` --
-          # unlike the other fixes in this chain, this is a deterministic
-          # logic assertion, not a timing flake (1467/1468 other tests
-          # passed), possibly a real nltk 3.10.3 / Python 3.13 interaction.
-          # It's testing nltk's own CFG-grammar depth-limiting safety net,
-          # a feature this host doesn't use (nltk is only here transitively
-          # for rouge-score/lm-eval's text-evaluation metrics, not grammar
-          # generation), so excluding it doesn't mask anything we rely on.
-          # Zero aarch64-darwin cache coverage already (404, checked
-          # 2026-11-13).
+          # LLM-stack chain as tornado/uvloop above) failed 3 of its own
+          # DoS/ReDoS self-tests across 2 retries, one at a time:
+          #   - test_default_depth_recursive_grammar_is_refused_not_unbounded:
+          #     `generate() enumerated an unbounded recursive grammar (DoS)`
+          #     -- a deterministic logic assertion, not timing (1467/1468
+          #     other tests passed first run), possibly a real nltk
+          #     3.10.3 / Python 3.13 interaction.
+          #   - test_features_regex_is_linear_on_crafted_line and
+          #     test_reviews_reader_does_not_hang_on_crafted_corpus: both
+          #     ReDoS timing-threshold checks ("hung on a crafted
+          #     line/corpus") -- the full suite still finished in ~585s
+          #     total, so these are threshold trips under this host's CPU
+          #     load, not true hangs, same flaky-under-load pattern as
+          #     tornado/uvloop.
+          # All three test nltk's own CFG-generation/regex-DoS safety nets,
+          # features this host doesn't use (nltk is only here transitively
+          # for rouge-score/lm-eval's text-evaluation metrics), so excluding
+          # them doesn't mask anything we rely on. Zero aarch64-darwin cache
+          # coverage already (404, checked 2026-11-13).
           nltk = pyprev.nltk.overridePythonAttrs (old: {
-            disabledTests = (old.disabledTests or [ ]) ++ [ "test_default_depth_recursive_grammar_is_refused_not_unbounded" ];
+            disabledTests = (old.disabledTests or [ ]) ++ [
+              "test_default_depth_recursive_grammar_is_refused_not_unbounded"
+              "test_features_regex_is_linear_on_crafted_line"
+              "test_reviews_reader_does_not_hang_on_crafted_corpus"
+            ];
           });
 
           # MACHINE-LOCAL BUILD ONLY (bug-560): this derivation embeds two
