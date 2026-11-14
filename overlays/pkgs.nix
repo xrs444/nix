@@ -376,7 +376,16 @@ in
   # (pytorch, scikit-learn, etc.) already building from source on this host
   # regardless. Safe to drop once nixpkgs backports 2026f (fresher
   # zonenow.tab) to nixos-26.05 — check with `just check-overlay-cache`.
-  tzdata = prev.tzdata.overrideAttrs (_: { doCheck = false; });
+  # Scoped to isDarwin: the narinfo check above was only ever run for
+  # aarch64-darwin. Applying this unconditionally pushed tzdata's hash off
+  # of cache.nixos.org on x86_64-linux/aarch64-linux too (where vanilla
+  # tzdata-2026e IS cached), and since nearly everything depends on tzdata
+  # at build time, that cascaded into a from-source rebuild of its entire
+  # reverse-dependency cone fleet-wide (`just check-overlay-cache` flagged
+  # 36 regressions on aarch64-linux alone — 2026-11-13).
+  tzdata = if final.stdenv.hostPlatform.isDarwin
+    then prev.tzdata.overrideAttrs (_: { doCheck = false; })
+    else prev.tzdata;
 
   # Haskell's network-3.2.8.0 (pulled in by shellcheck/pandoc/cabal-install
   # via haskellPackages, confirmed identical failure on both xcog1 and
