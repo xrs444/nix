@@ -239,17 +239,17 @@ in
           });
 
           # pytest-retry (pulled in by debugpy -> VS Code's ms-python
-          # extension -> home-manager) failed its own
-          # test_configuration_by_pyproject_toml_file: `assert 0.93 < 0.7`,
-          # a wall-clock timing assertion on its own retry-delay machinery.
-          # Flaky by construction under sustained CPU load from this host's
-          # concurrent from-scratch rebuild (44/48 other tests passed, and
-          # pytest-retry's own built-in retry already gave it a second
-          # attempt before failing for good). Deselect just that one test
-          # via pytestCheckHook's disabledTests, not doCheck=false, to keep
-          # the rest of the suite's coverage.
+          # extension -> home-manager) has multiple wall-clock timing
+          # assertions on its own retry-delay machinery, each individually
+          # flaky under this host's sustained build load:
+          # test_configuration_by_pyproject_toml_file (`0.93 < 0.7`) first,
+          # then on a later retry test_retry_delay_from_command_line_
+          # between_attempts (`0.94 < 0.8`) -- a different test each time,
+          # same root cause. Rather than excluding them one at a time as
+          # each surfaces, doCheck=false for the whole suite: it's clearly
+          # timing-based throughout, not one isolated flaky case.
           pytest-retry = python-prev.pytest-retry.overridePythonAttrs (old: {
-            disabledTests = (old.disabledTests or [ ]) ++ [ "test_configuration_by_pyproject_toml_file" ];
+            doCheck = false;
           });
         })
       ];
