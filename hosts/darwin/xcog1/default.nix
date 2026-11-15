@@ -172,17 +172,6 @@
             disabledTests = (old.disabledTests or [ ]) ++ [ "test_linear_performance" ];
           });
 
-          # uvloop (pulled in via anyio -> fastapi/httpx -> litellm-wrapped,
-          # same LLM-stack chain as tornado above) failed
-          # TestBaseUV::test_call_at by a razor-thin margin:
-          # `0.07658975012600422 not less than 0.07` -- a wall-clock timing
-          # assertion, flaky under this host's sustained CPU load (404/405
-          # other tests passed). Zero aarch64-darwin cache coverage already
-          # (404, checked 2026-11-13). Deselect via disabledTests rather
-          # than doCheck=false to keep the rest of the suite's coverage.
-          uvloop = pyprev.uvloop.overridePythonAttrs (old: {
-            disabledTests = (old.disabledTests or [ ]) ++ [ "test_call_at" ];
-          });
 
           # nltk (pulled in via rouge-score/lm-eval -> mlx-lm, same
           # LLM-stack chain as tornado/uvloop above) failed 3 of its own
