@@ -486,6 +486,23 @@ in
       uvloop = python-prev.uvloop.overridePythonAttrs (old: {
         disabledTests = (old.disabledTests or [ ]) ++ [ "test_call_at" ];
       });
+
+      # anyio (pulled in via pipx's test deps and fastapi/httpx on both
+      # hosts) already has a nixpkgs-upstream "these tests become flaky
+      # under heavy load" disabledTests section (test_asyncio_run_sync_called
+      # etc.) -- these 3 are the same category, just not yet added there:
+      # test_autouse_async_fixture and test_plugin_loads_with_filterwarnings_error
+      # are explicit pytest-timeout failures (>20s, in test_pytest_plugin.py's
+      # subprocess-spawning meta-tests), and test_hypothesis_module_mark
+      # raised a PytestUnraisableExceptionWarning from a Popen.__del__
+      # during cleanup under load. 2846/2849 other tests passed.
+      anyio = python-prev.anyio.overridePythonAttrs (old: {
+        disabledTests = (old.disabledTests or [ ]) ++ [
+          "test_autouse_async_fixture"
+          "test_plugin_loads_with_filterwarnings_error"
+          "test_hypothesis_module_mark"
+        ];
+      });
     })
   ];
 
