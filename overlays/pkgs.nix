@@ -475,6 +475,17 @@ in
           "test_partial_authed_open_download"
         ];
       });
+
+      # uvloop (pulled in via pipx's own test deps -> pytest-subprocess ->
+      # anyio on xlt1-t, and separately via anyio -> fastapi/httpx ->
+      # litellm-wrapped on xcog1 -- originally fixed xcog1-only before
+      # surfacing identically on xlt1-t) fails TestBaseUV::test_call_at by
+      # a razor-thin margin each time (0.0766s, then 0.0721s, against a
+      # 0.07s bound) -- a wall-clock timing assertion flaky under this
+      # host's sustained build load (404/405 other tests passed).
+      uvloop = python-prev.uvloop.overridePythonAttrs (old: {
+        disabledTests = (old.disabledTests or [ ]) ++ [ "test_call_at" ];
+      });
     })
   ];
 
