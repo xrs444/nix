@@ -438,6 +438,26 @@ in
     };
   };
 
+  # nodejs-slim_22's own test-net-autoselectfamily makes real outbound
+  # connections to example.org's actual IPv4/IPv6 addresses and asserts a
+  # specific ordered list of which addresses get tried during Happy-
+  # Eyeballs dual-stack connection racing -- inherently unreliable during a
+  # sandboxed build (depends on example.org's current DNS answers and
+  # whatever's filtering outbound traffic at the time, not just this host's
+  # load). Already uncached for this reason category (nixpkgs' own
+  # nodejs.nix already excludes a long list of other sandbox-unreliable
+  # tests via CI_SKIP_TESTS, just not this one yet). Append to the
+  # existing CI_SKIP_TESTS checkFlags entry rather than replacing it, to
+  # keep every test nixpkgs already skips there.
+  nodejs-slim_22 = prev.nodejs-slim_22.overrideAttrs (old: {
+    checkFlags = map (
+      flag:
+        if final.lib.hasPrefix "CI_SKIP_TESTS=" flag
+        then flag + ",test-net-autoselectfamily"
+        else flag
+    ) old.checkFlags;
+  });
+
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
   #
