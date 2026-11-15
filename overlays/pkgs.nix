@@ -458,6 +458,26 @@ in
     ) old.checkFlags;
   });
 
+  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+    (python-final: python-prev: {
+      # pypiserver is pipx's own test fixture (pipx -> home-manager on both
+      # hosts), not pipx itself. Its "authed" test server fixture
+      # (partial_authed_server) timed out becoming ready within these 3
+      # tests -- nixpkgs' own disabledTests already excludes
+      # test_pip_install_authed_succeeds/open_succeeds for a related
+      # "fails to install" symptom, so this darwin sandbox's authed-server
+      # startup is evidently unreliable more broadly than nixpkgs assumed.
+      # 484/489 other tests passed.
+      pypiserver = python-prev.pypiserver.overridePythonAttrs (old: {
+        disabledTests = (old.disabledTests or [ ]) ++ [
+          "test_twine_upload[partial_authed_server-authed_pypirc]"
+          "test_twine_register[partial_authed_server-authed_pypirc]"
+          "test_partial_authed_open_download"
+        ];
+      });
+    })
+  ];
+
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
   #

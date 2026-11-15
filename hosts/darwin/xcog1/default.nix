@@ -552,27 +552,56 @@
     # mlx-991-through-1106 history). Reuses the SAME LiteLLM model name
     # (`qwen3-30b-a3b`) the retired mlx entry used, so this is a pure
     # backend swap — hermes-t/s/k's `model.default: qwen3-30b-a3b` needed no
-    # changes at all. contextSize below (70000) matches what was actually
-    # live-tested, not the model's full advertised window (262144 per the
-    # base model's own config.json) — see contextSize's own option doc for
-    # why that distinction matters; don't raise it without live-testing the
-    # new value first, the same way this one was.
+    # changes at all.
     #
-    # Validated end-to-end before promotion: trivial/~9.5K/~44.2K/~61.7K-
-    # token prompts all completed cleanly (HTTP 200, server healthy
-    # afterward) through BOTH llama-server's raw /completion endpoint AND
-    # the real LiteLLM /v1/chat/completions path with real master-key auth —
-    # the exact request shape hermes-t/s/k actually use. The ~44K/~62K sizes
-    # are precisely where mlx_lm.server used to crash (bug-991 fifth/sixth
-    # follow-ups: solo crashes at 44099/44100 and 62983/62984).
+    # contextSize/parallel reconfirmed from scratch 2026-11-14 (bug-1154
+    # follow-up) — the previous 70000/parallel=1 pair was set during the
+    # mlx crash-safety investigation and never revisited once llama.cpp's
+    # structurally different KV-cache (fixed-upfront, not grow-during-
+    # prefill) removed the reason parallel=1 was forced in the first place.
+    # Found live that single-slot serialization has its own real cost: a
+    # single large prompt occupies the lone slot for minutes with every
+    # other caller (hermes-t/s/k are three separate identities sharing this
+    # one backend) queued behind it and zero priority — confirmed via the
+    # new llamacpp:requests_deferred metric (10 requests deferred at once,
+    # live, 2026-11-14).
+    #
+    # KV-cache cost, derived fresh from Qwen3-30B-A3B-Instruct-2507's own
+    # published config.json (num_hidden_layers=48, num_key_value_heads=4,
+    # head_dim=128, F16 cache — not reused from any mlx-era note): 2(K+V) x
+    # 48 x 4 x 128 x 2 bytes = 98304 bytes = 96 KiB per token of context,
+    # and this scales with contextSize TOTAL, independent of how `parallel`
+    # divides it — splitting one N-token buffer into two N/2 slots costs
+    # the same total KV-cache memory as one N-token slot. hermes-agent
+    # itself enforces a hard startup-time floor of 64,000 on its own
+    # `model.context_length` (independent of what this backend can
+    # actually deliver — see the hermes-t/s/k ConfigMaps' own comments) —
+    # chose parallel=2 at contextSize=128000 (64000/slot) specifically to
+    # give every slot that real 64K floor while adding the concurrency
+    # single-slot serialization was missing.
+    #
+    # Live-confirmed BEFORE this change (2026-11-14): 48GiB total RAM,
+    # llama-server RSS 30.26GiB at the old 70000/parallel=1 config under
+    # real traffic (weights 17.28GiB + ~13GiB of KV-cache/prompt-cache/
+    # compute-buffer overhead), only ~9.16GiB free system-wide — tighter
+    # than old assumptions suggested, and qwen3-14b's lazy-load alone
+    # (~7.8GiB, see `models.qwen3-14b.lazy`'s own doc) can claim most of
+    # that if triggered concurrently. The 128000-total KV-cache budget
+    # here is roughly double the old 70000 one — NOT YET live-tested
+    # under real concurrent 2-slot load the way the original mlx->llama.cpp
+    # migration was validated at specific token counts before promotion.
+    # Watch real RSS and the Xcog1LlamaCppQueueBacklog/node_exporter
+    # numbers after deploying this, and revisit if headroom proves too
+    # tight in practice (candidates if so: drop back to parallel=1 at a
+    # single 64K+ slot, or free up qwen3-14b's coexistence footprint).
     llamaCppModels = {
       qwen3-30b-a3b = {
         repo = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF";
         file = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf";
         revision = "eea7b2be5805a5f151f8847ede8e5f9a9284bf77";
         port = 8102;
-        contextSize = 70000;
-        parallel = 1;
+        contextSize = 128000;
+        parallel = 2;
       };
     };
 
