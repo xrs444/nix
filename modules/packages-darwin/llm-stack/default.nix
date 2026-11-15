@@ -459,7 +459,20 @@ let
                 ${cfg.hfPackage}/bin/hf download ${m.repo} ${m.file} --revision ${m.revision} --local-dir "$dir"
                 printf '%s' "${m.revision}" > "$dir/.revision"
               fi
-              exec ${cfg.llamaCppPackage}/bin/llama-server -m "$file" --host 127.0.0.1 --port ${toString m.port} -c ${toString m.contextSize} -ngl ${toString m.gpuLayers} --parallel ${toString m.parallel} ${extraArgs}
+              # --metrics (bug-1154 follow-up, 2026-11-14): exposes
+              # llama-server's own Prometheus-format /metrics endpoint —
+              # disabled by default upstream. Loopback-only (--host
+              # 127.0.0.1), so this adds no new LAN-reachable surface; the
+              # metricsScrapeScript daemon below reads it locally and
+              # republishes via node_exporter's textfile collector, which IS
+              # already LAN-scraped. Added specifically for
+              # llamacpp:requests_processing/requests_deferred — found live
+              # that a single large prompt can occupy the lone --parallel
+              # slot for minutes with every other caller queued behind it
+              # and zero visibility from outside (a busy queue and an
+              # actually-wedged daemon looked identical from the monitoring
+              # side until this).
+              exec ${cfg.llamaCppPackage}/bin/llama-server -m "$file" --host 127.0.0.1 --port ${toString m.port} -c ${toString m.contextSize} -ngl ${toString m.gpuLayers} --parallel ${toString m.parallel} --metrics ${extraArgs}
             ''}"
           ];
           WorkingDirectory = "/";
@@ -475,6 +488,29 @@ let
         };
       };
   };
+
+  # Periodic scraper (bug-1154 follow-up, 2026-11-14): pulls each
+  # llama-server's loopback-only /metrics into node_exporter's textfile
+  # collector. One shared script/daemon for all llamaCppModels rather than
+  # one per model — there's no per-model tuning here, just a repo/port loop.
+  # `curl -f` + a temp-file-then-rename means a failed scrape (daemon
+  # mid-restart) leaves the last-good file in place rather than clobbering
+  # it with an error body; node_exporter's own `node_textfile_mtime_seconds`
+  # then makes a stuck/stale scrape independently visible too.
+  metricsScrapeScript = pkgs.writeShellScript "llm-stack-metrics-scrape" (
+    ''
+      # Deliberately no -e (unlike every other script in this module): one
+      # model's curl failing should not stop the rest from being scraped.
+      set -uo pipefail
+    ''
+    + lib.concatStrings (
+      lib.mapAttrsToList (name: m: ''
+        ${pkgs.curl}/bin/curl -sf -m 5 http://127.0.0.1:${toString m.port}/metrics \
+          -o ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom.tmp \
+          && /bin/mv ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom.tmp ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom
+      '') cfg.llamaCppModels
+    )
+  );
 in
 
 {
@@ -994,6 +1030,20 @@ in
         type = types.port;
         default = 9100;
       };
+      textfileCollectorDir = mkOption {
+        type = types.str;
+        default = "/var/lib/llm-stack/textfile-collector";
+        description = ''
+          node_exporter's --collector.textfile.directory (bug-1154
+          follow-up, 2026-11-14): republishes metrics from loopback-only
+          daemons (llama-server's own --metrics endpoint, which never gets
+          a LAN-reachable port of its own) onto node_exporter's own,
+          already LAN-scraped /metrics endpoint, via the periodic scrape
+          script in launchd.daemons below. No new scrape target/
+          ServiceMonitor needed on the Prometheus side — node_exporter's
+          existing target just gains more series.
+        '';
+      };
     };
   };
 
@@ -1078,6 +1128,9 @@ in
       /bin/mkdir -p /var/lib/llm-stack
       /usr/sbin/chown root:wheel /var/lib/llm-stack
       /bin/chmod 755 /var/lib/llm-stack
+      /bin/mkdir -p ${cfg.textfileCollectorDir}
+      /usr/sbin/chown root:wheel ${cfg.textfileCollectorDir}
+      /bin/chmod 755 ${cfg.textfileCollectorDir}
     ''
     + lib.optionalString (cfg.modelsVolume == null) ''
       /bin/mkdir -p ${cfg.modelsDir}
@@ -1228,13 +1281,36 @@ in
             ProgramArguments = [
               "/bin/sh"
               "-c"
-              "exec ${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort}"
+              "exec ${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort} --collector.textfile.directory=${cfg.textfileCollectorDir}"
             ];
             WorkingDirectory = "/";
             KeepAlive = true;
             RunAtLoad = true;
             StandardErrorPath = "/var/log/llm-stack/node-exporter.stderr";
             StandardOutPath = "/var/log/llm-stack/node-exporter.stdout";
+          };
+        };
+      })
+
+      # Periodic llama.cpp /metrics -> textfile-collector scrape (bug-1154
+      # follow-up, 2026-11-14) — see metricsScrapeScript's own comment above
+      # for why this is one shared script/daemon rather than per-model.
+      # StartInterval, not KeepAlive: this is meant to run, exit, and run
+      # again, not stay resident.
+      (lib.mkIf (cfg.exporters.enable && cfg.llamaCppModels != { }) {
+        llm-stack-metrics-scrape = {
+          serviceConfig = {
+            Label = "net.xrs444.llm-stack-metrics-scrape";
+            ProgramArguments = [
+              "/bin/sh"
+              "-c"
+              "exec ${metricsScrapeScript}"
+            ];
+            WorkingDirectory = "/";
+            RunAtLoad = true;
+            StartInterval = 15;
+            StandardErrorPath = "/var/log/llm-stack/metrics-scrape.stderr";
+            StandardOutPath = "/var/log/llm-stack/metrics-scrape.stdout";
           };
         };
       })
