@@ -506,8 +506,8 @@ let
     + lib.concatStrings (
       lib.mapAttrsToList (name: m: ''
         ${pkgs.curl}/bin/curl -sf -m 5 http://127.0.0.1:${toString m.port}/metrics \
-          -o ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom.tmp \
-          && /bin/mv ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom.tmp ${cfg.textfileCollectorDir}/llama-cpp-${name}.prom
+          -o ${cfg.exporters.textfileCollectorDir}/llama-cpp-${name}.prom.tmp \
+          && /bin/mv ${cfg.exporters.textfileCollectorDir}/llama-cpp-${name}.prom.tmp ${cfg.exporters.textfileCollectorDir}/llama-cpp-${name}.prom
       '') cfg.llamaCppModels
     )
   );
@@ -1128,9 +1128,9 @@ in
       /bin/mkdir -p /var/lib/llm-stack
       /usr/sbin/chown root:wheel /var/lib/llm-stack
       /bin/chmod 755 /var/lib/llm-stack
-      /bin/mkdir -p ${cfg.textfileCollectorDir}
-      /usr/sbin/chown root:wheel ${cfg.textfileCollectorDir}
-      /bin/chmod 755 ${cfg.textfileCollectorDir}
+      /bin/mkdir -p ${cfg.exporters.textfileCollectorDir}
+      /usr/sbin/chown root:wheel ${cfg.exporters.textfileCollectorDir}
+      /bin/chmod 755 ${cfg.exporters.textfileCollectorDir}
     ''
     + lib.optionalString (cfg.modelsVolume == null) ''
       /bin/mkdir -p ${cfg.modelsDir}
@@ -1281,7 +1281,7 @@ in
             ProgramArguments = [
               "/bin/sh"
               "-c"
-              "exec ${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort} --collector.textfile.directory=${cfg.textfileCollectorDir}"
+              "exec ${pkgs.prometheus-node-exporter}/bin/node_exporter --web.listen-address=:${toString cfg.exporters.nodeExporterPort} --collector.textfile.directory=${cfg.exporters.textfileCollectorDir}"
             ];
             WorkingDirectory = "/";
             KeepAlive = true;
