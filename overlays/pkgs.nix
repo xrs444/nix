@@ -304,12 +304,17 @@ in
   # the rustc/LLVM concern below) are ALL cached at the current pin (narinfo
   # 200); ours were not (404). django alone feeds python3.13-ansible and
   # other home.packages tools, so this was a meaningful chunk of every
-  # aarch64 host's build. If any of these three fail again — the django
-  # timing-flake, pygobject3's GIR subproject build, or curl-cffi dragging
-  # in rustc-from-source on aarch64 — re-check with `just
-  # check-overlay-cache` before restoring; each entry below documents
-  # exactly what broke and how it was fixed, so restoring one in isolation
-  # (rather than the whole block) is straightforward.
+  # aarch64 host's build.
+  #
+  # curl-cffi UN-quarantined 2026-11-15: hit the exact rustc/llvm-from-
+  # source failure this entry warned about, live on xcog1 (llvm-21.1.8
+  # SIGKILL'd mid-build, matches open upstream nixpkgs#511010) — confirmed
+  # via narinfo that the vanilla chain is no longer cached the way it was
+  # in September. Restored in isolation, in the active
+  # pythonPackagesExtensions block below (not here), per this comment's
+  # own guidance. django and pygobject3 remain quarantined below — neither
+  # was implicated in this incident, re-check `just check-overlay-cache`
+  # before restoring either if they fail again too.
   #
   # Original comment (django): django 5.2.x: bash_completion test calls
   # external bash completion infrastructure that doesn't exist in the Nix
@@ -353,7 +358,8 @@ in
   #         mesonFlags = (old.mesonFlags or []) ++ [ "-Dtests=false" ];
   #       })
   #       else pyprev.pygobject3;
-  #     curl-cffi = pyprev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
+  #     # curl-cffi moved out and restored live — see the active
+  #     # pythonPackagesExtensions block below (2026-11-15).
   #   })
   # ];
 
@@ -503,6 +509,29 @@ in
           "test_hypothesis_module_mark"
         ];
       });
+
+      # curl-cffi: un-quarantined 2026-11-15 (see the full QUARANTINED block
+      # above, bug-940, for the original 2026-08-24 diagnosis and the
+      # 2026-09-15 reason it was disabled — restoring just this one entry
+      # in isolation, as that block's own comment anticipated). Hit again
+      # live on xcog1: checkInputs pull in fastapi -> bcrypt -> rustc ->
+      # llvm-21.1.8, and llvm-21.1.8 failed `lit :: xunit-output.py` with
+      # exit 137 (SIGKILL) partway through a from-source build — matches
+      # the OPEN upstream nixpkgs issue #511010 (same test, same platform,
+      # Hydra itself can't reproduce it, consistent with a resource-
+      # contention flake rather than a logic bug). Confirmed via narinfo
+      # (curl 404 on the exact output hash from this build,
+      # 2026-11-15) that this exact llvm-21.1.8 derivation genuinely isn't
+      # substitutable right now, so the chain was actually being built
+      # from source, not just theoretically at risk. doCheck = false drops
+      # curl-cffi's checkInputs (an HTTP client's own test suite spinning
+      # up a FastAPI test server — no runtime need) from the build closure
+      # entirely, removing the rustc/llvm dependency rather than trying to
+      # patch llvm's own flaky self-test. If this starts hurting cache
+      # hits again (vanilla curl-cffi becomes fully cached once more), the
+      # 2026-09-15 quarantine precedent applies: re-check with `just
+      # check-overlay-cache` before deciding whether to re-quarantine.
+      curl-cffi = python-prev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
     })
   ];
 
