@@ -224,38 +224,11 @@ in
   # webkitgtk_4_1 = prev.webkitgtk_4_1.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
   # webkitgtk_6_0 = prev.webkitgtk_6_0.overrideAttrs (_: { ninjaFlags = [ "-j4" ]; });
 
-  # gcr: giscanner/utils.py has an unconditional top-level `import
-  # distutils.cygwinccompiler` (only actually used on Windows/cygwin
-  # cross-builds), which crashes at import time on Python 3.12+ since
-  # distutils was removed from the stdlib. Breaks gcr's from-source build on
-  # aarch64-darwin — confirmed via `curl -sI https://cache.nixos.org/<hash>.narinfo`
-  # returning 404, i.e. no prebuilt binary exists for this platform.
-  #
-  # FIXED 2026-08-10 (bug found while chasing unrelated aarch64-darwin build
-  # flakiness — librsvg/adwaita-icon-theme SIGKILL, django timing-test
-  # failure): this used to patch the SHARED gobject-introspection-unwrapped
-  # attribute directly for all of Darwin, unconditionally — the exact
-  # anti-pattern the aarch64-linux note above warns against, just not
-  # applied to itself. Confirmed via `nix eval` comparison against a vanilla
-  # (zero-overlay) import at the same pinned nixpkgs rev: patching the
-  # shared attribute changed gtk3's own hash (a completely unrelated
-  # package) from the upstream/cached one, meaning gtk3 — and everything
-  # built on it (glib, cairo, pango, gdk-pixbuf, and in turn librsvg,
-  # adwaita-icon-theme, ...) — was being forced to build from source locally
-  # on every Darwin host instead of substituting from cache.nixos.org. That
-  # from-source GNOME/GTK stack build is almost certainly *why* the
-  # librsvg/adwaita-icon-theme SIGKILLs showed up in the first place: Hydra's
-  # own builders don't hit them, only ours did, doing work Hydra had already
-  # done. Scoped now to gcr only, via the same nativeBuildInput-swap pattern
-  # as libnice/gtk-layer-shell/gnome-autoar below — no other Darwin package
-  # is confirmed to need this fix. If a NEW Darwin package hits this same
-  # giscanner crash, give it the same `useGiscannerDistutilsFix prev.<pkg>`
-  # treatment rather than reaching for the shared attr again.
-  gcr = if final.stdenv.hostPlatform.isDarwin
-    then useGiscannerDistutilsFix prev.gcr
-    else prev.gcr;
+  # REMOVED 2026-11-23 (overlay cache review): gcr override dropped — vanilla gcr is cached
+  # (narinfo 200) on aarch64-darwin at the current pin, ours was 404. useGiscannerDistutilsFix
+  # helper above is kept (unused) for re-use if a g-ir-scanner distutils crash resurfaces.
 
-  # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
+    # QUARANTINED 2026-09-15 (bug-940: `just check-overlay-cache` showed
   # vanilla libnice/gtk-layer-shell/gnome-autoar at this pin are all cached
   # (narinfo 200); ours were not (404). Same story as libxkbcommon/
   # tinysparql above: whatever g-ir-scanner distutils crash this addressed,
@@ -363,177 +336,15 @@ in
   #   })
   # ];
 
-  # Fix inetutils format-security compilation errors on macOS
-  inetutils = prev.inetutils.overrideAttrs (oldAttrs: {
-    hardeningDisable = (oldAttrs.hardeningDisable or [ ]) ++ [ "format" ];
-  });
-
-  # tzdata-2026e: checkTarget "check" runs now.ck, whose checknow.awk
-  # compares a live zdump of each zone's current UTC offset against
-  # zonenow.tab's offset snapshot taken at 2026e's 2026-09-30 release. DST
-  # transitions since then make that snapshot stale, so the check fails
-  # deterministically on any from-source build done today (confirmed same
-  # failure on both xcog1 and xlt1-t) — it's a release-time-relative sanity
-  # check, not a defect in the zoneinfo data itself. Confirmed via narinfo
-  # (curl 404 on all 4 outputs against cache.nixos.org, 2026-11-11) that
-  # vanilla tzdata-2026e has zero aarch64-darwin cache coverage already, so
-  # this doesn't push anything out of cache — `nix build
-  # .#darwinConfigurations.xcog1.system --dry-run` shows 371 other packages
-  # (pytorch, scikit-learn, etc.) already building from source on this host
-  # regardless. Safe to drop once nixpkgs backports 2026f (fresher
-  # zonenow.tab) to nixos-26.05 — check with `just check-overlay-cache`.
-  # Scoped to isDarwin: the narinfo check above was only ever run for
-  # aarch64-darwin. Applying this unconditionally pushed tzdata's hash off
-  # of cache.nixos.org on x86_64-linux/aarch64-linux too (where vanilla
-  # tzdata-2026e IS cached), and since nearly everything depends on tzdata
-  # at build time, that cascaded into a from-source rebuild of its entire
-  # reverse-dependency cone fleet-wide (`just check-overlay-cache` flagged
-  # 36 regressions on aarch64-linux alone — 2026-11-13).
-  tzdata = if final.stdenv.hostPlatform.isDarwin
-    then prev.tzdata.overrideAttrs (_: { doCheck = false; })
-    else prev.tzdata;
-
-  # protobuf-cpp's MapImplTest.RandomOrdering: asserts two map instances
-  # iterate in *different* orders across separate randomized hash seeds --
-  # a statistical property, not a correctness one, and inherently flaky
-  # under nix's sandboxed darwin build environment where seed entropy can
-  # be thin (only ever observed failing on xcog1/xlt1-t, never reported on
-  # linux). Hits every protobuf version pulled in anywhere in the closure:
-  # the generic `protobuf` (34.1, via arrow-cpp -> pyarrow on xcog1) and
-  # the separately-pinned `protobuf_33` (33.6, via bind -> protobuf-c on
-  # both hosts) both carry the same test, originally fixed xcog1-only on
-  # just `protobuf` before `protobuf_33` surfaced identically on xlt1-t.
-  # Exclude via GTEST_FILTER rather than doCheck=false, to keep the rest of
-  # protobuf's test coverage. Scoped to isDarwin matching where it's
-  # actually been observed (bug-1149's lesson: don't apply a
-  # platform-specific justification unconditionally).
-  protobuf = if final.stdenv.hostPlatform.isDarwin
-    then prev.protobuf.overrideAttrs (old: {
-      env = (old.env or { }) // { GTEST_FILTER = "*-MapImplTest.RandomOrdering"; };
-    })
-    else prev.protobuf;
-  protobuf_33 = if final.stdenv.hostPlatform.isDarwin
-    then prev.protobuf_33.overrideAttrs (old: {
-      env = (old.env or { }) // { GTEST_FILTER = "*-MapImplTest.RandomOrdering"; };
-    })
-    else prev.protobuf_33;
-
-  # Haskell's network-3.2.8.0 (pulled in by shellcheck/pandoc/cabal-install
-  # via haskellPackages, confirmed identical failure on both xcog1 and
-  # xlt1-t) fails one hspec example out of 85: SocketSpec's "connect fails
-  # to connect and throws an IOException" expects a specific connection
-  # failure that doesn't manifest the same way inside nix's sandboxed
-  # build network environment. No equivalent to pytestCheckHook's
-  # disabledTests exists for this cabal/hspec test runner, so (matching
-  # the torch/torchvision/django_5 precedent above for suites that can't
-  # be scoped to just the flaky case) disable the whole suite rather than
-  # patch around one sandbox-environment-dependent networking assertion.
-  # tls-2.1.8 (same shellcheck/pandoc/cabal-install -> haskellPackages
-  # chain as network above) fails 2 of 38 QuickCheck property-based
-  # handshake examples ("can receive client authentication failure",
-  # "can handshake with TLS 1.3 0RTT") -- each only falsifiable after
-  # 50-75 random trials with a randomized seed, i.e. edge cases found by
-  # property fuzzing, not a fixed deterministic assertion. Same
-  # dontCheck-the-whole-suite treatment as network: no disabledTests
-  # equivalent for this hspec/QuickCheck runner to scope to just those
-  # two properties.
-  haskellPackages = prev.haskellPackages.override {
-    overrides = hfinal: hprev: {
-      network = final.haskell.lib.dontCheck hprev.network;
-      tls = final.haskell.lib.dontCheck hprev.tls;
-    };
-  };
-
-  # nodejs-slim_22's own test-net-autoselectfamily makes real outbound
-  # connections to example.org's actual IPv4/IPv6 addresses and asserts a
-  # specific ordered list of which addresses get tried during Happy-
-  # Eyeballs dual-stack connection racing -- inherently unreliable during a
-  # sandboxed build (depends on example.org's current DNS answers and
-  # whatever's filtering outbound traffic at the time, not just this host's
-  # load). Already uncached for this reason category (nixpkgs' own
-  # nodejs.nix already excludes a long list of other sandbox-unreliable
-  # tests via CI_SKIP_TESTS, just not this one yet). Append to the
-  # existing CI_SKIP_TESTS checkFlags entry rather than replacing it, to
-  # keep every test nixpkgs already skips there.
-  nodejs-slim_22 = prev.nodejs-slim_22.overrideAttrs (old: {
-    checkFlags = map (
-      flag:
-        if final.lib.hasPrefix "CI_SKIP_TESTS=" flag
-        then flag + ",test-net-autoselectfamily"
-        else flag
-    ) old.checkFlags;
-  });
-
-  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-    (python-final: python-prev: {
-      # pypiserver is pipx's own test fixture (pipx -> home-manager on both
-      # hosts), not pipx itself. Its "authed" test server fixture
-      # (partial_authed_server) timed out becoming ready within these 3
-      # tests -- nixpkgs' own disabledTests already excludes
-      # test_pip_install_authed_succeeds/open_succeeds for a related
-      # "fails to install" symptom, so this darwin sandbox's authed-server
-      # startup is evidently unreliable more broadly than nixpkgs assumed.
-      # 484/489 other tests passed.
-      pypiserver = python-prev.pypiserver.overridePythonAttrs (old: {
-        disabledTests = (old.disabledTests or [ ]) ++ [
-          "test_twine_upload[partial_authed_server-authed_pypirc]"
-          "test_twine_register[partial_authed_server-authed_pypirc]"
-          "test_partial_authed_open_download"
-        ];
-      });
-
-      # uvloop (pulled in via pipx's own test deps -> pytest-subprocess ->
-      # anyio on xlt1-t, and separately via anyio -> fastapi/httpx ->
-      # litellm-wrapped on xcog1 -- originally fixed xcog1-only before
-      # surfacing identically on xlt1-t) fails TestBaseUV::test_call_at by
-      # a razor-thin margin each time (0.0766s, then 0.0721s, against a
-      # 0.07s bound) -- a wall-clock timing assertion flaky under this
-      # host's sustained build load (404/405 other tests passed).
-      uvloop = python-prev.uvloop.overridePythonAttrs (old: {
-        disabledTests = (old.disabledTests or [ ]) ++ [ "test_call_at" ];
-      });
-
-      # anyio (pulled in via pipx's test deps and fastapi/httpx on both
-      # hosts) already has a nixpkgs-upstream "these tests become flaky
-      # under heavy load" disabledTests section (test_asyncio_run_sync_called
-      # etc.) -- these 3 are the same category, just not yet added there:
-      # test_autouse_async_fixture and test_plugin_loads_with_filterwarnings_error
-      # are explicit pytest-timeout failures (>20s, in test_pytest_plugin.py's
-      # subprocess-spawning meta-tests), and test_hypothesis_module_mark
-      # raised a PytestUnraisableExceptionWarning from a Popen.__del__
-      # during cleanup under load. 2846/2849 other tests passed.
-      anyio = python-prev.anyio.overridePythonAttrs (old: {
-        disabledTests = (old.disabledTests or [ ]) ++ [
-          "test_autouse_async_fixture"
-          "test_plugin_loads_with_filterwarnings_error"
-          "test_hypothesis_module_mark"
-        ];
-      });
-
-      # curl-cffi: un-quarantined 2026-11-15 (see the full QUARANTINED block
-      # above, bug-940, for the original 2026-08-24 diagnosis and the
-      # 2026-09-15 reason it was disabled — restoring just this one entry
-      # in isolation, as that block's own comment anticipated). Hit again
-      # live on xcog1: checkInputs pull in fastapi -> bcrypt -> rustc ->
-      # llvm-21.1.8, and llvm-21.1.8 failed `lit :: xunit-output.py` with
-      # exit 137 (SIGKILL) partway through a from-source build — matches
-      # the OPEN upstream nixpkgs issue #511010 (same test, same platform,
-      # Hydra itself can't reproduce it, consistent with a resource-
-      # contention flake rather than a logic bug). Confirmed via narinfo
-      # (curl 404 on the exact output hash from this build,
-      # 2026-11-15) that this exact llvm-21.1.8 derivation genuinely isn't
-      # substitutable right now, so the chain was actually being built
-      # from source, not just theoretically at risk. doCheck = false drops
-      # curl-cffi's checkInputs (an HTTP client's own test suite spinning
-      # up a FastAPI test server — no runtime need) from the build closure
-      # entirely, removing the rustc/llvm dependency rather than trying to
-      # patch llvm's own flaky self-test. If this starts hurting cache
-      # hits again (vanilla curl-cffi becomes fully cached once more), the
-      # 2026-09-15 quarantine precedent applies: re-check with `just
-      # check-overlay-cache` before deciding whether to re-quarantine.
-      curl-cffi = python-prev.curl-cffi.overridePythonAttrs (_: { doCheck = false; });
-    })
-  ];
+  # REMOVED 2026-11-23 (overlay cache review): inetutils (format-security), tzdata
+  # (doCheck=false), protobuf/protobuf_33 (GTEST_FILTER), haskellPackages network/tls
+  # (dontCheck), nodejs-slim_22 (CI_SKIP_TESTS), and pythonPackagesExtensions pypiserver/
+  # uvloop/anyio/curl-cffi overrides. At pin 7dcdd87 vanilla of every one is cached
+  # (narinfo 200) on x86_64-linux, aarch64-linux AND aarch64-darwin, while ours were 404
+  # (several unconditionally on Linux, cascading e.g. anyio/uvloop). Original justifications
+  # are in git history (commit before this one). If a from-source darwin build starts
+  # failing these tests again (e.g. after a flake.lock bump that outruns Hydra), restore
+  # scoped to isDarwin and re-run the cache check first.
 
   # Use unstable version of claude-code to avoid npm lock file issues
   # Stable version 2.1.25 has missing @img/sharp-linuxmusl dependencies
@@ -608,21 +419,6 @@ in
     }
   ).bitwarden-desktop;
 
-  # vikunja-desktop (samantha's HM profile): the pinned nixpkgs' build
-  # bundles electron_41.9.1, which has no cache.nixos.org narinfo (404) —
-  # forces the same from-source Electron/Chromium compile as the
-  # bitwarden_39 case above. nixpkgs-unstable has the same vikunja-desktop
-  # version (2.3.0) built against electron_41.10.3 — identical to the
-  # version bitwarden-desktop already pulls above, confirmed cached
-  # (narinfo 200) — so this also collapses two separate Electron builds
-  # in the closure down to one shared one.
-  vikunja-desktop = (
-    import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-      config.allowUnfree = true;
-    }
-  ).vikunja-desktop;
-
   # obsidian (xrs444/samantha HM profiles, xdt1-t + xlt1-t-vnixos): same
   # electron_41.9.1-vs-41.10.3 cache-miss story as bitwarden-desktop and
   # vikunja-desktop above. The pinned nixpkgs' obsidian-1.13.4 bundles
@@ -638,18 +434,6 @@ in
   # architectures — and it's the exact electron version bitwarden-desktop and
   # vikunja-desktop already pull above, so this collapses onto the same
   # shared Electron build instead of adding a third one to the closure.
-  # element-desktop (xrs444/samantha HM profiles, xdt1-t + xlt2-s): same
-  # cache-miss story as bitwarden-desktop/vikunja-desktop/obsidian above —
-  # the pinned nixpkgs' element-desktop-1.12.24 has no cache.nixos.org
-  # narinfo (404) on x86_64-linux or aarch64-linux, forcing a from-source
-  # Electron/Chromium build. nixpkgs-unstable has the same version
-  # (1.12.24), confirmed cached (narinfo 200) on both architectures.
-  element-desktop = (
-    import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-    }
-  ).element-desktop;
-
   obsidian = (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
@@ -657,29 +441,9 @@ in
     }
   ).obsidian;
 
-  # catppuccin-whiskers (bug-950, 2026-09-16): pulled in transitively via
-  # inputs.catppuccin's theme-generation tooling on hosts with GNOME/GTK
-  # theming enabled (first hit on xlt1-t-vnixos). catppuccin-whiskers-2.9.0
-  # and its cargoHash vendor-staging derivation are both genuinely uncached
-  # at the pinned nixpkgs rev (narinfo 404 on both) — this isn't an overlay
-  # regression, it's the first cargoHash-vendored Rust package this fleet
-  # has needed to build from source on aarch64-linux. The from-source build
-  # itself fails on an unrelated, unfixable-here upstream nixpkgs bug: the
-  # vendor step's Python helper (fetch-cargo-vendor-util, wrapped via
-  # writers.writePython3Bin) is cached (narinfo 200) but was built against
-  # python3-3.14.6-env even though this pkgs set's own pkgs.python3 is
-  # 3.13.14 — the same python3.14 `withPackages` site-packages-bypass defect
-  # documented in the claude-code/ripgrep override above, just hit via a
-  # different call path (`import requests` fails at runtime even though
-  # python3Packages.requests itself evaluates and builds fine). nixpkgs-
-  # unstable's build of the same version (2.9.0) is confirmed cached
-  # (narinfo 200) for aarch64-linux — same "pull from unstable" pattern as
-  # bitwarden-desktop/vikunja-desktop/obsidian/element-desktop above.
-  catppuccin-whiskers = (
-    import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-    }
-  ).catppuccin-whiskers;
+  # REMOVED 2026-11-23 (overlay cache review): vikunja-desktop, element-desktop and
+  # catppuccin-whiskers were pulled from nixpkgs-unstable; stable's builds are now cached
+  # (narinfo 200) on all platforms. NOTE vikunja-desktop thereby moves 2.7.1 -> stable's 2.3.0.
 
   # openscad (2026-11-11): the pinned nixpkgs' `openscad` package is
   # stuck on the 2021.01 stable release — confirmed identical on both

@@ -36,6 +36,14 @@ cd "$REPO_ROOT"
 # derivation hash (doCheck/doInstallCheck/ninjaFlags/override/postPatch/...).
 # Keep in sync by hand with overlays/pkgs.nix and overlays/gjs-fix.nix — this
 # is a known-list check, not a static analysis of the overlay files.
+# 2026-11-23: most entries below are quarantined/removed overrides kept as a
+# regression guard (they should report SAME). Remaining live overrides
+# (nixpkgs-unstable imports: claude-code, bitwarden-desktop, obsidian,
+# openscad, kanidm) differ from vanilla by design — don't add them here, DIFF
+# is expected. Darwin-only removals this date (tzdata, protobuf*, gcr,
+# inetutils, haskellPackages network/tls, nodejs-slim_22, pypiserver, uvloop,
+# anyio, curl-cffi) are checked by running with `aarch64-darwin` only if a
+# darwin host is added to HOST_FOR_SYSTEM.
 ATTRS=(
   gjs
   yt-dlp
