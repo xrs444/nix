@@ -403,43 +403,9 @@ in
     ripgrep = final.ripgrep;
   };
 
-  # bitwarden-desktop: pinned nixpkgs' version (2026.5.0) bundles
-  # electron_39 (39.8.10), which nixpkgs flags as insecure/EOL —
-  # packages flagged insecure are excluded from Hydra's binary cache, so
-  # allowing it via permittedInsecurePackages forces a full from-source
-  # Electron/Chromium compile (~45k build steps, hours) on every host
-  # that uses it. nixpkgs-unstable already has 2026.7.0 on electron_41
-  # (41.10.3), which has no known vulnerabilities and IS cached
-  # (confirmed via narinfo 200) — same "just take it from unstable"
-  # fix as claude-code above, no permittedInsecurePackages needed.
-  bitwarden-desktop = (
-    import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-      config.allowUnfree = true;
-    }
-  ).bitwarden-desktop;
-
-  # obsidian (xrs444/samantha HM profiles, xdt1-t + xlt1-t-vnixos): same
-  # electron_41.9.1-vs-41.10.3 cache-miss story as bitwarden-desktop and
-  # vikunja-desktop above. The pinned nixpkgs' obsidian-1.13.4 bundles
-  # electron-unwrapped-41.9.1, which has no cache.nixos.org narinfo (404) on
-  # EITHER x86_64-linux or aarch64-linux — forcing a full from-source
-  # Electron/Chromium build (~45k steps) on both xdt1-t and xlt1-t-vnixos.
-  # Confirmed via CI run 33703571901: xdt1-t hit the 150m wall-clock backstop
-  # mid-build; xlt1-t-vnixos has the identical dependency chain
-  # (obsidian -> electron-41.9.1 -> electron-unwrapped-41.9.1), just masked by
-  # an unrelated aarch64 build failure earlier in that run.
-  # nixpkgs-unstable has the same obsidian version (1.13.4) built against
-  # electron_41.10.3 (41.10.3), confirmed cached (narinfo 200) on both
-  # architectures — and it's the exact electron version bitwarden-desktop and
-  # vikunja-desktop already pull above, so this collapses onto the same
-  # shared Electron build instead of adding a third one to the closure.
-  obsidian = (
-    import inputs.nixpkgs-unstable {
-      system = final.stdenv.hostPlatform.system;
-      config.allowUnfree = true;
-    }
-  ).obsidian;
+  # REMOVED 2026-11-23 (overlay cache review): bitwarden-desktop and obsidian pulled from
+  # unstable (stable's electron_39 was insecure; electron 41.9.1 was uncached). Stable now
+  # ships both on cached electron 43.8.3 (bitwarden 2026.8.0, obsidian 1.13.7).
 
   # vikunja-desktop (samantha's HM profile): the pinned nixpkgs' build
   # bundles electron_41.9.1, which has no cache.nixos.org narinfo (404) —
