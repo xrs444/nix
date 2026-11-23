@@ -86,10 +86,7 @@ let
     "partialDiff.enableTelemetry" = false;
     "projectManager.git" = {
       baseFolders = [
-        "~/Chainguard"
-        "~/Development"
-        "~/Websites"
-        "~/Zero"
+        "~/Repositories"
       ];
       maxDepthRecursion = 5;
     };
