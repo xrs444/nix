@@ -110,29 +110,20 @@ let
     vscode-marketplace-release.eamodio.gitlens
     vscode-marketplace.codezombiech.gitignore
     vscode-marketplace.alefragnani.project-manager
-    vscode-marketplace.s3anmorrow.openwithkraken
     vscode-marketplace.github.vscode-pull-request-github
-    vscode-marketplace.github.codespaces
     vscode-marketplace.catppuccin.catppuccin-vsc
     vscode-marketplace.catppuccin.catppuccin-vsc-icons
-    vscode-marketplace.pkief.material-product-icons
-    vscode-marketplace.evan-buss.font-switcher
     vscode-marketplace.editorconfig.editorconfig
     vscode-marketplace.streetsidesoftware.code-spell-checker
     vscode-marketplace.aaron-bond.better-comments
     vscode-marketplace.esbenp.prettier-vscode
-    vscode-marketplace.formulahendry.code-runner
     vscode-marketplace.ms-vscode-remote.remote-ssh
     vscode-marketplace.ms-vscode-remote.remote-ssh-edit
     vscode-marketplace.ms-vscode.remote-explorer
-    vscode-marketplace.zainchen.json
     vscode-marketplace.dotjoshjohnson.xml
     vscode-marketplace.tamasfe.even-better-toml
-    vscode-marketplace.mindaro-dev.file-downloader
     vscode-marketplace.moshfeu.compare-folders
-    vscode-marketplace.pdconsec.vscode-print
     vscode-marketplace.ryu1kn.partial-diff
-    vscode-marketplace.ms-vscode.hexeditor
   ];
 
   # Nix / Ansible / Terraform / Kubernetes / systemd tooling.
