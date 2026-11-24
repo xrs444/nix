@@ -415,7 +415,6 @@
           # to static.crates.io and built.
           deploy-rs = inputs.deploy-rs.packages.${system}.default;
 
-          xdt1-t-game = nixible_lib.mkNixibleCli ./hosts/nixable/xdt1-t-game/default.nix;
           xdt2-g = nixible_lib.mkNixibleCli ./hosts/nixable/xdt2-g/default.nix;
           xdt3-r = nixible_lib.mkNixibleCli ./hosts/nixable/xdt3-r/default.nix;
           xdash1 = nixible_lib.mkNixibleCli ./hosts/nixable/xdash1/default.nix;
