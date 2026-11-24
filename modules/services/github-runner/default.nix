@@ -57,6 +57,28 @@ lib.mkIf hasRole {
     };
   };
 
+  # Throttle builds so CI and remote-builder work can't starve the Talos
+  # control-plane VM (v-k8s-xsvr1) that shares this host. Observed 2026-11-23:
+  # host load ~29 on 16 threads with ~40% iowait and zram swap in use, and the
+  # VM's kubelet dropped to NotReady. Weights (not hard caps) so builds still use
+  # idle CPU/IO and only back off under contention; MemoryHigh is a soft limit
+  # that forces reclaim from builds rather than pushing the VM into swap.
+  # Starting values — tune from observed load.
+  systemd.services.nix-daemon.serviceConfig = {
+    CPUWeight = 20;
+    IOWeight = 20;
+    MemoryHigh = "12G";
+    Nice = 10;
+  };
+  systemd.services."github-runner-xsvr1-builder".serviceConfig = {
+    CPUWeight = 20;
+    IOWeight = 20;
+  };
+  nix.settings = {
+    max-jobs = 4;
+    cores = 4;
+  };
+
   services.github-runners.xsvr1-builder = {
     enable = true;
     url = "https://github.com/xrs444/nix";
@@ -85,7 +107,10 @@ lib.mkIf hasRole {
       # Allow writing to the nix binary cache and the runner workDir.
       # NOTE: serviceOverrides.ReadWritePaths replaces the module default (which includes
       # workDir), so both paths must be listed explicitly here.
-      ReadWritePaths = [ "/var/lib/nixcache/cache" "/zfs/nixcache/builds/github-runner" ];
+      ReadWritePaths = [
+        "/var/lib/nixcache/cache"
+        "/zfs/nixcache/builds/github-runner"
+      ];
       # Grant read access to sops secrets (deploy key lives at /run/secrets/deploy_private_key;
       # ProtectHome=true blocks /home/builder/.ssh/ so the key must not live there)
       ReadOnlyPaths = [ "/run/secrets" ];
