@@ -248,7 +248,12 @@ in
           '';
         };
 
-        # Grant ZFS send/snapshot/hold on all source datasets across all jobs
+        # Grant ZFS send/snapshot/hold on all source datasets across all jobs.
+        # destroy (+ mount, which ZFS on Linux requires for destroy) lets syncoid
+        # prune its own syncoid_<host>_<timestamp> sync snapshots after each run.
+        # Without it every run logs "cannot destroy snapshots: permission denied"
+        # and the snapshots accumulate (200k on xsvr1 by 2026-11-23, oldest from
+        # May), which stalls the pool at every hourly replication pass.
         syncoid-zfs-permissions = {
           description = "Grant ZFS send permissions to Syncoid user";
           wantedBy = [ "multi-user.target" ];
@@ -258,10 +263,11 @@ in
             RemainAfterExit = true;
           };
           script = lib.concatMapStringsSep "\n" (dataset: ''
-            ${pkgs.zfs}/bin/zfs allow syncoid send,snapshot,hold ${dataset} || true
+            ${pkgs.zfs}/bin/zfs allow syncoid send,snapshot,hold,destroy,mount ${dataset} || true
           '') allSourceDatasets;
         };
-      } // lib.listToAttrs (lib.mapAttrsToList mkReplicationService cfg.jobs);
+      }
+      // lib.listToAttrs (lib.mapAttrsToList mkReplicationService cfg.jobs);
 
       # One systemd timer per job
       systemd.timers = lib.listToAttrs (lib.mapAttrsToList mkReplicationTimer cfg.jobs);
