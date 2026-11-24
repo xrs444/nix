@@ -24,7 +24,10 @@
   # the key is in place before any replication services start — no ordering
   # dependencies required.
   system.activationScripts.syncoid-ssh-setup = {
-    deps = [ "users" "groups" ];
+    deps = [
+      "users"
+      "groups"
+    ];
     text = ''
       key_src="/run/secrets/syncoid-private-key"
       ssh_dir="/var/lib/syncoid/.ssh"
@@ -67,7 +70,9 @@
         ];
         targetHost = "xsvr2.lan";
         targetPool = "zpool-xsvr2";
-        interval = "hourly";
+        # Staggered: sanoid snapshots at :00, critical replicates at :15, media
+        # at :35. They used to all fire at :00 and pile onto the pool together.
+        interval = "*-*-* *:15:00";
       };
 
       media = {
@@ -82,7 +87,7 @@
         ];
         targetHost = "xsvr2.lan";
         targetPool = "zpool-xsvr2-media";
-        interval = "hourly";
+        interval = "*-*-* *:35:00"; # see the stagger note on the critical job
       };
     };
   };
