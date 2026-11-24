@@ -388,7 +388,12 @@ in
   # a direct override arg of claude-code -- it's buried in python3's own
   # build inputs -- so it has to be fixed in this import's own overlay list
   # instead of via `.override`.
-  claude-code = (
+  #
+  # Darwin (2026-11-23): fall back to the main pkgs' claude-code. The isolated
+  # nixpkgs-unstable import drags in unstable's own darwin stdenv bootstrap
+  # (coreutils 9.12 vs the pinned 9.11), which isn't cached and has to build from
+  # source. The sharp-linuxmusl npm problem above is Linux-only.
+  claude-code = if final.stdenv.hostPlatform.isDarwin then prev.claude-code else (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
@@ -415,7 +420,9 @@ in
   # version bitwarden-desktop already pulls above, confirmed cached
   # (narinfo 200) — so this also collapses two separate Electron builds
   # in the closure down to one shared one.
-  vikunja-desktop = (
+  # Darwin: not used (the xrs444/samantha profiles only install it on Linux), and the
+  # isolated unstable import would pull unstable's uncached darwin stdenv bootstrap.
+  vikunja-desktop = if final.stdenv.hostPlatform.isDarwin then prev.vikunja-desktop else (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
@@ -441,7 +448,8 @@ in
   # unstable's build of the same version (2.9.0) is confirmed cached
   # (narinfo 200) for aarch64-linux — same "pull from unstable" pattern as
   # bitwarden-desktop/vikunja-desktop/obsidian/element-desktop above.
-  catppuccin-whiskers = (
+  # Darwin: use the main pkgs (unstable's darwin stdenv bootstrap is uncached).
+  catppuccin-whiskers = if final.stdenv.hostPlatform.isDarwin then prev.catppuccin-whiskers else (
     import inputs.nixpkgs-unstable {
       system = final.stdenv.hostPlatform.system;
     }
