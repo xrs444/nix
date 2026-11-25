@@ -37,11 +37,12 @@ in {
           debug.msg = "Connected to {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})";
         }
         {
-          name = "Ensure just is installed";
-          package = {
-            name = "just";
-            state = "present";
-          };
+          # `just` ships in the Bazzite image; just verify it. The `package` module
+          # isn't usable here: this host lacks python3-libdnf5 and Bazzite's dnf
+          # wrapper refuses to install it ("Fedora Atomic ... use rpm-ostree").
+          name = "Verify just is installed";
+          command = "rpm -q just";
+          changed_when = false;
         }
         # kanidm-unixd-clients removed 2026-11-24: not in Bazzite's Fedora 44/45 repos,
         # and xdt2-g/xdt3-r use local accounts (greyson/rowan) instead of Kanidm login.
