@@ -43,12 +43,24 @@ in {
             state = "present";
           };
         }
+        # kanidm-unixd-clients removed 2026-11-24: not in Bazzite's Fedora 44/45 repos,
+        # and xdt2-g/xdt3-r use local accounts (greyson/rowan) instead of Kanidm login.
+        # Re-add once a package source exists.
+        # Flatpaks added on top of the stock Bazzite set (system-wide, from Flathub).
+        # `flatpak install` is a no-op when already present; changed_when keys off its
+        # output so reruns report ok instead of changed.
         {
-          name = "Install kanidm-unixd-clients";
-          package = {
-            name = "kanidm-unixd-clients";
-            state = "present";
-          };
+          name = "Install extra flatpaks";
+          shell = "flatpak install --system --noninteractive flathub {{ item }}";
+          register = "flatpak_install";
+          changed_when = "'Installation complete' in flatpak_install.stdout";
+          loop = [
+            "com.google.Chrome"
+            "com.mojang.Minecraft"
+            "com.vysp3r.ProtonPlus"
+            "com.github.Matoking.protontricks"
+            "com.bitwarden.desktop"
+          ];
         }
         {
           name = "Create thomas-local user";
