@@ -5,6 +5,21 @@ in {
   # Inherit common collections and extend with host-specific ones if needed
   collections = common.collections // {};
 
+  # Bazzite ships Python 3.15 only, and ansible-core 2.21.x modules crash on it
+  # (AttributeError: dataclasses has no attribute '_is_type'; ansible/ansible#87677).
+  # 2.22 is the first release supporting 3.15 but nixpkgs still packages 2.21.5.
+  # Drop this override once nixpkgs ships ansible-core >= 2.22.
+  ansiblePackage = pkgs.python3Packages.ansible-core.overridePythonAttrs (old: rec {
+    version = "2.22.0";
+    src = pkgs.fetchPypi {
+      pname = "ansible_core";
+      inherit version;
+      hash = "sha256-v1C0oM+pheMFhce6MBiX6nBQ0iTKSdKBbKsQ4zoWDhw=";
+    };
+    # nixpkgs patches target 2.21.x and may not apply to 2.22.
+    patches = [];
+  });
+
   # Inventory configuration for this host
   inventory = {
     all = {
@@ -49,6 +64,10 @@ in {
             name = "kanidm-unixd-clients";
             state = "present";
           };
+          # 2026-11-23: "No package kanidm-unixd-clients available" in Bazzite's
+          # Fedora 45 repos. Don't block the remaining tasks on it; revisit once
+          # the package source is sorted out.
+          ignore_errors = true;
         }
         {
           name = "Create thomas-local user";
@@ -61,6 +80,39 @@ in {
             groups = "wheel";
             append = true;
           };
+        }
+        # Local (non-Kanidm) account for the machine's day-to-day user, same model
+        # as greyson on xdt2-g. No password set; the session autologins via GDM.
+        {
+          name = "Create rowan user";
+          user = {
+            name = "rowan";
+            state = "present";
+            shell = "/bin/bash";
+            create_home = true;
+            comment = "Rowan";
+          };
+        }
+        {
+          name = "Enable GDM automatic login as rowan";
+          # lineinfile (builtin) rather than community.general.ini_file, which
+          # isn't in this host's collection set.
+          lineinfile = {
+            path = "/etc/gdm/custom.conf";
+            regexp = "^#?{{ item.key }}=";
+            line = "{{ item.key }}={{ item.value }}";
+            insertafter = "^\\[daemon\\]";
+          };
+          loop = [
+            {
+              key = "AutomaticLoginEnable";
+              value = "True";
+            }
+            {
+              key = "AutomaticLogin";
+              value = "rowan";
+            }
+          ];
         }
         {
           name = "Create .ssh directory for thomas-local";
