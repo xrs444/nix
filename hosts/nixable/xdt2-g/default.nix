@@ -63,6 +63,33 @@ in {
             "com.bitwarden.desktop"
           ];
         }
+        # No screen lock / password prompt on wake (system-wide dconf defaults).
+        # Uses the stock "local" dconf db, already in /etc/dconf/profile/user.
+        {
+          name = "Disable GNOME screen lock";
+          copy = {
+            dest = "/etc/dconf/db/local.d/00-no-screenlock";
+            owner = "root";
+            group = "root";
+            mode = "0644";
+            content = ''
+              [org/gnome/desktop/screensaver]
+              lock-enabled=false
+
+              [org/gnome/desktop/session]
+              idle-delay=uint32 0
+
+              [org/gnome/desktop/lockdown]
+              disable-lock-screen=true
+            '';
+          };
+          register = "dconf_screenlock";
+        }
+        {
+          name = "Rebuild dconf database";
+          command = "dconf update";
+          when = "dconf_screenlock.changed";
+        }
         {
           name = "Create thomas-local user";
           user = {
