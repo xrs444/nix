@@ -27,9 +27,19 @@ let
     export BORG_PASSCOMMAND='cat ${stateDir}/passphrase'
     export BORG_RSH='ssh -i ${stateDir}/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${stateDir}/known_hosts'
 
-    # First run: create the repo if it does not exist yet.
-    if ! borg info >/dev/null 2>&1; then
-      borg init --encryption=repokey-blake2
+    # This host is the only client of its repo and the unit is a single-instance
+    # oneshot, so any lock still present is stale (e.g. server OOM-killed mid-run).
+    borg break-lock || true
+
+    # First run: create the repo only if it really does not exist. Any other
+    # failure (auth, network, lock) is surfaced instead of being masked by init.
+    if ! info_out="$(borg info 2>&1)"; then
+      if printf '%s' "$info_out" | grep -qi 'does not exist'; then
+        borg init --encryption=repokey-blake2
+      else
+        printf '%s\n' "$info_out" >&2
+        exit 1
+      fi
     fi
 
     borg create --stats --compression auto,zstd \
@@ -127,6 +137,9 @@ in
             Description=BorgBackup of /var/home to BorgWarehouse
             After=network-online.target
             Wants=network-online.target
+            # Give up after 5 failed attempts in an hour rather than retrying forever.
+            StartLimitIntervalSec=1h
+            StartLimitBurst=5
 
             [Service]
             Type=oneshot
