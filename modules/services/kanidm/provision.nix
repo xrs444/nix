@@ -9,6 +9,11 @@
       "admins" = { };
       "users" = { };
       # Application access groups
+      # Dashy (home.xrs444.net) gate: own oauth2-proxy + client so the kids can
+      # reach it without gaining access to the admin-only oauth2_traefik apps.
+      "dashy" = {
+        members = [ "rowan" "greyson" ];
+      };
       "seatable-admin" = {
         members = [ "admins" ];
       };
@@ -275,6 +280,27 @@
           basicSecretFile = "/run/secrets/kanidm_oauth2_traefik_secret";
           scopeMaps = {
             "admins" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+          };
+        };
+        "oauth2_dashy" = {
+          displayName = "Dashy";
+          originUrl = "https://home.xrs444.net";
+          originLanding = "https://home.xrs444.net";
+          basicSecretFile = "/run/secrets/kanidm_oauth2_dashy_secret";
+          # oauth2-proxy sends PKCE (code-challenge-method=S256), so enforcement stays on.
+          scopeMaps = {
+            "admins" = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            "dashy" = [
               "openid"
               "profile"
               "email"

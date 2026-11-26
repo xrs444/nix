@@ -110,6 +110,7 @@ in
             craftycontroller = "oauth2_craftycontroller_secret";
             scanopy = "kanidm_oauth2_scanopy_secret";
             borgwarehouse = "oauth2_borgwarehouse_secret";
+            dashy = "oauth2_dashy_secret";
           };
 
       # Step 2 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
@@ -291,6 +292,7 @@ in
           }
 
           add_redirect oauth2_traefik   "https://traefik.xrs444.net/oauth2/callback"
+          add_redirect oauth2_dashy     "https://home.xrs444.net/oauth2/callback"
           add_redirect oauth2_longhorn  "https://longhorn.xrs444.net/oauth2/callback"
           add_redirect oauth2_paperless "https://paperless.xrs444.net/accounts/oidc/kanidm/login/callback/"
           add_redirect oauth2_mealie    "https://mealie.xrs444.net/login"
