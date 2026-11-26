@@ -130,9 +130,14 @@ in
 
             [Service]
             Type=oneshot
+            # The machine may have only just woken (timer WakeSystem=true), so
+            # the network can lag behind: retry a few times instead of failing.
+            Restart=on-failure
+            RestartSec=2min
             # Run via bash rather than exec'ing the script directly: SELinux on
             # Bazzite blocks executing var_lib_t files (203/EXEC).
-            ExecStart=/usr/bin/bash ${stateDir}/backup.sh
+            # systemd-inhibit stops the 15-min idle suspend killing a long backup.
+            ExecStart=/usr/bin/systemd-inhibit --what=sleep:idle --mode=block --who=borg-backup --why="Backing up /var/home" /usr/bin/bash ${stateDir}/backup.sh
           '';
         };
         register = "borg_service";
@@ -150,6 +155,9 @@ in
             OnCalendar=daily
             RandomizedDelaySec=1h
             Persistent=true
+            # Wake the machine from suspend (RTC alarm) to run the backup.
+            # Does not help if it is fully powered off.
+            WakeSystem=true
 
             [Install]
             WantedBy=timers.target
@@ -162,7 +170,8 @@ in
         systemd = {
           name = "borg-backup.timer";
           enabled = true;
-          state = "started";
+          # restarted (not started) so edits to the timer unit (e.g. WakeSystem) take effect.
+          state = "restarted";
           daemon_reload = true;
         };
       }
