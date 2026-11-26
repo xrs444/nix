@@ -11,9 +11,9 @@
   user = "borgwarehouse";
 
   repoNames = {
-    "xlt2-s" = null;
-    "xdt1-t" = null;
-    "xdt2-g" = null;
-    "xdt3-r" = null;
+    "xlt2-s" = "34ecbabd";
+    "xdt1-t" = "ec5a018d";
+    "xdt2-g" = "ca126443";
+    "xdt3-r" = "e4ef0001";
   };
 }
