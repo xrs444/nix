@@ -8,10 +8,18 @@
 
 let
   nodeConfigs = {
-    xsvr1 = { routerId = "172.20.3.201"; };
-    xsvr2 = { routerId = "172.20.3.202"; };
-    xsvr3 = { routerId = "172.20.3.203"; };
-    xsvr4 = { routerId = "172.20.3.204"; };
+    xsvr1 = {
+      routerId = "172.20.3.201";
+    };
+    xsvr2 = {
+      routerId = "172.20.3.202";
+    };
+    xsvr3 = {
+      routerId = "172.20.3.203";
+    };
+    xsvr4 = {
+      routerId = "172.20.3.204";
+    };
   };
 
   localASN = 65000;
@@ -136,8 +144,16 @@ else
       enable = true;
       port = 9324;
       listenAddress = "0.0.0.0";
-      openFirewall = true;
+      # N4: not opened to every network — scoped to the Prometheus scrape CIDRs below.
+      openFirewall = false;
     };
+
+    # Same scrape-source scoping as monitoring/exporters.nix (Talos node subnet; Prometheus
+    # pods are masqueraded to node IPs). Delete-then-add keeps it idempotent.
+    networking.firewall.extraCommands = ''
+      iptables -D nixos-fw -s 172.20.3.0/24 -p tcp --dport 9324 -j nixos-fw-accept 2>/dev/null || true
+      iptables -A nixos-fw -s 172.20.3.0/24 -p tcp --dport 9324 -j nixos-fw-accept
+    '';
 
     # BGP health check script (matches pattern from xts1/xts2)
     environment.etc."check-bgp-session.sh" = {

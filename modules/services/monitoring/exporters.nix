@@ -25,6 +25,29 @@ let
   ];
 
   hasBIND = false;
+
+  # Source addresses Prometheus scrapes arrive from: the Talos node subnet (pods are
+  # masqueraded to node IPs) and the Tailscale range (cmrpi1 is scraped over its
+  # *.ts.net name).
+  scrapeCidrs = [
+    "172.20.3.0/24"
+    "100.64.0.0/10"
+  ];
+
+  exporterPorts = [
+    9080 # alloy (journal->Loki shipper; see promtail.nix)
+    9100 # node_exporter
+    9633 # smartctl_exporter
+  ]
+  ++ lib.optionals hasZFS [
+    9134 # zfs_exporter
+  ]
+  ++ lib.optionals hasLibvirt [
+    9177 # libvirt_exporter (custom systemd service)
+  ]
+  ++ lib.optionals hasBIND [
+    9119 # bind_exporter
+  ];
 in
 {
   config = lib.mkIf enableExporters {
@@ -83,22 +106,22 @@ in
       openFirewall = false;
     };
 
-    # Open firewall for exporters on all interfaces.
-    # bond0-scoped rules don't work for: (a) ARM hosts (end0/enu1u1u1), (b) k8s
-    # pod traffic which arrives on bridge22 not bond0 on the xsvr1-3 KVM hosts.
-    networking.firewall.allowedTCPPorts = [
-      9080 # alloy (journal->Loki shipper; see promtail.nix)
-      9100 # node_exporter
-      9633 # smartctl_exporter
-    ]
-    ++ lib.optionals hasZFS [
-      9134 # zfs_exporter
-    ]
-    ++ lib.optionals hasLibvirt [
-      9177 # libvirt_exporter (custom systemd service)
-    ]
-    ++ lib.optionals hasBIND [
-      9119 # bind_exporter
-    ];
+    # Exporter ports are reachable only from the Prometheus scrape source (N4), not
+    # from every network. Prometheus runs in-cluster; its pods are masqueraded to the
+    # Talos node IPs in 172.20.3.0/24 (observed live: 172.20.3.20 -> :9100/:9633/:9134/
+    # :9177/:9080), so one rule per CIDR+port covers whichever node it lands on.
+    # Interface-scoped rules don't work here: ARM hosts use different NIC names and k8s
+    # pod traffic arrives on bridge22, not bond0, on the xsvr1-3 KVM hosts.
+    # Rules go into nixos-fw (extraCommands runs before the final refuse rule);
+    # delete-then-add keeps them idempotent across activations (see keepalived module).
+    networking.firewall.extraCommands = lib.concatStringsSep "\n" (
+      lib.concatMap (
+        cidr:
+        map (port: ''
+          iptables -D nixos-fw -s ${cidr} -p tcp --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true
+          iptables -A nixos-fw -s ${cidr} -p tcp --dport ${toString port} -j nixos-fw-accept
+        '') exporterPorts
+      ) scrapeCidrs
+    );
   };
 }
