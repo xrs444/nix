@@ -1,0 +1,15 @@
+# Pinned SSH host keys for CI deploy targets (N3). Used by .github/workflows/deploy.yml
+# with StrictHostKeyChecking=accept-new: listed hosts are verified, a CHANGED key fails
+# the connection, and a host not listed here is trusted on first use (unlisted: xcomm1,
+# xlt1-t-vnixos, xlt2-s — suspended/off when scanned 2026-11-25).
+# Refresh one host after a legitimate reinstall: ssh-keyscan -4 -t ed25519 <host>.lan
+# xsvr1-4, xts1, xidm1, xdt1-t, vocibuild also pinned in modules/services/remotebuilds/default.nix.
+xsvr1.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPi6pOq7wjkPhbRs19XO1g9oud5JTq6O46KuEqVnKp09
+xsvr2.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILqV1INQL4xXMLnypfJQrB/R/i+xl4UR4dWdYTa8Ghae
+xsvr3.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE3iLniG9niDNFxK3Z3INcwqc6N6R1+2v/PfD88klFAX
+xsvr4.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOFLFK7JqbleQCC1PbsCISLZtkG5Bf1uLY1SRfjIz+K8
+xts1.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAJ61+bV3g7btEe0V4O5/a3GScuQYGaeAWHPFM6Yx5Dz
+xidm1.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM0xL67aVSeg+E+jyzgzz0uMekVBjDAOzR+Z/l2B45RU
+xpbx1.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKU5QhMkhCUP+JtK213THNUByJDMKPta6bLiEA4zDMsU
+xdt1-t.lan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDGFg8FIT5bB7OU3ihOBLvHlRs6hAxOSB3BopiV1O2J0
+vocibuild.xrs444.net ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMIFFm/zZIwJTu0f8Eny30jKsp93S6nngemziFi0mOsR

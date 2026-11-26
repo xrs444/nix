@@ -343,8 +343,8 @@ jobs:
           for host in "${CHECK_HOSTS[@]}"; do
             result=$(timeout 15 ssh -4 \
               -i /run/secrets/deploy_private_key \
-              -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null \
+              -o StrictHostKeyChecking=accept-new \
+              -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/known_hosts" \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
               deploy@"$host".lan '
@@ -400,8 +400,8 @@ jobs:
               for i in $(seq 1 18); do
                 if ssh -4 \
                      -i /run/secrets/deploy_private_key \
-                     -o StrictHostKeyChecking=no \
-                     -o UserKnownHostsFile=/dev/null \
+                     -o StrictHostKeyChecking=accept-new \
+                     -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/known_hosts" \
                      -o ConnectTimeout=5 \
                      -o BatchMode=yes \
                      deploy@xcomm1.lan "true" 2>/dev/null; then
@@ -422,8 +422,8 @@ jobs:
               for i in $(seq 1 18); do
                 if ssh -4 \
                      -i /run/secrets/deploy_private_key \
-                     -o StrictHostKeyChecking=no \
-                     -o UserKnownHostsFile=/dev/null \
+                     -o StrictHostKeyChecking=accept-new \
+                     -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/known_hosts" \
                      -o ConnectTimeout=5 \
                      -o BatchMode=yes \
                      deploy@xlt2-s.lan "true" 2>/dev/null; then
@@ -468,8 +468,8 @@ jobs:
                 if REMOTE_HOSTNAME=$(timeout 15 ssh \
                   -4 -vvv \
                   -i /run/secrets/deploy_private_key \
-                  -o StrictHostKeyChecking=no \
-                  -o UserKnownHostsFile=/dev/null \
+                  -o StrictHostKeyChecking=accept-new \
+                  -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/known_hosts" \
                   -o ConnectTimeout=10 \
                   -o BatchMode=yes \
                   deploy@${DEPLOY_HOSTNAME} \
@@ -485,8 +485,8 @@ jobs:
                 REMOTE_HOSTNAME=$(timeout 15 ssh \
                   -4 \
                   -i /run/secrets/deploy_private_key \
-                  -o StrictHostKeyChecking=no \
-                  -o UserKnownHostsFile=/dev/null \
+                  -o StrictHostKeyChecking=accept-new \
+                  -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/known_hosts" \
                   -o ConnectTimeout=10 \
                   -o BatchMode=yes \
                   deploy@${DEPLOY_HOSTNAME} \
