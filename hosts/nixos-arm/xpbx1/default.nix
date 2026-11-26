@@ -72,14 +72,11 @@
   # produces nothing useful. Override the monitoring-client default (set in exporters.nix).
   services.prometheus.exporters.smartctl.enable = lib.mkForce false;
 
-  # Open monitoring exporter and Asterisk HTTP ports on the LAN interface.
-  # exporters.nix opens on bond0 which doesn't exist here; asterisk module opens 8088
-  # globally but the global rule doesn't fire on this host — add it explicitly.
-  networking.firewall.interfaces.enu1u1u1.allowedTCPPorts = [
-    9080 # alloy (metrics)
-    9100 # node_exporter
-    8088 # Asterisk HTTP / Prometheus metrics
-  ];
+  # Exporter ports (9080 alloy, 9100 node_exporter) and Asterisk's 8088 metrics port are NOT
+  # opened here any more (N4): modules/services/monitoring/exporters.nix and
+  # modules/services/asterisk scope them to the Prometheus scrape sources (Talos node subnet +
+  # tailnet) via iptables rules. A blanket `networking.firewall.interfaces.<if>.allowedTCPPorts`
+  # entry for them here would bypass that scoping — it did until 2026-11-26.
 
   environment.systemPackages = with pkgs; [
     libraspberrypi
