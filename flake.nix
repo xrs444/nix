@@ -345,6 +345,7 @@
             sops
             age
             git
+            inputs.deploy-rs.packages.${system}.deploy-rs # `just deploy` / `just deploy-all`
           ];
         };
         qmk = import ./shells/qmk.nix { pkgs = inputs.nixpkgs.legacyPackages.${system}; };
