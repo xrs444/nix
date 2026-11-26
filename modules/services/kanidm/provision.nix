@@ -217,7 +217,7 @@
           displayName = "Linkwarden";
           originUrl = "https://linkwarden.xrs444.net";
           originLanding = "https://linkwarden.xrs444.net";
-          allowInsecureClientDisablePkce = true;
+          allowInsecureClientDisablePkce = false; # H5: explicit false required (kanidm-provision doesn't unset by omission, bug-371). If SSO login fails with "No PKCE code challenge", set back to true.
           enableLegacyCrypto = true; # Required for NextAuth compatibility (RS256 instead of ES256)
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_linkwarden_secret";
@@ -329,7 +329,7 @@
           displayName = "Immich Photo Management";
           originUrl = "https://immich.xrs444.net";
           originLanding = "https://immich.xrs444.net";
-          allowInsecureClientDisablePkce = true;
+          allowInsecureClientDisablePkce = false; # H5: explicit false required (bug-371). Immich v2.6.3; if SSO login fails with "No PKCE code challenge"/code_verifier errors, set back to true.
           preferShortUsername = true;
           basicSecretFile = "/run/secrets/kanidm_oauth2_immich_secret";
           scopeMaps = {
