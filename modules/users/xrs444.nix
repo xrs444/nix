@@ -72,6 +72,14 @@
     path = "/home/xrs444/.ssh/xrs444_key";
   };
 
+  # The sops secrets above deploy into ~/.ssh as root, which creates the
+  # directory root-owned if it doesn't exist yet — home-manager then fails
+  # to link ~/.ssh/config ("Permission denied", seen on xlt1-t-vnixos
+  # 2026-11-26). Make sure the directory exists and is xrs444's.
+  systemd.tmpfiles.rules = [
+    "d /home/xrs444/.ssh 0700 xrs444 xrs444 -"
+  ];
+
   # vja (Vikunja CLI) reads its API token from ~/.config/vja/token.json
   # (raw {"token": "..."} JSON, see vja's Features.md#login). Server URL
   # lives in the non-secret config.rc set via home-manager.
