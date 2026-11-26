@@ -130,7 +130,9 @@ in
 
             [Service]
             Type=oneshot
-            ExecStart=${stateDir}/backup.sh
+            # Run via bash rather than exec'ing the script directly: SELinux on
+            # Bazzite blocks executing var_lib_t files (203/EXEC).
+            ExecStart=/usr/bin/bash ${stateDir}/backup.sh
           '';
         };
         register = "borg_service";
