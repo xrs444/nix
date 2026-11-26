@@ -150,8 +150,11 @@ in
     #   - 172.18.7.1/32: Home Assistant, the PJSIP trunk (endpoint 801; it is NOT in the
     #     phone subnet, so it needs its own rule)
     # 8088 is the Prometheus metrics scrape (http.conf), reachable only from the cluster
-    # node subnet (pods are masqueraded to node IPs) and the tailnet. delete-then-add keeps
-    # each rule idempotent across activations (see the keepalived module for why).
+    # node subnet (pods are masqueraded to node IPs). NOT the tailnet range: xfw (tailnet
+    # subnet router) translates some LAN traffic to its tailnet address, so allowing
+    # 100.64.0.0/10 let any LAN host through (see monitoring/exporters.nix).
+    # delete-then-add keeps each rule idempotent across activations (see the keepalived
+    # module for why).
     networking.firewall.extraCommands =
       let
         voiceSources = [
@@ -160,7 +163,6 @@ in
         ];
         scrapeSources = [
           net.talosNodes
-          net.tailscale
         ];
         rule = src: proto: dport: ''
           iptables -D nixos-fw -s ${src} -p ${proto} --dport ${dport} -j nixos-fw-accept 2>/dev/null || true

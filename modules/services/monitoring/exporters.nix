@@ -28,11 +28,14 @@ let
   hasBIND = false;
 
   # Source addresses Prometheus scrapes arrive from: the Talos node subnet (pods are
-  # masqueraded to node IPs) and the Tailscale range (cmrpi1 is scraped over its
-  # *.ts.net name).
+  # masqueraded to node IPs). The Tailscale range is deliberately NOT allowed: xfw is the
+  # tailnet subnet router and some LAN-to-LAN traffic arrives translated to its tailnet
+  # address (observed 2026-11-26: the Mac's connection to xpbx1:9100 showed up as
+  # 100.126.101.100), so allowing 100.64.0.0/10 let any LAN host through. The cluster has no
+  # tailnet route, so nothing legitimate scrapes over it anyway (cmrpi1's ts.net scrape has
+  # been down since before this change).
   scrapeCidrs = [
     net.talosNodes
-    net.tailscale
   ];
 
   exporterPorts = [
