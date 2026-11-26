@@ -110,7 +110,7 @@ in
             craftycontroller = "oauth2_craftycontroller_secret";
             scanopy = "kanidm_oauth2_scanopy_secret";
             borgwarehouse = "oauth2_borgwarehouse_secret";
-            dashy = "oauth2_dashy_secret";
+            dashy = "oauth_dashy_secret"; # sic: key in secrets/kanidm_oauth2_secrets.yaml lacks the "2"
           };
 
       # Step 2 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
