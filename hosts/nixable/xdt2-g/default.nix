@@ -81,6 +81,12 @@ in {
 
               [org/gnome/desktop/lockdown]
               disable-lock-screen=true
+
+              [org/gnome/settings-daemon/plugins/power]
+              sleep-inactive-ac-type='suspend'
+              sleep-inactive-ac-timeout=900
+              sleep-inactive-battery-type='suspend'
+              sleep-inactive-battery-timeout=900
             '';
           };
           register = "dconf_screenlock";
