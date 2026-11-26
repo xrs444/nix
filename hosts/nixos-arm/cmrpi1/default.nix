@@ -50,14 +50,7 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  # Open firewall ports for AdGuard Home
-  networking.firewall = {
-    allowedTCPPorts = [
-      53 # DNS
-      3000 # AdGuard Home Web UI
-    ];
-    allowedUDPPorts = [
-      53 # DNS
-    ];
-  };
+  # AdGuard Home's firewall rules (DNS 53, web UI 3000) live in modules/services/adguard,
+  # scoped to the LAN / 172.16.0.0/12 / Tailscale ranges (N4). Do not re-open them globally
+  # here — a blanket allowedTCPPorts entry would bypass that scoping.
 }

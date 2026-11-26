@@ -9,7 +9,10 @@ let
   isAsteriskHost = lib.elem "asterisk" hostRoles;
 in
 {
-  imports = [ ./extensions.nix ./pjsip.nix ];
+  imports = [
+    ./extensions.nix
+    ./pjsip.nix
+  ];
 
   config = lib.mkIf isAsteriskHost {
     environment.systemPackages = with pkgs; [
@@ -140,15 +143,36 @@ in
       };
     };
 
-    # Open firewall ports for Asterisk
-    networking.firewall = {
-      allowedTCPPorts = [
-        5060 # SIP
-        8088 # Asterisk HTTP/WebSocket
-      ];
-      allowedUDPPorts = [
-        5060 # SIP
-      ] ++ (lib.range 10000 20000); # RTP port range
-    };
+    # Firewall for Asterisk (N4): SIP/RTP/HTTP used to be open to every network. Endpoints
+    # are identified by source IP (see pjsip.nix), so only the voice sources need access:
+    #   - 172.18.6.0/24: the phone VLAN (extensions 810-8xx)
+    #   - 172.18.7.1/32: Home Assistant, the PJSIP trunk (endpoint 801; it is NOT in the
+    #     phone subnet, so it needs its own rule)
+    # 8088 is the Prometheus metrics scrape (http.conf), reachable only from the cluster
+    # node subnet (pods are masqueraded to node IPs) and the tailnet. delete-then-add keeps
+    # each rule idempotent across activations (see the keepalived module for why).
+    networking.firewall.extraCommands =
+      let
+        voiceSources = [
+          "172.18.6.0/24"
+          "172.18.7.1/32"
+        ];
+        scrapeSources = [
+          "172.20.3.0/24"
+          "100.64.0.0/10"
+        ];
+        rule = src: proto: dport: ''
+          iptables -D nixos-fw -s ${src} -p ${proto} --dport ${dport} -j nixos-fw-accept 2>/dev/null || true
+          iptables -A nixos-fw -s ${src} -p ${proto} --dport ${dport} -j nixos-fw-accept
+        '';
+      in
+      lib.concatStringsSep "\n" (
+        lib.concatMap (src: [
+          (rule src "tcp" "5060")
+          (rule src "udp" "5060")
+          (rule src "udp" "10000:20000")
+        ]) voiceSources
+        ++ map (src: rule src "tcp" "8088") scrapeSources
+      );
   };
 }

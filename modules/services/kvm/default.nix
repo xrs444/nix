@@ -49,20 +49,19 @@ lib.mkIf hasRole {
         "bridge21"
         "bridge22"
       ];
+      # N4: libvirt's unauthenticated TCP listener (listen_tcp/auth_tcp="none" on 0.0.0.0,
+      # 16509 open in the firewall) was removed 2026-11-26. It was not actually listening
+      # (the TCP socket was never enabled) and nothing in either repo used it, but one
+      # `systemctl enable libvirtd-tcp.socket` would have exposed root-equivalent control of
+      # the host to the network. Manage libvirt over the local unix socket / ssh instead.
       extraConfig = ''
         listen_tls = 0
-        listen_tcp = 1
-        listen_addr = "0.0.0.0"
-        auth_tcp = "none"  # Warning: Use only in trusted networks
         unix_sock_group = "libvirtd"
         unix_sock_rw_perms = "0770"
       '';
     };
   };
 
-  # Open firewall ports
-  networking.firewall.allowedTCPPorts = [
-    16509
-    5900
-  ]; # libvirt and VNC
+  # No firewall ports opened: VNC (5900) is bound to localhost only, and libvirt is no
+  # longer exposed over TCP (see the extraConfig note above).
 }
