@@ -96,6 +96,31 @@ in {
           command = "dconf update";
           when = "dconf_screenlock.changed";
         }
+        # Chrome homepage. The flatpak has host-etc access, so it reads policies from
+        # /etc/opt/chrome/policies. "recommended" sets the default but leaves it
+        # user-changeable (use .../managed to lock it instead).
+        {
+          name = "Create Chrome recommended-policy directory";
+          file = {
+            path = "/etc/opt/chrome/policies/recommended";
+            state = "directory";
+            mode = "0755";
+          };
+        }
+        {
+          name = "Set Chrome homepage";
+          copy = {
+            dest = "/etc/opt/chrome/policies/recommended/homepage.json";
+            mode = "0644";
+            content = ''
+              {
+                "HomepageLocation": "https://home.xrs444.net",
+                "HomepageIsNewTabPage": false,
+                "ShowHomeButton": true
+              }
+            '';
+          };
+        }
         {
           name = "Create thomas-local user";
           user = {
@@ -176,20 +201,10 @@ in {
             create = true;
           };
         }
-        {
-          name = "Tap peteonrails/voxtype";
-          become = true;
-          become_user = "thomas-local";
-          shell = "/home/linuxbrew/.linuxbrew/bin/brew tap peteonrails/voxtype";
-          args.creates = "/home/linuxbrew/.linuxbrew/Library/Taps/peteonrails/homebrew-voxtype";
-        }
-        {
-          name = "Install voxtype via Homebrew";
-          become = true;
-          become_user = "thomas-local";
-          shell = "/home/linuxbrew/.linuxbrew/bin/brew install peteonrails/voxtype/voxtype";
-          args.creates = "/home/linuxbrew/.linuxbrew/bin/voxtype";
-        }
+        # voxtype tap/install removed 2026-11-26: peteonrails/voxtype 0.6.3 fails to
+        # build (whisper-rs-sys bindgen size asserts, ~1h15m from-source on xdt2-g)
+        # and has no bottle. Re-add the tap + `brew install peteonrails/voxtype/voxtype`
+        # once the tap is patched.
         # xprn2 network printer (HP Color LaserJet Pro MFP M281cdw).
         # Driverless IPP Everywhere queue — Bazzite's base image ships CUPS,
         # so no PPD/hplip package layering is needed.
