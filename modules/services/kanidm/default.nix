@@ -13,7 +13,15 @@ let
   isReplicaServer = lib.elem "kanidm-replica" hostRoles;
   isKanidmServer = lib.elem "kanidm-server" hostRoles || isPrimaryServer || isReplicaServer;
 
-  # Only primary should run provisioning
+  # Only primary should run provisioning.
+  # FAILOVER GAP (N9): provision.nix (oauth2 clients, groups, scope maps) and the
+  # kanidm-oauth2-redirect-urls service exist ONLY on the "kanidm-primary" host (xsvr1).
+  # Replicas (xsvr2, xidm1) receive that state through replication but never run
+  # provisioning, so promoting a replica to primary is NOT enough on its own: also give
+  # it the "kanidm-primary" role (provision.nix + the kanidm_oauth2_*_secret sops secrets
+  # + the redirect-urls unit come with it), check that the idm.xrs444.net VIP/DNS now reaches it, and drop the
+  # old primary's role first so two hosts never provision concurrently. No tested
+  # promotion runbook exists yet — see T2 (xsvr1 single point of failure).
   isProvisioningHost = isPrimaryServer;
 
   # Kanidm server URI points to the VIP
@@ -62,168 +70,47 @@ in
 
     # Primary server configuration (xsvr1)
     (lib.mkIf isPrimaryServer {
-      # OAuth2 client secrets for provisioning
-      sops.secrets.kanidm_oauth2_paperless_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_paperless_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_linkwarden_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_linkwarden_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_longhorn_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_longhorn_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_traefik_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_traefik_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_mealie_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_mealie_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_netbox_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_netbox_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_immich_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_immich_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_romm_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_romm_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_audiobookshelf_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_audiobookshelf_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_booklore_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "kanidm_oauth2_booklore_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_matrix_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "kanidm_oauth2_matrix_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_seatable_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_seatable_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_termix_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_termix_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_manyfold_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_manyfold_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_windmill_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_windmill_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_hermes_t_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_hermes_t_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_hermes_s_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_hermes_s_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_hermes_k_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_hermes_k_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_vikunja_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_vikunja_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_grafana_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_grafana_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_craftycontroller_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_craftycontroller_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_scanopy_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "kanidm_oauth2_scanopy_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
-      sops.secrets.kanidm_oauth2_borgwarehouse_secret = {
-        sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
-        key = "oauth2_borgwarehouse_secret";
-        owner = "kanidm";
-        group = "kanidm";
-        mode = "0400";
-      };
+      # OAuth2 client secrets for provisioning. One entry per client: app name = sops key in
+      # secrets/kanidm_oauth2_secrets.yaml. Most keys are "oauth2_<app>_secret"; booklore, matrix
+      # and scanopy were added with a "kanidm_" prefix and are kept as-is (renaming a sops key
+      # means re-encrypting the secrets file).
+      sops.secrets =
+        lib.mapAttrs'
+          (
+            app: key:
+            lib.nameValuePair "kanidm_oauth2_${app}_secret" {
+              sopsFile = ../../../secrets/kanidm_oauth2_secrets.yaml;
+              inherit key;
+              owner = "kanidm";
+              group = "kanidm";
+              mode = "0400";
+            }
+          )
+          {
+            paperless = "oauth2_paperless_secret";
+            linkwarden = "oauth2_linkwarden_secret";
+            longhorn = "oauth2_longhorn_secret";
+            traefik = "oauth2_traefik_secret";
+            mealie = "oauth2_mealie_secret";
+            netbox = "oauth2_netbox_secret";
+            immich = "oauth2_immich_secret";
+            romm = "oauth2_romm_secret";
+            audiobookshelf = "oauth2_audiobookshelf_secret";
+            booklore = "kanidm_oauth2_booklore_secret";
+            matrix = "kanidm_oauth2_matrix_secret";
+            seatable = "oauth2_seatable_secret";
+            termix = "oauth2_termix_secret";
+            manyfold = "oauth2_manyfold_secret";
+            windmill = "oauth2_windmill_secret";
+            hermes_t = "oauth2_hermes_t_secret";
+            hermes_s = "oauth2_hermes_s_secret";
+            hermes_k = "oauth2_hermes_k_secret";
+            vikunja = "oauth2_vikunja_secret";
+            grafana = "oauth2_grafana_secret";
+            craftycontroller = "oauth2_craftycontroller_secret";
+            scanopy = "kanidm_oauth2_scanopy_secret";
+            borgwarehouse = "oauth2_borgwarehouse_secret";
+          };
 
       # Step 2 of 2 of the sequential 1.10 -> 1.11 -> 1.12 upgrade; see
       # comment on the replica's package override above.

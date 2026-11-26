@@ -8,6 +8,15 @@
 }:
 
 rec {
+  # Exposes nixpkgs-unstable as `pkgs.unstable` for Home Manager configs.
+  # Shared by mkAllHomes and mkHome so the two can't drift apart.
+  unstableOverlay = final: prev: {
+    unstable = import inputs.nixpkgs-unstable {
+      system = final.stdenv.hostPlatform.system;
+      config.allowUnfree = true;
+    };
+  };
+
   # Generate all Home Manager configurations for all users in hosts
   # Filters out hosts with enableHomeManager = false (those use integrated HM via Darwin/NixOS modules)
   mkAllHomes =
@@ -22,14 +31,7 @@ rec {
         pkgs = import inputs.nixpkgs {
           system = hostConfig.platform;
           config.allowUnfree = true;
-          overlays = overlays ++ [
-            (final: prev: {
-              unstable = import inputs.nixpkgs-unstable {
-                system = final.stdenv.hostPlatform.system;
-                config.allowUnfree = true;
-              };
-            })
-          ];
+          overlays = overlays ++ [ unstableOverlay ];
         };
         extraSpecialArgs = {
           inherit inputs outputs stateVersion;
@@ -75,14 +77,7 @@ rec {
         pkgs = import inputs.nixpkgs {
           system = hostConfig.platform;
           config.allowUnfree = true;
-          overlays = overlays ++ [
-            (final: prev: {
-              unstable = import inputs.nixpkgs-unstable {
-                system = final.stdenv.hostPlatform.system;
-                config.allowUnfree = true;
-              };
-            })
-          ];
+          overlays = overlays ++ [ unstableOverlay ];
         };
         extraSpecialArgs = {
           inherit inputs outputs stateVersion;

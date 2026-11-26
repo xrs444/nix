@@ -61,6 +61,18 @@
     };
   };
 
+  # NFS export status (N10; see backlog H2 for how each was verified).
+  # Every export is root_squash EXCEPT these, which are deliberately no_root_squash:
+  #   - /export (the fsid=0 pseudoroot) — structural, exposes no data itself.
+  #   - media/games and ingest/games — romm's Dockerfile has no USER directive and no
+  #     PUID/PGID support, so it is root-only upstream.
+  #   - the Scanopy daemon config export below — its container runs as root (--privileged).
+  # Other consumers that needed work to tolerate root_squash (borgwarehouse, manyfold,
+  # jellyfin, audiobookshelf, paperless-ngx) were fixed app-side in flux in H2 batch 2;
+  # syncthing's entrypoint chown is non-recursive and error-tolerant, so it needed nothing.
+  # documents/photos is not in `exports` at all: it is a bind mount of /zfs/documents/photos
+  # onto /export/zfs/documents/photos (see the mount unit below), so it is reached through
+  # the /export pseudoroot rather than exported as its own entry.
   services.nfs.server = {
     enable = true;
     createMountPoints = lib.mkForce false;
