@@ -1,100 +1,98 @@
-# Summary: NixOS module for BorgBackup client configuration with BorgWarehouse integration
+# Summary: NixOS BorgBackup client for BorgWarehouse, enabled via the "borg-client" hostRole; backs up /home with a per-host sops key + passphrase.
+# Secrets live in secrets/borg-<hostname>.yaml (keys: passphrase, ssh_private_key,
+# ssh_public_key). The repo name comes from ./repos.nix — until it is filled in for
+# a host, only the secrets are deployed and no backup job exists.
 {
   hostname,
+  hostRoles ? [ ],
   lib,
   config,
   pkgs,
   ...
 }:
+let
+  hasRole = lib.elem "borg-client" hostRoles;
+  borg = import ./repos.nix;
+  repoName = borg.repoNames.${hostname} or null;
+  stateDir = "/var/lib/borg-client";
+in
 {
-  imports = lib.optional (builtins.pathExists (./. + "/${hostname}.nix")) ./${hostname}.nix;
-
   options.services.borgbackup-client = {
-    enable = lib.mkEnableOption "BorgBackup client with BorgWarehouse";
-
-    repository = lib.mkOption {
-      type = lib.types.str;
-      description = "BorgWarehouse repository SSH URL";
-      example = "ssh://user@borgwarehouse.xrs444.net:2222/repos/hostname";
-    };
-
     paths = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [
-        "/home"
-        "/root"
-        "/etc"
-      ];
-      description = "List of paths to backup";
+      default = [ "/home" ];
+      description = "Paths to back up. /etc and /root are intentionally excluded: /etc is generated from the flake.";
     };
 
     exclude = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "*.cache"
-        "*/cache/*"
-        "*/.cache/*"
-        "*/Cache/*"
+        "*/.cache"
+        "*/Cache"
         "*/.local/share/Trash"
         "*/node_modules"
         "*/.nix-profile"
       ];
-      description = "List of patterns to exclude from backup";
+      description = "Patterns to exclude from the backup.";
     };
 
     schedule = lib.mkOption {
       type = lib.types.str;
       default = "daily";
-      description = "Systemd timer schedule for automatic backups";
+      description = "Systemd OnCalendar schedule for the backup job.";
     };
 
-    prune = {
-      keep = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          daily = 7;
-          weekly = 4;
-          monthly = 6;
+    prune.keep = lib.mkOption {
+      type = lib.types.attrs;
+      default = {
+        daily = 7;
+        weekly = 4;
+        monthly = 6;
+      };
+      description = "Retention policy applied after each backup.";
+    };
+  };
+
+  config = lib.mkIf hasRole (
+    let
+      cfg = config.services.borgbackup-client;
+      sopsFile = ../../../secrets/borg-${hostname}.yaml;
+    in
+    {
+      environment.systemPackages = [ pkgs.borgbackup ];
+
+      sops.secrets."borg-passphrase" = {
+        inherit sopsFile;
+        key = "passphrase";
+        mode = "0400";
+      };
+      sops.secrets."borg-ssh-key" = {
+        inherit sopsFile;
+        key = "ssh_private_key";
+        mode = "0400";
+      };
+
+      systemd.tmpfiles.rules = [ "d ${stateDir} 0700 root root -" ];
+
+      services.borgbackup.jobs.${hostname} = lib.mkIf (repoName != null) {
+        repo = "ssh://${borg.user}@${borg.server}:${toString borg.port}/./${repoName}";
+        inherit (cfg) paths exclude;
+        encryption = {
+          mode = "repokey-blake2";
+          passCommand = "cat ${config.sops.secrets."borg-passphrase".path}";
         };
-        description = "Retention policy for backups";
+        environment.BORG_RSH = lib.concatStringsSep " " [
+          "ssh"
+          "-i ${config.sops.secrets."borg-ssh-key".path}"
+          "-o IdentitiesOnly=yes"
+          "-o StrictHostKeyChecking=accept-new"
+          "-o UserKnownHostsFile=${stateDir}/known_hosts"
+        ];
+        compression = "auto,zstd";
+        startAt = cfg.schedule;
+        persistentTimer = true;
+        prune.keep = cfg.prune.keep;
       };
-    };
-  };
-
-  config = lib.mkIf config.services.borgbackup-client.enable {
-    # Install borgbackup
-    environment.systemPackages = [ pkgs.borgbackup ];
-
-    # Configure borgbackup jobs
-    services.borgbackup.jobs."${hostname}" = {
-      repo = config.services.borgbackup-client.repository;
-      paths = config.services.borgbackup-client.paths;
-      exclude = config.services.borgbackup-client.exclude;
-
-      encryption = {
-        mode = "repokey-blake2";
-        passCommand = "cat /run/secrets/borg-passphrase";
-      };
-
-      compression = "auto,zstd";
-      startAt = config.services.borgbackup-client.schedule;
-
-      prune.keep = config.services.borgbackup-client.prune.keep;
-
-      preHook = ''
-        echo "Starting backup for ${hostname} at $(date)"
-      '';
-
-      postHook = ''
-        echo "Backup completed for ${hostname} at $(date)"
-      '';
-    };
-
-    # Borg passphrase secret (requires sops configuration per-host)
-    # Example per-host configuration:
-    # sops.secrets."borg-passphrase" = {
-    #   sopsFile = ../../../secrets/borg-${hostname}.yaml;
-    #   key = "passphrase";
-    # };
-  };
+    }
+  );
 }

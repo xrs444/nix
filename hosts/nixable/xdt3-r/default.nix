@@ -283,7 +283,7 @@ in {
           # the whole play, just retry next run.
           failed_when = false;
         }
-      ];
+      ] ++ (import ../common/borg.nix {hostname = "xdt3-r";});
     }
   ];
 }

@@ -192,6 +192,7 @@
             "letsencrypt-host"
             "monitoring-client"
             "auto-upgrade"
+            "borg-client"
           ];
         };
         xlt2-s = {
@@ -203,6 +204,7 @@
             "monitoring-client"
             "auto-upgrade"
             "tailscale-client"
+            "borg-client"
           ];
         };
         cmrpi1 = {
