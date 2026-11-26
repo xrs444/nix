@@ -7,6 +7,7 @@
   ...
 }:
 let
+  net = import ../../../lib/network.nix;
   isMonitoringServer = lib.elem "monitoring-server" hostRoles;
   isMonitoringClient = lib.elem "monitoring-client" hostRoles;
   enableExporters = isMonitoringServer || isMonitoringClient;
@@ -30,8 +31,8 @@ let
   # masqueraded to node IPs) and the Tailscale range (cmrpi1 is scraped over its
   # *.ts.net name).
   scrapeCidrs = [
-    "172.20.3.0/24"
-    "100.64.0.0/10"
+    net.talosNodes
+    net.tailscale
   ];
 
   exporterPorts = [

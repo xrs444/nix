@@ -7,6 +7,7 @@
   ...
 }:
 let
+  net = import ../../../lib/network.nix;
   hasRole = lib.elem "adguard" hostRoles;
 in
 lib.mkIf hasRole {
@@ -67,9 +68,9 @@ lib.mkIf hasRole {
   networking.firewall.extraCommands =
     let
       v4Allowed = [
-        "192.168.0.0/24"
-        "172.16.0.0/12"
-        "100.64.0.0/10"
+        net.adguardLan
+        net.homeVlans
+        net.tailscale
       ];
       v4Rule = cidr: proto: port: ''
         iptables -D nixos-fw -s ${cidr} -p ${proto} --dport ${toString port} -j nixos-fw-accept 2>/dev/null || true

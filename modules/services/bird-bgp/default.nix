@@ -7,6 +7,7 @@
 }:
 
 let
+  net = import ../../../lib/network.nix;
   nodeConfigs = {
     xsvr1 = {
       routerId = "172.20.3.201";
@@ -151,8 +152,8 @@ else
     # Same scrape-source scoping as monitoring/exporters.nix (Talos node subnet; Prometheus
     # pods are masqueraded to node IPs). Delete-then-add keeps it idempotent.
     networking.firewall.extraCommands = ''
-      iptables -D nixos-fw -s 172.20.3.0/24 -p tcp --dport 9324 -j nixos-fw-accept 2>/dev/null || true
-      iptables -A nixos-fw -s 172.20.3.0/24 -p tcp --dport 9324 -j nixos-fw-accept
+      iptables -D nixos-fw -s ${net.talosNodes} -p tcp --dport 9324 -j nixos-fw-accept 2>/dev/null || true
+      iptables -A nixos-fw -s ${net.talosNodes} -p tcp --dport 9324 -j nixos-fw-accept
     '';
 
     # BGP health check script (matches pattern from xts1/xts2)

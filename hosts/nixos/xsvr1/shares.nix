@@ -5,17 +5,318 @@
   ...
 }:
 
+let
+  net = import ../../../lib/network.nix;
+
+  # One NFS export line: "<path> <cidr>(<opts>) <cidr>(<opts>) ...". Defaults are the safe
+  # ones (rw, root_squash); no_root_squash entries are deliberate — see the status comment
+  # above services.nfs.server and backlog H2.
+  exportLine =
+    {
+      path,
+      clients,
+      access ? "rw",
+      squash ? "root_squash",
+      extra ? "",
+    }:
+    "${path} "
+    + lib.concatMapStringsSep " " (
+      cidr: "${cidr}(${access},sync,no_subtree_check,${squash}${extra})"
+    ) clients;
+
+  nfsExports = [
+    {
+      path = "/export";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.officeVlan
+      ];
+      squash = "no_root_squash";
+      extra = ",fsid=0,crossmnt";
+    }
+    {
+      path = "/export/zfs/systembackups/longhorn";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/devicebackups";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/documents/manyfold";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/ingest";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/movies";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/tvshows";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/games";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+      squash = "no_root_squash";
+    }
+    {
+      path = "/export/zfs/media/audiobooks/fiction";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/audiobooks/non-fiction";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/audiobooks/adult";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/system/crafty";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/system/loki";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/systembackups/crafty";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/books/fiction";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/books/nonfiction";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/books/adult";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/books/ingest";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/system/matrix";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/users/syncthing";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/media/music";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/ebooks";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/documents";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/3dmodels";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/games";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+      squash = "no_root_squash";
+    }
+    {
+      path = "/export/zfs/ingest/movies";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/tvshows";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/ingest/music";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    {
+      path = "/export/zfs/scan/scans";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+        net.officeVlan
+      ];
+    }
+    # Scanopy daemon config (identity/API key), mounted by the privileged
+    # host-network container on xfw (Firewalla) — nix/hosts/nixable/xfw/.
+    # no_root_squash: the daemon process runs as root inside its container
+    # (--privileged) and needs to write its config.json as root over NFS;
+    # root_squash (the default elsewhere in this file) would map that to
+    # "nobody" and break writes. 172.20.0.0/16 already covers xfw's k8s-VLAN
+    # gateway address (172.20.3.250), so no separate CIDR is needed for it.
+    {
+      path = "/export/zfs/system/scanopy";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+      squash = "no_root_squash";
+    }
+    # Read-only distribution tree — arbitrary files (fonts, etc.) that must not
+    # live in git. Writable to xrs444 via the "distribute" Samba share below;
+    # exported read-only here so every NFS client is protected from accidental
+    # writes. Export the parent so future subfolders under /zfs/distribute
+    # don't each need their own export line.
+    {
+      path = "/export/zfs/distribute";
+      clients = [
+        net.ciliumLb
+        net.k8s
+        net.tailscale
+      ];
+      access = "ro";
+    }
+    # samba-tool AD backup tarballs, written by the samba-dc CronJob in the
+    # cluster. no_root_squash: the samba-dc pod runs privileged (as root) and
+    # writes the backup tar as root — root_squash would map that to "nobody"
+    # and break the write, same reasoning as scanopy above.
+    {
+      path = "/export/zfs/systembackups/samba-dc";
+      clients = [
+        net.ciliumLb
+        net.k8s
+      ];
+      squash = "no_root_squash";
+    }
+  ];
+in
 {
   # Samba passwords managed via sops — set automatically on every nixos-rebuild switch.
   # Kanidm does not store NTLM hashes, so Samba uses its own tdbsam passdb.
   # Linux session login still goes through Kanidm PAM (enablePam = true on xsvr1).
-  sops.secrets.xrs444_smb_password        = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.samantha_smb_password      = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.rowan_smb_password         = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.greyson_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.scanner_smb_password       = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.homeassistant_smb_password = { sopsFile = ../../../secrets/samba.yaml; };
-  sops.secrets.longhorn_smb_password      = { sopsFile = ../../../secrets/samba.yaml; };
+  sops.secrets.xrs444_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.samantha_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.rowan_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.greyson_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.scanner_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.homeassistant_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
+  sops.secrets.longhorn_smb_password = {
+    sopsFile = ../../../secrets/samba.yaml;
+  };
 
   # Scanner service account — exists only for Samba authentication (HP M281 printer)
   users.users.scanner = {
@@ -24,7 +325,7 @@
     shell = "${pkgs.shadow}/bin/nologin";
     description = "HP printer SMB service account";
   };
-  users.groups.scanner = {};
+  users.groups.scanner = { };
 
   # Home Assistant service account — exists only for Samba authentication
   users.users.homeassistant = {
@@ -33,7 +334,7 @@
     shell = "${pkgs.shadow}/bin/nologin";
     description = "Home Assistant SMB service account";
   };
-  users.groups.homeassistant = {};
+  users.groups.homeassistant = { };
 
   # Longhorn backup service account — exists only for Samba authentication
   # (replaces the former guest access to the longhorn-backups share)
@@ -76,56 +377,7 @@
   services.nfs.server = {
     enable = true;
     createMountPoints = lib.mkForce false;
-    exports = ''
-      /export 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt) 172.18.100.0/24(rw,sync,no_subtree_check,no_root_squash,fsid=0,crossmnt)
-      /export/zfs/systembackups/longhorn 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/devicebackups 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/documents/manyfold 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/ingest 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/movies 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/games 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
-      /export/zfs/media/audiobooks/fiction 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/audiobooks/non-fiction 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/audiobooks/adult 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/system/crafty 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/system/loki 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/systembackups/crafty 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/books/fiction 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/books/nonfiction 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/books/adult 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/books/ingest 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/system/matrix 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/users/syncthing 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/media/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/ebooks 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/documents 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/3dmodels 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/games 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,no_root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,no_root_squash)
-      /export/zfs/ingest/movies 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/tvshows 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/ingest/music 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      /export/zfs/scan/scans 172.21.0.0/24(rw,sync,no_subtree_check,root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,root_squash) 100.64.0.0/10(rw,sync,no_subtree_check,root_squash) 172.18.100.0/24(rw,sync,no_subtree_check,root_squash)
-      # Scanopy daemon config (identity/API key), mounted by the privileged
-      # host-network container on xfw (Firewalla) — nix/hosts/nixable/xfw/.
-      # no_root_squash: the daemon process runs as root inside its container
-      # (--privileged) and needs to write its config.json as root over NFS;
-      # root_squash (the default elsewhere in this file) would map that to
-      # "nobody" and break writes. 172.20.0.0/16 already covers xfw's k8s-VLAN
-      # gateway address (172.20.3.250), so no separate CIDR is needed for it.
-      /export/zfs/system/scanopy 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
-      # Read-only distribution tree — arbitrary files (fonts, etc.) that must not
-      # live in git. Writable to xrs444 via the "distribute" Samba share below;
-      # exported read-only here so every NFS client is protected from accidental
-      # writes. Export the parent so future subfolders under /zfs/distribute
-      # don't each need their own export line.
-      /export/zfs/distribute 172.21.0.0/24(ro,sync,no_subtree_check,root_squash) 172.20.0.0/16(ro,sync,no_subtree_check,root_squash) 100.64.0.0/10(ro,sync,no_subtree_check,root_squash)
-      # samba-tool AD backup tarballs, written by the samba-dc CronJob in the
-      # cluster. no_root_squash: the samba-dc pod runs privileged (as root) and
-      # writes the backup tar as root — root_squash would map that to "nobody"
-      # and break the write, same reasoning as scanopy above.
-      /export/zfs/systembackups/samba-dc 172.21.0.0/24(rw,sync,no_subtree_check,no_root_squash) 172.20.0.0/16(rw,sync,no_subtree_check,no_root_squash)
-    '';
+    exports = lib.concatMapStringsSep "\n" exportLine nfsExports + "\n";
   };
 
   # Create the bind mounts
@@ -578,7 +830,7 @@
         # Samba 4.x and cannot be overridden per-share.
         "server min protocol" = lib.mkForce "SMB2_02";
         # Extend base module's hosts allow to include Tailscale (100.64.0.0/10)
-        "hosts allow" = lib.mkForce "172.16.0.0/12 100.64.0.0/10 127.0.0.1 localhost";
+        "hosts allow" = lib.mkForce "${net.homeVlans} ${net.tailscale} 127.0.0.1 localhost";
       };
       "public" = {
         "path" = "/mnt/Shares/Public";

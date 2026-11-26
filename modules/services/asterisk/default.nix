@@ -6,6 +6,7 @@
   ...
 }:
 let
+  net = import ../../../lib/network.nix;
   isAsteriskHost = lib.elem "asterisk" hostRoles;
 in
 {
@@ -154,12 +155,12 @@ in
     networking.firewall.extraCommands =
       let
         voiceSources = [
-          "172.18.6.0/24"
-          "172.18.7.1/32"
+          net.phoneVlan
+          net.homeAssistant
         ];
         scrapeSources = [
-          "172.20.3.0/24"
-          "100.64.0.0/10"
+          net.talosNodes
+          net.tailscale
         ];
         rule = src: proto: dport: ''
           iptables -D nixos-fw -s ${src} -p ${proto} --dport ${dport} -j nixos-fw-accept 2>/dev/null || true
