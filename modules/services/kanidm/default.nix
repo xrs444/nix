@@ -137,7 +137,11 @@ in
             versions = 7;
           };
           replication = {
-            origin = "repl://idm.xrs444.net:8444";
+            # Per-host (not the shared idm VIP name): the replication cert's SAN
+            # is minted from this, and Kanidm 1.12 verifies the SAN against the
+            # partner's repl:// hostname. A shared idm.xrs444.net origin gave
+            # xidm1 a cert xsvr1 rejects (NotValidForName).
+            origin = "repl://${config.networking.hostName}.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
             # Pull from xsvr2 by hostname, partner_cert handles mutual TLS auth
             "repl://xsvr2.xrs444.net:8444" = {
@@ -373,7 +377,11 @@ in
             versions = 7;
           };
           replication = {
-            origin = "repl://idm.xrs444.net:8444";
+            # Per-host (not the shared idm VIP name): the replication cert's SAN
+            # is minted from this, and Kanidm 1.12 verifies the SAN against the
+            # partner's repl:// hostname. A shared idm.xrs444.net origin gave
+            # xidm1 a cert xsvr1 rejects (NotValidForName).
+            origin = "repl://${config.networking.hostName}.xrs444.net:8444";
             bindaddress = "0.0.0.0:8444";
             # Pull from xsvr1 by hostname, partner_cert handles mutual TLS auth
             "repl://xsvr1.xrs444.net:8444" = {
