@@ -225,12 +225,14 @@ in {
         }
         {
           name = "Add xprn2 print queue";
+          # 172.18.100.160 since 2026-10-31 (was 172.18.5.1); keep in sync with
+          # modules/services/printing/default.nix's xprn2Uri.
           # Device URI must be the raw IP, not xprn2.lan: the printer's
           # embedded cupsd validates the HTTP Host header and rejects
           # anything but its own IP with a generic 400 (confirmed
           # 2026-08-30 -- see nix/modules/services/printing/default.nix
           # for the full diagnosis).
-          command = "lpadmin -p xprn2 -E -v ipp://172.18.5.1/ipp/print -m everywhere -D 'HP Color LaserJet Pro MFP M281cdw'";
+          command = "lpadmin -p xprn2 -E -v ipp://172.18.100.160/ipp/print -m everywhere -D 'HP Color LaserJet Pro MFP M281cdw'";
           when = "xprn2_queue.rc != 0";
           # Printer may still be genuinely powered off; don't let that fail
           # the whole play, just retry next run.
