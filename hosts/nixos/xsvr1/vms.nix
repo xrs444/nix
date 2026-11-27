@@ -19,7 +19,13 @@ let
       autostart = true;
       firmware = "efi";
       storage = {
-        path = "/vm/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";
+        # Moved 2026-11-27 from /vm (zpool-xsvr1-main/vm, the contended ZFS array)
+        # to the host's SSD mdraid root: etcd fdatasync was stalling for seconds
+        # on vda during a rollout burst (vda ~100% busy, IO PSI ~80%), taking
+        # xsvr1 + xsvr3 NotReady. Not covered by the zpool syncoid replication
+        # anymore -- Talos VMs are declarative/rebuildable. Copy the file here
+        # BEFORE deploying: the watch-vm unit redefines + restarts the VM.
+        path = "/var/lib/libvirt/images/v-k8s-xsvr1/v-k8s-xsvr1.qcow2";
       };
       extraDrives = [
         {
