@@ -612,7 +612,10 @@ in
   # somewhere to push into. Best-effort and non-fatal — see installHeadroom
   # above for why an optional setup step must never abort the rest of
   # activation. The theme (ananke) is a git submodule, hence --recurse-submodules.
-  home.activation.cloneSite = lib.mkIf (!isServer) (
+  #
+  # Gated to xlt1-t and xdt1-t only: the repo is private, so on any other host
+  # (e.g. xlt1-t-vnixos) the clone just fails for lack of GitHub credentials.
+  home.activation.cloneSite = lib.mkIf (lib.elem hostName [ "xlt1-t" "xdt1-t" ]) (
     lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -d "$HOME/site/xrs444/.git" ]; then
         $DRY_RUN_CMD mkdir -p "$HOME/site"
