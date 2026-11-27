@@ -19,6 +19,11 @@ in
     kanidm = pinned;
     kanidm_1_4 = pinned;
     kanidm_1_7 = pinned;
+    # The kanidm module references pkgs.kanidm_1_12 / kanidmWithSecretProvisioning_1_12
+    # by name. Without these, they resolve to the *stable* nixpkgs package (1.12.0,
+    # which has the broken replication-cert issuer) and the unstable pin is bypassed.
+    kanidm_1_12 = pinned;
+    kanidmWithSecretProvisioning_1_12 = pinned.override { enableSecretProvisioning = true; };
     kanidmWithSecretProvisioning = pinned.override { enableSecretProvisioning = true; };
     kanidm-provision = pkgsUnstable.kanidm-provision;
   })
