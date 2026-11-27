@@ -150,14 +150,13 @@ in
               # Do NOT set automatic_refresh on primary
             };
             # 3rd replica (xidm1, Sweet Potato SBC on the server VLAN) — last-resort
-            # idm VIP member. Cert captured via `kanidmd show-replication-certificate`
-            # on xidm1 (2026-09-10, Phase B of kanidm-replace-xts2-with-xidm1 plan).
-            # SAN is "idm.xrs444.net" rather than "xidm1.xrs444.net" (unlike xsvr2's
-            # cert below) — replication trust is exact-cert pinning, not hostname
-            # verification, so this is cosmetic, not a blocker.
+            # idm VIP member. Cert re-minted 2026-11-27 via
+            # `kanidmd renew-replication-certificate` + `show-replication-certificate`
+            # on xidm1 (service must be RUNNING on 1.12 — they use /run/kanidmd/sock).
+            # SAN is xidm1.xrs444.net; Kanidm 1.12 verifies it against the repl:// host.
             "repl://xidm1.xrs444.net:8444" = {
               type = "mutual-pull";
-              partner_cert = "MIIB1jCCAXygAwIBAgIRATykuyPppEIpo8EhMjNX0-IwCgYIKoZIzj0EAwIwTDEtMCsGA1UEAwwkM2NhNGJiMjMtZTlhNC00MjI5LWEzYzEtMjEzMjMzNTdkM2UyMRswGQYDVQQKDBJLYW5pZG0gUmVwbGljYXRpb24wHhcNMjYwODI1MjIwMDU0WhcNMzAwODI1MjIwMDU0WjBMMS0wKwYDVQQDDCQzY2E0YmIyMy1lOWE0LTQyMjktYTNjMS0yMTMyMzM1N2QzZTIxGzAZBgNVBAoMEkthbmlkbSBSZXBsaWNhdGlvbjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABD4sWc2GrpoycxJ4d_z_W1AET0DtcU1eI7GWfgqCYxnbxFJ_itKfRMLRUgVsipy8GVJsz5D6fhpMRAwDTHsMBoujPzA9MCAGA1UdJQEB_wQWMBQGCCsGAQUFBwMCBggrBgEFBQcDATAZBgNVHREEEjAQgg5pZG0ueHJzNDQ0Lm5ldDAKBggqhkjOPQQDAgNIADBFAiAbwYi4rbzFRE8sRHKjoSBqt9Hh70y8mWBdjsVAzNu4BAIhAJS0Del9ilOSUjmWpBt6NfYWYHlta5mr9sr10zJKL1kU";
+              partner_cert = "MIIB-DCCAZ2gAwIBAgIRAYdxcMJRbE2BhDUzasCfow8wCgYIKoZIzj0EAwIwTDEbMBkGA1UECgwSS2FuaWRtIFJlcGxpY2F0aW9uMS0wKwYDVQQDDCQ4NzcxNzBjMi01MTZjLTRkODEtODQzNS0zMzZhYzA5ZmEzMGYwHhcNMjYxMTI3MDA1NDAwWhcNMzAxMTI3MDA1NDAwWjAvMS0wKwYDVQQDDCQ4NzcxNzBjMi01MTZjLTRkODEtODQzNS0zMzZhYzA5ZmEzMGYwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQ6-xbrMZimoHAII8j9cvfmgQwr83qQyJUyOmtHLzSCrRZsXXPmtLO31l1ZS2JundZOsB3a6vGd68IU_lGIIZWYo30wezAbBgNVHREEFDASghB4aWRtMS54cnM0NDQubmV0MB8GA1UdIwQYMBaAFFI0oYjcQG2WJ9HaeYySxOBA44FrMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB_wQEAwIHgDAKBggqhkjOPQQDAgNJADBGAiEA7x_hkzEkR8zobiYCUcWydQasx0h8K49_V2bbeOmsFQoCIQCb5Yn3AgtJVMbm___KZbzxJbWis6la_eb-ZpYvqBCPhg";
               # Do NOT set automatic_refresh on primary
             };
           };
